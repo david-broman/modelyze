@@ -1,0 +1,62 @@
+Modeling Kernel Language (MKL) toolchain
+Copyright (C) 2010 David Broman
+
+MKL toolchain is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL toolchain is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
+
+MKL toolchain, version 1.0
+-----------------------------------------------------
+This project contains a simple interpreter for the 
+modeling kernel language (MKL). For a detailed overview of the
+MKL language, please see David Broman's PhD Thesis:
+http://www.bromans.com/david/publ/thesis-2010-david-broman.pdf
+
+If you have any comments or questions, please send an email to
+david@bromans.com
+
+INSTALLATION
+------------
+To run the MKL interpreter on an UNIX-based system, 
+do the following steps:
+
+1. Unzip the MKL source code.
+2. Install the SUNDIALS solver suite version 2.4 or later. 
+   https://computation.llnl.gov/casc/sundials/download/
+3. Install Objective Caml version 3.11.2 or later.
+   http://caml.inria.fr/ocaml/
+4. Install GNUPLOT version 3.8h or later.
+   http://www.gnuplot.info/
+4. Compile the project using command
+   >> build byte
+
+EXAMPLES
+--------
+Under folder "library", a simple standard library for MKL is provided.
+Two test files are also provided:
+1. test-mechsys.mkl
+   This test program generates Modelica flat code from a Mechatronic MKL
+   model. Usage: mkl test-mechsys.mkl
+2. test-lotkavolterra.mkl
+   This test program shows a simple mathematical modeling that is simulated
+   and plotted. Usage: mklplot 1 test-lotkavolterra.mkl 
+
+LICENSE
+-------
+All files in the MKL toolchain project, excepts for files in the folders 
+"library/" and "other/" are under the GNU General Public Licence according 
+to file COPYING. Files under folder "other/" have specific licenses given 
+in each sub-folder. Files under folder "library/" are under the GNU Lesser
+General Public License according to file "library/COPYING.LESSER".
+
+
+

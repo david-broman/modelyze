@@ -1,0 +1,4 @@
+<main> or <syntax> or <utils> or <semantics> or <solvers/sundials> or <other/unittest> or <other/ustring> or <other/utils> or <other/extlib>: include
+<solvers/sundials/*> or <syntax/*> or <semantics/*> or <other/unittest/*> or <other/ustring/*> or <other/utils/*> or <other/extlib>: pkg_pcre, pkg_oUnit, pkg_num
+
+

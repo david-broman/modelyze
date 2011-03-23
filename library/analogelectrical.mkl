@@ -1,0 +1,91 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include Electrical
+include Mechanical
+
+let Resistor R:Real -> p:Electrical -> n:Electrical -> Equations =
+  let i:Current in
+  let v:Voltage in
+  ElectricalBranch i v p n;
+  R *. i = v 
+
+let Capacitor C:Real -> p:Electrical -> n:Electrical -> Equations =
+  let i:Current in
+  let v:Voltage in
+  ElectricalBranch i v p n;
+  C *. (der v) = i
+
+let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
+  let i:Current in
+  let v:Voltage in
+  ElectricalBranch i v p n;
+  L *. (der i) = v
+
+let Ground p:Electrical -> Equations =
+  let i:Current in
+  let v:Voltage in
+  ElectricalRefBranch i v p;
+  v = 0.
+    
+let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical -> 
+                Equations =
+  let PI = 3.1415 in
+  let i:Current in
+  let v:Voltage in
+  ElectricalBranch i v p n;
+  v = V *. sin(2. *. PI *. f *. time)
+
+let ConstantVoltage V:Real -> p:Electrical -> n:Electrical ->  Equations =
+  let i:Current in
+  let v:Voltage in
+  ElectricalBranch i v p n;
+  v = V 
+
+let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational -> 
+                  Equations =
+  let i:Current in
+  let v:Voltage in
+  let w:AngularVelocity in    
+  let phi:Angle in
+  let tau:Torque in
+  ElectricalBranch i v p n;
+  RotationalRefBranch tau phi flange;
+  w = der(phi);
+  k *. w = v;
+  tau =  k *. i
+
+let VoltageSensor output:Signal -> p:Electrical -> n:Electrical -> 
+                  Equations =
+  ElectricalBranch 0. output p n
+
+let PotentialSensor output:Signal -> p:Electrical -> Equations =
+  ElectricalRefBranch 0. output p 
+
+let CurrentSensor output:Signal -> p:Electrical -> n:Electrical -> 
+                  Equations =
+  ElectricalBranch output 0. p n
+
+
+  
+
+
+
+
+
+

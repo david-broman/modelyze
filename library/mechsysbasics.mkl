@@ -1,0 +1,54 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include AnalogElectrical
+include RotationalMechanical
+
+let ShaftElement flangeA:Rotational -> flangeB:Rotational -> 
+                 Equations =
+  let r1:Rotational in
+  Spring 8. flangeA r1;
+  Damper 1.5 flangeA r1;
+  Inertia 0.5 r1 flangeB
+
+let DCMotor flange:Rotational -> Equations =
+  let e1:Electrical in
+  let e2:Electrical in
+  let e3:Electrical in
+  let e4:Electrical in
+  ConstantVoltage 60. e1 e4;
+  Resistor 100. e1 e2;
+  Inductor 0.2 e2 e3;
+  EMF 1. e3 e4 flange;
+  Ground e4
+
+let FlexibleShaft n:Int -> flangeA:Rotational -> flangeB:Rotational -> 
+                  Equations =
+  if n == 1 then 
+    ShaftElement flangeA flangeB 
+  else 
+    let r1:Rotational in
+    ShaftElement flangeA r1;
+    FlexibleShaft (n-1) r1 flangeB
+
+
+
+
+
+  
+

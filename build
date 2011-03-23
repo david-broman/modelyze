@@ -1,0 +1,107 @@
+# Modeling Kernel Language (MKL) toolchain
+# Copyright (C) 2010 David Broman
+#
+# MKL toolchain is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# MKL toolchain is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
+
+#!/bin/bash
+
+set -e
+
+FLAGS="-libs unix"
+OCAMLBUILD=ocamlbuild
+OUTDIR="bin"
+
+
+ocb()
+{
+  cp -f $2-myocamlbuild.ml myocamlbuild.ml
+  cp -f $2-_tags _tags
+
+  $OCAMLBUILD $FLAGS $1 
+  cp _build/main/mkl.$2 $OUTDIR/mkl
+}
+
+builddoc()
+{
+  rm -f doc/src
+  $OCAMLBUILD src.docdir/index.html
+  (cd doc;ln -s ../_build/src.docdir src)
+}
+
+cleandymola()
+{
+  rm -f $1/buildlog.txt
+  rm -f $1/dsfinal.txt
+  rm -f $1/dsin.txt
+  rm -f $1/dslog.txt
+  rm -f $1/dsmodel.c
+  rm -f $1/dymosim.exe
+  rm -f $1/*.mat
+}
+
+mkclean()
+{ 
+  $OCAMLBUILD -clean
+  rm -f _log
+  rm -f $OUTDIR/mkl
+  rm -f doc/src
+  rm -f test/unittest/test_*
+  rm -f *~
+  rm -f *#
+  cleandymola dynamic/testdata
+  cleandymola static/testdata
+  cleandymola parser/testdata
+}
+
+utest()
+{
+  (cd $1;$3_build/other/unittest/maketestsuite.byte $2.ml > $3other/unittest/$2_run.ml)
+  echo -n "Test suite: " $2
+  ocamlbuild -quiet other/unittest/$2_run.byte --    
+  echo ""
+  echo ""
+  rm -f other/unittest/$2_run.ml
+  rm -f $2_run.byte
+}
+
+runtests()
+{
+  ocamlbuild -quiet other/unittest/maketestsuite.byte
+  
+  utest solvers/sundials test_sundials_ida ../../
+  utest other/ustring test_ustring ../../
+  utest parser test_molex ../
+}
+
+
+help(){
+  echo "Usage:"
+  echo "  build <command>"
+  echo "Commands:"
+  echo "    clean   Clean the whole project."
+  echo "    byte    Compile byte code version."
+  echo "    native  Compile native code version."
+ # echo "    doc     Generate code documentation."
+ # echo "    test    Compile and run test suite."
+}
+
+  case $1 in
+    clean)   mkclean;;
+    native)  ocb native.otarget native;;
+    byte)    ocb byte.otarget byte;;
+    doc)     builddoc;;
+    test)    runtests;;
+    *)       help;;
+  esac;
+

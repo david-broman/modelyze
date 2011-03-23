@@ -1,0 +1,35 @@
+BACKLOG / Requirements list for future versions
+==================================================
+
+This is a wish-list of requirements that the Ustring module might 
+support in the future. If you have any new requirements or want to
+argue that we change priority for some items, please send
+and email to me: david@bromans.com
+
+HIGH PRIORITY
+-----------------------------------------------------------------
+- Explicit string literal using Ocamlp4
+  Now, it is simple to write (us"test string") to create a ustring.
+  However, the computation to convert is done at run-time. It
+  would be good to have a Ocamlp4 implementation that can do this
+  at compile time. E.g. the equivalent code could be U"test string".
+  In such a case, we might be able to skip parenthesis as well. 
+
+- Add hash and equal function and make sure that it is possible
+  to use ustring easitly in a hash table.
+
+- uprintf, ufprintf, usprintf etc.
+  Unicode variants of all the printf functions. 
+
+MEDIUM PRIORITY
+-----------------------------------------------------------------
+- Internal UTF-8 encoding. 
+  By using int arrays internally, we gain good performance, but 
+  these arrays requires quite a lot of memory. If UTF-8 encoding 
+  is used internally, we save memory but some functions will be 
+  less efficient. This requirement should be implemented as an 
+  option. 
+
+
+LOW PRIORITY
+-----------------------------------------------------------------

@@ -1,0 +1,124 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include Mechanical
+
+let Spring c:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+           Equations =
+  let tau:Torque in
+  let relphi:Angle in
+  RotationalBranch tau relphi flangeB flangeA;
+  tau = c *. relphi
+
+let Damper d:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+           Equations =
+  let tau:Torque in
+  let relphi:Angle in
+  RotationalBranch tau relphi flangeB flangeA;
+  tau = d *. der(relphi)
+
+let Inertia J:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+    Equations =
+  let tauA:Torque in
+  let tauB:Torque in
+  let phiA:Angle in
+  let phiB:Angle in
+  let phi:Angle in
+  let w:AngularVelocity in
+  let a:AngularAcceleration in
+  RotationalRefBranch tauB phiB flangeB;
+  RotationalRefBranch tauA phiA flangeA;
+  phiA = phi;
+  phiB = phi;
+  w = der(phi);
+  a = der(w); 
+  J *. a = tauA +. tauB
+
+let IdealGear ratio:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+    Equations =
+  let tauA:Torque in
+  let tauB:Torque in
+  let phiA:Angle in
+  let phiB:Angle in
+  RotationalRefBranch tauA phiA flangeA;
+  RotationalRefBranch tauB phiB flangeB;
+  phiA = ratio *. phiB;  
+  0. = ratio *. tauA +. tauB   
+
+let Fixed angle:Real -> flangeB:Rotational -> Equations =
+  let tau:Torque in
+  RotationalRefBranch tau angle flangeB
+
+let ConstantTorque tau:Real -> flangeB:Rotational -> Equations=
+  let phi:Angle in
+  RotationalRefBranch tau phi flangeB
+
+let Torque tau:Signal -> flangeB:Rotational -> Equations =
+  let phi:Angle in
+  RotationalRefBranch tau phi flangeB
+
+let TorqueSensor tau:Signal -> flangeA:Rotational -> 
+                 flangeB:Rotational -> Equations =
+  RotationalBranch tau 0. flangeB flangeA
+
+let AngleSensor phi:Signal -> flangeB:Rotational -> Equations =
+  RotationalRefBranch 0. (-.phi) flangeB
+
+let SpeedSensor w:Signal -> flangeB:Rotational -> Equations =
+  let phi:Angle in
+  RotationalRefBranch 0. (-.phi) flangeB;
+  w = der(phi)
+
+let AccSensor a:Signal -> flangeB:Rotational -> Equations =
+  let phi:Angle in
+  let w:AngularVelocity in
+  RotationalRefBranch 0. (-.phi) flangeB;
+  w = der(phi);
+  a = der(w)
+
+let RelAngleSensor phiRel:Signal -> flangeA:Rotational -> 
+                   flangeB:Rotational -> Equations =
+  RotationalBranch 0. phiRel flangeB flangeA
+
+let RelSpeedSensor w:Signal -> flangeA:Rotational -> 
+                   flangeB:Rotational -> Equations =
+  let phiRel:Angle in
+  RotationalBranch 0. phiRel flangeB flangeA;
+  w = der(phiRel)
+
+let RelAccSensor a:Signal -> flangeA:Rotational -> 
+                 flangeB:Rotational -> Equations =
+  let phiRel:Angle in
+  let w:AngularVelocity in
+  RotationalBranch 0. phiRel flangeB flangeA;
+  w = der(phiRel);
+  a = der(w)
+
+
+
+
+
+
+
+
+
+
+
+
+
+

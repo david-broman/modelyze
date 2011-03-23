@@ -1,0 +1,43 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include ExportModelica
+include Simulation
+
+type Population = <Real>
+
+let LotkaVolterra =
+  let growthRateRabbits = 0.04 in
+  let deathRateRabbits = 0.0005 in
+  let deathRateFoxes = 0.09 in
+  let efficiencyGrowthFoxes = 0.1 in
+  let rabbits:Population in
+  let foxes:Population in
+  Init rabbits 700.;
+  Init foxes 10.;
+  der(rabbits) = growthRateRabbits *. rabbits -. 
+                 deathRateRabbits *. rabbits *. foxes;
+  der(foxes)   = efficiencyGrowthFoxes *. deathRateRabbits *.
+                 rabbits *. foxes -. deathRateFoxes *. foxes;
+  probe "foxes" = foxes;
+  probe "animals" = foxes +. rabbits
+
+
+let main = 
+  printsim LotkaVolterra 1. 1000.
+  //printLine (exportModelica "LotkaVolterra" LotkaVolterra)

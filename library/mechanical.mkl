@@ -27,3 +27,7 @@ type AngularVelocity = <Real>
 type AngularAcceleration = <Real>
 type Angle = <Real>
 type Torque = <Real>
+type Force = <Real>
+type Position = <Real>
+type Velocity = <Real>
+type Acceleration = <Real>

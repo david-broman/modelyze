@@ -60,3 +60,14 @@ General Public License according to file "library/COPYING.LESSER".
 
 
 
+REVISIONS
+---------
+
+Version 1.0.1
+  Updated version with minor corrections and bug-fixes.
+  - Fixed problem with init conditions. The function InitValues in
+    elaboration.mkl must match pattern 'Init and not just Init.
+
+Version 1.0.0 - October 1, 2010
+  - First version corresponding to David Broman's PhD Thesis.
+

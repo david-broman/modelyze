@@ -344,7 +344,6 @@ and trans_patcases_vartrans cases =
   in trans_cases cases []
 
 
-
 and desugar_match fi l t cases  =
   let errdef = 
     TmError(fi,l,TmConst(fi,l,ConstString(us"Pattern match error"))) in

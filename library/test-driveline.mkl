@@ -16,25 +16,36 @@ You should have received a copy of the GNU Lesser General Public License
 along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include Mechanical
-include Electrical
-include Elaboration
+include ExportModelica
+include AnalogElectrical
+include RotationalMechanical
+include Simulation
 
-let isMechatronicBranch b:Node = 
-  match b with
-  | 'ElectricalBranch -> true
-  | 'RotationalBranch -> true
-  | _ -> false
+let Driveline =
+  let r1:Rotational in
+  let r2:Rotational in
+  let r3:Rotational in
+  let r4:Rotational in
+  let r5:Rotational in
+  let r6:Rotational in
+  let r7:Rotational in
+  ConstantTorque 2. r1;
+  TorqueSensor (probe "tau1") r1 r2;
+  SpeedSensor (probe "w1") r2;
+  Inertia 10. r2 r3;
+  SpeedSensor (probe "w2") r3;
+  TorqueSensor (probe "tau2") r3 r4;
+  Spring 5. r4 r5;
+  SpeedSensor (probe "w3") r5;  
+  TorqueSensor (probe "tau3") r5 r6;
+  Inertia 2. r6 r7;
+  SpeedSensor (probe "w4") r7
 
-let isMechatronicRefBranch b:Node = 
-  match b with
-  | 'ElectricalRefBranch -> true
-  | 'RotationalRefBranch -> true
-  | _ -> false
+ 
+let main = 
+   printsim Driveline 0.01 1.
+   //printLine (exportModelica "Driveline" Driveline)
 
-let elaborate model:Equations -> (Equations,ProbeMap) =
-  let model2 = elaborateDerivatives model in
-  let (model3,probes) = elaborateProbes model2 in
-  (elaborateConnections isMechatronicBranch 
-   isMechatronicRefBranch model3,probes)
+  
 
+  

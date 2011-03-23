@@ -1,0 +1,17 @@
+model Pendulum
+  output Real x = uk5;
+protected
+  Real uk5;
+  Real uk0;
+  Real uk2;
+  Real uk1(start=-1.41477653833,fixed=true);
+  Real uk3(start=1.41365036221,fixed=true);
+  Real uk4;
+equation
+  uk0 = der(uk1);
+  uk2 = der(uk3);
+  (-uk4) * uk3 / 2. = 5. * der(uk2);
+  ((-uk4) * uk1 / 2. - 49.05) = 5. * der(uk0);
+  (((uk3 * der(uk2) + uk2 ^ (2.)) + uk1 * der(uk0)) + uk0 ^ (2.)) = 0.;
+  uk5 = uk3;
+end Pendulum;

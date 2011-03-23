@@ -1,0 +1,108 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include MechsysBasics
+include Simulation
+include ExportModelica
+
+// Explitcit without Pantelides
+let Pendulum1 m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let T:Force in
+  let x:Position in
+  let y:Position in
+  let dx:Velocity in
+  let dy:Velocity in
+  Init x (l *. sin startAngle);
+  Init y (-. l *. cos startAngle);
+
+  dx = der x;
+  dy = der y;
+  -.T *. x /. l = m *. (der dx);
+  -.T *. y /. l -. m *. g = m *. (der dy);     
+  x ^. 2. +. y ^. 2. = l ^. 2.;
+  probe "x" = x
+
+//Panterlides applied, but no dummy derivatives
+let Pendulum2 m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let T:Force in
+  let x:Position in
+  let y:Position in
+  let dx:Velocity in
+  let dy:Velocity in
+  Init x (l *. sin startAngle);
+  Init y (-. l *. cos startAngle);
+
+  dx = der x;
+  dy = der y;
+  -.T *. x /. l = m *. (der dx);
+  -.T *. y /. l -. m *. g = m *. (der dy);     
+  x *. (der dx) +. dx ^. 2. +. y *. (der dy) +. dy ^. 2. = 0.;
+  probe "x" = x
+
+
+//Panterlides applied, with higher order derivatives
+let Pendulum3 m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let T:Force in
+  let x:Position in
+  let y:Position in
+  Init x (l *. sin startAngle);
+  Init y (-. l *. cos startAngle);
+
+  -.T *. x /. l = m *. (der (der x));
+  -.T *. y /. l -. m *. g = m *. (der (der y));     
+  x *. (der (der x)) +. (der x) ^. 2. +. y *. (der (der y)) +. (der y) ^. 2. = 0.;
+  probe "x" = x
+
+    
+
+//Mixed
+let Pendulum4 m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let T:Force in
+  let x:Position in
+  let y:Position in
+  let dx:Velocity in
+  let dy:Velocity in
+  Init x (l *. sin startAngle);
+  Init y (-. l *. cos startAngle);
+
+  dx = der x;
+  dy = der y;
+  -.T *. x /. l = m *. (der dx);
+  -.T *. y /. l -. m *. g = m *. (der dy);     
+  x *. (der (der x)) +. (der x) ^. 2. +. y *. (der (der y)) +. (der y) ^. 2. = 0.;
+  probe "x" = x
+  
+let _ = 
+  let angle = 45. *. 3.14 /. 180. in
+  //printsim (Pendulum4 5.0 2.0 angle) 0.01 10.
+  printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
+
+
+
+
+
+
+
+
+
+
+

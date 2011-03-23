@@ -32,6 +32,9 @@ type ProbeMap =  (String => [Signal])
 type InitValMap = (<Real> => (Real,Bool))
 type UkSet = (Set <Real>)
 type UkMap = (Signal => (Int,Bool))
+type SubExprMap = (<> => Signal)
+type SubExprList = [(<>,Signal)]
+
 
 let elaborateConnections isBranch:(<> -> Bool) -> 
                          isRefBranch:(<> -> Bool) ->
@@ -112,13 +115,80 @@ let elaborateProbes model:Equations -> (Equations,ProbeMap) =
        (e1b e2b,ps2)
     | _ -> (e,ps)
   in elab model (Map.empty)
+
+/*
+//Old code 
+let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
+  match e with
+  | 'der (uk:Signal) -> 
+     if Map.mem e exprmap then
+       (match Map.find e exprmap with
+        | (e2,true) -> (e2,exprmap)
+        | _ -> (e,exprmap))
+     else (e,exprmap)
+  | 'der e2 ->  
+      let (e3,exprmap2) = extractSubExpr e2 exprmap in
+      (match e3 with 
+       | uk:Signal -> (der e3,exprmap2)
+       | _ -> if Map.mem e3 exprmap2 then
+                (der (fst (Map.find e3 exprmap2)), exprmap2)
+              else
+                let x:Signal in 
+                (der x,Map.add e3 (x,true) exprmap2))
+  | e1 e2 ->   
+      let (e1b,exprmap2) = extractSubExpr e1 exprmap in
+      let (e2b,exprmap3) = extractSubExpr e2 exprmap2 in
+      (e1b e2b,exprmap3)
+  | _ -> (e,exprmap)
+*/
+
+//Not used right now...
+let extractDerDefs eqs:Equations -> acc:SubExprMap -> SubExprMap =
+  match eqs with
+  | e1 ; e2 -> extractDerDefs e2 (extractDerDefs e1 acc)
+  | 'der uk:Signal = uk:Signal -> 
+      (match eqs with | e1 = e2 -> Map.add e1 e2 acc)
+  | uk:Signal = 'der uk:Signal -> 
+      (match eqs with | e1 = e2 -> Map.add e2 e1 acc)
+  | _ -> acc
+
+
+let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
+  match e with
+  | 'der e2 ->  
+      let (e3,exprmap2) = extractSubExpr e2 exprmap in
+      (match e3 with 
+       | uk:Signal -> 
+           if Map.mem (der e3) exprmap2 then 
+             (Map.find (der e3) exprmap,exprmap2)
+           else 
+             (der e3,exprmap2)
+       | _ -> 
+           let x:Signal in 
+           (der x,Map.add e3 x exprmap2))
+  | e1 e2 ->   
+      let (e1b,exprmap2) = extractSubExpr e1 exprmap in
+      let (e2b,exprmap3) = extractSubExpr e2 exprmap2 in
+      (e1b e2b,exprmap3)
+  | _ -> (e,exprmap)
+
+let elaborateDerivatives model:Equations -> Equations =
+  let makeEquations eqs:Equations -> lst:SubExprList -> Equations =
+    match lst with
+    | (expr,x)::xs -> x = expr; (makeEquations eqs xs)
+    | _::xs -> makeEquations eqs xs 
+    | [] -> eqs
+  in
+  let (eqs,exprmap) = extractSubExpr model (Map.empty) in
+  makeEquations eqs (Map.toList exprmap)
+
   
 let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | Init x (val v:Real) -> Map.add x (v,false) acc
-    | InitGuess x (val v:Real) -> Map.add x (v,true) acc
+    | 'Init x (val v:Real) -> Map.add x (v,false) acc
+    | 'InitGuess x (val v:Real) -> Map.add x (v,true) acc
     | _ -> acc
   in get eqs (Map.empty)
 
@@ -145,7 +215,7 @@ let realUnknowns eqs:Equations -> (Int,UkMap) =
      match e with
      | e1 e2 -> get e2 (get e1 acc)
      | 'time -> acc
-     | der x -> 
+     | 'der x -> 
         (match x with 
          | uk:<Real> -> 
              let (k,ukmap) = acc in 

@@ -23,25 +23,25 @@ let Resistor R:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
   ElectricalBranch i v p n;
-  R *. i = v 
+  R * i = v 
 
 let Capacitor C:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
   ElectricalBranch i v p n;
-  C *. (der v) = i
+  C * (der v) = i
 
 let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
   ElectricalBranch i v p n;
-  L *. (der i) = v
+  L * (der i) = v
 
 let Ground p:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
   ElectricalRefBranch i v p;
-  v = 0.
+  v = 0.0
     
 let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical -> 
                 Equations =
@@ -49,7 +49,7 @@ let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical ->
   let i:Current in
   let v:Voltage in
   ElectricalBranch i v p n;
-  v = V *. sin(2. *. PI *. f *. time)
+  v = V * sin(2.0 * PI * f * time)
 
 let ConstantVoltage V:Real -> p:Electrical -> n:Electrical ->  Equations =
   let i:Current in
@@ -67,19 +67,19 @@ let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational ->
   ElectricalBranch i v p n;
   RotationalRefBranch tau phi flange;
   w = der(phi);
-  k *. w = v;
-  tau =  k *. i
+  k * w = v;
+  tau =  k * i
 
 let VoltageSensor output:Signal -> p:Electrical -> n:Electrical -> 
                   Equations =
-  ElectricalBranch 0. output p n
+  ElectricalBranch 0.0 output p n
 
 let PotentialSensor output:Signal -> p:Electrical -> Equations =
-  ElectricalRefBranch 0. output p 
+  ElectricalRefBranch 0.0 output p 
 
 let CurrentSensor output:Signal -> p:Electrical -> n:Electrical -> 
                   Equations =
-  ElectricalBranch output 0. p n
+  ElectricalBranch output 0.0 p n
 
 
   

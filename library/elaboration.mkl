@@ -50,15 +50,15 @@ let elaborateConnections isBranch:(<> -> Bool) ->
       match branches with
       | (b i v p n)::bs when isBranch b ->  
           let emap1 = if Map.mem p emap 
-                      then Map.add p ((Map.find p emap) +. i) emap
+                      then Map.add p ((Map.find p emap) + i) emap
                       else Map.add p i emap in
           let emap2 = if Map.mem n emap1 
-                      then Map.add n ((Map.find n emap1) -. i) emap1
-                      else Map.add n (-. i) emap1 in
+                      then Map.add n ((Map.find n emap1) - i) emap1
+                      else Map.add n (-i) emap1 in
           worker bs emap2
       | (b i v p)::bs when isRefBranch b -> 
           let emap1 = if Map.mem p emap 
-                      then Map.add p ((Map.find p emap) +. i) emap
+                      then Map.add p ((Map.find p emap) + i) emap
                       else Map.add p i emap in
           worker bs emap1
       | [] -> emap
@@ -79,7 +79,7 @@ let elaborateConnections isBranch:(<> -> Bool) ->
       match m with
       | b i v p n when isBranch b ->
         let nodemap2 = addNode n (addNode p nodemap) in
-        let eq = (v = (Map.find p nodemap2) -. 
+        let eq = (v = (Map.find p nodemap2) - 
                  (Map.find n nodemap2)) in
         (eq,nodemap2,Set.add m branchset)
       | b i v p when isRefBranch b ->
@@ -206,7 +206,7 @@ let noUnknowns eqs:Equations -> Int =
 
 let noEquations eqs:Equations -> Int =
   match eqs with
-  | e1 ; e2 -> (noEquations e1) + (noEquations e2)
+  | e1 ; e2 -> (noEquations e1) +. (noEquations e2)
   | e1 = e2 -> 1
   | _ -> 0
  
@@ -221,10 +221,10 @@ let realUnknowns eqs:Equations -> (Int,UkMap) =
              let (k,ukmap) = acc in 
              if Map.mem e ukmap 
              then (k,Map.add e (fst (Map.find e ukmap),true) ukmap)
-             else ((k+1,Map.add e (k,true) ukmap))
+             else ((k+.1,Map.add e (k,true) ukmap))
          | _ -> error "Illegal diffrentiation of expression") 
      | uk:<Real> -> if Map.mem e (snd acc) then acc
-                    else ((fst acc)+1,Map.add e (fst acc,false) (snd acc))
+                    else ((fst acc)+.1,Map.add e (fst acc,false) (snd acc))
      | e1 -> acc 
   in get eqs (0,(Map.empty))
 

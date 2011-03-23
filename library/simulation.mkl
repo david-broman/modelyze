@@ -36,12 +36,12 @@ let makeResidual model:Equations -> ukmap:UkMap ->
                 | uk:Signal -> Array.get yp (fst (Map.find x ukmap))
                 | _ -> error "Derivatives only allowed on unknowns")
     | uk:Signal -> Array.get yy (fst(Map.find e ukmap))
-    | _ -> error "Unsupported model construct" 
+    | _ -> let _ = dpa e in error "Unsupported model construct" 
   in
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with
     | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr e1 -. realExpr e2) :: acc
+    | e1 = e2 -> (realExpr e1 - realExpr e2) :: acc
     | _ -> acc
   in traverseEq model [] 
 
@@ -64,7 +64,7 @@ let makeNewResidual model:Equations -> ukmap:UkMap ->
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with
     | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr e1 -. realExpr e2) :: acc
+    | e1 = e2 -> (realExpr e1 - realExpr e2) :: acc
     | _ -> acc
   in traverseEq model [] 
 
@@ -99,8 +99,8 @@ let makeStepVal currtime:Real -> yy:{Real} ->
 let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
   match probes with
   | (s,u::us)::ss -> 
-    let s2 = s ++ (if n > 1 then "_" ++ int2string n else "") in
-    s2::(makeProbeNames ((s,us)::ss) (n+1))
+    let s2 = s ++ (if n >. 1 then "_" ++ int2string n else "") in
+    s2::(makeProbeNames ((s,us)::ss) (n +. 1))
   | (s,[])::ss -> makeProbeNames ss 1
   | [] -> []
 
@@ -128,12 +128,12 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   let id = initConditionCorrection ukmap in
   let state = DAESolver.make yy yp id residual in
   let simloop currtime:Real -> acc:[StepVal] -> [StepVal] = 
-    if currtime >=. endtime then acc
+    if currtime >= endtime then acc
     else
       let stepval = makeStepVal currtime yy probelist ukmap in
       let newtime = DAESolver.step steptime state in 
       if newtime == 0. then acc
-      else simloop (newtime +. steptime) (stepval::acc)
+      else simloop (newtime + steptime) (stepval::acc)
   in
     (makeProbeNames probelist 1,revResult (simloop 0. []) []) 
 

@@ -70,4 +70,6 @@ Version 1.0.1
 
 Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.
-
+  - Changed operators for Real and Int, so that e.g., -. and +. are
+    for integer operations instead of Real. The rationale is that most
+    expressions are written using Reals.

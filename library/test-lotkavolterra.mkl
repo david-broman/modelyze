@@ -30,12 +30,12 @@ let LotkaVolterra =
   let foxes:Population in
   Init rabbits 700.;
   Init foxes 10.;
-  der(rabbits) = growthRateRabbits *. rabbits -. 
-                 deathRateRabbits *. rabbits *. foxes;
-  der(foxes)   = efficiencyGrowthFoxes *. deathRateRabbits *.
-                 rabbits *. foxes -. deathRateFoxes *. foxes;
+  der(rabbits) = growthRateRabbits*rabbits - 
+                 deathRateRabbits*rabbits*foxes;
+  der(foxes)   = efficiencyGrowthFoxes*deathRateRabbits*
+                 rabbits*foxes - deathRateFoxes*foxes;
   probe "foxes" = foxes;
-  probe "animals" = foxes +. rabbits
+  probe "animals" = foxes + rabbits
 
 
 let main = 

@@ -27,7 +27,7 @@ let pprintModelica name:String ->
                    model:Equations -> String =
   let uks = realUnknowns model in
   let real2modelicaString r:Real -> String = 
-    if r <. 0. then "(" ++ real2string r ++ ")" else real2string r
+    if r < 0. then "(" ++ real2string r ++ ")" else real2string r
   in
   let pprintUnknowns us:(Int,UkMap) -> initvalmap:InitValMap -> String = 
     let initstr u:Signal -> String =
@@ -46,12 +46,12 @@ let pprintModelica name:String ->
   in
   let pprintExpr expr:<> -> String =
     match expr with
-    | e1 +. e2 -> "(" ++ pprintExpr e1 ++ " + " ++ pprintExpr e2 ++ ")"
-    | e1 -. e2 -> "(" ++ pprintExpr e1 ++ " - " ++ pprintExpr e2 ++ ")"
-    | e1 *. e2 -> pprintExpr e1 ++ " * " ++ pprintExpr e2 
-    | e1 /. e2 -> pprintExpr e1 ++ " / " ++ pprintExpr e2 
-    | -. e ->     "(-" ++ pprintExpr e ++ ")" 
-    | e1 ^. e2 -> pprintExpr e1 ++ " ^ " ++ "(" ++ pprintExpr e2 ++ ")"
+    | e1 + e2 -> "(" ++ pprintExpr e1 ++ " + " ++ pprintExpr e2 ++ ")"
+    | e1 - e2 -> "(" ++ pprintExpr e1 ++ " - " ++ pprintExpr e2 ++ ")"
+    | e1 * e2 -> pprintExpr e1 ++ " * " ++ pprintExpr e2 
+    | e1 / e2 -> pprintExpr e1 ++ " / " ++ pprintExpr e2 
+    | -e ->     "(-" ++ pprintExpr e ++ ")" 
+    | e1^e2 -> pprintExpr e1 ++ " ^ " ++ "(" ++ pprintExpr e2 ++ ")"
     | 'der e ->   "der(" ++ pprintExpr e ++ ")"
     | 'sin e ->   "sin(" ++ pprintExpr e ++ ")"
     | 'cos e ->   "cos(" ++ pprintExpr e ++ ")"
@@ -79,9 +79,9 @@ let pprintModelica name:String ->
   let pprintOutput probes:[(String,[Signal])] -> n:Int -> String =        
     match probes with
     | (s,u::us)::ss -> 
-         "  output Real " ++ s ++ (if n > 1 then "_" ++ int2string n 
+         "  output Real " ++ s ++ (if n >. 1 then "_" ++ int2string n 
                                             else "") ++ 
-         " = " ++ mkvar uks u ++ ";\n" ++ pprintOutput ((s,us)::ss) (n+1)
+         " = " ++ mkvar uks u ++ ";\n" ++ pprintOutput ((s,us)::ss) (n +. 1)
     | (s,[])::ss -> pprintOutput ss 1
     | [] -> ""                             
   in

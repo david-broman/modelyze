@@ -18,29 +18,29 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 
 let (mod) : Int -> Int -> Int = @@int_mod
-let (+) : Int -> Int -> Int = @@int_add
-let (-) : Int -> Int -> Int = @@int_sub
-let (*) : Int -> Int -> Int = @@int_mul
-let (/) : Int -> Int -> Int = @@int_div
-let (<) : Int -> Int -> Bool = @@int_less
-let (<=) : Int -> Int -> Bool = @@int_less_equal
-let (>) : Int -> Int -> Bool = @@int_great
-let (>=) : Int -> Int -> Bool = @@int_great_equal
-let (!=) : Int -> Int -> Bool = @@int_not_equal
-let (+.) : Real -> Real -> Real = @@real_add
-let (-.) : Real -> Real -> Real = @@real_sub
-let (*.) : Real -> Real -> Real = @@real_mul
-let (/.) : Real -> Real -> Real = @@real_div
-let (<.) : Real -> Real -> Bool = @@real_less
-let (<=.) : Real -> Real -> Bool = @@real_less_equal
-let (>.) : Real -> Real -> Bool = @@real_great
-let (>=.) : Real -> Real -> Bool = @@real_great_equal
-let (!=.) : Real -> Real -> Bool = @@real_not_equal
+let (+.) : Int -> Int -> Int = @@int_add
+let (-.) : Int -> Int -> Int = @@int_sub
+let (*.) : Int -> Int -> Int = @@int_mul
+let (/.) : Int -> Int -> Int = @@int_div
+let (<.) : Int -> Int -> Bool = @@int_less
+let (<=.) : Int -> Int -> Bool = @@int_less_equal
+let (>.) : Int -> Int -> Bool = @@int_great
+let (>=.) : Int -> Int -> Bool = @@int_great_equal
+let (!=.) : Int -> Int -> Bool = @@int_not_equal
+let (+) : Real -> Real -> Real = @@real_add
+let (-) : Real -> Real -> Real = @@real_sub
+let (*) : Real -> Real -> Real = @@real_mul
+let (/) : Real -> Real -> Real = @@real_div
+let (<) : Real -> Real -> Bool = @@real_less
+let (<=) : Real -> Real -> Bool = @@real_less_equal
+let (>) : Real -> Real -> Bool = @@real_great
+let (>=) : Real -> Real -> Bool = @@real_great_equal
+let (!=) : Real -> Real -> Bool = @@real_not_equal
 let (!) : Bool -> Bool = @@bool_not
 let (&&) : Bool -> Bool -> Bool = @@bool_and
 let (||) : Bool -> Bool -> Bool = @@bool_or
-let (--) : Int -> Int = @@int_neg
-let (--.) : Real -> Real = @@real_neg
+let (--.) : Int -> Int = @@int_neg
+let (--) : Real -> Real = @@real_neg
 let print : String -> () = @@print
 let bool2string : Bool -> String = @@bool2string
 let int2string : Int -> String = @@int2string 
@@ -68,7 +68,7 @@ let log : Real -> Real = @@log
 let log10 : Real -> Real = @@log10
 let sqrt : Real -> Real = @@sqrt
 let exp : Real -> Real = @@exp
-let (^.) : Real -> Real -> Real = @@exponentiation
+let (^) : Real -> Real -> Real = @@exponentiation
 let substr : String -> Int -> Int -> String = @@string_substr
 let strlen : String -> Int = @@string_strlen
 let (++) : String -> String -> String = @@string_concat

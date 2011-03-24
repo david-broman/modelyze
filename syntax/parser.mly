@@ -145,6 +145,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> EQUAL         /* "==" */
 %token <unit Ast.tokendata> USCORE        /* "_"  */
+%token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
 
 %start main tokens
@@ -167,6 +168,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %left MOD
 %left EXP DOTEXP
 %nonassoc UNARYMINUS
+%left SQUOTE 
 
 %%
 
@@ -452,6 +454,8 @@ pat_op:
   | pat_op DOTEXP pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(^.)" $1 $3 }
 
+  | pat_op SQUOTE
+      { mk_unpat_op (mkinfo (pat_info $1) $2.i) $2.l "(')" $1 }
   | SUB pat_op %prec UNARYMINUS
       { mk_unpat_op (mkinfo $1.i (pat_info $2)) $1.l "(--)" $2 }
   | DOTSUB pat_op %prec UNARYMINUS
@@ -493,7 +497,7 @@ pat_atom:
       { PatExpr($1.i,TmConst($1.i,$1.l,ConstString($1.v))) }
   | LPAREN RPAREN 
       { PatExpr(mkinfo $1.i $2.i,TmConst($1.i,$1.l,ConstUnit)) } 
-  | SQUOTE atom
+  | ESCAPE atom
       { PatExpr(mkinfo $1.i (tm_info $2),$2) }
   | LSQUARE RSQUARE
       { let fi = mkinfo $1.i $2.i in
@@ -602,6 +606,8 @@ op:
   | op DOTEXP op
       { mk_binop (mktminfo $1 $3) $2.l "(^.)" $1 $3 }
 
+  | op SQUOTE 
+      { mk_unop (mkinfo (tm_info $1) $2.i) $2.l "(')" $1 }
   | SUB op %prec UNARYMINUS
       { mk_unop (mkinfo $1.i (tm_info $2)) $1.l "(--)" $2 }
   | DOTSUB op %prec UNARYMINUS

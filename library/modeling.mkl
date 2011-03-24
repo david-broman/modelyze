@@ -18,18 +18,23 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Base
 
+type Signal = <Real>
+
+let der : <Real -> Real>
+let (') : <Real -> Real> = der
+
 type Eqs
 type Equations = <Eqs>
-type Signal = <Real>
-let der : <Real -> Real>
 let EquationSysNode : <Eqs -> Eqs -> Eqs>
 let Eq : <Real -> Real -> Eqs>
+let (=) : <Real -> Real -> Eqs> = Eq
+let (;) : <Eqs -> Eqs -> Eqs> = EquationSysNode
+
 let Init : <Real -> Real -> Eqs>
 let InitGuess : <Real -> Real -> Eqs>
+
 let time : <Real>
 let probe : <String -> Real> 
 
-let (=) : <Real -> Real -> Eqs> = Eq
-let (;) : <Eqs -> Eqs -> Eqs> = EquationSysNode
 
 

@@ -51,9 +51,9 @@ let Pendulum2 m:Real -> l:Real -> startAngle:Real -> Equations =
 
   dx = der x;
   dy = der y;
-  -T*x/l = m*(der dx);
-  -T*y/l - m*g = m*(der dy);     
-  x*(der dx) + dx^2. + y*(der dy) + dy^2. = 0.;
+  -T*x/l = m*dx';
+  -T*y/l - m*g = m*dy';     
+  x*dx' + dx^2. + y*dy' + dy^2. = 0.;
   probe "x" = x
 
 
@@ -66,9 +66,9 @@ let Pendulum3 m:Real -> l:Real -> startAngle:Real -> Equations =
   Init x (l*sin startAngle);
   Init y (-l*cos startAngle);
 
-  -T*x/l = m*(der (der x));
-  -T*y/l - m*g = m*(der (der y));     
-  x*(der (der x)) + (der x) ^ 2. + y*(der (der y)) + (der y)^2. = 0.;
+  -T*x/l = m*x'';
+  -T*y/l - m*g = m*y'';     
+  x*x'' + x'^2. + y*y'' + y'^2. = 0.;
   probe "x" = x
 
     
@@ -86,15 +86,15 @@ let Pendulum4 m:Real -> l:Real -> startAngle:Real -> Equations =
 
   dx = der x;
   dy = der y;
-  -T*x/l = m*(der dx);
-  -T*y/l - m*g = m*(der dy);     
-  x*(der (der x)) + (der x)^2. + y*(der (der y)) + (der y)^2. = 0.;
+  -T*x/l = m*dx';
+  -T*y/l - m*g = m*dy';     
+  x*x'' + x'^2. + y*y'' + y'^2. = 0.;
   probe "x" = x
   
 let _ = 
   let angle = 45.*3.14/180. in
-  //printsim (Pendulum4 5.0 2.0 angle) 0.01 10.
-  printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
+  printsim (Pendulum4 5.0 2.0 angle) 0.01 10.
+  //printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
 
 
 

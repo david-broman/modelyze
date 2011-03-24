@@ -22,14 +22,14 @@ include Elaboration
 
 let isMechatronicBranch b:Node = 
   match b with
-  | 'ElectricalBranch -> true
-  | 'RotationalBranch -> true
+  | ~ElectricalBranch -> true
+  | ~RotationalBranch -> true
   | _ -> false
 
 let isMechatronicRefBranch b:Node = 
   match b with
-  | 'ElectricalRefBranch -> true
-  | 'RotationalRefBranch -> true
+  | ~ElectricalRefBranch -> true
+  | ~RotationalRefBranch -> true
   | _ -> false
 
 let elaborate model:Equations -> (Equations,ProbeMap) =

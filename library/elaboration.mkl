@@ -108,7 +108,7 @@ let addProbe s:String -> u:Signal -> ps:ProbeMap =
 let elaborateProbes model:Equations -> (Equations,ProbeMap) =
   let elab e:<> -> ps:ProbeMap -> (<>,ProbeMap) = 
     match e with
-    | 'probe (val s:String) -> let u:Signal in (u,addProbe s u ps)
+    | ~probe (val s:String) -> let u:Signal in (u,addProbe s u ps)
     | e1 e2 -> 
        let (e1b,ps1) = elab e1 ps in
         let (e2b,ps2) = elab e2 ps1 in
@@ -120,13 +120,13 @@ let elaborateProbes model:Equations -> (Equations,ProbeMap) =
 //Old code 
 let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
   match e with
-  | 'der (uk:Signal) -> 
+  | ~der (uk:Signal) -> 
      if Map.mem e exprmap then
        (match Map.find e exprmap with
         | (e2,true) -> (e2,exprmap)
         | _ -> (e,exprmap))
      else (e,exprmap)
-  | 'der e2 ->  
+  | ~der e2 ->  
       let (e3,exprmap2) = extractSubExpr e2 exprmap in
       (match e3 with 
        | uk:Signal -> (der e3,exprmap2)
@@ -146,16 +146,16 @@ let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
 let extractDerDefs eqs:Equations -> acc:SubExprMap -> SubExprMap =
   match eqs with
   | e1 ; e2 -> extractDerDefs e2 (extractDerDefs e1 acc)
-  | 'der uk:Signal = uk:Signal -> 
+  | ~der uk:Signal = uk:Signal -> 
       (match eqs with | e1 = e2 -> Map.add e1 e2 acc)
-  | uk:Signal = 'der uk:Signal -> 
+  | uk:Signal = ~der uk:Signal -> 
       (match eqs with | e1 = e2 -> Map.add e2 e1 acc)
   | _ -> acc
 
 
 let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
   match e with
-  | 'der e2 ->  
+  | ~der e2 ->  
       let (e3,exprmap2) = extractSubExpr e2 exprmap in
       (match e3 with 
        | uk:Signal -> 
@@ -187,16 +187,16 @@ let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | 'Init x (val v:Real) -> Map.add x (v,false) acc
-    | 'InitGuess x (val v:Real) -> Map.add x (v,true) acc
+    | ~Init x (val v:Real) -> Map.add x (v,false) acc
+    | ~InitGuess x (val v:Real) -> Map.add x (v,true) acc
     | _ -> acc
   in get eqs (Map.empty)
-
+ 
 let unknowns eqs:Equations -> UkSet =
   let get e:<> -> acc:UkSet -> UkSet = 
      match e with
      | e1 e2 -> get e2 (get e1 acc)
-     | 'time -> acc
+     | ~time -> acc
      | uk:<Real> -> Set.add e acc
      | _ -> acc 
   in get eqs (Set.empty)
@@ -214,8 +214,8 @@ let realUnknowns eqs:Equations -> (Int,UkMap) =
   let get e:<> -> acc:(Int,UkMap) -> (Int,UkMap) = 
      match e with
      | e1 e2 -> get e2 (get e1 acc)
-     | 'time -> acc
-     | 'der x -> 
+     | ~time -> acc
+     | ~der x -> 
         (match x with 
          | uk:<Real> -> 
              let (k,ukmap) = acc in 

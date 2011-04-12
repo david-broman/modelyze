@@ -65,7 +65,8 @@ let Pendulum3 m:Real -> l:Real -> startAngle:Real -> Equations =
   let y:Position in
   Init x (l*sin startAngle);
   Init y (-l*cos startAngle);
-
+     
+//  x'^2. +  x*x'' + y*y'' + y'^2. = 0.;  //Problem when at first
   -T*x/l = m*x'';
   -T*y/l - m*g = m*y'';     
   x*x'' + x'^2. + y*y'' + y'^2. = 0.;
@@ -93,7 +94,7 @@ let Pendulum4 m:Real -> l:Real -> startAngle:Real -> Equations =
   
 let _ = 
   let angle = 45.*3.14/180. in
-  printsim (Pendulum4 5.0 2.0 angle) 0.01 10.
+  printsim (Pendulum3 5.0 2.0 angle) 0.01 10.
   //printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
 
 

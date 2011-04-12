@@ -34,6 +34,8 @@ type UkSet = (Set <Real>)
 type UkMap = (Signal => (Int,Bool))
 type SubExprMap = (<> => Signal)
 type SubExprList = [(<>,Signal)]
+type DerivMap = (Signal => Signal)
+type DerivList = [(Signal,Signal)]
 
 
 let elaborateConnections isBranch:(<> -> Bool) -> 
@@ -182,7 +184,93 @@ let elaborateDerivatives model:Equations -> Equations =
   let (eqs,exprmap) = extractSubExpr model (Map.empty) in
   makeEquations eqs (Map.toList exprmap)
 
-  
+
+
+
+//Extract equations of form  der x = dx, as well as recording such
+//equations where higher-order derivatives will be generated after
+//differentiation.
+let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
+  let makeHOder x:Signal -> k:Int -> dmap:DerivMap -> DerivMap =
+    if k >. 1 then 
+      if Map.mem x dmap then makeHOder (Map.find x dmap) (k -. 1) dmap
+      else   
+        let dx:Signal in
+        makeHOder dx (k -. 1) (Map.add x dx dmap)
+    else dmap
+  in
+  let extractHOder expr:Expr -> k:Int -> dmap:DerivMap -> DerivMap =
+    match expr with
+    | ~der e -> extractHOder e (k +. 1) dmap
+    | uk:Signal -> makeHOder expr k dmap
+    | e1 e2 -> extractHOder e2 k (extractHOder e1 k dmap)
+    | _ -> dmap
+  in
+  match eqs with
+  | e1 ; e2 ->     
+      let (e1b,dmap1) = extractDerivatives e1 dmap in
+      let (e2b,dmap2) = extractDerivatives e2 dmap1 in
+      (match (e1b,e2b) with
+       | (NoEq,NoEq) -> (NoEq,dmap2)
+       | (NoEq,_)    -> (e2b,dmap2)
+       | (_,NoEq)    -> (e1b,dmap2)
+       | (_,_)       -> (e1b;e2b,dmap2))
+  | ~der uk:Signal = uk:Signal -> 
+      (match eqs with | ~der e1 = e2 -> (NoEq,Map.add e1 e2 dmap))
+  | uk:Signal = ~der uk:Signal -> 
+      (match eqs with | e1 = ~der e2 -> (NoEq,Map.add e2 e1 dmap))
+  | _ -> (eqs,extractHOder eqs 0 dmap)
+
+//Symbolically differentiate a model (higher-order).
+let differentiateModel expr:Expr -> Expr =
+  let sdiff expr:Signal -> Signal =
+    match expr with
+    | uk:Signal -> hoDer expr 1
+    | ~hoDer x k -> hoDer x (k +. 1)
+    | ~der e -> sdiff (sdiff e)
+    | e1 + e2 -> sdiff e1 + sdiff e2 
+    | e1 - e2 -> sdiff e1 - sdiff e2 
+    | e1 * e2 -> sdiff e1 * e2 + e1 * sdiff e2
+    | e1 / e2 -> (sdiff e1 * e2 - e1 * sdiff e2) / (e2 * e2)
+    | _ -> expr
+  in
+  match expr with
+  | ~der e -> sdiff e
+  | e1 e2 -> (differentiateModel e1) (differentiateModel e2)
+  | _ -> expr
+
+//Remove higher-order derivatives and replace them with new unknowns
+//representing chains of derivatives.
+let removeHOderivatives expr:Expr -> dmap:DerivMap -> Expr =
+  let getDeriv x:Signal -> k:Int -> Expr =
+    if k >. 1 then getDeriv (Map.find x dmap) (k -. 1)
+    else 
+      if Map.mem x dmap then Map.find x dmap
+      else der x
+  in
+  match expr with
+  | ~hoDer x (val k:Int) -> getDeriv x k
+  | e1 e2 -> (removeHOderivatives e1 dmap) (removeHOderivatives e2 dmap) 
+  | _ -> expr
+
+//Generate equations of form  der x = dx, which removes the need for
+//higher-order derivatives.
+let generateEquations eqs:Equations -> dlist:DerivList -> Equations =
+  match dlist with
+  | (x,dx)::xs -> der x = dx; (generateEquations eqs xs)
+  | _::xs -> generateEquations eqs xs 
+  | [] -> eqs
+
+//Elaborate derivatives. Symbolic differentiation of expressions and
+//conversion from higher-order derivatives into derivatives of first order.
+//This is the main function for elaboration of derivatives.
+let elaborateDerivatives_ model:Equations -> Equations =
+  let (eqs,dmap) =  extractDerivatives model (Map.empty) in
+  let eqs2 = differentiateModel eqs in
+  let eqs3 = removeHOderivatives eqs2 dmap in
+  generateEquations eqs3 (Map.toList dmap) 
+
+
 let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with

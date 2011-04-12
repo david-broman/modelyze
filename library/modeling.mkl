@@ -22,6 +22,7 @@ type Signal = <Real>
 
 let der : <Real -> Real>
 let (') : <Real -> Real> = der
+let hoDer : <Real -> Int -> Real>
 
 type Eqs
 type Equations = <Eqs>
@@ -29,6 +30,7 @@ let EquationSysNode : <Eqs -> Eqs -> Eqs>
 let Eq : <Real -> Real -> Eqs>
 let (=) : <Real -> Real -> Eqs> = Eq
 let (;) : <Eqs -> Eqs -> Eqs> = EquationSysNode
+let NoEq : Equations
 
 let Init : <Real -> Real -> Eqs>
 let InitGuess : <Real -> Real -> Eqs>

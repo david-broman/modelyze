@@ -155,6 +155,8 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
   | _ -> (eqs,extractHOder eqs 0 dmap)
 
 //Symbolically differentiate a model (higher-order).
+//What is missing is built in functions and other functions using
+//the chain rule.
 let differentiateModel expr:Expr -> Expr =
   let sdiff expr:Signal -> Signal =
     match expr with
@@ -165,6 +167,8 @@ let differentiateModel expr:Expr -> Expr =
     | e1 - e2 -> sdiff e1 - sdiff e2 
     | e1 * e2 -> sdiff e1 * e2 + e1 * sdiff e2
     | e1 / e2 -> (sdiff e1 * e2 - e1 * sdiff e2) / (e2 * e2)
+    | e1 ^ (val k:Real) -> (k * e1 ^ (k - 1.)) * sdiff e1
+    | val x:Real -> val 0.
     | _ -> expr
   in
   match expr with

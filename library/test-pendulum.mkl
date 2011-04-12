@@ -90,7 +90,7 @@ let Pendulum4 m:Real -> l:Real -> startAngle:Real -> Equations =
   -T*y/l - m*g = m*dy';     
   x*x'' + x'^2. + y*y'' + y'^2. = 0.;
   probe "x" = x
-  
+
 
 //Panterlides applied, with symbolic differentation
 let Pendulum5 m:Real -> l:Real -> startAngle:Real -> Equations =
@@ -103,14 +103,23 @@ let Pendulum5 m:Real -> l:Real -> startAngle:Real -> Equations =
      
   -T*x/l = m*x'';
   -T*y/l - m*g = m*y'';     
-  der(der(x^2. + y^2.)) = der(der(l^2.));
-  //x*x'' + x'^2. + y*y'' + y'^2. = 0.;
+
+  //(x*x + y*y)'' = (l*l)'';
+  (x^2. + y^2.)'' = (l^2.)'';
   probe "x" = x
+
+
+let Test =
+  let x:Force in
+  Init x 1.;
+  der (x + 0.)  = -0.5 * x;
+  probe "x" = x  
 
 
 let _ = 
   let angle = 45.*3.14/180. in
-  printsim (Pendulum3 5.0 2.0 angle) 0.01 10.
+  printsim (Pendulum5 5.0 2.0 angle) 0.01 10.
+  //printsim Test 0.01 10.
   //printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
 
 

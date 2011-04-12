@@ -118,73 +118,6 @@ let elaborateProbes model:Equations -> (Equations,ProbeMap) =
     | _ -> (e,ps)
   in elab model (Map.empty)
 
-/*
-//Old code 
-let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
-  match e with
-  | ~der (uk:Signal) -> 
-     if Map.mem e exprmap then
-       (match Map.find e exprmap with
-        | (e2,true) -> (e2,exprmap)
-        | _ -> (e,exprmap))
-     else (e,exprmap)
-  | ~der e2 ->  
-      let (e3,exprmap2) = extractSubExpr e2 exprmap in
-      (match e3 with 
-       | uk:Signal -> (der e3,exprmap2)
-       | _ -> if Map.mem e3 exprmap2 then
-                (der (fst (Map.find e3 exprmap2)), exprmap2)
-              else
-                let x:Signal in 
-                (der x,Map.add e3 (x,true) exprmap2))
-  | e1 e2 ->   
-      let (e1b,exprmap2) = extractSubExpr e1 exprmap in
-      let (e2b,exprmap3) = extractSubExpr e2 exprmap2 in
-      (e1b e2b,exprmap3)
-  | _ -> (e,exprmap)
-*/
-
-//Not used right now...
-let extractDerDefs eqs:Equations -> acc:SubExprMap -> SubExprMap =
-  match eqs with
-  | e1 ; e2 -> extractDerDefs e2 (extractDerDefs e1 acc)
-  | ~der uk:Signal = uk:Signal -> 
-      (match eqs with | e1 = e2 -> Map.add e1 e2 acc)
-  | uk:Signal = ~der uk:Signal -> 
-      (match eqs with | e1 = e2 -> Map.add e2 e1 acc)
-  | _ -> acc
-
-
-let extractSubExpr e:<> -> exprmap:SubExprMap -> (<>,SubExprMap) =
-  match e with
-  | ~der e2 ->  
-      let (e3,exprmap2) = extractSubExpr e2 exprmap in
-      (match e3 with 
-       | uk:Signal -> 
-           if Map.mem (der e3) exprmap2 then 
-             (Map.find (der e3) exprmap,exprmap2)
-           else 
-             (der e3,exprmap2)
-       | _ -> 
-           let x:Signal in 
-           (der x,Map.add e3 x exprmap2))
-  | e1 e2 ->   
-      let (e1b,exprmap2) = extractSubExpr e1 exprmap in
-      let (e2b,exprmap3) = extractSubExpr e2 exprmap2 in
-      (e1b e2b,exprmap3)
-  | _ -> (e,exprmap)
-
-let elaborateDerivatives model:Equations -> Equations =
-  let makeEquations eqs:Equations -> lst:SubExprList -> Equations =
-    match lst with
-    | (expr,x)::xs -> x = expr; (makeEquations eqs xs)
-    | _::xs -> makeEquations eqs xs 
-    | [] -> eqs
-  in
-  let (eqs,exprmap) = extractSubExpr model (Map.empty) in
-  makeEquations eqs (Map.toList exprmap)
-
-
 
 
 //Extract equations of form  der x = dx, as well as recording such
@@ -211,10 +144,10 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
       let (e1b,dmap1) = extractDerivatives e1 dmap in
       let (e2b,dmap2) = extractDerivatives e2 dmap1 in
       (match (e1b,e2b) with
-       | (NoEq,NoEq) -> (NoEq,dmap2)
-       | (NoEq,_)    -> (e2b,dmap2)
-       | (_,NoEq)    -> (e1b,dmap2)
-       | (_,_)       -> (e1b;e2b,dmap2))
+       | (~NoEq,~NoEq) -> (NoEq,dmap2)
+       | (~NoEq,_)     -> (e2b,dmap2)
+       | (_,~NoEq)     -> (e1b,dmap2)
+       | (_,_)         -> (e1b;e2b,dmap2))
   | ~der uk:Signal = uk:Signal -> 
       (match eqs with | ~der e1 = e2 -> (NoEq,Map.add e1 e2 dmap))
   | uk:Signal = ~der uk:Signal -> 
@@ -226,7 +159,7 @@ let differentiateModel expr:Expr -> Expr =
   let sdiff expr:Signal -> Signal =
     match expr with
     | uk:Signal -> hoDer expr 1
-    | ~hoDer x k -> hoDer x (k +. 1)
+    | ~hoDer x (val k:Int) -> hoDer x (k +. 1)
     | ~der e -> sdiff (sdiff e)
     | e1 + e2 -> sdiff e1 + sdiff e2 
     | e1 - e2 -> sdiff e1 - sdiff e2 
@@ -264,12 +197,12 @@ let generateEquations eqs:Equations -> dlist:DerivList -> Equations =
 //Elaborate derivatives. Symbolic differentiation of expressions and
 //conversion from higher-order derivatives into derivatives of first order.
 //This is the main function for elaboration of derivatives.
-let elaborateDerivatives_ model:Equations -> Equations =
+let elaborateDerivatives model:Equations -> Equations =
   let (eqs,dmap) =  extractDerivatives model (Map.empty) in
   let eqs2 = differentiateModel eqs in
   let eqs3 = removeHOderivatives eqs2 dmap in
   generateEquations eqs3 (Map.toList dmap) 
-
+  
 
 let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =

@@ -135,6 +135,7 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
   let extractHOder expr:Expr -> k:Int -> dmap:DerivMap -> DerivMap =
     match expr with
     | ~der e -> extractHOder e (k +. 1) dmap
+    | ~time -> dmap
     | uk:Signal -> makeHOder expr k dmap
     | e1 e2 -> extractHOder e2 k (extractHOder e1 k dmap)
     | _ -> dmap
@@ -148,18 +149,24 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
        | (~NoEq,_)     -> (e2b,dmap2)
        | (_,~NoEq)     -> (e1b,dmap2)
        | (_,_)         -> (e1b;e2b,dmap2))
-  | ~der uk:Signal = uk:Signal -> 
-      (match eqs with | ~der e1 = e2 -> (NoEq,Map.add e1 e2 dmap))
-  | uk:Signal = ~der uk:Signal -> 
-      (match eqs with | e1 = ~der e2 -> (NoEq,Map.add e2 e1 dmap))
+  | ~der ~time = _ -> (eqs,extractHOder eqs 0 dmap)
+  | ~der _ = ~time -> (eqs,extractHOder eqs 0 dmap)
+  | _ = ~der ~time -> (eqs,extractHOder eqs 0 dmap)
+  | ~time = ~der _ -> (eqs,extractHOder eqs 0 dmap)
+  | ~der uk:Signal = uk:Signal ->
+      (match eqs with | ~der x = dx -> (NoEq,Map.add x dx dmap))
+  | uk:Signal = ~der uk:Signal ->
+      (match eqs with | ~der x = dx -> (NoEq,Map.add x dx dmap))
   | _ -> (eqs,extractHOder eqs 0 dmap)
 
 //Symbolically differentiate a model (higher-order).
 //What is missing is built in functions and other functions using
 //the chain rule.
 let differentiateModel expr:Expr -> Expr =
+  let eulerNumber = 2.71828182845904523536 in
   let sdiff expr:Signal -> Signal =
     match expr with
+    | ~time -> val 1.
     | uk:Signal -> hoDer expr 1
     | ~hoDer x (val k:Int) -> hoDer x (k +. 1)
     | ~der e -> sdiff (sdiff e)
@@ -167,13 +174,26 @@ let differentiateModel expr:Expr -> Expr =
     | e1 - e2 -> sdiff e1 - sdiff e2 
     | e1 * e2 -> sdiff e1 * e2 + e1 * sdiff e2
     | e1 / e2 -> (sdiff e1 * e2 - e1 * sdiff e2) / (e2 * e2)
+    | ~sin e -> sdiff e * cos e
+    | ~cos e -> sdiff e * -(sin e)
+    | ~tan e -> sdiff e * 1./(cos e)^2.
+    | ~asin e -> sdiff e * (1. / (sqrt (1. - e^2.)))
+    | ~acos e -> sdiff e * -(1. / (sqrt (1. - e^2.)))
+    | ~atan e -> sdiff e * (1. / (1. + e^2.))
+    | ~sinh e -> sdiff e * cosh e
+    | ~cosh e -> sdiff e * sinh e
+    | ~tanh e -> sdiff e * (1. / (cosh e)^2.)
+    | ~log e -> sdiff e / e
+    | ~log10 e -> sdiff e * log10 eulerNumber / e 
+    | ~sqrt e -> sdiff e / (2.*(sqrt e))
     | e1 ^ (val k:Real) -> (k * e1 ^ (k - 1.)) * sdiff e1
+    | -e -> -(sdiff e)
     | val x:Real -> val 0.
-    | _ -> expr
+    | _ -> error "Cannot differentiate model"
   in
   match expr with
   | ~der e -> sdiff e
-  | e1 e2 -> (differentiateModel e1) (differentiateModel e2)
+  | e1 e2 -> (differentiateModel e1)  (differentiateModel e2) 
   | _ -> expr
 
 //Remove higher-order derivatives and replace them with new unknowns

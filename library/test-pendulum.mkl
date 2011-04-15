@@ -112,7 +112,9 @@ let Pendulum5 m:Real -> l:Real -> startAngle:Real -> Equations =
 let Test =
   let x:Force in
   Init x 1.;
-  der (x + 0.)  = -0.5 * x;
+  //der (x)  = -0.5 * sin x + der (sin time);
+  ( (tanh time))' = x;  
+//  (sin time)''' = x;  
   probe "x" = x  
 
 

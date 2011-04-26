@@ -1,0 +1,138 @@
+
+
+include Modeling
+
+type Node
+type ENode = <Node>
+type VNode = Expr
+let nonode : <Node>
+
+type EqsGraph = (ENode => (Set VNode))
+type ColorESet = Set ENode
+type ColorVSet = Set VNode
+type ColorVList = [ENode]
+type ColorVList = [VNode]
+type AssignMap = (VNode => ENode)
+type PathFound = Bool
+
+type EqMap = (ENode => ENode)
+type EqList = [(ENode,ENode)]
+type VarSet = Set Expr
+type VarList = [Expr]
+
+//Algorithm AUGMENTPATH according to page 217 by Pantelides (1988)
+let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet -> 
+    assign:AssignMap -> A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
+  let assignPath jlist:VarList -> (PathFound,AssignMap) =
+    match jlist with
+    | j::js -> 
+      if (Map.mem j assign) || !(Set.mem j A) then
+        assignPath js 
+      else 
+        (true,Map.add j i assign)
+    | [] -> (false,assign)
+  in
+  let everyJ vlist:VarList -> colE:ColorESet -> colV:ColorVSet -> assign:AssignMap ->
+     A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
+    match vlist with 
+    | j::js when (Set.mem j colV) || !(Set.mem j A) -> everyJ js colE colV assign A
+    | j::js -> 
+      let colV2 = Set.add j colV in
+      let k = Map.find j assign in
+      let (found,colE3,colV3,assign3) = augmentPath graph k colE colV2 assign A in
+      if found then
+        (true,colE3,colV3,Map.add j i assign3)
+      else
+        everyJ js colE3 colV3 assign3 A
+    | [] -> (false,colE,colV,assign)
+  in 
+    let colE2 = Set.add i colE in 
+    let jList = Set.toList (Map.find i graph) in
+    let (found,assign2) = assignPath jList in
+    if found then
+      (true,colE2,colV,assign2)
+    else
+       everyJ jList colE2 colV assign2 A
+
+/*  
+//Algorithm 4.1 according to page 218 by Pantelides (1988)
+let pantelides graph:EqsGraph -> A:VarSet -> B:EqMap -> EqMap =
+  let deleteSelectedVNodes A:VarSet -> VarSet =
+    let delete vlist:VarList -> acc:VarSet -> VarSet =
+      match vlist with
+      | n::ns when Set.mem (der n) A -> delete ns acc
+      | n::ns -> delete ns (Map.add n acc)
+      | [] -> acc
+    in delete (Map.toList A) (Map.empty)
+  in
+  let makeNewVNodes colV:ColorVList -> A:VarSet -> VarSet =
+    match colV with
+    | v::vs -> 
+       let A2 = Set.add (der v) A in
+       let A3 = Set.remove v A2 in
+       makeNewVNodes vs A3 
+    | [] A
+  in
+  let makeDerivVars vars:VarList -> acc:VarSet -> VarSet = 
+    match vars with
+    | v::vs -> makeDerivVars vs (Map.add (der v) acc)
+    | [] -> acc 
+  in
+  let makeNewENodes colE:ColorEList -> graph:EqsGraph -> B:EqMap -> 
+    (EqsGraph,EqMap) = 
+    match colE with
+    | l::ls -> 
+       let evars = Map.find l graph in
+       let evars2 = makeDerivVars (Map.toList evars) evars in
+       let n:ENode in
+       (Map.add l evars2 graph, Map.add l n B)
+    | [] -> (graph,B)
+  in
+  let makeAssignment colV:ColorVList -> A:VarSet -> B:EqMap -> assign:AssignMap ->
+    AssignMap =
+    match colV with
+    | j::js -> 
+      let eq = Map.find (Map.find j assign) B in
+      let assign2 = Map.add (der j) eq assign in
+      makeAssignment js A B assign2
+    | [] -> assign
+  in
+  let foreachEq eqs:EqList -> graph:EqsGraph ->  A:VarSet -> B:EqMap -> 
+    assign:AssignMap -> EqMap =
+    (match eqs with
+    | (i,_)::is ->
+      let A2 = deleteSelectedVNodes A in
+      let (found,colE,colV,assign2) = augmentPath graph i (Set.empty) 
+                                      (Set.empty) assign A in
+      if found then B
+      else 
+        let A3 = makeNewVNodes (Set.toList colV) A2 in 
+        let (graph2,B2) = makeNewENodes (Set.toList colE) graph B in
+    
+        
+        
+        
+        
+    | [] -> B  
+  in
+  */  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

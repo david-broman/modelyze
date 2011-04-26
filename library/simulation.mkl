@@ -130,10 +130,10 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   let simloop currtime:Real -> acc:[StepVal] -> [StepVal] = 
     if currtime >= endtime then acc
     else
-      let stepval = makeStepVal currtime yy probelist ukmap in
       let newtime = DAESolver.step steptime state in 
+      let stepval = makeStepVal newtime yy probelist ukmap in
       if newtime == 0. then acc
-      else simloop (newtime + steptime) (stepval::acc)
+      else simloop newtime (stepval::acc)
   in
     (makeProbeNames probelist 1,revResult (simloop 0. []) []) 
 

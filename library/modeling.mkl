@@ -39,5 +39,6 @@ let InitGuess : <Real -> Real -> Eqs>
 let time : <Real>
 let probe : <String -> Real> 
 
+type Expr = <>
 
 

@@ -117,11 +117,21 @@ let Test =
 //  (sin time)''' = x;  
   probe "x" = x  
 
+let ERApendulum =
+  let theta:<Real> in
+  let v:<Real> in
+  Init theta 0.;
+  Init v 2.;
+  theta' = v;
+  v' = (-8./0.1) * sin theta;
+  probe "theta" = theta
+
+  
 
 let _ = 
   let angle = 45.*3.14/180. in
   printsim (Pendulum5 5.0 2.0 angle) 0.01 10.
-  //printsim Test 0.01 10.
+  //printsim ERApendulum 0.01 1.1
   //printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
 
 

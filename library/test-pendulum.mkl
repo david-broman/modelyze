@@ -130,9 +130,9 @@ let ERApendulum =
 
 let _ = 
   let angle = 45.*3.14/180. in
-  printsim (Pendulum5 5.0 2.0 angle) 0.01 10.
+  //printsim (Pendulum5 5.0 2.0 angle) 0.01 10.
   //printsim ERApendulum 0.01 1.1
-  //printLine (exportModelica "Pendulum" (Pendulum3 5.0 2.0 angle))
+  printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
 
 
 

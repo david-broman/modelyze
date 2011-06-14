@@ -118,20 +118,20 @@ let Test =
   probe "x" = x  
 
 let ERApendulum =
-  let theta:<Real> in
+  let th:<Real> in
   let v:<Real> in
-  Init theta 0.;
+  Init th 0.;
   Init v 2.;
-  theta' = v;
-  v' = (-8./0.1) * sin theta;
-  probe "theta" = theta
+  th' = v;
+  v' = -100. * th;
+  probe "theta" = th
 
   
 
 let _ = 
   let angle = 45.*3.14/180. in
   //printsim (Pendulum5 5.0 2.0 angle) 0.01 10.
-  //printsim ERApendulum 0.01 1.1
+  printsim ERApendulum 0.01 500.
   printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
 
 

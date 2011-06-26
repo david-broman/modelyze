@@ -107,7 +107,9 @@ CAMLprim value ida_make_ext_c(value params, value init_y, value init_yder, value
   (*ctx).cb_res = caml_named_value(String_val(Field(params,CB_RES_ID))); 
   (*ctx).roots = Int_val(Field(params,ROOTS));  
   (*ctx).cb_root = caml_named_value(String_val(Field(params,CB_ROOT_ID))); 
+  
 
+ 
   /* Init ida structures */
   (*ctx).yy = N_VNew_Serial((*ctx).eqs);
   (*ctx).yp = N_VNew_Serial((*ctx).eqs);
@@ -233,7 +235,7 @@ CAMLprim value ida_y_c(value si)
   CAMLlocal1(res);
   ida_instance* ctx = (ida_instance*)Nativeint_val(si);
   long eqs = (*ctx).eqs;
-  res = caml_alloc(eqs*2,Double_array_tag);
+  res = caml_alloc(eqs,Double_array_tag);
   long i;
   realtype* yval = NV_DATA_S((*ctx).yy);
   for(i=0; i<eqs; i++){
@@ -250,7 +252,7 @@ CAMLprim value ida_yp_c(value si)
   CAMLlocal1(res);
   ida_instance* ctx = (ida_instance*)Nativeint_val(si);
   long eqs = (*ctx).eqs;
-  res = caml_alloc(eqs*2,Double_array_tag);
+  res = caml_alloc(eqs,Double_array_tag);
   long i;
   realtype* ypval = NV_DATA_S((*ctx).yp);
   for(i=0; i<eqs; i++){
@@ -349,8 +351,8 @@ int residual(realtype t, N_Vector yy, N_Vector yp, N_Vector rr, void *user_data)
 
   /* Init value y_t and vector value v_yy and v_yp */
   v_t = caml_copy_double(t);
-  v_yy = caml_alloc(eqs*2,Double_array_tag);
-  v_yp = caml_alloc(eqs*2,Double_array_tag);
+  v_yy = caml_alloc(eqs,Double_array_tag);
+  v_yp = caml_alloc(eqs,Double_array_tag);
   for(i=0; i<eqs; i++){
     Store_double_field(v_yy, i, yval[i]);
     Store_double_field(v_yp, i, ypval[i]);
@@ -387,8 +389,8 @@ int rootfinder(realtype t, N_Vector yy, N_Vector yp, realtype *gout, void *user_
 
   /* Init value y_t and vector value v_yy and v_yp */
   v_t = caml_copy_double(t);
-  v_yy = caml_alloc(eqs*2,Double_array_tag);
-  v_yp = caml_alloc(eqs*2,Double_array_tag);
+  v_yy = caml_alloc(eqs,Double_array_tag);
+  v_yp = caml_alloc(eqs,Double_array_tag);
   for(i=0; i<eqs; i++){
     Store_double_field(v_yy, i, yval[i]);
     Store_double_field(v_yp, i, ypval[i]);

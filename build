@@ -59,6 +59,7 @@ mkclean()
   rm -f test/unittest/test_*
   rm -f *~
   rm -f *#
+  rm -f myocamlbuild.ml
   cleandymola dynamic/testdata
   cleandymola static/testdata
   cleandymola parser/testdata

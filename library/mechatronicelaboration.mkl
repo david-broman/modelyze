@@ -33,7 +33,7 @@ let isMechatronicRefBranch b:Node =
   | _ -> false
 
 let elaborate model:Equations -> (Equations,ProbeMap) =
-  let model2 = /* elaborateDerivatives */ model in
+  let model2 = /*elaborateDerivatives*/ model in
   let (model3,probes) = elaborateProbes model2 in
   (elaborateConnections isMechatronicBranch 
    isMechatronicRefBranch model3,probes)

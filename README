@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
-MKL toolchain, version 1.0
+MKL toolchain, version 1.0.1
 -----------------------------------------------------
 This project contains a simple interpreter for the 
 modeling kernel language (MKL). For a detailed overview of the
@@ -24,21 +24,18 @@ http://www.bromans.com/david/publ/thesis-2010-david-broman.pdf
 If you have any comments or questions, please send an email to
 david@bromans.com
 
-INSTALLATION
-------------
+INSTALLATION (Mac OS)
+--------------------
 To run the MKL interpreter on an UNIX-based system, 
 do the following steps:
 
-1. Unzip the MKL source code.
-2. Install the SUNDIALS solver suite version 2.4 or later. 
-   https://computation.llnl.gov/casc/sundials/download/
-3. Install Objective Caml version 3.11.2 or later.
-   http://caml.inria.fr/ocaml/
-4. Install OCaml Batteries 1.3 or later
-   http://batteries.forge.ocamlcore.org/   
-5. Install GNUPLOT version 3.8h or later.
-   http://www.gnuplot.info/
-6. Compile the project using command
+1. Install the SUNDIALS solver suite version 2.4.0 or later. 
+   http://computation.llnl.gov/casc/sundials/
+2. Install Macports (including X11 support)
+   http://www.macports.org/
+3. Install Objective Caml compiler, ocamlfind, and gnuplot via Macports
+   >> sudo port install ocaml caml-findlib gnuplot
+4. Unzip the MKL source code and compile the project using command
    >> build byte
 
 EXAMPLES

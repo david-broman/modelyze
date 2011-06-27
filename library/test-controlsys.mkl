@@ -18,17 +18,50 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include ExportModelica
 include MechsysBasics
+include Block
 include Simulation
 
-let MechSys =
+let DCMotor V:Voltage -> flange:Rotational -> Equations =
+  let e1:Electrical in
+  let e2:Electrical in
+  let e3:Electrical in
+  let e4:Electrical in
+  SignalVoltage V e1 e4;
+  Resistor 200. e1 e2;
+  Inductor 0.1 e2 e3;
+  EMF 1. e3 e4 flange;
+  Ground e4
+
+ //original
+let Shaft flangeA:Rotational -> flangeB:Rotational -> Equations =
+  let r1:Rotational in
+  let r2:Rotational in
+  Inertia 0.1 flangeA r1;
+  Spring 3.0 r1 r2; 
+  Damper 0.02 r1 r2;
+  Inertia 0.1 r2 flangeB
+
+
+ //original
+let ControlSys =
+  let s1:Signal in
+  let s2:Signal in
+  let s3:Signal in
+  let s4:Signal in
   let r1:Rotational in
   let r2:Rotational in
   let r3:Rotational in
-  DCMotor r1;
-  Inertia 0.2 r1 r2;
-  FlexibleShaft 120 r2 r3;
-  AngleSensor r3 (probe "phi") 
+  ConstantSource 1.0 s1;
+  Feedback s1 s4 s2;
+  PID 3.0 0.7 0.1 10.0 s2 s3;
+  DCMotor s3 r1;
+  IdealGear 4.0 r1 r2;
+  Shaft r2 r3;
+  SpeedSensor r3 s4;
+  probe "angularVelocity" = s4 
+
+
 
 let main = 
   //printsim MechSys 0.1 1.
-  printLine (exportModelica "MechSys" MechSys)
+  printLine (exportModelica "ControlSys" ControlSys)

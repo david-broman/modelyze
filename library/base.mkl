@@ -74,6 +74,13 @@ let strlen : String -> Int = @@string_strlen
 let (++) : String -> String -> String = @@string_concat
 
 
+let abs x:Real -> Real = 
+  if x < 0. then x * -1.0 else x
+
+let max x:Real -> y:Real -> Real = 
+  if x >= y then x else y
+
+
 let printLine s:String -> () = 
     let _ = print s in print "\n"
 

@@ -16,19 +16,9 @@ You should have received a copy of the GNU Lesser General Public License
 along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include ExportModelica
-include MechsysBasics
-include Simulation
+include Base
 
-let MechSys =
-  let r1:Rotational in
-  let r2:Rotational in
-  let r3:Rotational in
-  DCMotor r1;
-  Inertia 0.2 r1 r2;
-  FlexibleShaft 120 r2 r3;
-  AngleSensor r3 (probe "phi") 
+let pi = 2.0 * (asin 1.0)
+let eps = 1e-15
 
-let main = 
-  //printsim MechSys 0.1 1.
-  printLine (exportModelica "MechSys" MechSys)
+

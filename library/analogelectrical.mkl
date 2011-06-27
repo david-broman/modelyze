@@ -57,6 +57,12 @@ let ConstantVoltage V:Real -> p:Electrical -> n:Electrical ->  Equations =
   ElectricalBranch i v p n;
   v = V 
 
+let SignalVoltage V:Voltage -> p:Electrical -> n:Electrical ->  Equations =
+  let i:Current in
+  let v:Voltage in
+  ElectricalBranch i v p n;
+  v = V 
+
 let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational -> 
                   Equations =
   let i:Current in
@@ -65,20 +71,20 @@ let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational ->
   let phi:Angle in
   let tau:Torque in
   ElectricalBranch i v p n;
-  RotationalRefBranch tau phi flange;
+  RotationalRefBranch (-tau) phi flange;
   w = der(phi);
   k * w = v;
   tau =  k * i
 
-let VoltageSensor output:Signal -> p:Electrical -> n:Electrical -> 
-                  Equations =
+let VoltageSensor p:Electrical -> n:Electrical -> 
+                  output:Signal -> Equations =
   ElectricalBranch 0.0 output p n
 
-let PotentialSensor output:Signal -> p:Electrical -> Equations =
+let PotentialSensor p:Electrical ->  output:Signal -> Equations =
   ElectricalRefBranch 0.0 output p 
 
-let CurrentSensor output:Signal -> p:Electrical -> n:Electrical -> 
-                  Equations =
+let CurrentSensor p:Electrical -> n:Electrical -> 
+                  output:Signal -> Equations =
   ElectricalBranch output 0.0 p n
 
 

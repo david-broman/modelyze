@@ -1,0 +1,64 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include Modeling
+include Constants 
+
+let Feedback u1:Signal -> u2:Signal -> y:Signal -> Equations =
+  y = u1 - u2
+
+let Gain k:Real -> u:Signal -> y:Signal -> Equations =
+  y = k * u
+
+let ConstantSource k:Real -> y:Signal -> Equations =
+  y = k
+
+let Integrator k:Real -> y0:Real -> u:Signal -> y:Signal -> Equations =
+  Init y y0;
+  y' = k * u
+
+let Derivative k:Real -> T:Real -> u:Signal -> y:Signal -> Equations =
+  let state:Signal in
+  state' = (if (abs k) >= eps then (u - state)/T else val 0.);
+  y = (if (abs k) >= eps then (k/T)*(y - state) else val 0.)
+
+let Add u1:Signal -> u2:Signal -> y:Signal -> Equations =
+  y = u1 + u2
+
+let Add3 u1:Signal -> u2:Signal -> u3:Signal -> y:Signal -> Equations =
+  y = u1 + u2 + u3
+
+let PID k:Real -> Ti:Real -> Td:Real -> Nd:Real -> 
+        u:Signal -> y:Signal -> Equations =
+  let s1:Signal in
+  let s2:Signal in
+  let s3:Signal in
+  let s4:Signal in
+  Gain 1.0 u s1;    
+  Integrator (1.0/Ti) 0.0 u s2;
+  Derivative Td (max (Td/Nd) (100.0*eps)) u s3;
+  Add3 s1 s2 s3 s4;
+  Gain k s4 y
+
+
+
+
+  
+
+
+

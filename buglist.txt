@@ -1,0 +1,21 @@
+
+
+
+
+NEW
+---------------------
+
+2011-06-20: Declaring symbols and other let expressions does not seems
+to have the same environment. Confusing for example when creating a
+symbol using syntax "let x:floor" because floor exists in Base.mkl
+
+
+PRIO
+---------------------
+
+
+
+DONE
+---------------------
+
+

@@ -16,9 +16,12 @@ You should have received a copy of the GNU Lesser General Public License
 along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Notes
+// - I did not change elaborate functions or differentation functions.
+// - Needed to update the simulation loop to include the discrete changes.
+
+
 include Modeling
-include Differentiation
-include DifferentiatePantelides
 type Node = <>
 type Unknown = <>
 type Branch = <>
@@ -116,15 +119,12 @@ let elaborateProbes model:Equations -> (Equations,ProbeMap) =
     | _ -> (e,ps)
   in elab model (Map.empty)
 
-
-
  
 let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
     | ~Init x (val v:Real) -> Map.add x (v,false) acc
-    | ~InitGuess x (val v:Real) -> Map.add x (v,true) acc
     | _ -> acc
   in get eqs (Map.empty)
  

@@ -1,6 +1,5 @@
 
 include Modeling
-include Pantelides
 type DerivMap = (Signal => Signal)
 type DerivList = [(Signal,Signal)]
 

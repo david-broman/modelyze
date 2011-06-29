@@ -20,6 +20,7 @@ include HybridModeling
 include Mechanical
 include Electrical
 include Elaboration
+include Differentiation
 
 let isMechatronicBranch b:Node = 
   match b with
@@ -33,12 +34,47 @@ let isMechatronicRefBranch b:Node =
   | ~RotationalRefBranch -> true
   | _ -> false
 
-
-
 type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
+type InitValMap = (<Real> => <Real>)
+
+let extractCurrentState model:Equations -> Equations =
+  let extract cstate:State -> model:Equations -> <> =
+    match model with
+    | ~statechart s e -> extract s e
+    | ~state s e -> if s == cstate then  extract cstate e else NoEq
+    | ~transition _ _ _ -> NoEq
+    | e1 e2 -> (extract cstate e1) (extract cstate e2)
+    | e -> e
+  in  
+    extract topstate model 
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
+
+let initValues eqs:Equations -> InitValMap =
+  let get eqs:Equations -> acc:InitValMap -> InitValMap =
+    match eqs with
+    | e1 ; e2 -> get e2 (get e1 acc)
+    | ~Init x v -> Map.add x v acc
+    | _ -> acc
+  in get eqs (Map.empty)
+
+
+let evalRealExpr expr:Expr -> ctime:Real -> valmap:InitValMap -> Real =
+  let eval e:<> -> Real = 
+    match e with
+    | (val f:(Real -> Real -> Real)) e1 e2 -> 
+           f (eval e1) (eval e2)
+    | (val f:(Real -> Real)) e1 -> f  (eval e1) 
+    | val v:Real -> v
+    | ~time -> ctime
+    | ~der x -> (match x with 
+                | uk:Signal -> eval (Map.find (der x) valmap) 
+                | _ -> error "Derivatives only allowed on unknowns")
+    | uk:Signal -> eval (Map.find e valmap)
+    | _ -> let _ = dpa e in error "Unsupported model construct" 
+  in
+    eval expr 
 
 let makeResidual model:Equations -> ukmap:UkMap -> 
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
@@ -63,44 +99,23 @@ let makeResidual model:Equations -> ukmap:UkMap ->
   in traverseEq model [] 
 
 
-let makeNewResidual model:Equations -> ukmap:UkMap -> 
-                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
-  let realExpr e:<> -> Real = 
-    match e with
-    | (val f:(Real -> Real -> Real)) e1 e2 -> 
-           f (realExpr e1) (realExpr e2)
-    | (val f:(Real -> Real)) e1 -> f  (realExpr e1) 
-    | val v:Real -> v
-    | ~time -> ctime
-    | ~der x -> (match x with 
-                | uk:Signal -> Array.get yp (fst (Map.find x ukmap))
-                | _ -> error "Derivatives only allowed on unknowns")
-    | uk:Signal -> Array.get yy (fst(Map.find e ukmap))
-    | _ -> error "Unsupported model construct" 
-  in
-  let traverseEq m:Equations -> acc:[Real] -> [Real] =
-    match m with
-    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr e1 - realExpr e2) :: acc
-    | _ -> acc
-  in traverseEq model [] 
-
-
-
 
 //Generate arrays of initial values
-let makeInitValues model:Equations -> ukmap:UkMap -> ({Real},{Real}) =
-  let initvalmap = initValues model in
+let makeInitStateArrays initvals:InitValMap -> prevalmap:InitValMap -> 
+                        ctime:Real -> ukmap:UkMap -> ({Real},{Real}) =
   let size = Map.size ukmap in
   let yy = Array.make size 0. in
   let yp = Array.make size 0. in
-  let setvals initvals:[(Signal,(Real,Bool))] -> {Real} =
+  let setvals initvals:[(Signal,<Real>)] -> () =
     match initvals with
-    | (u,(v,_))::xs -> 
+    | (u,e)::xs -> 
+        let v = evalRealExpr e ctime prevalmap in
         let _ = Array.set yy (fst (Map.find u ukmap)) v in setvals xs 
-    | [] -> yy
-  in (setvals  (Map.toList initvalmap), yp)
-
+    | [] -> ()
+  in 
+    let _ = setvals (Map.toList prevalmap) in
+    let _ = setvals (Map.toList initvals) in
+    (yy, yp)
 
 
 let makeStepVal currtime:Real -> yy:{Real} ->
@@ -139,25 +154,33 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
              SimulationResult =
   let (model1,probes) = elaborateProbes model in
   let probelist = Map.toList probes in
+
   let dtloop currtime:Real -> acc:[StepVal] ->
              model1:Equations -> [StepVal] = 
+    let modelNoState = extractCurrentState model1 in
     let model2 = (elaborateConnections isMechatronicBranch 
-                  isMechatronicRefBranch model1) in
+                  isMechatronicRefBranch modelNoState) in
     let model3 = elaborateDerivatives model2 in
     let ukmap = makeUkMap model3 in
     let residual = makeResidual model3 ukmap in
-    let (yy,yp) = makeInitValues model3 ukmap in
+    let initvalmap = initValues model3 in
+    let (yy,yp) = makeInitStateArrays initvalmap initvalmap currtime ukmap in
     let id = initConditionCorrection ukmap in
     let state = DAESolver.make yy yp id residual in
-    let ctloop currtime:Real -> acc:[StepVal] -> [StepVal] = 
-      if currtime >= endtime then acc
+
+    let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real) = 
+      if currtime >= endtime then (acc,currtime)
       else
         let newtime = DAESolver.step steptime state in 
         let stepval = makeStepVal newtime yy probelist ukmap in
-        if newtime == 0. then acc
+        if newtime == 0. then (acc,newtime)
         else ctloop newtime (stepval::acc)
-    in
-      ctloop currtime acc 
+    in 
+      let (acc2,newtime) = ctloop currtime acc in
+      //let _ = dpa (newtime) in
+      //if newtime >= endtime then acc2  
+      //else dtloop newtime acc2 model1 
+      acc2 //do not do the disrete loop now...
   in
     (makeProbeNames probelist 1,revResult (dtloop 0. [] model1) []) 
 

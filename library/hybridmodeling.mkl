@@ -1,0 +1,10 @@
+type PState
+type State = <PState>  
+
+let statechart : <PState -> Eqs -> Eqs>
+let state : <PState -> Eqs -> Eqs>
+let transition : <PState -> Bool -> Eqs -> Eqs>
+
+let nothing : Equations
+
+

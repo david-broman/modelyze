@@ -1,0 +1,115 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include MechsysBasics
+include HybridSimulation
+include ExportModelica
+include HybridModeling
+
+
+let HybridBall m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let x:Position in
+  let y:Position in
+  let ground:Position in
+
+  let Pendulum:State in
+  let BouncingBall:State in
+  
+  Init ground 3.0;
+
+  statechart Pendulum (
+    state Pendulum (
+      let T:Force in
+
+      transition BouncingBall (x > l/2.0) nothing;
+
+      Init x (l*sin startAngle);
+      Init y (-l*cos startAngle);
+     
+      -T*x/l = m*x'';
+      -T*y/l - m*g = m*y'';     
+      (x^2. + y^2.)'' = (l^2.)''
+    );
+
+    state BouncingBall (    
+      let timer:Signal in
+
+      timer' = 1.;
+  
+      transition BouncingBall (y <= 0.)
+        (Init (y') (y' * -0.7));
+
+      transition BouncingBall (timer > 0.3 && ground > 0.)
+        (Init timer 0.; Init ground (ground - 0.2));
+
+      x'' = 0.;
+      -m*g = m*y'';
+      ground' = 0.
+    )
+
+  );
+   
+
+  probe "y" = y;
+  probe "ground" = ground
+
+
+let Flying m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let x:Position in
+  let y:Position in
+  Init (x') 1.0;
+  Init y 3.0;
+     
+  x'' = 0.;
+  -m*g = m*y'';     
+
+  probe "x" = x
+
+
+let Pendulum m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let T:Force in
+  let x:Position in
+  let y:Position in
+  Init x (l*sin startAngle);
+  Init y (-l*cos startAngle);
+     
+  -T*x/l = m*x'';
+  -T*y/l - m*g = m*y'';     
+
+  //(x*x + y*y)'' = (l*l)'';
+  (x^2. + y^2.)'' = (l^2.)'';
+  probe "x" = x
+
+let _ = 
+  let angle = 45.*3.14/180. in
+  printsim (Pendulum 5.0 2.0 angle) 0.01 10.
+  //printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
+
+
+
+
+
+
+
+
+
+
+

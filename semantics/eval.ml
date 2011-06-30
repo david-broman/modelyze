@@ -407,19 +407,32 @@ let array_from_tmlist tm =
       | _ -> assert false
   in Array.of_list (worker tm)
 
+
+
 let eval_daesolver_op eval op arg_lst = 
+    (* Residual and root finder functions *)
+    let resrootfun tmres time yy yp = 
+      let tmtime = TmConst(Ast.ConstReal(time)) in  
+      let tmyy = TmArray(array_to_tm yy) in
+      let tmyp = TmArray(array_to_tm yp) in
+      let lst = eval (TmApp(TmApp(TmApp(tmres,tmtime),tmyy),tmyp)) in
+        array_from_tmlist lst 
+    in
     match op,arg_lst with
     | Ast.DAESolverOpMake,
         [TmArray(tm_yy);TmArray(tm_yp);TmArray(tm_id);tmres] -> 
-        let residualfun tmres time yy yp = 
-          let tmtime = TmConst(Ast.ConstReal(time)) in  
-          let tmyy = TmArray(array_to_tm yy) in
-          let tmyp = TmArray(array_to_tm yp) in
-          let lst = eval (TmApp(TmApp(TmApp(tmres,tmtime),tmyy),tmyp)) in
-          array_from_tmlist lst 
-        in    
         let st = Ida.make (array_from_tm tm_yy) (array_from_tm tm_yp)  
-                       (array_from_tm tm_id) (residualfun tmres) in
+                       (array_from_tm tm_id) (resrootfun tmres) in
+        array_update (Ida.y st) tm_yy;
+        TmDAESolver(st,tm_yy,tm_yp)
+    | Ast.DAESolverOpMakeHybrid,
+        [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp);
+         TmArray(tm_id);tmres;tmrootfinder] -> 
+        let rootfun = resrootfun tmrootfinder in
+        let (yy,yp) = (array_from_tm tm_yy,array_from_tm tm_yp) in
+        let roots = Array.length (rootfun 0. yy yp) in
+        let st = Ida.make ~start_time:time ~roots:roots ~rootfun:rootfun yy yp 
+                 (array_from_tm tm_id) (resrootfun tmres)  in
         array_update (Ida.y st) tm_yy;
         TmDAESolver(st,tm_yy,tm_yp)
     | Ast.DAESolverOpStep,[TmConst(Ast.ConstReal(time));
@@ -428,6 +441,14 @@ let eval_daesolver_op eval op arg_lst =
         array_update (Ida.y st) tm_yy;
         array_update (Ida.yp st) tm_yp;
         TmConst(Ast.ConstReal(time'))
+    | Ast.DAESolverOpReinit,[TmDAESolver(st,tm_yy,tm_yp)] -> 
+        Ida.reinit st;
+        TmConst(Ast.ConstUnit)
+    | Ast.DAESolverOpClose,[TmDAESolver(st,tm_yy,tm_yp)] -> 
+        Ida.close st;
+        TmConst(Ast.ConstUnit)
+    | Ast.DAESolverOpRoots,[TmDAESolver(st,tm_yy,tm_yp)] -> 
+        TmArray(Array.map (fun x -> TmConst(Ast.ConstInt(x)))(Ida.roots st))
   | _ -> assert false (* Should be discovered by the type checker *)
 
 

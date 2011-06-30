@@ -37,6 +37,7 @@ let isMechatronicRefBranch b:Node =
 type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
 type InitValMap = (<Real> => <Real>)
+type ZeroCrossing = <Real>
 
 let extractCurrentState model:Equations -> Equations =
   let extract cstate:State -> model:Equations -> <> =
@@ -98,7 +99,17 @@ let makeResidual model:Equations -> ukmap:UkMap ->
     | _ -> acc
   in traverseEq model [] 
 
-
+let makeRootFun zcList:[ZeroCrossing] -> ukmap:UkMap -> initVal:InitValMap ->
+                ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
+  []
+/*  let eval = evaluate false ukmap yy yp (Map.empty) initVal ctime in
+  let make zcList:[ZeroCrossing] -> acc:[Real] -> [Real] =
+    match zcList with
+    | exp::ls -> 
+          make ls ((castReal(eval exp))::acc)
+    | [] -> acc
+  in make zcList []
+*/
 
 //Generate arrays of initial values
 let makeInitStateArrays initvals:InitValMap -> prevalmap:InitValMap -> 
@@ -166,7 +177,8 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let initvalmap = initValues model3 in
     let (yy,yp) = makeInitStateArrays initvalmap initvalmap currtime ukmap in
     let id = initConditionCorrection ukmap in
-    let state = DAESolver.make yy yp id residual in
+    let rootfun = makeRootFun [] ukmap initvalmap in 
+    let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
 
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real) = 
       if currtime >= endtime then (acc,currtime)
@@ -174,10 +186,10 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
         let newtime = DAESolver.step steptime state in 
         let stepval = makeStepVal newtime yy probelist ukmap in
         if newtime == 0. then (acc,newtime)
-        else ctloop newtime (stepval::acc)
+        else ctloop (newtime + steptime) (stepval::acc)
     in 
       let (acc2,newtime) = ctloop currtime acc in
-      //let _ = dpa (newtime) in
+      //let _ = DAESolver.close state in
       //if newtime >= endtime then acc2  
       //else dtloop newtime acc2 model1 
       acc2 //do not do the disrete loop now...

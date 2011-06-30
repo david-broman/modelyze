@@ -186,7 +186,11 @@ and setop =
 
 and daesolverop = 
   | DAESolverOpMake
+  | DAESolverOpMakeHybrid
   | DAESolverOpStep
+  | DAESolverOpReinit
+  | DAESolverOpClose
+  | DAESolverOpRoots
       
 (** Top elements of a source code file *)
 and top = 
@@ -874,7 +878,11 @@ let pprint_set_op op =
 let pprint_daesolver_op op =
   match op with
   | DAESolverOpMake -> us"make"
+  | DAESolverOpMakeHybrid -> us"makehybrid"
   | DAESolverOpStep -> us"step"
+  | DAESolverOpReinit -> us"reinit"
+  | DAESolverOpClose -> us"close"
+  | DAESolverOpRoots -> us"roots"
 
 let pprint_mpat p = 
   match p with
@@ -1166,7 +1174,11 @@ let mk_daesolverop fi sid =
   let s = Symtbl.get sid in
   match Ustring.to_latin1 s with
   | "make" -> DAESolverOpMake
+  | "makehybrid" -> DAESolverOpMakeHybrid
   | "step" -> DAESolverOpStep
+  | "reinit" -> DAESolverOpReinit
+  | "close" -> DAESolverOpClose
+  | "roots" -> DAESolverOpRoots
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s])) 
 
 

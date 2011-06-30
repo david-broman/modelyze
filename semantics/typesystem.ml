@@ -366,20 +366,13 @@ let check_istype_real fi l ty_real =
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_REAL_TYPE,ERROR,fi,
 		    [pprint_ty ty_real; ustring_of_int l]))
 
-let check_istype_residual fi l ty_residual =
-  match ty_residual with 
-    | TyArrow(_,l1,TyReal(_,l2),
-           TyArrow(_,l3,TyArray(_,l4,TyReal(_,l5)),
-               TyArrow(_,l6,TyArray(_,l7,TyReal(_,l8)),
-                       TyList(_,l9,TyReal(_,l10))))) 
-      when l=l1 && l=l2 && l=l3 && l=l4 && l=l5 && 
-           l=l6 && l=l7 && l=l8 && l=l9 && l=l10 -> ()
-    | _ -> 
-        let tyexp = TyArrow(fi,l,TyReal(fi,l),
+let check_istype_resroot fi l ty_residual =
+   let tyexp = TyArrow(fi,l,TyReal(fi,l),
            TyArrow(fi,l,TyArray(fi,l,TyReal(fi,l)),
                TyArrow(fi,l,TyArray(fi,l,TyReal(fi,l)),
                        TyList(fi,l,TyReal(fi,l))))) in
-        raise (Mkl_type_error(TYPE_EXPECTED_RESIDUAL_TYPE,ERROR,fi,
+   if not (ty_consistent tyexp ty_residual) then
+        raise (Mkl_type_error(TYPE_EXPECTED_RESROOT_TYPE,ERROR,fi,
 		    [pprint_ty tyexp; pprint_ty ty_residual]))
 
      
@@ -520,8 +513,26 @@ and typeof_daesolver_op fi l op ts env ukenv =
       check_istype_real (tm_info ar_yy) l ty_yy';
       check_istype_real (tm_info ar_yp) l ty_yp';
       check_istype_real (tm_info ar_id) l ty_id';
-      check_istype_residual (tm_info tmres) l ty_tmres;
+      check_istype_resroot (tm_info tmres) l ty_tmres;
       (TyDAESolver(fi,l),[ar_yy';ar_yp';ar_id';tmres'])
+
+  | DAESolverOpMakeHybrid,[time;ar_yy;ar_yp;ar_id;tmres;tmroot] ->
+      let (ty_time,time') = typeof env ukenv time in
+      let (ty_ar_yy,ar_yy') = typeof env ukenv ar_yy in
+      let (ty_ar_yp,ar_yp') = typeof env ukenv ar_yp in
+      let (ty_ar_id,ar_id') = typeof env ukenv ar_id in
+      let (ty_tmres,tmres') = typeof env ukenv tmres in
+      let (ty_tmroot,tmroot') = typeof env ukenv tmroot in
+      let ty_yy' = check_istype_array (tm_info ar_yy) l ty_ar_yy in
+      let ty_yp' = check_istype_array (tm_info ar_yp) l ty_ar_yp in
+      let ty_id' = check_istype_array (tm_info ar_id) l ty_ar_id in
+      check_istype_real (tm_info time) l ty_time;
+      check_istype_real (tm_info ar_yy) l ty_yy';
+      check_istype_real (tm_info ar_yp) l ty_yp';
+      check_istype_real (tm_info ar_id) l ty_id';
+      check_istype_resroot (tm_info tmres) l ty_tmres;
+      check_istype_resroot (tm_info tmroot) l ty_tmroot;
+      (TyDAESolver(fi,l),[time';ar_yy';ar_yp';ar_id';tmres';tmroot'])
 
   | DAESolverOpStep,[time;sun] ->
       let (ty_time,time') = typeof env ukenv time in
@@ -529,6 +540,22 @@ and typeof_daesolver_op fi l op ts env ukenv =
       let (ty_sun,sun') = typeof env ukenv sun in
       check_istype_daesolver (tm_info sun) l ty_sun;
       (ty_time,[time';sun'])
+
+  | DAESolverOpReinit,[sun] ->
+      let (ty_sun,sun') = typeof env ukenv sun in
+      check_istype_daesolver (tm_info sun) l ty_sun;
+      (TyUnit(NoInfo,l),[sun'])
+
+  | DAESolverOpClose,[sun] ->
+      let (ty_sun,sun') = typeof env ukenv sun in
+      check_istype_daesolver (tm_info sun) l ty_sun;
+      (TyUnit(NoInfo,l),[sun'])
+
+  | DAESolverOpRoots,[sun] ->
+      let (ty_sun,sun') = typeof env ukenv sun in
+      check_istype_daesolver (tm_info sun) l ty_sun;
+      (TyArray(NoInfo,l,TyInt(NoInfo,l)),[sun'])
+
   | _ -> raise (Mkl_type_error
 	       (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                 [ustring_of_int (List.length ts)]))

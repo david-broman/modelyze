@@ -34,10 +34,14 @@ let isMechatronicRefBranch b:Node =
   | ~RotationalRefBranch -> true
   | _ -> false
 
+let ROOT_TOL = 1e-10
+
 type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
 type InitValMap = (<Real> => <Real>)
 type ZeroCrossing = <Real>
+
+let lastEvent = {-0.10}
 
 let extractCurrentState model:Equations -> Equations =
   let extract cstate:State -> model:Equations -> <> =
@@ -61,21 +65,39 @@ let initValues eqs:Equations -> InitValMap =
   in get eqs (Map.empty)
 
 
-let evalRealExpr expr:Expr -> ctime:Real -> valmap:InitValMap -> Real =
-  let eval e:<> -> Real = 
+let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap -> 
+                  (InitValMap,InitValMap) =
+  let worker lst:UkList -> yymap:InitValMap -> ypmap:InitValMap -> 
+             (InitValMap,InitValMap) =
+    match lst with
+    | (u,(i,_))::xs ->
+         worker xs (Map.add u (val (Array.get yy i)) yymap)
+                   (Map.add u (val (Array.get yp i)) ypmap) 
+    | [] -> (yymap,ypmap)
+  in
+    worker (Map.toList ukmap) (Map.empty) (Map.empty)
+ 
+//       let v = Array.get (if isDeriv then yp else yy) i in
+//       worker xs (Map.add u (val v) acc)
+//    | [] -> acc
+//  in 
+//    worker (Map.toList ukmap) (Map.empty)
+
+let eval expr:Expr -> ctime:Real -> valmap:InitValMap -> Real =
+  let worker e:<> -> Real = 
     match e with
     | (val f:(Real -> Real -> Real)) e1 e2 -> 
-           f (eval e1) (eval e2)
-    | (val f:(Real -> Real)) e1 -> f  (eval e1) 
+           f (worker e1) (worker e2)
+    | (val f:(Real -> Real)) e1 -> f  (worker e1) 
     | val v:Real -> v
     | ~time -> ctime
     | ~der x -> (match x with 
-                | uk:Signal -> eval (Map.find (der x) valmap) 
+                | uk:Signal -> worker (Map.find (der x) valmap) 
                 | _ -> error "Derivatives only allowed on unknowns")
-    | uk:Signal -> eval (Map.find e valmap)
+    | uk:Signal -> worker (Map.find e valmap)
     | _ -> let _ = dpa e in error "Unsupported model construct" 
   in
-    eval expr 
+    worker expr 
 
 let makeResidual model:Equations -> ukmap:UkMap -> 
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
@@ -101,7 +123,8 @@ let makeResidual model:Equations -> ukmap:UkMap ->
 
 let makeRootFun zcList:[ZeroCrossing] -> ukmap:UkMap -> initVal:InitValMap ->
                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
-  []
+  [if (ctime - (Array.get lastEvent 0)) < ROOT_TOL then ROOT_TOL else
+   (Array.get yy 0) + 1.7]
 /*  let eval = evaluate false ukmap yy yp (Map.empty) initVal ctime in
   let make zcList:[ZeroCrossing] -> acc:[Real] -> [Real] =
     match zcList with
@@ -111,21 +134,33 @@ let makeRootFun zcList:[ZeroCrossing] -> ukmap:UkMap -> initVal:InitValMap ->
   in make zcList []
 */
 
+let eventFound state:DAESolver -> ctime:Real -> Bool =
+  let roots = DAESolver.roots state in
+  if (Array.length roots) !=. 0 
+    then let _ = Array.set lastEvent 0 ctime in true 
+    else false
+  
+
 //Generate arrays of initial values
-let makeInitStateArrays initvals:InitValMap -> prevalmap:InitValMap -> 
+let makeInitStateArrays initvals:InitValMap -> 
+                        yymap:InitValMap -> ypmap:InitValMap -> 
                         ctime:Real -> ukmap:UkMap -> ({Real},{Real}) =
   let size = Map.size ukmap in
   let yy = Array.make size 0. in
   let yp = Array.make size 0. in
-  let setvals initvals:[(Signal,<Real>)] -> () =
+  let setvals initvals:[(Signal,Signal)] -> arr:{Real} -> () =
     match initvals with
     | (u,e)::xs -> 
-        let v = evalRealExpr e ctime prevalmap in
-        let _ = Array.set yy (fst (Map.find u ukmap)) v in setvals xs 
+        let v = eval e ctime yymap in
+        let _ = if Map.mem u ukmap 
+                  then Array.set arr (fst (Map.find u ukmap)) v  
+                  else ()
+        in setvals xs arr
     | [] -> ()
   in 
-    let _ = setvals (Map.toList prevalmap) in
-    let _ = setvals (Map.toList initvals) in
+    let _ = setvals (Map.toList yymap) yy in
+    let _ = setvals (Map.toList initvals) yy in
+    let _ = setvals (Map.toList ypmap) yp in
     (yy, yp)
 
 
@@ -166,35 +201,57 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   let (model1,probes) = elaborateProbes model in
   let probelist = Map.toList probes in
 
-  let dtloop currtime:Real -> acc:[StepVal] ->
-             model1:Equations -> [StepVal] = 
+  let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
+             yymap:InitValMap -> ypmap:InitValMap ->
+             olddmap:DerivMap -> [StepVal] = 
     let modelNoState = extractCurrentState model1 in
     let model2 = (elaborateConnections isMechatronicBranch 
                   isMechatronicRefBranch modelNoState) in
-    let model3 = elaborateDerivatives model2 in
+    let (model3,newdmap) = elaborateDerivatives model2 olddmap in
     let ukmap = makeUkMap model3 in
+    let _ = dpa ukmap in
     let residual = makeResidual model3 ukmap in
     let initvalmap = initValues model3 in
-    let (yy,yp) = makeInitStateArrays initvalmap initvalmap currtime ukmap in
+    let (yy,yp) = makeInitStateArrays initvalmap yymap ypmap currtime ukmap in
+    let _ = dpa ("--- init") in
+    let _ = dpa (yy) in
+    let _ = dpa (yp) in
     let id = initConditionCorrection ukmap in
-    let rootfun = makeRootFun [] ukmap initvalmap in 
+    let rootfun = makeRootFun [] ukmap initvalmap in  
+    //let _ = dpa ("--- second1") in
+    //let _ = dpa (currtime) in
+    //let _ = dpa (yy) in
+    //let _ = dpa (yp) in
+    //let _ = dpa (id) in
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
+    //let _ = dpa ("--- second2") in
 
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real) = 
-      if currtime >= endtime then (acc,currtime)
-      else
-        let newtime = DAESolver.step steptime state in 
-        let stepval = makeStepVal newtime yy probelist ukmap in
-        if newtime == 0. then (acc,newtime)
-        else ctloop (newtime + steptime) (stepval::acc)
+      if currtime >= endtime 
+        then (acc,currtime)
+        else
+          let newtime = DAESolver.step steptime state in 
+          let stepval = makeStepVal newtime yy probelist ukmap in
+          if newtime == 0. || eventFound state newtime
+            then (acc,newtime)
+            else ctloop (newtime + steptime) (stepval::acc)
     in 
       let (acc2,newtime) = ctloop currtime acc in
-      //let _ = DAESolver.close state in
-      //if newtime >= endtime then acc2  
-      //else dtloop newtime acc2 model1 
-      acc2 //do not do the disrete loop now...
+      let _ = DAESolver.close state in
+      if newtime >= endtime then acc2  
+      else 
+        let (yymap,ypmap) = makePreValMap yy yp ukmap in
+        let _ = dpa ("--- after") in
+        let _ = dpa (yymap) in
+        let _ = dpa (ypmap) in
+        let _ = dpa (yy) in
+        let _ = dpa (yp) in
+        dtloop newtime acc2 model1 yymap ypmap newdmap
+      //acc2 //do not do the disrete loop now...
   in
-    (makeProbeNames probelist 1,revResult (dtloop 0. [] model1) []) 
+    let result = revResult (dtloop 0. [] model1 
+                 (Map.empty) (Map.empty) (Map.empty)) [] in
+    (makeProbeNames probelist 1,result) 
 
 
 let pprintSimulation res:SimulationResult -> String =

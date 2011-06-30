@@ -35,6 +35,7 @@ type ProbeMap =  (String => [Signal])
 type InitValMap = (<Real> => (Real,Bool))
 type UkSet = (Set <Real>)
 type UkMap = (Signal => (Int,Bool))
+type UkList = [(Signal,(Int,Bool))]
 type SubExprMap = (<> => Signal)
 type SubExprList = [(<>,Signal)]
 
@@ -149,16 +150,16 @@ let noEquations eqs:Equations -> Int =
 let realUnknowns eqs:Equations -> (Int,UkMap) =
   let get e:<> -> acc:(Int,UkMap) -> (Int,UkMap) = 
      match e with
-     | e1 e2 -> get e2 (get e1 acc)
      | ~time -> acc
      | ~der x -> 
         (match x with 
          | uk:<Real> -> 
              let (k,ukmap) = acc in 
-             if Map.mem e ukmap 
-             then (k,Map.add e (fst (Map.find e ukmap),true) ukmap)
-             else ((k+.1,Map.add e (k,true) ukmap))
+             if Map.mem x ukmap 
+             then (k,Map.add x (fst (Map.find x ukmap),true) ukmap)
+             else ((k+.1,Map.add x (k,true) ukmap))
          | _ -> error "Illegal diffrentiation of expression") 
+     | e1 e2 -> get e2 (get e1 acc)
      | uk:<Real> -> if Map.mem e (snd acc) then acc
                     else ((fst acc)+.1,Map.add e (fst acc,false) (snd acc))
      | e1 -> acc 

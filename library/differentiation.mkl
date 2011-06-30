@@ -5,14 +5,21 @@ type DerivList = [(Signal,Signal)]
 
 //Extract equations of form  der x = dx, as well as recording such
 //equations where higher-order derivatives will be generated after
-//differentiation.
-let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
+//differentiation. Reuse symbols from and old dmap if available. THis
+//is necessary for a structurally hybrid system, so that the same 
+//differentiated symbols are mapped back to old values.
+let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
+                       (Equations,DerivMap) =
   let makeHOder x:Signal -> k:Int -> dmap:DerivMap -> DerivMap =
     if k >. 1 then 
       if Map.mem x dmap then makeHOder (Map.find x dmap) (k -. 1) dmap
-      else   
-        let dx:Signal in
-        makeHOder dx (k -. 1) (Map.add x dx dmap)
+      else 
+        if Map.mem x olddmap then  
+          let dx = Map.find x olddmap in
+          makeHOder dx (k -. 1) (Map.add x dx dmap)
+        else
+          let dx:Signal in
+          makeHOder dx (k -. 1) (Map.add x dx dmap)
     else dmap
   in
   let extractHOder expr:Expr -> k:Int -> dmap:DerivMap -> DerivMap =
@@ -25,8 +32,8 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> (Equations,DerivMap) =
   in
   match eqs with
   | e1 ; e2 ->     
-      let (e1b,dmap1) = extractDerivatives e1 dmap in
-      let (e2b,dmap2) = extractDerivatives e2 dmap1 in
+      let (e1b,dmap1) = extractDerivatives e1 dmap olddmap in
+      let (e2b,dmap2) = extractDerivatives e2 dmap1 olddmap in
       (match (e1b,e2b) with
        | (~NoEq,~NoEq) -> (NoEq,dmap2)
        | (~NoEq,_)     -> (e2b,dmap2)
@@ -103,8 +110,25 @@ let generateEquations eqs:Equations -> dlist:DerivList -> Equations =
 //Elaborate derivatives. Symbolic differentiation of expressions and
 //conversion from higher-order derivatives into derivatives of first order.
 //This is the main function for elaboration of derivatives.
-let elaborateDerivatives model:Equations -> Equations =
-  let (eqs,dmap) = extractDerivatives model (Map.empty) in
+//Returns the new equation system together with the mapping of derivatives
+//That was generated.
+let elaborateDerivatives model:Equations -> olddmap:DerivMap ->
+    (Equations,DerivMap) =
+  let (eqs,dmap) = extractDerivatives model (Map.empty) olddmap in
   let eqs2 = differentiateModel eqs in
   let eqs3 = removeHOderivatives eqs2 dmap in
-  generateEquations eqs3 (Map.toList dmap) 
+  (generateEquations eqs3 (Map.toList dmap),dmap)
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -34,8 +34,14 @@ type ExprList = [(Node, Expr)]
 type ProbeMap =  (String => [Signal])
 type InitValMap = (<Real> => (Real,Bool))
 type UkSet = (Set <Real>)
+
+// Ukmap maps an unknown (signal type) to an integer value
+// representing a unique integer number for the unknown in
+// the equation system. The boolean is true if the unknown
+// appears differentiated in the equation system.
 type UkMap = (Signal => (Int,Bool))
 type UkList = [(Signal,(Int,Bool))]
+
 type SubExprMap = (<> => Signal)
 type SubExprList = [(<>,Signal)]
 
@@ -146,7 +152,12 @@ let noEquations eqs:Equations -> Int =
   | e1 ; e2 -> (noEquations e1) +. (noEquations e2)
   | e1 = e2 -> 1
   | _ -> 0
- 
+
+//Function realUnknowns extracts all unknowns from
+//an equations system. The resulting tuple is the number
+//of unique unknowns and a UkMap mapping unknowns to unique
+//integer values. This function is usually used via function
+//makeUkMap. 
 let realUnknowns eqs:Equations -> (Int,UkMap) =
   let get e:<> -> acc:(Int,UkMap) -> (Int,UkMap) = 
      match e with
@@ -165,6 +176,8 @@ let realUnknowns eqs:Equations -> (Int,UkMap) =
      | e1 -> acc 
   in get eqs (0,(Map.empty))
 
+//Returns the mapping between unknowns and unique integer numbers
+//in an equation system. See definirion of UkMap.
 let makeUkMap eqs:Equations -> UkMap =
     snd (realUnknowns eqs)
 

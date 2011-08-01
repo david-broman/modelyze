@@ -41,18 +41,29 @@ type SimulationResult = ([String],[StepVal])
 type InitValMap = (<Real> => <Real>)
 type ZeroCrossing = <Real>
 
-let lastEvent = {-0.10}
+//The path of states through the hierarchy of statecharts
+type StatePath = [State]
 
-let extractCurrentState model:Equations -> Equations =
-  let extract cstate:State -> model:Equations -> <> =
-    match model with
-    | ~statechart s e -> extract s e
-    | ~state s e -> if s == cstate then  extract cstate e else NoEq
+let lastEvent = {-1.0}
+
+let extractCurrentState model:Equations -> freshState:Bool ->
+    prePath:StatePath -> currPath:StatePath -> Equations =
+  let extract m:Equations -> fresh:Bool ->
+    pre:StatePath -> curr:StatePath -> cstate:State -> <> =
+    match m with
+    | ~statechart s e -> 
+      (match (pre,curr) with
+       | (_,[]) -> extract e true [] [] s
+       | (p::ps,c::cs) -> if p == c then extract e false ps cs p
+                          else extract e true ps cs c)
+    | ~state s e -> if s == cstate then extract e fresh pre curr s else NoEq
     | ~transition _ _ _ -> NoEq
-    | e1 e2 -> (extract cstate e1) (extract cstate e2)
+    | ~Init x e -> if fresh then Init x e else NoEq
+    | e1 e2 -> (extract e1 fresh pre curr cstate)
+               (extract e2 fresh pre curr cstate)
     | e -> e
   in  
-    extract topstate model 
+    extract model freshState prePath currPath topstate
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 
@@ -123,8 +134,9 @@ let makeResidual model:Equations -> ukmap:UkMap ->
 
 let makeRootFun zcList:[ZeroCrossing] -> ukmap:UkMap -> initVal:InitValMap ->
                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
-  [if (ctime - (Array.get lastEvent 0)) < ROOT_TOL then ROOT_TOL else
-   (Array.get yy 0) + 1.7]
+//   [if (ctime - (Array.get lastEvent 0)) < ROOT_TOL then ROOT_TOL else]
+   [if (ctime >= 2.0) && (Array.get lastEvent 0) < 2.0 then 0. else 1.0]
+     
 /*  let eval = evaluate false ukmap yy yp (Map.empty) initVal ctime in
   let make zcList:[ZeroCrossing] -> acc:[Real] -> [Real] =
     match zcList with
@@ -168,7 +180,7 @@ let makeStepVal currtime:Real -> yy:{Real} ->
                 probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
   let mkvals probes:[(String,[Signal])] -> [Real] =        
     match probes with
-    | (s,u::us)::ss -> (Array.get yy (fst(Map.find u ukmap)))::
+    | (s,u::us)::ss ->  (Array.get yy (fst(Map.find u ukmap)))::
                         (mkvals ((s,us)::ss))
     | (s,[])::ss -> mkvals ss 
     | [] -> []
@@ -201,33 +213,41 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   let (model1,probes) = elaborateProbes model in
   let probelist = Map.toList probes in
 
+  // ** Start of dirscrete-time loop. **
+  //    Iterate for each state change
   let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
              yymap:InitValMap -> ypmap:InitValMap ->
-             olddmap:DerivMap -> [StepVal] = 
-    let modelNoState = extractCurrentState model1 in
+             olddmap:DerivMap -> prePath:StatePath -> currPath:StatePath ->
+             [StepVal] = 
+    //Extract all equations and correct inits for a partiuclar state path. 
+    let modelNoState = extractCurrentState model1 (currtime == 0.)
+                       prePath currPath in
+    //Performe connection elaboration
     let model2 = (elaborateConnections isMechatronicBranch 
                   isMechatronicRefBranch modelNoState) in
+    //Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
+
     let ukmap = makeUkMap model3 in
-    let _ = dpa ukmap in
     let residual = makeResidual model3 ukmap in
     let initvalmap = initValues model3 in
     let (yy,yp) = makeInitStateArrays initvalmap yymap ypmap currtime ukmap in
-    let _ = dpa ("--- init") in
-    let _ = dpa (yy) in
-    let _ = dpa (yp) in
+    ////let _ = dpa ("--- init") in
+    ////let _ = dpa (yy) in
+    ////let _ = dpa (yp) in
     let id = initConditionCorrection ukmap in
     let rootfun = makeRootFun [] ukmap initvalmap in  
-    //let _ = dpa ("--- second1") in
-    //let _ = dpa (currtime) in
-    //let _ = dpa (yy) in
-    //let _ = dpa (yp) in
-    //let _ = dpa (id) in
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
-    //let _ = dpa ("--- second2") in
+    
+    //Update solver with micro step so that algebraic constrained variables
+    //(e.g., probs) gets updated. Then print out the step. Makes sure that
+    //it gets printed at time zero and the start of each new state change.
+    let _ = DAESolver.step (1e-10) state in 
+    let firststepval = makeStepVal currtime yy probelist ukmap in
 
+    // ** Start of continuous-time loop **
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real) = 
-      if currtime >= endtime 
+      if currtime > endtime 
         then (acc,currtime)
         else
           let newtime = DAESolver.step steptime state in 
@@ -236,21 +256,21 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
             then (acc,newtime)
             else ctloop (newtime + steptime) (stepval::acc)
     in 
-      let (acc2,newtime) = ctloop currtime acc in
+      let (acc2,newtime) = ctloop currtime (firststepval::acc) in
       let _ = DAESolver.close state in
-      if newtime >= endtime then acc2  
+      let newPath = currPath in //TODO
+      if newtime > endtime then acc2  
       else 
         let (yymap,ypmap) = makePreValMap yy yp ukmap in
-        let _ = dpa ("--- after") in
-        let _ = dpa (yymap) in
-        let _ = dpa (ypmap) in
-        let _ = dpa (yy) in
-        let _ = dpa (yp) in
-        dtloop newtime acc2 model1 yymap ypmap newdmap
-      //acc2 //do not do the disrete loop now...
+        //let _ = dpa ("--- after") in
+        //let _ = dpa (yymap) in
+        //let _ = dpa (ypmap) in
+        //let _ = dpa (yy) in
+        //let _ = dpa (yp) in
+        dtloop newtime acc2 model1 yymap ypmap newdmap currPath newPath
   in
     let result = revResult (dtloop 0. [] model1 
-                 (Map.empty) (Map.empty) (Map.empty)) [] in
+                 (Map.empty) (Map.empty) (Map.empty) [] []) [] in
     (makeProbeNames probelist 1,result) 
 
 

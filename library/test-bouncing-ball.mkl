@@ -16,28 +16,52 @@ You should have received a copy of the GNU Lesser General Public License
 along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include ExportModelica
+include MechsysBasics
 include HybridSimulation
-
-type Population = <Real>
-
-let LotkaVolterra =
-  let growthRateRabbits = 0.04 in
-  let deathRateRabbits = 0.0005 in
-  let deathRateFoxes = 0.09 in
-  let efficiencyGrowthFoxes = 0.1 in
-  let rabbits:Population in
-  let foxes:Population in
-  Init rabbits 700.;
-  Init foxes 10.;
-  der(rabbits) = growthRateRabbits*rabbits - 
-                 deathRateRabbits*rabbits*foxes;
-  der(foxes)   = efficiencyGrowthFoxes*deathRateRabbits*
-                 rabbits*foxes - deathRateFoxes*foxes;
-  probe "foxes" = foxes;
-  probe "animals" = foxes + rabbits
+include ExportModelica
+include HybridModeling
 
 
-let main = 
-  printsim LotkaVolterra 1. 1000.
-  //printLine (exportModelica "LotkaVolterra" LotkaVolterra)
+let BouncingBall height:Real -> Equations =
+  let g = 9.81 in
+  let y:Position in
+
+  let Bounce:State in
+  
+  Init y height;
+  statechart Bounce (
+    state Bounce (    
+//      transition Bounce (y <= 0.)
+//        (Init (y') (y' * -0.7));
+
+      -g = y''
+    )
+
+  );
+
+  probe "y" = y
+
+
+let BouncingBallExt height:Real -> Equations =
+  let g = 9.81 in
+  let y:Position in  
+  let yp:<Real> in
+  let Bounce:State in
+  
+  Init y height;
+  statechart Bounce (
+    state Bounce (    
+//      transition Bounce (y <= 0.)
+//        (Init (y') (y' * -0.7));
+      y' = yp;
+      -g = yp'
+    )
+
+  );
+
+  probe "y" = y
+
+
+
+let _ = 
+  printsim (BouncingBallExt 5.0) 0.01 3.

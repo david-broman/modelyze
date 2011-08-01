@@ -191,7 +191,7 @@ let rec pprint t  =
     | TmArrayOp(op,tms) -> Ast.pprint_array_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
     | TmMap(size,tmmap) -> us"map{" ^. 
-        (PMap.foldi (fun t1 t2 a -> pprint t1 ^. us"->" ^. pprint t2 ^. a)  
+        (PMap.foldi (fun t1 t2 a -> pprint t1 ^. us"->" ^. pprint t2 ^. us"," ^. a)  
           tmmap (us"")) ^. us"}"
     | TmMapOp(op,tms) -> Ast.pprint_map_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))

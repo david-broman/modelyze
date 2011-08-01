@@ -69,8 +69,6 @@ let makeNewResidual model:Equations -> ukmap:UkMap ->
   in traverseEq model [] 
 
 
-
-
 //Generate arrays of initial values
 let makeInitValues model:Equations -> ukmap:UkMap -> ({Real},{Real}) =
   let initvalmap = initValues model in

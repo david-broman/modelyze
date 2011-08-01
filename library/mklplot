@@ -1,3 +1,4 @@
 #!/bin/bash
 ../bin/mkl $2  > plot.dat 
 gnuplot plot$1.cfg
+rm -f plot.dat

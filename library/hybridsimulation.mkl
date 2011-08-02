@@ -40,30 +40,38 @@ type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
 type InitValMap = (<Real> => <Real>)
 type ZeroCrossing = <Real>
+type Transitions = [(State,State,Expr,Expr)]
 
-//The path of states through the hierarchy of statecharts
+//Statw path of states through the hierarchy of statecharts
 type StatePath = [State]
 
 let lastEvent = {-1.0}
 
-let extractCurrentState model:Equations -> freshState:Bool ->
-    prePath:StatePath -> currPath:StatePath -> Equations =
-  let extract m:Equations -> fresh:Bool ->
-    pre:StatePath -> curr:StatePath -> cstate:State -> <> =
+//Extract the current hierarical state of equations as well as 
+//all possible transitions.
+let extractHState model:Equations -> freshState:Bool ->
+    prePath:StatePath -> currPath:StatePath -> (Equations,Transitions) =
+  let extract m:Equations -> acc:Transitions -> fresh:Bool ->
+    pre:StatePath -> curr:StatePath -> cstate:State -> (<>,Transitions) =
     match m with
     | ~statechart s e -> 
       (match (pre,curr) with
-       | (_,[]) -> extract e true [] [] s
-       | (p::ps,c::cs) -> if p == c then extract e false ps cs p
-                          else extract e true ps cs c)
-    | ~state s e -> if s == cstate then extract e fresh pre curr s else NoEq
-    | ~transition _ _ _ -> NoEq
-    | ~Init x e -> if fresh then Init x e else NoEq
-    | e1 e2 -> (extract e1 fresh pre curr cstate)
-               (extract e2 fresh pre curr cstate)
-    | e -> e
+       | (_,[]) -> extract e acc true [] [] s
+       | (p::ps,c::cs) -> if p == c then extract e acc false ps cs p
+                          else extract e acc true ps cs c)
+    | ~state s e -> if s == cstate 
+                      then extract e acc fresh pre curr s 
+                      else (NoEq,acc)
+    | ~transition nstate guard initexp -> 
+          (NoEq,(cstate,nstate,guard,initexp)::acc)
+    | ~Init x e -> if fresh then (Init x e,acc) else (NoEq,acc)
+    | e1 e2 ->  
+         let (eqs1,acc1) = extract e1 acc fresh pre curr cstate in
+         let (eqs2,acc2) = extract e2 acc1 fresh pre curr cstate in
+         (eqs1 eqs2,acc2)
+    | e -> (e,acc)
   in  
-    extract model freshState prePath currPath topstate
+    extract model [] freshState prePath currPath topstate
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 
@@ -87,14 +95,10 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
     | [] -> (yymap,ypmap)
   in
     worker (Map.toList ukmap) (Map.empty) (Map.empty)
- 
-//       let v = Array.get (if isDeriv then yp else yy) i in
-//       worker xs (Map.add u (val v) acc)
-//    | [] -> acc
-//  in 
-//    worker (Map.toList ukmap) (Map.empty)
 
-let eval expr:Expr -> ctime:Real -> valmap:InitValMap -> Real =
+
+let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
+         ctime:Real -> Real =
   let worker e:<> -> Real = 
     match e with
     | (val f:(Real -> Real -> Real)) e1 e2 -> 
@@ -103,28 +107,30 @@ let eval expr:Expr -> ctime:Real -> valmap:InitValMap -> Real =
     | val v:Real -> v
     | ~time -> ctime
     | ~der x -> (match x with 
-                | uk:Signal -> worker (Map.find (der x) valmap) 
+                | uk:Signal -> worker (ypfun x)  
                 | _ -> error "Derivatives only allowed on unknowns")
-    | uk:Signal -> worker (Map.find e valmap)
+    | uk:Signal -> worker (yyfun e)
     | _ -> let _ = dpa e in error "Unsupported model construct" 
   in
     worker expr 
 
+let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
+  let yyfun s:Signal -> Signal = Map.find s valmap in
+  let ypfun s:Signal -> Signal = Map.find (der s) valmap in  
+  eval expr yyfun ypfun ctime 
+
+let evalFromArray expr:Expr -> yy:{Real} -> yp:{Real} -> 
+      ukmap:UkMap -> ctime:Real -> Real =
+  let yyfun s:Signal -> Signal = 
+     val (Array.get yy (fst(Map.find s ukmap))) in
+  let ypfun s:Signal -> Signal = 
+     val (Array.get yp (fst (Map.find s ukmap))) in
+  eval expr yyfun ypfun ctime 
+
+
 let makeResidual model:Equations -> ukmap:UkMap -> 
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
-  let realExpr e:<> -> Real = 
-    match e with
-    | (val f:(Real -> Real -> Real)) e1 e2 -> 
-           f (realExpr e1) (realExpr e2)
-    | (val f:(Real -> Real)) e1 -> f  (realExpr e1) 
-    | val v:Real -> v
-    | ~time -> ctime
-    | ~der x -> (match x with 
-                | uk:Signal -> Array.get yp (fst (Map.find x ukmap))
-                | _ -> error "Derivatives only allowed on unknowns")
-    | uk:Signal -> Array.get yy (fst(Map.find e ukmap))
-    | _ -> let _ = dpa e in error "Unsupported model construct" 
-  in
+  let realExpr expr:Expr -> Real = evalFromArray expr yy yp ukmap ctime in
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with
     | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
@@ -132,11 +138,10 @@ let makeResidual model:Equations -> ukmap:UkMap ->
     | _ -> acc
   in traverseEq model [] 
 
-let makeRootFun zcList:[ZeroCrossing] -> ukmap:UkMap -> initVal:InitValMap ->
+let makeRootFun trans:Transitions -> ukmap:UkMap -> initVal:InitValMap ->
                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
 //   [if (ctime - (Array.get lastEvent 0)) < ROOT_TOL then ROOT_TOL else]
-   [if (ctime >= 2.0) && (Array.get lastEvent 0) < 2.0 then 0. else 1.0]
-     
+   [if (ctime >= 2.0) && (Array.get lastEvent 0) < 2.0 then 0. else 1.0]   
 /*  let eval = evaluate false ukmap yy yp (Map.empty) initVal ctime in
   let make zcList:[ZeroCrossing] -> acc:[Real] -> [Real] =
     match zcList with
@@ -163,7 +168,7 @@ let makeInitStateArrays initvals:InitValMap ->
   let setvals initvals:[(Signal,Signal)] -> arr:{Real} -> () =
     match initvals with
     | (u,e)::xs -> 
-        let v = eval e ctime yymap in
+        let v = evalFromMap e yymap ctime in
         let _ = if Map.mem u ukmap 
                   then Array.set arr (fst (Map.find u ukmap)) v  
                   else ()
@@ -208,44 +213,55 @@ let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
   | x::xs -> revResult xs (x::acc)
   | [] -> acc 
 
+// The main simulation function. Performs hybrid simulation using
+// hierarical state machines and differential-algebraic equations
 let simulate model:Equations -> steptime:Real -> endtime:Real -> 
              SimulationResult =
+  // Extract probes
   let (model1,probes) = elaborateProbes model in
   let probelist = Map.toList probes in
 
-  // ** Start of dirscrete-time loop. **
+  // **** Start of discrete-time loop. ****
   //    Iterate for each state change
   let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
              yymap:InitValMap -> ypmap:InitValMap ->
              olddmap:DerivMap -> prePath:StatePath -> currPath:StatePath ->
              [StepVal] = 
-    //Extract all equations and correct inits for a partiuclar state path. 
-    let modelNoState = extractCurrentState model1 (currtime == 0.)
-                       prePath currPath in
-    //Performe connection elaboration
+    // Extract all equations and correct inits for a partiuclar state path. 
+    let (modelNoState,transitions) = extractHState model1 (currtime == 0.)
+                                        prePath currPath in
+    // Performe connection elaboration
     let model2 = (elaborateConnections isMechatronicBranch 
                   isMechatronicRefBranch modelNoState) in
-    //Elaborate derivatives, e.g., get rid of higher-order deriviatives.
+    // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
 
+    // Create a map of unknowns to unique integer values
     let ukmap = makeUkMap model3 in
+    
+    // Create the DAE residual 
     let residual = makeResidual model3 ukmap in
+
+    // Create a map with all initial values for the current state
     let initvalmap = initValues model3 in
     let (yy,yp) = makeInitStateArrays initvalmap yymap ypmap currtime ukmap in
-    ////let _ = dpa ("--- init") in
-    ////let _ = dpa (yy) in
-    ////let _ = dpa (yp) in
+
+    // Auto correct initial conditions of the DAE
     let id = initConditionCorrection ukmap in
-    let rootfun = makeRootFun [] ukmap initvalmap in  
+
+    // Create the root function for detecting zero crossings
+    let rootfun = makeRootFun transitions ukmap initvalmap in  
+
+    // Create the simulation instance for continuous-time simulation using IDA
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
     
-    //Update solver with micro step so that algebraic constrained variables
-    //(e.g., probs) gets updated. Then print out the step. Makes sure that
-    //it gets printed at time zero and the start of each new state change.
+    // Update solver with micro step so that algebraic constrained variables
+    // (e.g., probs) gets updated. Then print out the step. Makes sure that
+    // it gets printed at time zero and the start of each new state change.
     let _ = DAESolver.step (1e-10) state in 
     let firststepval = makeStepVal currtime yy probelist ukmap in
 
-    // ** Start of continuous-time loop **
+    // **** Start of continuous-time loop *****
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real) = 
       if currtime > endtime 
         then (acc,currtime)
@@ -255,20 +271,23 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
           if newtime == 0. || eventFound state newtime
             then (acc,newtime)
             else ctloop (newtime + steptime) (stepval::acc)
-    in 
+    in
+      // Post processing after continuous-time simulation 
       let (acc2,newtime) = ctloop currtime (firststepval::acc) in
+      
+      // Close the continuous-time DAE solver instance.
       let _ = DAESolver.close state in
+
+      // Update and generate a new state path
       let newPath = currPath in //TODO
+
+      // Perform another round of CT simulation?
       if newtime > endtime then acc2  
       else 
         let (yymap,ypmap) = makePreValMap yy yp ukmap in
-        //let _ = dpa ("--- after") in
-        //let _ = dpa (yymap) in
-        //let _ = dpa (ypmap) in
-        //let _ = dpa (yy) in
-        //let _ = dpa (yp) in
         dtloop newtime acc2 model1 yymap ypmap newdmap currPath newPath
   in
+    // Initiate the hybrid simulation loop (CT + DT)
     let result = revResult (dtloop 0. [] model1 
                  (Map.empty) (Map.empty) (Map.empty) [] []) [] in
     (makeProbeNames probelist 1,result) 

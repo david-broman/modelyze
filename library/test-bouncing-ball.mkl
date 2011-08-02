@@ -51,8 +51,8 @@ let BouncingBallExt height:Real -> Equations =
   Init y height;
   statechart Bounce (
     state Bounce (    
-//      transition Bounce (y <= 0.)
-//        (Init (y') (y' * -0.7));
+      transition Bounce (y <= 0.)
+        (Init (y') (y' * -0.7));
       y' = yp;
       -g = yp'
     )
@@ -65,3 +65,4 @@ let BouncingBallExt height:Real -> Equations =
 
 let _ = 
   printsim (BouncingBallExt 5.0) 0.01 3.
+ // simulate (BouncingBallExt 5.0) 0.01 3.

@@ -127,7 +127,6 @@ let evalFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
      val (Array.get yp (fst (Map.find s ukmap))) in
   eval expr yyfun ypfun ctime 
 
-
 let makeResidual model:Equations -> ukmap:UkMap -> 
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
   let realExpr expr:Expr -> Real = evalFromArray expr yy yp ukmap ctime in
@@ -137,10 +136,13 @@ let makeResidual model:Equations -> ukmap:UkMap ->
     | e1 = e2 -> (realExpr e1 - realExpr e2) :: acc
     | _ -> acc
   in traverseEq model [] 
-
+   
 let makeRootFun trans:Transitions -> ukmap:UkMap -> initVal:InitValMap ->
                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
-//   [if (ctime - (Array.get lastEvent 0)) < ROOT_TOL then ROOT_TOL else]
+//  let travtrans trans:Transitions -> [Real] = 
+//    match trans with
+//    (s1,s2,g,i)::ts -> 
+
    [if (ctime >= 2.0) && (Array.get lastEvent 0) < 2.0 then 0. else 1.0]   
 /*  let eval = evaluate false ukmap yy yp (Map.empty) initVal ctime in
   let make zcList:[ZeroCrossing] -> acc:[Real] -> [Real] =
@@ -255,10 +257,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Create the simulation instance for continuous-time simulation using IDA
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
     
-    // Update solver with micro step so that algebraic constrained variables
-    // (e.g., probs) gets updated. Then print out the step. Makes sure that
-    // it gets printed at time zero and the start of each new state change.
-    let _ = DAESolver.step (1e-10) state in 
+    //Return the values for the pre value (time 0 the first time)
     let firststepval = makeStepVal currtime yy probelist ukmap in
 
     // **** Start of continuous-time loop *****
@@ -269,12 +268,11 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
           let newtime = DAESolver.step steptime state in 
           let stepval = makeStepVal newtime yy probelist ukmap in
           if newtime == 0. || eventFound state newtime
-            then (acc,newtime)
+            then (stepval::acc,newtime)
             else ctloop (newtime + steptime) (stepval::acc)
     in
       // Post processing after continuous-time simulation 
       let (acc2,newtime) = ctloop currtime (firststepval::acc) in
-      
       // Close the continuous-time DAE solver instance.
       let _ = DAESolver.close state in
 

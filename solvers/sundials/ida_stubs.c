@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 /* Sundials includes */
 #include <ida/ida.h>
 #include <ida/ida_dense.h>
@@ -107,8 +106,6 @@ CAMLprim value ida_make_ext_c(value params, value init_y, value init_yder, value
   (*ctx).cb_res = caml_named_value(String_val(Field(params,CB_RES_ID))); 
   (*ctx).roots = Int_val(Field(params,ROOTS));  
   (*ctx).cb_root = caml_named_value(String_val(Field(params,CB_ROOT_ID))); 
-  
-
  
   /* Init ida structures */
   (*ctx).yy = N_VNew_Serial((*ctx).eqs);
@@ -125,6 +122,8 @@ CAMLprim value ida_make_ext_c(value params, value init_y, value init_yder, value
     ypval[i] = RCONST(Double_field(init_yder,i));     
     idval[i] = RCONST(Double_field(init_id,i));     
   }
+   
+  
 
   /* Create the IDA simulation instance */  
   (*ctx).ida = IDACreate();
@@ -160,14 +159,15 @@ CAMLprim value ida_make_ext_c(value params, value init_y, value init_yder, value
 
   /* Correct initial values */
   retval1 = IDASetId((*ctx).ida,(*ctx).id);
-  retval2 = IDACalcIC((*ctx).ida,IDA_YA_YDP_INIT,0.0001);
-  if(retval1 != IDA_SUCCESS || retval2 != IDA_SUCCESS){
+  retval2 = IDACalcIC((*ctx).ida,IDA_YA_YDP_INIT,0.00000001);
+  retval3 = IDAGetConsistentIC((*ctx).ida,(*ctx).yy, (*ctx).yp);
+  if(retval1 != IDA_SUCCESS || retval2 != IDA_SUCCESS || retval3 != IDA_SUCCESS){
     free_ida(ctx);
     free_yy_yp(ctx);
     free_si(ctx);
     CAMLreturn(caml_copy_nativeint(0));
   } 
-
+ 
   /* Init roots structures */
   (*ctx).rootsfound = 0;
   (*ctx).foundroots = malloc(sizeof(int) * (*ctx).roots);

@@ -49,6 +49,7 @@ let BouncingBallExt height:Real -> Equations =
   let Bounce:State in
   
   Init y height;
+  Init yp (-2.0);
   statechart Bounce (
     state Bounce (    
       transition Bounce (y <= 0.)

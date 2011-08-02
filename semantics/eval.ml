@@ -434,6 +434,7 @@ let eval_daesolver_op eval op arg_lst =
         let st = Ida.make ~start_time:time ~roots:roots ~rootfun:rootfun yy yp 
                  (array_from_tm tm_id) (resrootfun tmres)  in
         array_update (Ida.y st) tm_yy;
+        array_update (Ida.yp st) tm_yp;
         TmDAESolver(st,tm_yy,tm_yp)
     | Ast.DAESolverOpStep,[TmConst(Ast.ConstReal(time));
                               TmDAESolver(st,tm_yy,tm_yp)] -> 

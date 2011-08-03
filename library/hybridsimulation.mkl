@@ -48,28 +48,29 @@ type StatePath = [State]
 //Extract the current hierarical state of equations as well as 
 //all possible transitions.
 let extractHState model:Equations -> freshState:Bool ->
-    prePath:StatePath -> currPath:StatePath -> (Equations,Transitions) =
+    prePath:StatePath -> currPath:StatePath -> (Equations,Transitions,StatePath) =
   let extract m:Equations -> acc:Transitions -> fresh:Bool ->
-    pre:StatePath -> curr:StatePath -> cstate:State -> (<>,Transitions) =
+    pre:StatePath -> curr:StatePath -> updated:StatePath ->
+      cstate:State -> (<>,Transitions,StatePath) =
     match m with
     | ~statechart s e -> 
       (match (pre,curr) with
-       | (_,[]) -> extract e acc true [] [] s
-       | (p::ps,c::cs) -> if p <==> c then extract e acc false ps cs p
-                          else extract e acc true ps cs c)
+       | (_,[]) -> extract e acc true [] [] (s::updated) s
+       | (p::ps,c::cs) -> if p <==> c then extract e acc false ps cs (p::updated) p
+                          else extract e acc true ps cs (c::updated) c)
     | ~state s e -> if s <==> cstate  
-                      then extract e acc fresh pre curr s 
-                      else (NoEq,acc)
+                      then extract e acc fresh pre curr updated s 
+                      else (NoEq,acc,updated)
     | ~transition nstate guard initexp -> 
-          (NoEq,(cstate,nstate,guard,initexp)::acc)
-    | ~Init x e -> if fresh then (Init x e,acc) else (NoEq,acc)
+          (NoEq,(cstate,nstate,guard,initexp)::acc,updated)
+    | ~Init x e -> if fresh then (Init x e,acc,updated) else (NoEq,acc,updated)
     | e1 e2 ->  
-         let (eqs1,acc1) = extract e1 acc fresh pre curr cstate in
-         let (eqs2,acc2) = extract e2 acc1 fresh pre curr cstate in
-         (eqs1 eqs2,acc2)
-    | e -> (e,acc)
+         let (eqs1,acc1,up1) = extract e1 acc fresh pre curr updated cstate in
+         let (eqs2,acc2,up2) = extract e2 acc1 fresh pre curr up1 cstate in
+         (eqs1 eqs2,acc2,up2)
+    | e -> (e,acc,updated)
   in  
-    extract model [] freshState prePath currPath topstate
+    extract model [] freshState prePath currPath [] topstate
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 
@@ -189,7 +190,7 @@ let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:StatePath ->
                 ([Expr],StatePath) = 
     match trans with
      | (s1,s2,g,i)::ts -> 
-          if evalBoolFromArray g yy yp ukmap ctime 
+          if evalBoolFromArray g yy yp ukmap ctime
             then travTrans ts (i::acc) (changeState sp s1 s2) 
             else travTrans ts acc sp 
      | [] -> (acc,sp)
@@ -274,8 +275,9 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
              prePath:StatePath -> currPath:StatePath ->
              [StepVal] = 
     // Extract all equations and correct inits for a partiuclar state path. 
-    let (modelNoState,transitions) = extractHState model1 (currtime == 0.)
-                                        prePath currPath in
+    let (modelNoState,transitions,currPathUpdated) = 
+           extractHState model1 (currtime == 0.) prePath currPath in
+   
     // Performe connection elaboration
     let model2 = (elaborateConnections isMechatronicBranch 
                   isMechatronicRefBranch modelNoState) in
@@ -310,7 +312,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // **** Start of continuous-time loop *****
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real,[Expr],StatePath) = 
       if currtime > endtime 
-        then (acc,currtime,[],currPath)
+        then (acc,currtime,[],currPathUpdated)
         else
           // Compute the next step using numerical integration
           let newtime = DAESolver.step steptime state in 
@@ -318,7 +320,8 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
           let stepval = makeStepVal newtime yy probelist ukmap in
           // Check if there are event actions
           let (transInits,newPath) = 
-              makeEventActions state transitions currPath ukmap newtime yy yp in
+              makeEventActions state transitions currPathUpdated 
+                               ukmap newtime yy yp in
           // End continuous-time loop?
           if newtime == 0. || !(transInits <==> []) 
             then (stepval::acc,newtime,transInits,newPath)
@@ -335,7 +338,8 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
       if newtime > endtime then acc2  
       else 
         let (yymap,ypmap) = makePreValMap yy yp ukmap in
-        dtloop newtime acc2 model1 yymap ypmap newdmap transInits currPath newPath
+          dtloop newtime acc2 model1 yymap ypmap newdmap transInits 
+                 currPathUpdated newPath
   in
     // Initiate the hybrid simulation loop (CT + DT)
     let result = revResult (dtloop 0. [] model1 

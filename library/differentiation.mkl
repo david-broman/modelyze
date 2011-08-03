@@ -46,7 +46,7 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
   | ~der uk:Signal = uk:Signal ->
       (match eqs with | ~der x = dx -> (NoEq,Map.add x dx dmap))
   | uk:Signal = ~der uk:Signal ->
-      (match eqs with | ~der x = dx -> (NoEq,Map.add x dx dmap))
+      (match eqs with | dx = ~der x -> (NoEq,Map.add x dx dmap))
   | _ -> (eqs,extractHOder eqs 0 dmap)
 
 //Symbolically differentiate a model (higher-order).

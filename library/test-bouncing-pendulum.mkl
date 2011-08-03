@@ -80,7 +80,7 @@ let HybridBall m:Real -> l:Real -> startAngle:Real -> Equations =
     state Pendulum (
       let T:Force in
 
-      transition BouncingBall (x > l/2.0) nothing;
+      transition BouncingBall (time > 2.) nothing;
 
       Init x (l*sin startAngle);
       Init y (-l*cos startAngle);
@@ -91,8 +91,47 @@ let HybridBall m:Real -> l:Real -> startAngle:Real -> Equations =
     );
 
     state BouncingBall (    
-      transition BouncingBall (y <= 0.)
+      transition BouncingBall (y <= -4.)
         (Init (y') (y' * -0.7));
+
+      x'' = 0.;
+      -m*g = m*y''
+    )
+
+  );
+
+  probe "y" = y
+
+
+// Same as above but yp is declared explicitly and init is using yp 
+// instead of y'
+let HybridBall2 m:Real -> l:Real -> startAngle:Real -> Equations =
+  let g = 9.81 in
+  let x:Position in
+  let y:Position in
+  let yp:Position in
+
+  let Pendulum:State in
+  let BouncingBall:State in
+  
+  yp = y';
+
+  statechart Pendulum (
+    state Pendulum (
+      let T:Force in
+      transition BouncingBall (time > 2.) nothing;
+
+      Init x (l*sin startAngle);
+      Init y (-l*cos startAngle);
+     
+      -T*x/l = m*x'';
+      -T*y/l - m*g = m*y'';     
+      (x^2. + y^2.)'' = (l^2.)''
+    );
+
+    state BouncingBall (    
+      transition BouncingBall (y <= -4.)
+        (Init (yp) (yp * -0.7));
 
       x'' = 0.;
       -m*g = m*y''
@@ -106,8 +145,8 @@ let HybridBall m:Real -> l:Real -> startAngle:Real -> Equations =
 
 let _ = 
   let angle = 45.*3.14/180. in
-  printsim (HybridBall 5.0 2.0 angle) 0.01 10.
-//  simulate (HybridBall 5.0 2.0 angle) 0.01 10.
+  printsim (HybridBall2 5.0 2.0 angle) 0.01 5.
+//  simulate (HybridBall2 5.0 2.0 angle) 0.01 5.
   //printsim (Pendulum 5.0 2.0 angle) 0.01 10.
   //printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
 

@@ -110,6 +110,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> LESSEQUAL     /* "<=" */
 %token <unit Ast.tokendata> GREAT         /* ">"  */
 %token <unit Ast.tokendata> GREATEQUAL    /* ">=" */
+%token <unit Ast.tokendata> EQUAL         /* "==" */
 %token <unit Ast.tokendata> NOTEQUAL      /* "!=" */
 %token <unit Ast.tokendata> DOTADD        /* "+." */
 %token <unit Ast.tokendata> DOTSUB        /* "-." */
@@ -119,6 +120,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> DOTLESSEQUAL  /* "<=."*/
 %token <unit Ast.tokendata> DOTGREAT      /* ">." */
 %token <unit Ast.tokendata> DOTGREATEQUAL /* ">=."*/
+%token <unit Ast.tokendata> DOTEQUAL      /* "==."*/
 %token <unit Ast.tokendata> DOTNOTEQUAL   /* "!=."*/
 %token <unit Ast.tokendata> NOT           /* "!"  */
 %token <unit Ast.tokendata> AND           /* "&&" */
@@ -143,7 +145,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> ARROW         /* "->" */
 %token <unit Ast.tokendata> DARROW        /* "=>" */
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
-%token <unit Ast.tokendata> EQUAL         /* "==" */
+%token <unit Ast.tokendata> POLYEQUAL     /* "<==>" */
 %token <unit Ast.tokendata> USCORE        /* "_"  */
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
@@ -161,7 +163,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %left AND 
 %nonassoc NOT
 %left EQ APXEQ PLUSPLUS
-%left LESS LESSEQUAL GREAT GREATEQUAL EQUAL NOTEQUAL
+%left LESS LESSEQUAL GREAT GREATEQUAL EQUAL POLYEQUAL EQUAL NOTEQUAL
 %left DOTLESS DOTLESSEQUAL DOTGREAT DOTGREATEQUAL DOTEQUAL DOTNOTEQUAL
 %left ADD SUB DOTADD DOTSUB
 %left MUL DIV DOTMUL DOTDIV
@@ -268,7 +270,7 @@ deconpat:
         MPatUk(fi,$3) }
   | IDENT IDENT
       { MPatModApp(mkinfo $1.i $2.i,$1.v,$2.v) }
-  | IDENT EQUAL IDENT
+  | IDENT POLYEQUAL IDENT
       { MPatModEqual(mkinfo $1.i $3.i,$1.v,$3.v) }
   | IFGUARD IDENT 
       { MPatModIfGuard(mkinfo $1.i $2.i,$2.v) }
@@ -419,6 +421,8 @@ pat_op:
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(>)" $1 $3 }
   | pat_op GREATEQUAL pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(>=)" $1 $3 }
+  | pat_op EQUAL pat_op
+      { mk_binpat_op (mkpatinfo $1 $3) $2.l "(==)" $1 $3 }
   | pat_op NOTEQUAL pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(!=)" $1 $3 }
   | pat_op DOTADD pat_op
@@ -437,6 +441,8 @@ pat_op:
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(>.)" $1 $3 }
   | pat_op DOTGREATEQUAL pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(>=.)" $1 $3 }
+  | pat_op DOTEQUAL pat_op
+      { mk_binpat_op (mkpatinfo $1 $3) $2.l "(==.)" $1 $3 }
   | pat_op DOTNOTEQUAL pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(!=.)" $1 $3 }
   | NOT pat_op
@@ -461,7 +467,7 @@ pat_op:
   | DOTSUB pat_op %prec UNARYMINUS
       { mk_unpat_op (mkinfo $1.i (pat_info $2)) $1.l "(--.)" $2 }
 
-  | pat_op EQUAL pat_op
+  | pat_op POLYEQUAL pat_op
       { let fi = mkinfo (pat_info $1) (pat_info $3) in
 	PatModEqual(fi,$1,$3) }
 
@@ -571,6 +577,8 @@ op:
       { mk_binop (mktminfo $1 $3) $2.l "(>)" $1 $3 }
   | op GREATEQUAL op
       { mk_binop (mktminfo $1 $3) $2.l "(>=)" $1 $3 }
+  | op EQUAL op
+      { mk_binop (mktminfo $1 $3) $2.l "(==)" $1 $3 }
   | op NOTEQUAL op
       { mk_binop (mktminfo $1 $3) $2.l "(!=)" $1 $3 }
   | op DOTADD op
@@ -589,6 +597,8 @@ op:
       { mk_binop (mktminfo $1 $3) $2.l "(>.)" $1 $3 }
   | op DOTGREATEQUAL op
       { mk_binop (mktminfo $1 $3) $2.l "(>=.)" $1 $3 }
+  | op DOTEQUAL op
+      { mk_binop (mktminfo $1 $3) $2.l "(==.)" $1 $3 }
   | op DOTNOTEQUAL op
       { mk_binop (mktminfo $1 $3) $2.l "(!=.)" $1 $3 }
   | NOT op
@@ -613,7 +623,7 @@ op:
   | DOTSUB op %prec UNARYMINUS
       { mk_unop (mkinfo $1.i (tm_info $2)) $1.l "(--.)" $2 }
 
-  | op EQUAL op
+  | op POLYEQUAL op
       { let fi = mktminfo $1 $3 in
         TmEqual(fi,$2.l,$1,$3) }
 
@@ -747,7 +757,8 @@ tok:
   | LESSEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"<=\"" }
   | GREAT { us"symtoken: \"" ^. metastr $1.l ^. us">\"" }
   | GREATEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us">=\"" }
-  | EQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==\"" }
+  | POLYEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==\"" }
+  | EQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==\"" } 
   | NOTEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"!=\"" } 
   | DOTADD { us"symtoken: \"" ^. metastr $1.l ^. us"+.\"" }
   | DOTSUB { us"symtoken: \"" ^. metastr $1.l ^. us"-.\"" }
@@ -757,6 +768,7 @@ tok:
   | DOTLESSEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"<=.\"" }
   | DOTGREAT { us"symtoken: \"" ^. metastr $1.l ^. us">.\"" }
   | DOTGREATEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us">=.\"" }
+  | DOTEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==.\"" } 
   | DOTNOTEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"!=.\"" } 
   | NOT { us"symtoken: \"" ^. metastr $1.l ^. us"!\"" } 
   | AND { us"symtoken: \"" ^. metastr $1.l ^. us"&&\"" } 

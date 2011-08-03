@@ -57,9 +57,9 @@ let extractHState model:Equations -> freshState:Bool ->
     | ~statechart s e -> 
       (match (pre,curr) with
        | (_,[]) -> extract e acc true [] [] s
-       | (p::ps,c::cs) -> if p == c then extract e acc false ps cs p
+       | (p::ps,c::cs) -> if p <==> c then extract e acc false ps cs p
                           else extract e acc true ps cs c)
-    | ~state s e -> if s == cstate 
+    | ~state s e -> if s <==> cstate  
                       then extract e acc fresh pre curr s 
                       else (NoEq,acc)
     | ~transition nstate guard initexp -> 
@@ -143,7 +143,9 @@ let makeRootFun trans:Transitions -> ukmap:UkMap -> initVal:InitValMap ->
 //    match trans with
 //    (s1,s2,g,i)::ts -> 
 
-   [if (ctime >= 2.0) && (Array.get lastEvent 0) < 2.0 then 0. else 1.0]   
+//   [if (ctime >= 2.0) && (Array.get lastEvent 0) < 2.0 then 0. else 1.0]   
+   [Array.get yy 0]
+
 /*  let eval = evaluate false ukmap yy yp (Map.empty) initVal ctime in
   let make zcList:[ZeroCrossing] -> acc:[Real] -> [Real] =
     match zcList with
@@ -257,7 +259,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Create the simulation instance for continuous-time simulation using IDA
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
     
-    //Return the values for the pre value (time 0 the first time)
+    //Return the init values after an event or start of simulation (time 0)
     let firststepval = makeStepVal currtime yy probelist ukmap in
 
     // **** Start of continuous-time loop *****

@@ -39,7 +39,7 @@ let DCMotor flange:Rotational -> Equations =
 
 let FlexibleShaft n:Int -> flangeA:Rotational -> flangeB:Rotational -> 
                   Equations =
-  if n == 1 then 
+  if n ==. 1 then 
     ShaftElement flangeA flangeB 
   else 
     let r1:Rotational in

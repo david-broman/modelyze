@@ -68,6 +68,9 @@ Version 1.0.1
     der(der(y)) can be written y''
   - Fixed problem with init conditions. The function InitValues in
     elaboration.mkl must match pattern ~Init and not just Init.
+  - Changed the syntax for polymorphic equality from == to <==>. Added 
+    operators == and ==. meaning real and integer equality test respectively.
+    The rationale is that == can now be used as part of a model.
 
 Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.

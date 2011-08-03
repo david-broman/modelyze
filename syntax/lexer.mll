@@ -80,6 +80,7 @@ let reserved_strings = [
   ("<=",            fun(i,l) -> Parser.LESSEQUAL{i=i;l=l;v=()});
   (">",             fun(i,l) -> Parser.GREAT{i=i;l=l;v=()});
   (">=",            fun(i,l) -> Parser.GREATEQUAL{i=i;l=l;v=()});
+  ("==",            fun(i,l) -> Parser.EQUAL{i=i;l=l;v=()}); 
   ("!=",            fun(i,l) -> Parser.NOTEQUAL{i=i;l=l;v=()}); 
   ("+.",            fun(i,l) -> Parser.DOTADD{i=i;l=l;v=()});
   ("-.",            fun(i,l) -> Parser.DOTSUB{i=i;l=l;v=()});
@@ -89,6 +90,7 @@ let reserved_strings = [
   ("<=.",           fun(i,l) -> Parser.DOTLESSEQUAL{i=i;l=l;v=()});
   (">.",            fun(i,l) -> Parser.DOTGREAT{i=i;l=l;v=()});
   (">=.",           fun(i,l) -> Parser.DOTGREATEQUAL{i=i;l=l;v=()});
+  ("==.",           fun(i,l) -> Parser.DOTEQUAL{i=i;l=l;v=()}); 
   ("!=.",           fun(i,l) -> Parser.DOTNOTEQUAL{i=i;l=l;v=()}); 
   ("!",             fun(i,l) -> Parser.NOT{i=i;l=l;v=()}); 
   ("&&",            fun(i,l) -> Parser.AND{i=i;l=l;v=()}); 
@@ -113,7 +115,7 @@ let reserved_strings = [
   ("->",            fun(i,l) -> Parser.ARROW{i=i;l=l;v=()}); 
   ("=>",            fun(i,l) -> Parser.DARROW{i=i;l=l;v=()}); 
   ("~",             fun(i,l) -> Parser.ESCAPE{i=i;l=l;v=()}); 
-  ("==",            fun(i,l) -> Parser.EQUAL{i=i;l=l;v=()});
+  ("<==>",          fun(i,l) -> Parser.POLYEQUAL{i=i;l=l;v=()});
   ("_",             fun(i,l) -> Parser.USCORE{i=i;l=l;v=()});
   ("~",             fun(i,l) -> Parser.ESCAPE{i=i;l=l;v=()}); 
   ("'",             fun(i,l) -> Parser.SQUOTE{i=i;l=l;v=()}); 
@@ -278,14 +280,14 @@ let q_char = [^ '\\' '\'']
 let ident = (nondigit (digit | nondigit)*)
 let operator = "="  | "~="  | "mod" |
                "+"  | "-"   | "*"   | "/"   | 
-               "<"  |"<="   | ">"   | ">="  | "!="  | 
+               "<"  |"<="   | ">"   | ">="  | "=="  | "!="  | 
                "+." | "-."  | "*."  | "/."  | 
-               "<." | "<=." | ">."  | ">=." | "!=." | 
+               "<." | "<=." | ">."  | ">=." | "==." | "!=." | 
                "!"  | "&&"  | "||"  | ";"   | "++"  |
 	      "--"  | "--." | "^"   | "^."  | "'" 
 
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
-                "," | "." | "|" | "->" | "=>" | "~" | "==" | "_" | 
+                "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
                  "~"
 let metas = ['#']*
 let line_comment = "//" [^ '\013' '\010']*  

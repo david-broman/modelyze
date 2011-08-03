@@ -59,9 +59,8 @@ let BouncingBallExt height:Real -> Equations =
     )
 
   );
-
+ 
   probe "y" = y
-
 
 
 let _ = 

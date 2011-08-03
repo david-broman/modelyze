@@ -26,6 +26,7 @@ let (<.) : Int -> Int -> Bool = @@int_less
 let (<=.) : Int -> Int -> Bool = @@int_less_equal
 let (>.) : Int -> Int -> Bool = @@int_great
 let (>=.) : Int -> Int -> Bool = @@int_great_equal
+let (==.) : Int -> Int -> Bool = @@int_equal
 let (!=.) : Int -> Int -> Bool = @@int_not_equal
 let (+) : Real -> Real -> Real = @@real_add
 let (-) : Real -> Real -> Real = @@real_sub
@@ -35,6 +36,7 @@ let (<) : Real -> Real -> Bool = @@real_less
 let (<=) : Real -> Real -> Bool = @@real_less_equal
 let (>) : Real -> Real -> Bool = @@real_great
 let (>=) : Real -> Real -> Bool = @@real_great_equal
+let (==) : Real -> Real -> Bool = @@real_equal
 let (!=) : Real -> Real -> Bool = @@real_not_equal
 let (!) : Bool -> Bool = @@bool_not
 let (&&) : Bool -> Bool -> Bool = @@bool_and

@@ -34,46 +34,68 @@ let isMechatronicRefBranch b:Node =
   | ~RotationalRefBranch -> true
   | _ -> false
 
-let ROOT_TOL = 1e-10
-
+// Data for simulation results for one point in time. The first element
+// of the time is the time value and the second a list of data points
+// representing the different variables (defined using probes).
 type StepVal = (Real,[Real])
+
+// Type definition for simulation result. Contains a list names
+// of the variables used as well as the data points.
 type SimulationResult = ([String],[StepVal])
+
+// Mapping of initial values. From unknown to expression.
 type InitValMap = (<Real> => <Real>)
-type ZeroCrossing = <Real>
+
+// List definition of transistions
 type Transitions = [(State,State,Expr,Expr)]
 
-//Statw path of states through the hierarchy of statecharts
+// State path of states through the hierarchy of statecharts
 type StatePath = [State]
 
-//Extract the current hierarical state of equations as well as 
-//all possible transitions.
+// Internal transition for storing both source and target state info
+let internalTrans : <PState -> PState -> Bool -> Eqs -> Eqs>
+
+
+// Extract the current hierarical state of equations as well as 
+// the resulting state path. Transation information is preserved
+// in the equation system in form "internalTrans" so that actions
+// also are affected by the differentiation procedure (handling of
+// higher-order derivatives).
 let extractHState model:Equations -> freshState:Bool ->
-    prePath:StatePath -> currPath:StatePath -> (Equations,Transitions,StatePath) =
-  let extract m:Equations -> acc:Transitions -> fresh:Bool ->
+    prePath:StatePath -> currPath:StatePath -> (Equations,StatePath) =
+  let extract m:Equations -> fresh:Bool ->
     pre:StatePath -> curr:StatePath -> updated:StatePath ->
-      cstate:State -> (<>,Transitions,StatePath) =
+      cstate:State -> (<>,StatePath) =
     match m with
     | ~statechart s e -> 
       (match (pre,curr) with
-       | (_,[]) -> extract e acc true [] [] (s::updated) s
-       | (p::ps,c::cs) -> if p <==> c then extract e acc false ps cs (p::updated) p
-                          else extract e acc true ps cs (c::updated) c)
+       | (_,[]) -> extract e true [] [] (s::updated) s
+       | (p::ps,c::cs) -> if p <==> c then extract e false ps cs (p::updated) p
+                          else extract e true ps cs (c::updated) c)
     | ~state s e -> if s <==> cstate  
-                      then extract e acc fresh pre curr updated s 
-                      else (NoEq,acc,updated)
-    | ~transition nstate guard initexp -> 
-          (NoEq,(cstate,nstate,guard,initexp)::acc,updated)
-    | ~Init x e -> if fresh then (Init x e,acc,updated) else (NoEq,acc,updated)
+                      then extract e fresh pre curr updated s 
+                      else (NoEq,updated)
+    | ~transition nstate g i -> (internalTrans cstate nstate g i,updated) 
+    | ~Init x e -> if fresh then (Init x e,updated) else (NoEq,updated)
     | e1 e2 ->  
-         let (eqs1,acc1,up1) = extract e1 acc fresh pre curr updated cstate in
-         let (eqs2,acc2,up2) = extract e2 acc1 fresh pre curr up1 cstate in
-         (eqs1 eqs2,acc2,up2)
-    | e -> (e,acc,updated)
+         let (eqs1,up1) = extract e1 fresh pre curr updated cstate in
+         let (eqs2,up2) = extract e2 fresh pre curr up1 cstate in
+         (eqs1 eqs2,up2)
+    | e -> (e,updated)
   in  
-    extract model [] freshState prePath currPath [] topstate
+    extract model freshState prePath currPath [] topstate
 
-type Residual = Real -> {Real} -> {Real} -> [Real]
+// Extract a list of transitions from an equation syste.
+let extractTransitions model:Expr -> Transitions =
+  let extract e:Expr -> acc:Transitions -> Transitions =
+    match e with
+    | ~internalTrans s1 s2 g i -> (s1,s2,g,i)::acc
+    | e1 e2 -> extract e2 (extract e1 acc)
+    | _ -> acc
+  in extract model [] 
 
+
+// Extract initial values from an equation system. 
 let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
@@ -82,7 +104,9 @@ let initValues eqs:Equations -> InitValMap =
     | _ -> acc
   in get eqs (Map.empty)
 
-
+// Extract value maps from arrays of real values for unknowns.
+// The function is used to when performing structural discrete changes
+// and transferring the state during the event.
 let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap -> 
                   (InitValMap,InitValMap) =
   let worker lst:UkList -> yymap:InitValMap -> ypmap:InitValMap -> 
@@ -95,7 +119,8 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
   in
     worker (Map.toList ukmap) (Map.empty) (Map.empty)
 
-
+// Evaluate an expression of real type. Uses general higher-order functons
+// to lookup unknowns.
 let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
          ctime:Real -> Real =
   let worker e:<> -> Real = 
@@ -113,11 +138,15 @@ let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
   in
     worker expr 
 
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up using initvalue maps.
 let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
   let yyfun s:Signal -> Signal = Map.find s valmap in
   let ypfun s:Signal -> Signal = Map.find (der s) valmap in  
   eval expr yyfun ypfun ctime 
 
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up in yy and yp arrays.
 let evalFromArray expr:Expr -> yy:{Real} -> yp:{Real} -> 
       ukmap:UkMap -> ctime:Real -> Real =
   let yyfun s:Signal -> Signal = 
@@ -126,6 +155,7 @@ let evalFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
      val (Array.get yp (fst (Map.find s ukmap))) in
   eval expr yyfun ypfun ctime 
 
+// Evaluate an expression that is assumed to have type Bool.
 let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} -> 
       ukmap:UkMap -> ctime:Real -> Bool =
   let evalReal expr:Expr -> Real = evalFromArray expr yy yp ukmap ctime in
@@ -141,9 +171,11 @@ let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
     | e1 && e2 -> evalBool e1 && evalBool e2
     | e1 || e2 -> evalBool e1 || evalBool e2
     | val b:Bool -> b
+    | _ -> error "The value is not a boolean type."
   in
     evalBool expr
 
+// Create the residual function of the DAE. Used by IDA/Sundials.
 let makeResidual model:Equations -> ukmap:UkMap -> 
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
   let realExpr expr:Expr -> Real = evalFromArray expr yy yp ukmap ctime in
@@ -154,6 +186,10 @@ let makeResidual model:Equations -> ukmap:UkMap ->
     | _ -> acc
   in traverseEq model [] 
    
+// Create the function that is used by IDA/Sundials for root finding 
+// (detecting zero-crossings). The root function is created by
+// evaluating the transitions that are extracted from the original
+// equation system.
 let makeRootFun trans:Transitions -> ukmap:UkMap ->
                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
   let travGuard e:Expr -> acc:[Real] -> [Real] =
@@ -177,7 +213,10 @@ let makeRootFun trans:Transitions -> ukmap:UkMap ->
   in 
     travTrans trans []
 
-
+// Create a list of expressions containing initiatiations that should
+// be executed when a an event (transistion occurs). The function takes
+// as input the current state path and the state path that should exists
+// after transition.
 let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:StatePath ->
       ukmap:UkMap -> ctime:Real -> yy:{Real} -> yp:{Real} -> ([Expr],StatePath) =
   let changeState sp:StatePath -> prevS:State -> nextS:State -> StatePath =
@@ -198,13 +237,14 @@ let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:StatePath ->
     let roots = DAESolver.roots daesolv in
     if (Array.length roots) !=. 0 then travTrans trans [] sp else ([],sp)
 
-
-let addTransInits inits:[Equations] -> eqs:Equations -> Equations =
+// Extend an equation system with a list of new equations
+let addEquations inits:[Equations] -> eqs:Equations -> Equations =
   match inits with
-  | e::es -> addTransInits es (e;eqs)
+  | e::es -> addEquations es (e;eqs)
   | [] -> eqs
 
-//Generate arrays of initial values
+// Generate arrays of initial values from init value map and old
+// state information
 let makeInitStateArrays initvals:InitValMap -> 
                         yymap:InitValMap -> ypmap:InitValMap -> 
                         ctime:Real -> ukmap:UkMap -> ({Real},{Real}) =
@@ -226,7 +266,7 @@ let makeInitStateArrays initvals:InitValMap ->
     let _ = setvals (Map.toList ypmap) yp in
     (yy, yp)
 
-
+// Save data for probe value in one  time point
 let makeStepVal currtime:Real -> yy:{Real} ->
                 probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
   let mkvals probes:[(String,[Signal])] -> [Real] =        
@@ -236,7 +276,8 @@ let makeStepVal currtime:Real -> yy:{Real} ->
     | (s,[])::ss -> mkvals ss 
     | [] -> []
   in (currtime,mkvals probes)
-  
+
+// Create a list of probe names from a probe map  
 let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
   match probes with
   | (s,u::us)::ss -> 
@@ -245,6 +286,9 @@ let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =
   | (s,[])::ss -> makeProbeNames ss 1
   | [] -> []
 
+// Generate the identity array specifying if a variable
+// appears differentiated or not. The array is used by
+// IDA/Sundials for initial condition correction
 let initConditionCorrection ukmap:UkMap -> {Real} =
   let id = Array.make (Map.size ukmap) 0. in
   let worker uklist:[(Signal,(Int,Bool))] -> {Real} =
@@ -254,6 +298,7 @@ let initConditionCorrection ukmap:UkMap -> {Real} =
     | [] -> id
   in worker (Map.toList ukmap)
 
+// Reverse the simulation plot result
 let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
   match lst with
   | x::xs -> revResult xs (x::acc)
@@ -272,11 +317,11 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
              yymap:InitValMap -> ypmap:InitValMap ->
              olddmap:DerivMap -> transInits:[Expr] ->
-             prePath:StatePath -> currPath:StatePath ->
+             prePath:StatePath -> newPath:StatePath ->
              [StepVal] = 
     // Extract all equations and correct inits for a partiuclar state path. 
-    let (modelNoState,transitions,currPathUpdated) = 
-           extractHState model1 (currtime == 0.) prePath currPath in
+    let (modelNoState,updatedPath) = 
+           extractHState model1 (currtime == 0.) prePath newPath in
    
     // Performe connection elaboration
     let model2 = (elaborateConnections isMechatronicBranch 
@@ -284,8 +329,11 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
 
+    // Extract transitions
+    let transitions = extractTransitions model3 in
+
     // Add transition initializations to the current model
-    let model4 = addTransInits transInits model3 in
+    let model4 = addEquations transInits model3 in
 
     // Create a map of unknowns to unique integer values
     let ukmap = makeUkMap model4 in
@@ -312,23 +360,23 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // **** Start of continuous-time loop *****
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real,[Expr],StatePath) = 
       if currtime > endtime 
-        then (acc,currtime,[],currPathUpdated)
+        then (acc,currtime,[],updatedPath)
         else
           // Compute the next step using numerical integration
           let newtime = DAESolver.step steptime state in 
           // Save the step value
           let stepval = makeStepVal newtime yy probelist ukmap in
           // Check if there are event actions
-          let (transInits,newPath) = 
-              makeEventActions state transitions currPathUpdated 
+          let (transInits,newEventPath) = 
+              makeEventActions state transitions updatedPath 
                                ukmap newtime yy yp in
           // End continuous-time loop?
           if newtime == 0. || !(transInits <==> []) 
-            then (stepval::acc,newtime,transInits,newPath)
+            then (stepval::acc,newtime,transInits,newEventPath)
             else ctloop (newtime + steptime) (stepval::acc)
     in
       // Post processing after continuous-time simulation 
-      let (acc2,newtime,transInits,newPath) = 
+      let (acc2,newtime,transInits,newEventPath) = 
              ctloop currtime (firststepval::acc) in
 
       // Close the continuous-time DAE solver instance.
@@ -339,14 +387,14 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
       else 
         let (yymap,ypmap) = makePreValMap yy yp ukmap in
           dtloop newtime acc2 model1 yymap ypmap newdmap transInits 
-                 currPathUpdated newPath
+                 updatedPath newEventPath
   in
     // Initiate the hybrid simulation loop (CT + DT)
     let result = revResult (dtloop 0. [] model1 
                  (Map.empty) (Map.empty) (Map.empty) [] [] []) [] in
     (makeProbeNames probelist 1,result) 
 
-
+// Pretty-print simulation result
 let pprintSimulation res:SimulationResult -> String =
   let (names,stepvals) = res in  
   let psteps step:[StepVal] -> first:Bool -> String =
@@ -359,6 +407,7 @@ let pprintSimulation res:SimulationResult -> String =
     | [] -> ""
   in psteps stepvals true
  
+// Utility function to both simulate and pretty-print the result
 let printsim model:Equations -> steptime:Real -> endtime:Real -> () =
       print (pprintSimulation (simulate model steptime endtime))
 

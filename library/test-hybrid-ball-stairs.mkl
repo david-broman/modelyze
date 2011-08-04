@@ -17,9 +17,11 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /**
-  Name:  Bouncing Pendulum
-  Cases: - Tests transistion between two states.
-         - Tests the use of higher-order derivatives.
+  Name:  Hybrid Ball with Stairs
+  Cases: - Tests transistion between two states
+         - Tests the use of discrete variables modelled using
+           derivatives set to 0 (e.g., equation "ground' = 0."
+         - Tests the use of several probe variables.
 */
 
 include MechsysBasics
@@ -27,19 +29,24 @@ include HybridSimulation
 include ExportModelica
 include HybridModeling
 
-let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
+
+let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
   let g = 9.81 in
   let x:Position in
   let y:Position in
+  let ground:Position in
 
   let Pendulum:State in
   let BouncingBall:State in
+  
+  Init ground 3.0;
+  ground' = 0.;
 
   statechart Pendulum (
     state Pendulum (
       let T:Force in
 
-      transition BouncingBall (time > 2.) nothing;
+      transition BouncingBall (x > l/2.0) nothing;
 
       Init x (l*sin startAngle);
       Init y (-l*cos startAngle);
@@ -50,8 +57,15 @@ let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
     );
 
     state BouncingBall (    
-      transition BouncingBall (y <= -4.)
+      let timer:Signal in
+
+      timer' = 1.;
+  
+      transition BouncingBall (y <= 0.)
         (Init (y') (y' * -0.7));
+
+      transition BouncingBall (timer > 0.3 && ground > 0.)
+        (Init timer 0.; Init ground (ground - 0.2));
 
       x'' = 0.;
       -m*g = m*y''
@@ -59,22 +73,9 @@ let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
 
   );
 
-  probe "y" = y
-
-
+  probe "y" = ground//;
+  //probe "ground" = ground
 
 let main = 
   let angle = 45.*3.14/180. in
-  printsim (BouncingPendulum 5.0 2.0 angle) 0.01 5.
-
-
-
-
-
-
-
-
-
-
-
-
+  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 5.

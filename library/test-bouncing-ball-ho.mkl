@@ -17,8 +17,12 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /**
-  Name:  Bouncing Ball
+  Name:  Bouncing Ball Higher-Order
   Cases: - Tests a self transition and the simplest possible hybrid model.
+         - Compared to "test-bouncing-ball.mkl", this case also
+           tests the use of higher-order derivatives (y'') without
+           declaring an explict variable yp.
+         - Tests that Init statements are using derivatives, i.e., y'
 */
 
 include MechsysBasics
@@ -26,26 +30,27 @@ include HybridSimulation
 include ExportModelica
 include HybridModeling
 
+
 let BouncingBall height:Real -> Equations =
   let g = 9.81 in
-  let y:Position in  
-  let yp:<Real> in
+  let y:Position in
   let Bounce:State in
   
   Init y height;
   statechart Bounce (
     state Bounce (    
-      transition Bounce (y <= 0.) 
-          (Init (yp) (yp * -0.7));
-      y' = yp;
-      -g = yp'
+      transition Bounce (y <= 0.)
+        (Init (y') (y' * -0.7));
+        
+      -g = y''
     )
-
   );
- 
+
   probe "y" = y
+
+
 
 
 let _ = 
   printsim (BouncingBall 5.0) 0.01 6.
- 
+

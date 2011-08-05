@@ -159,7 +159,7 @@ let rec pprint t  =
     | TmClos(t,e) -> us"(" ^. us"closure[" ^. 
         (*(e |> List.map pprint |> Ustring.concat (us",")) ^.*) us"] -> " ^. 
              pprint t ^. us")"
-    | TmApp(t1,t2) -> us"(" ^. pprint t1 ^. us"@" ^. pprint t2 ^. us")"
+    | TmApp(t1,t2) -> us"(" ^. pprint t1 ^. us" " ^. pprint t2 ^. us")"
     | TmFix(t) -> us"fix[" ^. pprint t ^. us"]"
     | TmIf(t1,t2,t3) -> us"if " ^. 
 	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
@@ -169,7 +169,7 @@ let rec pprint t  =
     | TmRun(t) -> us".!(" ^. pprint t ^. us")"
     | TmUk(idx,ty) -> ustring_of_int idx ^. us"'':" ^. pprint_ty ty
     | TmUkGen(ty) -> us"ukgen(" ^. pprint_ty ty ^. us")"
-    | TmModApp(t1,t2) -> us"(" ^. pprint t1  ^. us" " ^. pprint t2  ^. us")"
+    | TmModApp(t1,t2) -> us"(" ^. pprint t1  ^. us"@" ^. pprint t2  ^. us")"
     | TmModIf(t1,t2,t3) -> us"<if> " ^. 
 	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
     | TmModEqual(t1,t2) -> pprint t1 ^. us" <==> " ^. pprint t2

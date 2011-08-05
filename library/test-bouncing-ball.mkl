@@ -19,6 +19,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 /**
   Name:  Bouncing Ball
   Cases: - Tests a self transition and the simplest possible hybrid model.
+         - Test to have several probes.
 */
 
 include MechsysBasics
@@ -43,7 +44,8 @@ let BouncingBall height:Real -> Equations =
 
   );
  
-  probe "y" = y
+  probe "y" = y;
+  probe "y'" = yp
 
 
 let _ = 

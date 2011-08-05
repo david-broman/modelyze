@@ -945,9 +945,9 @@ and pprint tm =
         pprint t2 ^. us")"
   | TmFix(_,l,t) -> metastr l ^. us"fix[" ^. pprint t ^. us"]"
   | TmLet(_,l,id,tyop,arglst,t1,t2,recursive) ->
-      let params = arglst 
+      let params = us" " ^. (arglst 
         |> List.map (fun (x,ty) -> Symtbl.get x ^. us":" ^. pprint_ty ty) 
-        |> Ustring.concat (us" -> ") in
+        |> Ustring.concat (us" -> ")) in
       metastr l ^. us"let " ^.  Symtbl.get id ^. params ^. us" = " ^. 
       pprint t1 ^. us" in " ^. pprint t2
   | TmIf(_,l,t1,t2,t3) -> metastr l ^. us"(if " ^. 

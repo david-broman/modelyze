@@ -47,7 +47,7 @@ Two test files are also provided:
    model. Usage: mkl test-mechsys.mkl
 2. test-lotkavolterra.mkl
    This test program shows a simple mathematical modeling that is simulated
-   and plotted. Usage: mklplot 1 test-lotkavolterra.mkl 
+   and plotted. Usage: mklplot test-lotkavolterra.mkl 
 
 LICENSE
 -------

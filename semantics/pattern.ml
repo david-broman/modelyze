@@ -392,6 +392,7 @@ and desugar tm =
       | TmDpa(t) -> TmDpa(ds t)
       | TmDpb(t) -> TmDpb(ds t)
       | TmError(fi,l,t) -> TmError(fi,l,ds t)
-  in ds tm
+  in 
+    ds tm
 
 

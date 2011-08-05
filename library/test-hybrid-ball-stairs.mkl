@@ -39,14 +39,14 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
   let Pendulum:State in
   let BouncingBall:State in
   
-  Init ground 3.0;
+  Init ground (-3.0);
   ground' = 0.;
 
   statechart Pendulum (
     state Pendulum (
       let T:Force in
 
-      transition BouncingBall (x > l/2.0) nothing;
+      transition BouncingBall (time > 2.) nothing; //(x > l/2.0) nothing;
 
       Init x (l*sin startAngle);
       Init y (-l*cos startAngle);
@@ -61,10 +61,10 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
 
       timer' = 1.;
   
-      transition BouncingBall (y <= 0.)
+      transition BouncingBall (y <= ground)  //  (y <= 0.) triggers wroing
         (Init (y') (y' * -0.7));
 
-      transition BouncingBall (timer > 0.3 && ground > 0.)
+      transition BouncingBall (timer > 0.3 && ground > -5.)
         (Init timer 0.; Init ground (ground - 0.2));
 
       x'' = 0.;
@@ -73,9 +73,9 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
 
   );
 
-  probe "y" = ground//;
-  //probe "ground" = ground
+  probe "ground" = ground;
+  probe "y" = y
 
 let main = 
   let angle = 45.*3.14/180. in
-  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 5.
+  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.

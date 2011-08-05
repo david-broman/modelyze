@@ -23,7 +23,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-include Simulation
+include HybridSimulation
 
 type Population = <Real>
 

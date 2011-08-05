@@ -23,7 +23,7 @@ let mkllex filename =
 let mkleval filename =   
   (try 
     Fileincluder.read_file_chain filename 
-      |> Typesystem.desugar 
+      |> Typesystem.desugar  
       |> Typesystem.typecheck 
       |> Eval.translate 
       |> Eval.evaluate 

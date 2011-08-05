@@ -396,7 +396,12 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
 
 // Pretty-print simulation result
 let pprintSimulation res:SimulationResult -> String =
-  let (names,stepvals) = res in  
+  let (names,stepvals) = res in
+  let pnames varnames:[String] -> String =
+    match varnames with
+    | n::ns -> n ++ "\t" ++ pnames ns
+    | [] -> "\n"
+  in
   let psteps step:[StepVal] -> first:Bool -> String =
     match step with
     | (t,x::xs)::xxs when first ->        
@@ -405,7 +410,7 @@ let pprintSimulation res:SimulationResult -> String =
         real2string x ++ "\t" ++ psteps ((t,xs)::xxs) false
     | (t,[])::xxs -> "\n" ++ psteps xxs true
     | [] -> ""
-  in psteps stepvals true
+  in "time\t" ++ pnames names ++ psteps stepvals true 
  
 // Utility function to both simulate and pretty-print the result
 let printsim model:Equations -> steptime:Real -> endtime:Real -> () =

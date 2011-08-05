@@ -1,6 +1,6 @@
 
 
-Known issues in the MKL OCaml implementation
+Known issues and todos in the MKL OCaml implementation
 --------------------------------------------
 
 2011-06-20: Declaring symbols and other let expressions does not seems
@@ -22,5 +22,22 @@ fresh variables in a wrong way. The first question is why a "match" was
 generated in the first place.
 
 
-Known issues in the MKL libraries
+Known issues and todos in the MKL libraries
 ---------------------------------
+
+2011-08-05: There is an error in the hybrid ball stairs example. The
+last stair case does not create a bounce.
+
+2011-08-05: Panetelides implementation is not working yet.
+
+2011-08-05: Dummy-derivative is not implemented yet.
+
+2011-08-05: Domain-specific branches is not implemented. Tested in
+another git branch, but not included in the main trunk.
+
+2011-08-05: Keywords begin and end should be added.
+
+2011-08-05: y' cannot be used in probes (test in bouncing ball example).
+
+2011-08-05: We cannot plot a partially hidden variable (in a state). 
+For example T in bouncing pendulum.

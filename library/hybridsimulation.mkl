@@ -295,8 +295,9 @@ let makeStepVal currtime:Real -> yy:{Real} ->
                 probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
   let mkvals probes:[(String,[Signal])] -> [Real] =        
     match probes with
-    | (s,u::us)::ss ->  (Array.get yy (fst(Map.find u ukmap)))::
-                        (mkvals ((s,us)::ss))
+    | (s,u::us)::ss ->  
+      let v = if Map.mem u ukmap then (Array.get yy (fst(Map.find u ukmap))) else INFINITE in
+      v::(mkvals ((s,us)::ss))
     | (s,[])::ss -> mkvals ss 
     | [] -> []
   in (currtime,mkvals probes)
@@ -431,7 +432,8 @@ let pprintSimulation res:SimulationResult -> String =
     | (t,x::xs)::xxs when first ->        
         real2string t ++ "\t" ++ psteps ((t,x::xs)::xxs) false
     | (t,x::xs)::xxs -> 
-        real2string x ++ "\t" ++ psteps ((t,xs)::xxs) false
+        (if x == INFINITE then "?" else real2string x) ++
+        "\t" ++ psteps ((t,xs)::xxs) false
     | (t,[])::xxs -> "\n" ++ psteps xxs true
     | [] -> ""
   in "time\t" ++ pnames names ++ psteps stepvals true 

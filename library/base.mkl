@@ -75,6 +75,8 @@ let substr : String -> Int -> Int -> String = @@string_substr
 let strlen : String -> Int = @@string_strlen
 let (++) : String -> String -> String = @@string_concat
 
+let INFINITE = 1./0.
+
 
 let abs x:Real -> Real = 
   if x < 0. then x * -1.0 else x

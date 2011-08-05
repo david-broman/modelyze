@@ -39,5 +39,3 @@ another git branch, but not included in the main trunk.
 
 2011-08-05: y' cannot be used in probes (test in bouncing ball example).
 
-2011-08-05: We cannot plot a partially hidden variable (in a state). 
-For example T in bouncing pendulum.

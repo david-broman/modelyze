@@ -334,8 +334,10 @@ let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
 let simulate model:Equations -> steptime:Real -> endtime:Real -> 
              SimulationResult =
   // Extract probes
+
   let (model1,probes) = elaborateProbes model in
   let probelist = Map.toList probes in
+
 
   // **** Start of discrete-time loop. ****
   //    Iterate for each state change
@@ -351,8 +353,10 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Performe connection elaboration
     let model2 = (elaborateConnections isMechatronicBranch 
                   isMechatronicRefBranch modelNoState) in
+
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
+
 
     // Extract transitions
     let transitions = extractTransitions model3 in
@@ -381,7 +385,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     
     // Return the init values after an event or start of simulation (time 0)
     let firststepval = makeStepVal currtime yy probelist ukmap in
-
+  
     // **** Start of continuous-time loop *****
     let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real,[Expr],StatePath) = 
       if currtime > endtime 

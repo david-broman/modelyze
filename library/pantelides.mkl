@@ -1,4 +1,27 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010 David Broman
 
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+// pantelides.mkl
+//
+// This file include the implementation of Pantelide's algorithm, published
+// in Constantinos C. Pantelides "The Consitent Initialization of
+// of Differential-Algebraic Systems", SIAM Journal on Scientific and 
+// Statistical Computing, vol 9, No 2., 1988
 
 include Modeling
 
@@ -23,8 +46,8 @@ type VarList = [Expr]
 //Algorithm AUGMENTPATH according to page 217 by Pantelides (1988)
 let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet -> 
     assign:AssignMap -> A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
-  let assignPath jlist:VarList -> (PathFound,AssignMap) =
-    match jlist with
+  let assignPath jlist:VarList -> (PathFound,AssignMap) = 
+    match jlist with  //Step (2)
     | j::js -> 
       if (Map.mem j assign) || !(Set.mem j A) then
         assignPath js 
@@ -34,7 +57,7 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
   in
   let everyJ vlist:VarList -> colE:ColorESet -> colV:ColorVSet -> assign:AssignMap ->
      A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
-    match vlist with 
+    match vlist with (Step (3)
     | j::js when (Set.mem j colV) || !(Set.mem j A) -> everyJ js colE colV assign A
     | j::js -> 
       let colV2 = Set.add j colV in
@@ -46,13 +69,15 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
         everyJ js colE3 colV3 assign3 A
     | [] -> (false,colE,colV,assign)
   in 
-    let colE2 = Set.add i colE in 
+    let colE2 = Set.add i colE in  //Step (1) 
     let jList = Set.toList (Map.find i graph) in
     let (found,assign2) = assignPath jList in
     if found then
       (true,colE2,colV,assign2)
     else
        everyJ jList colE2 colV assign2 A
+
+let _ = dpa "hello"
 
 /*  
 //Algorithm 4.1 according to page 218 by Pantelides (1988)

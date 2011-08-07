@@ -30,16 +30,16 @@ let Driveline =
   let r6:Rotational in
   let r7:Rotational in
   ConstantTorque 2. r1;
-  TorqueSensor (probe "tau1") r1 r2;
-  SpeedSensor (probe "w1") r2;
+  TorqueSensor r1 r2 (probe "tau1");
+  SpeedSensor r2 (probe "w1");
   Inertia 10. r2 r3;
-  SpeedSensor (probe "w2") r3;
-  TorqueSensor (probe "tau2") r3 r4;
+  SpeedSensor r3 (probe "w2");
+  TorqueSensor r3 r4 (probe "tau2");
   Spring 5. r4 r5;
-  SpeedSensor (probe "w3") r5;  
-  TorqueSensor (probe "tau3") r5 r6;
+  SpeedSensor r5 (probe "w3");  
+  TorqueSensor r5 r6 (probe "tau3");
   Inertia 2. r6 r7;
-  SpeedSensor (probe "w4") r7
+  SpeedSensor r7 (probe "w4") 
 
  
 let main = 

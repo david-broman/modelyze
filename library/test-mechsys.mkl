@@ -18,7 +18,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include ExportModelica
 include MechsysBasics
-include Simulation
+include HybridSimulation
 
 let MechSys =
   let r1:Rotational in

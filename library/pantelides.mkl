@@ -59,7 +59,7 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
   let everyJ vlist:VarList -> colE:ColorESet -> colV:ColorVSet -> assign:AssignMap ->
      A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
     match vlist with //(Step (3)
-    | j::js when (Set.mem j colV) || !(Set.mem j A) -> everyJ js colE colV assign A
+    | j::js if (Set.mem j colV) || !(Set.mem j A) -> everyJ js colE colV assign A
     | j::js -> 
       let colV2 = Set.add j colV in
       let k = Map.find j assign in
@@ -86,7 +86,7 @@ let pantelides graph:EqsGraph -> A:VarSet -> B:EqMap -> EqMap =
   let deleteSelectedVNodes A:VarSet -> VarSet =
     let delete vlist:VarList -> acc:VarSet -> VarSet =
       match vlist with
-      | n::ns when Set.mem (der n) A -> delete ns acc
+      | n::ns if Set.mem (der n) A -> delete ns acc
       | n::ns -> delete ns (Map.add n acc)
       | [] -> acc
     in delete (Map.toList A) (Map.empty)

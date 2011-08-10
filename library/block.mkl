@@ -29,7 +29,7 @@ let ConstantSource k:Real -> y:Signal -> Equations =
   y = k
 
 let Integrator k:Real -> y0:Real -> u:Signal -> y:Signal -> Equations =
-  Init y y0;
+  init y y0;
   y' = k * u
 
 let Derivative k:Real -> T:Real -> u:Signal -> y:Signal -> Equations =

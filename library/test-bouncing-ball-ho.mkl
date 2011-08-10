@@ -36,15 +36,15 @@ let BouncingBall height:Real -> Equations =
   let y:Position in
   let Bounce:State in
   
-  Init y height;
-  statechart Bounce (
-    state Bounce (    
-      transition Bounce (y <= 0.)
-        (Init (y') (y' * -0.7));
-        
-      -g = y''
-    )
-  );
+  init y height;
+  statechart initstate Bounce begin
+    state Bounce begin            
+      -g = y'';
+
+      transition Bounce when (y <= 0.)
+        action (y' <- y' * -0.7)
+    end
+  end;
 
   probe "y" = y
 

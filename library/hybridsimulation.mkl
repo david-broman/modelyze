@@ -67,7 +67,7 @@ let extractHState model:Equations -> freshState:Bool ->
     pre:StatePath -> curr:StatePath -> updated:StatePath ->
       cstate:State -> (<>,StatePath) =
     match m with
-    | ~statechart s e -> 
+    | ~statechart ~initstate s e -> 
       (match (pre,curr) with
        | (_,[]) -> extract e true [] [] (s::updated) s
        | (p::ps,c::cs) -> if p <==> c then extract e false ps cs (p::updated) p
@@ -75,8 +75,9 @@ let extractHState model:Equations -> freshState:Bool ->
     | ~state s e -> if s <==> cstate  
                       then extract e fresh pre curr updated s 
                       else (NoEq,updated)
-    | ~transition nstate g i -> (internalTrans cstate nstate g i,updated) 
-    | ~Init x e -> if fresh then (Init x e,updated) else (NoEq,updated)
+    | ~transition nstate ~when g ~action i -> 
+          (internalTrans cstate nstate g i,updated) 
+    | ~init x e -> if fresh then (init x e,updated) else (NoEq,updated)
     | e1 e2 ->  
          let (eqs1,up1) = extract e1 fresh pre curr updated cstate in
          let (eqs2,up2) = extract e2 fresh pre curr up1 cstate in
@@ -100,7 +101,7 @@ let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | ~Init x v -> Map.add x v acc
+    | ~init x v -> Map.add x v acc
     | _ -> acc
   in get eqs (Map.empty)
 
@@ -433,7 +434,7 @@ let pprintSimulation res:SimulationResult -> String =
   in
   let psteps step:[StepVal] -> first:Bool -> String =
     match step with
-    | (t,x::xs)::xxs when first ->        
+    | (t,x::xs)::xxs if first ->        
         real2string t ++ "\t" ++ psteps ((t,x::xs)::xxs) false
     | (t,x::xs)::xxs -> 
         (if x == INFINITE then "?" else real2string x) ++

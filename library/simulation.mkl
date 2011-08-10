@@ -139,7 +139,7 @@ let pprintSimulation res:SimulationResult -> String =
   let (names,stepvals) = res in  
   let psteps step:[StepVal] -> first:Bool -> String =
     match step with
-    | (t,x::xs)::xxs when first ->        
+    | (t,x::xs)::xxs if first ->        
         real2string t ++ "\t" ++ psteps ((t,x::xs)::xxs) false
     | (t,x::xs)::xxs -> 
         real2string x ++ "\t" ++ psteps ((t,xs)::xxs) false

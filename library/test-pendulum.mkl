@@ -27,8 +27,9 @@ let Pendulum m:Real -> l:Real -> startAngle:Real -> Equations =
   let T:Force in
   let x:Position in
   let y:Position in
-  Init x (l*sin startAngle);
-  Init y (-l*cos startAngle);
+
+  init x (l*sin startAngle);
+  init y (-l*cos startAngle);
      
   -T*x/l = m*x'';
   -T*y/l - m*g = m*y'';     

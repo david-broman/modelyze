@@ -1,5 +1,5 @@
 Modeling Kernel Language (MKL) toolchain
-Copyright (C) 2010 David Broman
+Copyright (C) 2010-2011 David Broman
 
 MKL toolchain is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -73,6 +73,10 @@ Version 1.0.1
     The rationale is that == can now be used as part of a model.
   - Added two new keywords "begin" and "end", which have the same 
     functionality as parentheses.
+  - Renamed initialization keyword from "Init" to "init". Also, the 
+    init operator "<-" can be used instead of "init".
+  - Renamed the "when" guard on patterns to use keyword "if". In this
+    way, "when" can be used in the DSLs.
 
 Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.

@@ -58,7 +58,6 @@ let reserved_strings = [
   ("error",         fun(i,l) -> Parser.ERROR{i=i;l=l;v=()}); 
   ("match",         fun(i,l) -> Parser.MATCH{i=i;l=l;v=()}); 
   ("from",          fun(i,l) -> Parser.FROM{i=i;l=l;v=()}); 
-  ("when",          fun(i,l) -> Parser.WHEN{i=i;l=l;v=()}); 
   ("type",          fun(i,l) -> Parser.TYPE{i=i;l=l;v=()}); 
   ("Array",         fun(i,l) -> Parser.ARRAY{i=i;l=l;v=()}); 
   ("Map",           fun(i,l) -> Parser.MAP{i=i;l=l;v=()}); 
@@ -73,6 +72,7 @@ let reserved_strings = [
   (* Operators *)
   ("=",             fun(i,l) -> Parser.EQ{i=i;l=l;v=()});
   ("~=",            fun(i,l) -> Parser.APXEQ{i=i;l=l;v=()});
+  ("<-",            fun(i,l) -> Parser.LEFTARROW{i=i;l=l;v=()}); 
   ("mod",           fun(i,l) -> Parser.MOD{i=i;l=l;v=()}); 
   ("+",             fun(i,l) -> Parser.ADD{i=i;l=l;v=()});
   ("-",             fun(i,l) -> Parser.SUB{i=i;l=l;v=()});
@@ -280,7 +280,7 @@ let unsigned_number = unsigned_integer ('.' (unsigned_integer)?)?
 let nondigit = ('_' | us_letter)
 let q_char = [^ '\\' '\'']
 let ident = (nondigit (digit | nondigit)*)
-let operator = "="  | "~="  | "mod" |
+let operator = "="  | "~="  | "<-"  | "mod" |
                "+"  | "-"   | "*"   | "/"   | 
                "<"  |"<="   | ">"   | ">="  | "=="  | "!="  | 
                "+." | "-."  | "*."  | "/."  | 

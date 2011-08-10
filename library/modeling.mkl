@@ -33,8 +33,8 @@ let (=) : <Real -> Real -> Eqs> = Eq
 let (;) : <Eqs -> Eqs -> Eqs> = EquationSysNode
 let NoEq : Equations
 
-let Init : <Real -> Real -> Eqs>
-let InitGuess : <Real -> Real -> Eqs>
+let init : <Real -> Real -> Eqs>
+let (<-) : <Real -> Real -> Eqs> = init
 
 let time : <Real>
 let probe : <String -> Real> 

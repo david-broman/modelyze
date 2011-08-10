@@ -58,7 +58,7 @@ let elaborateConnections isBranch:(<> -> Bool) ->
   let sumexpr branches:BranchSet -> ExprMap = 
     let worker branches:BranchList -> emap:ExprMap -> ExprMap =
       match branches with
-      | (b i v p n)::bs when isBranch b ->  
+      | (b i v p n)::bs if isBranch b ->  
           let emap1 = if Map.mem p emap 
                       then Map.add p ((Map.find p emap) + i) emap
                       else Map.add p i emap in
@@ -66,7 +66,7 @@ let elaborateConnections isBranch:(<> -> Bool) ->
                       then Map.add n ((Map.find n emap1) - i) emap1
                       else Map.add n (-i) emap1 in
           worker bs emap2
-      | (b i v p)::bs when isRefBranch b -> 
+      | (b i v p)::bs if isRefBranch b -> 
           let emap1 = if Map.mem p emap 
                       then Map.add p ((Map.find p emap) + i) emap
                       else Map.add p i emap in
@@ -87,12 +87,12 @@ let elaborateConnections isBranch:(<> -> Bool) ->
     let worker m:Equations -> nodemap:NodeMap -> 
                 branchset:BranchSet -> (<>,NodeMap,BranchSet) =
       match m with
-      | b i v p n when isBranch b ->
+      | b i v p n if isBranch b ->
         let nodemap2 = addNode n (addNode p nodemap) in
         let eq = (v = (Map.find p nodemap2) - 
                  (Map.find n nodemap2)) in
         (eq,nodemap2,Set.add m branchset)
-      | b i v p when isRefBranch b ->
+      | b i v p if isRefBranch b ->
         let nodemap2 = addNode p nodemap in
         let eq = (v = (Map.find p nodemap2)) in
         (eq,nodemap2,Set.add m branchset)
@@ -131,7 +131,7 @@ let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | ~Init x (val v:Real) -> Map.add x (v,false) acc
+    | ~init x (val v:Real) -> Map.add x (v,false) acc
     | _ -> acc
   in get eqs (Map.empty)
  

@@ -19,11 +19,23 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 include Modeling
 
 type PState
-type State = <PState>  
+type State = <PState>
 
-let statechart : <PState -> Eqs -> Eqs>
+type PInitState  
+type InitStateKeyword = <PInitState>
+let initstate:InitStateKeyword 
+
+type PAction
+type ActionKeyword = <PAction>
+let action:ActionKeyword
+
+type PWhen
+type WhenKeyword = <PWhen>
+let when:WhenKeyword
+
+let statechart : <PInitState -> PState -> Eqs -> Eqs>
 let state : <PState -> Eqs -> Eqs>
-let transition : <PState -> Bool -> Eqs -> Eqs>
+let transition : <PState -> PWhen -> Bool -> PAction -> Eqs -> Eqs>
 
 let nothing : Equations
 let topstate:State 

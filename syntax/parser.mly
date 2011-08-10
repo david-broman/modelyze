@@ -89,7 +89,6 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> ERROR
 %token <unit Ast.tokendata> MATCH
 %token <unit Ast.tokendata> FROM
-%token <unit Ast.tokendata> WHEN
 %token <unit Ast.tokendata> TYPE
 %token <unit Ast.tokendata> ARRAY
 %token <unit Ast.tokendata> MAP
@@ -103,6 +102,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 /* Operators */
 %token <unit Ast.tokendata> EQ            /* "="  */
 %token <unit Ast.tokendata> APXEQ         /* "~=" */
+%token <unit Ast.tokendata> LEFTARROW     /* "<-"  */
 %token <unit Ast.tokendata> MOD           /* "mod"*/
 %token <unit Ast.tokendata> ADD           /* "+"  */
 %token <unit Ast.tokendata> SUB           /* "-"  */
@@ -164,7 +164,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %left OR
 %left AND 
 %nonassoc NOT
-%left EQ APXEQ PLUSPLUS
+%left EQ APXEQ LEFTARROW PLUSPLUS
 %left LESS LESSEQUAL GREAT GREATEQUAL EQUAL POLYEQUAL EQUAL NOTEQUAL
 %left DOTLESS DOTLESSEQUAL DOTGREAT DOTGREATEQUAL DOTEQUAL DOTNOTEQUAL
 %left ADD SUB DOTADD DOTSUB
@@ -377,7 +377,7 @@ matchcases:
 
 op_guard:
       { None }
-  | WHEN term
+  | IF term
       { Some $2 }
 
 pattern:
@@ -561,6 +561,8 @@ op:
       { mk_binop (mktminfo $1 $3) $2.l "(=)" $1 $3 }
   | op APXEQ op
       { mk_binop (mktminfo $1 $3) $2.l "(~=)" $1 $3 }
+  | op LEFTARROW op
+      { mk_binop (mktminfo $1 $3) $2.l "(<-)" $1 $3 }
   | op MOD op
       { mk_binop (mktminfo $1 $3) $2.l "(mod)" $1 $3 }
   | op ADD op

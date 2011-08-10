@@ -64,13 +64,15 @@ REVISIONS
 
 Version 1.0.1
   - Changed syntax for patterns 'var to ~var. 
-  - Added new syntax for deriviatives, e.g., der(x) can be written x' and
+  - Added new syntax for derivatives, e.g., der(x) can be written x' and
     der(der(y)) can be written y''
   - Fixed problem with init conditions. The function InitValues in
     elaboration.mkl must match pattern ~Init and not just Init.
   - Changed the syntax for polymorphic equality from == to <==>. Added 
     operators == and ==. meaning real and integer equality test respectively.
     The rationale is that == can now be used as part of a model.
+  - Added two new keywords "begin" and "end", which have the same 
+    functionality as parentheses.
 
 Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.

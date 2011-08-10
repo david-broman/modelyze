@@ -44,6 +44,7 @@ type VarSet = Set Expr
 type VarList = [Expr]
 
 //Algorithm AUGMENTPATH according to page 217 by Pantelides (1988)
+// What is the variable set A?
 let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet -> 
     assign:AssignMap -> A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
   let assignPath jlist:VarList -> (PathFound,AssignMap) = 
@@ -57,7 +58,7 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
   in
   let everyJ vlist:VarList -> colE:ColorESet -> colV:ColorVSet -> assign:AssignMap ->
      A:VarSet -> (PathFound,ColorESet,ColorVSet,AssignMap) =
-    match vlist with (Step (3)
+    match vlist with //(Step (3)
     | j::js when (Set.mem j colV) || !(Set.mem j A) -> everyJ js colE colV assign A
     | j::js -> 
       let colV2 = Set.add j colV in

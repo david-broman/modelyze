@@ -64,8 +64,10 @@ let reserved_strings = [
   ("Map",           fun(i,l) -> Parser.MAP{i=i;l=l;v=()}); 
   ("List",          fun(i,l) -> Parser.LIST{i=i;l=l;v=()}); 
   ("Set",           fun(i,l) -> Parser.SET{i=i;l=l;v=()}); 
-  ("DAESolver",      fun(i,l) -> Parser.DAESOLVER{i=i;l=l;v=()}); 
+  ("DAESolver",     fun(i,l) -> Parser.DAESOLVER{i=i;l=l;v=()}); 
   ("include",       fun(i,l) -> Parser.INCLUDE{i=i;l=l;v=()}); 
+  ("begin",         fun(i,l) -> Parser.BEGIN{i=i;l=l;v=()}); 
+  ("end",           fun(i,l) -> Parser.END{i=i;l=l;v=()}); 
 
 
   (* Operators *)

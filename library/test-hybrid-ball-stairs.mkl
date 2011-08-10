@@ -42,8 +42,8 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
   Init ground (-3.0);
   ground' = 0.;
 
-  statechart Pendulum (
-    state Pendulum (
+  statechart Pendulum begin
+    state Pendulum begin
       let T:Force in
 
       transition BouncingBall (time > 2.) nothing; 
@@ -54,9 +54,9 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
       -T*x/l = m*x'';
       -T*y/l - m*g = m*y'';     
       (x^2. + y^2.)'' = (l^2.)''
-    );
+    end;
 
-    state BouncingBall (    
+    state BouncingBall begin    
       let timer:Signal in
 
       timer' = 1.;
@@ -69,12 +69,13 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
 
       x'' = 0.;
       -m*g = m*y''
-    )
+    end
 
-  );
+  end;
 
   probe "ground" = ground;
   probe "y" = y
+//https://git.bettercodes.org/node-based-semantics-1168829622
 
 let main = 
   let angle = 45.*3.14/180. in

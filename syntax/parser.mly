@@ -97,6 +97,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> SET
 %token <unit Ast.tokendata> DAESOLVER
 %token <unit Ast.tokendata> INCLUDE
+%token <unit Ast.tokendata> BEGIN
+%token <unit Ast.tokendata> END
 
 /* Operators */
 %token <unit Ast.tokendata> EQ            /* "="  */
@@ -692,6 +694,8 @@ atom:
 	  | ts ->  TmTuple(fi,$1.l,List.rev ts) } 
   | ESCAPE atom
       { TmEscape(mkinfo $1.i (tm_info $2),$2) }
+  | BEGIN term END
+      { $2 }
 
 
 revtmseq: 

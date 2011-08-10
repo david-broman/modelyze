@@ -27,6 +27,7 @@ include HybridSimulation
 include ExportModelica
 include HybridModeling
 
+// Work in progress. Still not working correct.
 let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
   let g = 9.81 in
   let x:Position in
@@ -35,31 +36,31 @@ let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
   let Pendulum:State in
   let BouncingBall:State in
 
-  statechart Pendulum (
-    state Pendulum (
+  statechart init Pendulum begin
+    state Pendulum begin
       let T:Force in
 
 //     transition BouncingBall (T > 70.) nothing;    // Tension 70 does not work
 //    transition BouncingBall (time > 0.5) nothing;  // Seems to be same problem with time > 0.5
-      transition BouncingBall (time > 2.) nothing;
+      transition BouncingBall (time > 2.) action nothing;
 
-      Init x (l*sin startAngle);
-      Init y (-l*cos startAngle);
+      init (x = l*sin startAngle);
+      init (y = -l*cos startAngle);
      
       -T*x/l = m*x'';
       -T*y/l - m*g = m*y'';     
       (x^2. + y^2.)'' = (l^2.)''
-    );
+    end;
 
-    state BouncingBall (    
-      transition BouncingBall (y <= -4.)
-        (Init (y') (y' * -0.7));
+    state BouncingBall begin    
+      transition BouncingBall (y <= -4.) 
+        (init (y' =  y' * -0.7));
 
       x'' = 0.;
       -m*g = m*y''
-    )
+    end
 
-  );
+  end;
 
   probe "y" = y
 

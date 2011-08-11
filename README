@@ -77,6 +77,8 @@ Version 1.0.1
     init operator "<-" can be used instead of "init".
   - Renamed the "when" guard on patterns to use keyword "if". In this
     way, "when" can be used in the DSLs.
+  - It is now possible to plot a probe that does not exist during the
+    whole simulation, e.g., a probe that exists in a specific state.
 
 Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.

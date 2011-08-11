@@ -24,11 +24,13 @@ generated in the first place.
 
 Known issues and todos in the MKL libraries
 ---------------------------------
+2011-08-11: Bug in the type checker. Assertion. The problem appears when
+exeuting "mkl indexreduction.mkl".
 
 2011-08-05: There is an error in the hybrid ball stairs example. The
 last stair case does not create a bounce.
 
-2011-08-05: Panetelides implementation is not working yet.
+2011-08-05: Panetelides implementation is not tested yet.
 
 2011-08-05: Dummy-derivative is not implemented yet.
 

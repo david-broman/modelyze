@@ -358,7 +358,6 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
 
-
     // Extract transitions
     let transitions = extractTransitions model3 in
 

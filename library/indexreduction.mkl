@@ -32,6 +32,9 @@ let  eqContainer:<PEqNode -> Eqs -> Eqs>
 
 type VarSet = Set Expr
 
+
+
+/*
 let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
   let travExpr exp:Expr -> accvar:VarSet -> accvarmap:VarMap -> 
                (VarSet,VarMap) =
@@ -60,7 +63,7 @@ let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
     | e -> (accgraph,accvarmap,e)
   in
     travEq eqs (Map.empty) (Map.empty)
-
+*/
 
 
 

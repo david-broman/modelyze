@@ -1,0 +1,9 @@
+
+include Base
+
+//Gives the following type error:
+//Fatal error: exception Assert_failure("semantics/typesystem.ml", 745, 31)
+let f =
+    let y = match 1 with 
+            | _ -> () in ()
+

@@ -1,0 +1,9 @@
+
+include Base
+
+//Results in value 1 but it should be value 2.
+let main = dpa (dpb (
+  let x = 1 in
+  let f x:Int -> Int =  x
+  in
+    f 2 ))

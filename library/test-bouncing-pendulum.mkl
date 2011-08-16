@@ -47,12 +47,8 @@ let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
       -T*y/l - m*g = m*y'';     
       (x^2. + y^2.)'' = (l^2.)'';
     
-      probe "T" = T;
-
-      transition BouncingBall when (time > 2.) 
+      transition BouncingBall when (time >= 2.) 
         action nothing
-//     transition BouncingBall (T > 70.) nothing;    // Tension 70 does not work
-//    transition BouncingBall (time > 0.5) nothing;  // Seems to be same problem with time > 0.5
     end;
 
     state BouncingBall begin    

@@ -22,6 +22,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Modeling
 include Pantelides
+include Differentiation
 
 //Equation node that the augmented equation system will contain.
 //This is used for keeping track of the mapping between ENodes and
@@ -32,9 +33,13 @@ let  eqContainer:<PEqNode -> Eqs -> Eqs>
 
 type VarSet = Set Expr
 
+//Functions for generating fresh equation and variable nodes
+let makeVNode x:() -> VNode = let n:Signal in n 
+let makeENode x:() -> ENode = let n:EqNode in n
 
-
-/*
+// Generates an equation grapjh from an equation system. This
+// function can be used together with pantelides algrithm, 
+// implemented in pantelides.mkl
 let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
   let travExpr exp:Expr -> accvar:VarSet -> accvarmap:VarMap -> 
                (VarSet,VarMap) =
@@ -48,7 +53,7 @@ let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
     | _ -> (accvar,accvarmap) 
   in
   let travEq eq:Equations -> accgraph:EqsGraph -> accvarmap:VarMap -> 
-             (EqsGraph,VarMap,Equations) =
+             (EqsGraph,VarMap,<>) =
     match eq with
     | e1 = e2 -> 
         let eqnode:EqNode in
@@ -63,7 +68,42 @@ let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
     | e -> (accgraph,accvarmap,e)
   in
     travEq eqs (Map.empty) (Map.empty)
-*/
+
+
+// Do index reduction using Panatelides algorithm. The original
+// equations are replaced with the differentiated ones. This
+// approach has the inherent drifting problem. Please use
+// the dummy derivative method (function indexReducationDummyDer) 
+// for mathematically correct reduction. This function is just
+// for testing purposes. Note also that this function
+// will not terminate if the equation system is structurally singular.
+let indexReducationPantelides eqs:Equations -> olddermap:DerivMap -> 
+          (Equations,DerivMap) =
+  
+  let addDerEqs eqs:Expr -> eqmap:EqMap -> Expr =
+    let wrapder n:EqNode -> exp:Expr -> Expr =
+      if Map.mem n eqmap 
+        then der (wrapder (Map.find n eqmap) exp)
+        else exp
+    in
+      match eqs with
+      | ~eqContainer n e1 e2 -> (wrapder n e1) = (wrapder n e2)
+      | e1 e2 -> (addDerEqs e1 eqmap) (addDerEqs e2 eqmap)
+      | e -> e
+  in
+    // Generate the equation graph and augmented equation system
+    let (graph,varmap,augmentedEqs) = makeEquationGraph eqs in
+    // Execute Pantelides algorithm
+    let (_,eqmap) = pantelides graph varmap makeVNode makeENode in
+    // Wrap equations to be differentiated into der expressions
+    let eqs2 = addDerEqs augmentedEqs eqmap in
+    // Differentiate 
+    elaborateDerivatives eqs2 olddermap
+
+
+
+
+
 
 
 

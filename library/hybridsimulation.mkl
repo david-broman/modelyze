@@ -21,6 +21,7 @@ include Mechanical
 include Electrical
 include Elaboration
 include Differentiation
+include IndexReduction
 
 let isMechatronicBranch b:Node = 
   match b with
@@ -358,6 +359,9 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
 
+    // Peforme index reduction
+    //let (model3,newdmap) = indexReducationPantelides model3 newdmap in
+
     // Extract transitions
     let transitions = extractTransitions model3 in
 
@@ -387,7 +391,8 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let firststepval = makeStepVal currtime yy probelist ukmap in
   
     // **** Start of continuous-time loop *****
-    let ctloop currtime:Real -> acc:[StepVal] -> ([StepVal],Real,[Expr],StatePath) = 
+    let ctloop currtime:Real -> acc:[StepVal] -> 
+               ([StepVal],Real,[Expr],StatePath) = 
       if currtime > endtime 
         then (acc,currtime,[],updatedPath)
         else

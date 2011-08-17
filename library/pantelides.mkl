@@ -54,14 +54,16 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
         (true,Map.add j i assign)
     | [] -> (false,assign)
   in
-  let everyJ vlist:VarList -> colE:ColorESet -> colV:ColorVSet -> assign:AssignMap ->
+  let everyJ vlist:VarList -> colE:ColorESet -> 
+             colV:ColorVSet -> assign:AssignMap ->
             (PathFound,ColorESet,ColorVSet,AssignMap) =
     match vlist with //(Step (3)
     | j::js if Set.mem j colV -> everyJ js colE colV assign
     | j::js -> 
       let colV2 = Set.add j colV in
       let k = Map.find j assign in
-      let (found,colE3,colV3,assign3) = augmentPath graph k colE colV2 assign in
+      let (found,colE3,colV3,assign3) = 
+         augmentPath graph k colE colV2 assign in
       if found then
         (true,colE3,colV3,Map.add j i assign3)
       else
@@ -75,8 +77,6 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
       (true,colE2,colV,assign2)
     else
        everyJ jList colE2 colV assign2 
-
-let _ = dpa "hello"
 
 
 
@@ -102,13 +102,15 @@ let _ = dpa "hello"
 //           'emap(e1) = e2' states that equation 'e2' should
 //           be created by differentiating 'e1'. 
 let pantelides equationGraph:EqsGraph -> variableMap:VarMap -> 
-                makeVNode:(()->VNode) -> makeENode:(()->ENode) -> (VarMap,EqMap) =
+                makeVNode:(()->VNode) -> makeENode:(()->ENode) -> 
+                (VarMap,EqMap) =
   // Delete V-nodes that has a derivative (3b-1)
   let deleteVNodes list:EqsGraphList -> A:VarMap -> accEq:EqsGraph -> 
                    accV:[VNode]-> EqsGraph =
     match list with
     | (e,v::vs)::es -> 
-        deleteVNodes ((e,vs)::es) A accEq (if Map.mem v A then accV else v::accV)
+        deleteVNodes ((e,vs)::es) A accEq 
+                     (if Map.mem v A then accV else v::accV)
     | (e,[])::es -> deleteVNodes es A (Map.add e [] accEq) [] 
     | [] -> accEq
   in

@@ -320,11 +320,6 @@ let desugar_bracket_escape tm =
   in ds 0 [] [] tm
 
 
-let desugar tlst =
-    tlst |> Toplevel.desugar 
-         |> desugar_bracket_escape 
-         |> Pattern.desugar 
-
 let mk_tymodel ty =
   TyModel(ty_info ty,ty_lev ty,ty)
 

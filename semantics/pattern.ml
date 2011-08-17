@@ -94,9 +94,10 @@ and subst_var (x:int) (y:int) (tm:tm)  =
 	  if x = z then tt else TmLam(fi,l,z,ty1,subst_var x y t2)
       | TmApp(fi,l,t1,t2) -> TmApp(fi,l,subst_var x y t1, subst_var x y t2)
       | TmFix(fi,l,t) -> TmFix(fi,l,subst_var x y t)  
-      | TmLet(fi,l,z,ty,plst,t1,t2,recu) -> 
+      | TmLet(fi,l,z,ty,plst,t1,t2,recu) ->
+          let in_p = List.exists (fun (p,_) -> p = x) plst in 
 	  TmLet(fi,l,z,ty,plst,
-                (if x = z && recu then t1 else subst_var x y t1),
+                (if in_p || (x = z && recu) then t1 else subst_var x y t1),
 		(if x = z then t2 else subst_var x y t2),recu)
       | TmIf(fi,l,t1,t2,t3) -> 
 	  TmIf(fi,l,subst_var x y t1,subst_var x y t2,subst_var x y t3)
@@ -359,7 +360,7 @@ and desugar tm =
       | TmLam(fi,l,x,ty1,t2) -> TmLam(fi,l,x,ty1,ds t2)
       | TmApp(fi,l,t1,t2) -> TmApp(fi,l,ds t1,ds t2) 
       | TmFix(fi,l,t) -> TmFix(fi,l,ds t) 
-      | TmLet(fi,l,x,ty,plst,t1,t2,recu) -> 
+      | TmLet(fi,l,x,ty,plst,t1,t2,recu) ->
           TmLet(fi,l,x,ty,plst,ds t1,ds t2,recu)
       | TmIf(fi,l,t1,t2,t3) -> TmIf(fi,l,ds t1,ds t2,ds t3) 
       | TmConst(fi,l,c) -> TmConst(fi,l,c)
@@ -368,7 +369,8 @@ and desugar tm =
       | TmBracket(fi,t) -> assert false
       | TmEscape(fi,t) -> assert false
       | TmList(fi,l,tms) -> TmList(fi,l,List.map ds tms)
-      | TmMatch(fi,l,t,cases) -> desugar_match fi l t cases 
+      | TmMatch(fi,l,t,cases) -> 
+          desugar_match fi l (ds t) cases 
       | TmUk(fi,l,x,ty) -> TmUk(fi,l,x,ty) 
       | TmNu(fi,l,x,ty,t) -> TmNu(fi,l,x,ty,ds t)
       | TmModApp(fi,l,t1,t2) -> TmModApp(fi,l,ds t1,ds t2)

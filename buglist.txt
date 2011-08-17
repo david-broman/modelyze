@@ -7,26 +7,8 @@ Known issues and todos in the MKL OCaml implementation
 to have the same environment. Confusing for example when creating a
 symbol using syntax "let x:floor" because floor exists in Base.mkl
 
-2011-08-05: A local let construct overwrites varaibles that should
-be closed by another definition, e.g. function
-  let main = dpa (dpb (
-    let x = 1 in
-    let f x:Int -> Int =  x
-    in
-      f 2 ))
-results in value 1 but it should be 2. The term that is to be translated
-in eval.ml is
-  let main  = let @fresh0  = 1 in let f x:Int = @fresh0 in (f 2) in ()
-hence, it seems like the pattern generation function in pattarn.ml creates
-fresh variables in a wrong way. The first question is why a "match" was
-generated in the first place.
-
-
 Known issues and todos in the MKL libraries
 ---------------------------------
-2011-08-11: Bug in the type checker. Assertion. The problem appears when
-exeuting "error1.mkl".
-
 2011-08-05: There is an error in the hybrid ball stairs example. The
 last stair case does not create a bounce.
 
@@ -36,8 +18,6 @@ last stair case does not create a bounce.
 
 2011-08-05: Domain-specific branches is not implemented. Tested in
 another git branch, but not included in the main trunk.
-
-2011-08-05: Keywords begin and end should be added.
 
 2011-08-05: y' cannot be used in probes (test in bouncing ball example).
 

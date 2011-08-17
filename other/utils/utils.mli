@@ -78,6 +78,8 @@ val genlist : (int -> 'a) -> int -> 'a list
 
 val xor : bool -> bool -> bool
 
+val pipeprint : ('a -> Ustring.Op.ustring) -> 'a -> 'a
+
 module Int :
 sig
   type t = int

@@ -19,8 +19,6 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 exception Mkl_type_error of Message.message
 
-val desugar : Ast.top list -> Ast.tm
-
 val typeofterm :   Ast.tm -> Ast.ty 
 
 val typecheck : Ast.tm -> Ast.tm

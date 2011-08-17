@@ -20,10 +20,12 @@ let mkllex filename =
   close_in fs1
 
 
+
 let mkleval filename =   
   (try 
-    Fileincluder.read_file_chain filename 
-      |> Typesystem.desugar  
+         Fileincluder.read_file_chain filename 
+      |> Toplevel.desugar 
+      |> Pattern.desugar
       |> Typesystem.typecheck 
       |> Eval.translate 
       |> Eval.evaluate 
@@ -41,7 +43,6 @@ let mkleval filename =
 	(Ustring.to_utf8 (Message.message2str m))
   )
   
-
 
 let menu() =
     printf "Usage: mkl <file.mkl>\n"

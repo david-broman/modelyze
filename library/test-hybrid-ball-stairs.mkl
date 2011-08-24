@@ -46,8 +46,8 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
     state Pendulum begin
       let T:Force in
 
-      init x (l*sin startAngle);
-      init y (-l*cos startAngle);
+      init x (l*sin(startAngle));
+      init y (-l*cos(startAngle));
 
       -T*x/l = m*x'';
       -T*y/l - m*g = m*y'';     

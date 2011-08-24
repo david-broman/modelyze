@@ -67,7 +67,7 @@ let reserved_strings = [
   ("end",           fun(i,l) -> Parser.END{i=i;l=l;v=()}); 
 
 
-  (* Operators *)
+  (* v *)
   ("=",             fun(i,l) -> Parser.EQ{i=i;l=l;v=()});
   ("~=",            fun(i,l) -> Parser.APXEQ{i=i;l=l;v=()});
   ("<-",            fun(i,l) -> Parser.LEFTARROW{i=i;l=l;v=()}); 
@@ -233,12 +233,18 @@ let _ = List.iter (fun (str,f) -> Hashtbl.add str_tab str f)
   reserved_strings
 
 (* Make identfier, keyword, or operator  *)
-let mkid fullstr =
+let mkid fullstr withparen =
   try 
-    let f = Hashtbl.find str_tab fullstr in f (mkinfo_fast fullstr,0)    
+    let f = Hashtbl.find str_tab fullstr in 
+    let fi = mkinfo_fast fullstr in
+    let kw = f (fi,0) in
+    if withparen then [kw; Parser.LPAREN{i=fi;l=0;v=()}] else [kw]
   with Not_found ->   
     let s2 = Ustring.from_utf8 fullstr in
-      Parser.IDENT {i=mkinfo_ustring s2; l=0; v=Symtbl.add s2}
+    if withparen then
+      [Parser.IDENTPAREN {i=mkinfo_ustring s2; l=0; v=Symtbl.add s2}]
+    else
+      [Parser.IDENT {i=mkinfo_ustring s2; l=0; v=Symtbl.add s2}]
 
 (* String handling *)
 let string_buf = Buffer.create 80
@@ -282,6 +288,9 @@ let operator = "="  | "~="  | "<-"  | "mod" |
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
                 "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
                  "~"
+
+
+
 let line_comment = "//" [^ '\013' '\010']*  
 
 
@@ -295,38 +304,37 @@ rule main = parse
       { main lexbuf }
   | "/*" as s 
       { Buffer.reset string_buf ;  
-	Buffer.add_string string_buf s; section_comment lexbuf; 
-	count_utf8 (Buffer.contents string_buf);
-	main lexbuf}
+	 Buffer.add_string string_buf s; section_comment lexbuf; 
+	 count_utf8 (Buffer.contents string_buf);
+	 main lexbuf}
   | tab 
       { add_colno !tabsize; main lexbuf }
   | newline
       { newrow(); main lexbuf }
   | "(" operator ")" as s
-      { mkid s } 
+      { mkid s false } 
+  | (ident as s) "(" 
+      { mkid s true }  
   | ident | operator | symtok as s
-      { mkid s }
+      { mkid s false }
   | "@@" ident as s
-      { let fi = mkinfo_fast s in
-	Parser.PRIMITIVE{i=fi; l=0; v=str2primitive fi s} }
+      { [let fi = mkinfo_fast s in
+	 Parser.PRIMITIVE{i=fi; l=0; v=str2primitive fi s}] }
   | unsigned_integer as str
-      { Parser.UINT{i=mkinfo_fast str; l=0; v=int_of_string str} }
+      { [Parser.UINT{i=mkinfo_fast str; l=0; v=int_of_string str}] }
   | unsigned_number as str
-      { Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str} }
+      { [Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str}] }
   | '"'  
       { Buffer.reset string_buf ;  mklstring lexbuf; add_colno 1;
-	let s = Ustring.from_utf8 (Buffer.contents string_buf) in
-        let esc_s = Ustring.convert_escaped_chars s in
-	let rval = Parser.STRING{i=mkinfo_ustring s; l=0; v=esc_s} in
-	add_colno 1; rval}
-(*  | metas as s
-    {let len = String.length (Lexing.lexeme lexbuf) in
-        Parser.METAAPP {i=mkinfo_fast s; l=len; v=()}} *)
+	 let s = Ustring.from_utf8 (Buffer.contents string_buf) in
+         let esc_s = Ustring.convert_escaped_chars s in
+	 let rval = Parser.STRING{i=mkinfo_ustring s; l=0; v=esc_s} in
+	 add_colno 1; [rval]}
   | eof
-      { Parser.EOF }
+      { [Parser.EOF] }
   | utf8 as c
-      { let s = Ustring.from_utf8 c in
-	raise (Mkl_lex_error (LEX_UNKNOWN_CHAR,ERROR,mkinfo_utf8_fast c,[s])) }
+      { [let s = Ustring.from_utf8 c in
+	 raise (Mkl_lex_error (LEX_UNKNOWN_CHAR,ERROR,mkinfo_utf8_fast c,[s]))]}
 
 and mklstring = parse
   | '"'

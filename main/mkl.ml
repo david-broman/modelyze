@@ -6,20 +6,6 @@ open Printf
 open Message
 
 
-let mkllex filename = 
-  let fs1 = open_in filename in
-  try 
-    let lexbuf = Ustring.lexing_from_channel fs1 in
-    Lexer.init (us filename) 8;
-    let tokens = Parser.tokens Lexer.main lexbuf in
-    let tokensstr = Ustring.concat (us"\n") tokens in 
-    uprint_endline tokensstr  
-  with
-    | Message.Mkl_lex_error m -> fprintf stderr "%s\n" 
-	(Ustring.to_utf8 (Message.message2str m));
-  close_in fs1
-
-
 
 let mkleval filename =   
   (try 

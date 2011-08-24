@@ -79,6 +79,15 @@ Version 1.0.1
     way, "when" can be used in the DSLs.
   - It is now possible to plot a probe that does not exist during the
     whole simulation, e.g., a probe that exists in a specific state.
+  - A function can be called either by using space between paranthesis, e.g.
+      foo p1 p2
+    or to use paranthesis and a comma separated list (as in C or Java)
+      foo(p1,p2)
+    For the latter, it is important that it there are no white space
+    between foo and the left paranhesis. In this case, this is
+    translated into a curried call. If foo was supposed to take a tuple
+    as argument, it can be called as follows (note the space)
+      foo (p1,p2)
 
 Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.

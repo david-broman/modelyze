@@ -24,11 +24,21 @@ open Message
 module IdSet = Set.Make(Int)
 module IdMap = Map.Make(Int)
 
+
+let lexercache =
+  let cache = ref [] in
+  fun lexbuffer -> 
+    (match !cache with
+     | x::xs -> cache := xs; x
+     | [] -> (match Lexer.main lexbuffer with
+                | [] -> failwith "Should not happen"
+                | x::xs -> cache := xs; x))
+
 let parse_file fi fname  =
   try
     let fs1 = open_in fname in
     Lexer.init (us fname) 8;
-    let tlst = Parser.main Lexer.main <| Ustring.lexing_from_channel fs1 in
+    let tlst = Parser.main lexercache <| Ustring.lexing_from_channel fs1 in
     close_in fs1; 
     tlst
   with Sys_error _ -> raise (Mkl_static_error(STATIC_ERROR_OPEN_FILE,

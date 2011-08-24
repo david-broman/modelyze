@@ -53,6 +53,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <int Ast.tokendata> UINT
 %token <float Ast.tokendata> UFLOAT
 %token <int Ast.tokendata> IDENT
+%token <int Ast.tokendata> IDENTPAREN
 %token <Ast.primitive Ast.tokendata> PRIMITIVE
 %token <Ustring.ustring Ast.tokendata> STRING
 %token <unit Ast.tokendata> METAAPP
@@ -152,9 +153,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
 
-%start main tokens
+%start main 
 %type <Ast.top list> main
-%type <Ustring.ustring list> tokens
 
 
 %nonassoc WITH
@@ -634,6 +634,18 @@ op:
 app_left:
   | atom
       { $1 }
+  | IDENTPAREN RPAREN 
+      { let t1 = TmVar($1.i,$1.v) in 
+        let t2 = TmConst($2.i,0,ConstUnit) in
+        TmApp(mkinfo $1.i $2.i,0,t1,t2) }
+  | IDENTPAREN revtmseq RPAREN
+      { let tm_ident = TmVar($1.i,$1.v) in
+        let fi = mkinfo $1.i $3.i in
+        let rec mkapps lst =
+          match lst with
+          | t::ts -> TmApp(fi,0,mkapps ts,t)
+          | [] -> tm_ident
+        in mkapps $2 }
   | app_left app_right
       { let (l,t) = $2 in
         TmApp(mktminfo $1 t,l,$1,t) }
@@ -716,77 +728,4 @@ revtmseq:
 
 
 
-
-/* ----------- Parsing of tokens - for lexical testing --------- */ 
-
-tokens:
-  | toks EOF
-      { List.rev $1 }
-
-toks: 
-  | tok 
-      { [$1] }
-  | toks tok
-      { $2::$1 } 
-
-tok:
-  | UINT { us"uint: " ^. metastr $1.l ^. ustring_of_int $1.v }
-  | UFLOAT { us"ufloat: " ^. metastr $1.l ^. ustring_of_float $1.v }
-  | IDENT { us"identifier: " ^. Symtbl.get $1.v ^. 
-		us" (" ^. ustring_of_int $1.v ^. us")" }
-  | STRING { us"string: \"" ^. $1.v ^. us"\"" }
-  | METAAPP { us"metaapp: " ^. metastr $1.l }
-  | FUN { us"keyword: " ^. metastr $1.l ^. us"fun" }
-  | LET { us"keyword: " ^. metastr $1.l ^. us"let" }
-  | IN { us"keyword: " ^. metastr $1.l ^. us"in" }
-  | IF { us"keyword: " ^. metastr $1.l ^. us"if" }
-  | THEN { us"keyword: " ^. metastr $1.l ^. us"then" }
-  | ELSE { us"keyword: " ^. metastr $1.l ^. us"else" }
-  | MOD { us"keyword: " ^. metastr $1.l ^. us"mod" }
-  | TRUE { us"keyword: " ^. metastr $1.l ^. us"true" }
-  | FALSE { us"keyword: " ^. metastr $1.l ^. us"false" }
-  | EQ { us"symtoken: \"" ^. metastr $1.l ^. us"=\"" }
-  | LPAREN { us"symtoken: \"" ^. metastr $1.l ^. us"(\"" }
-  | RPAREN { us"symtoken: \"" ^. metastr $1.l ^. us")\"" }
-  | LSQUARE { us"symtoken: \"" ^. metastr $1.l ^. us"[\"" }
-  | RSQUARE { us"symtoken: \"" ^. metastr $1.l ^. us"]\"" }
-  | LCURLY { us"symtoken: \"" ^. metastr $1.l ^. us"{\"" }
-  | RCURLY { us"symtoken: \"" ^. metastr $1.l ^. us"}\"" }
-  | COLON { us"symtoken: \"" ^. metastr $1.l ^. us":\"" }
-  | COMMA { us"symtoken: \"" ^. metastr $1.l ^. us",\"" }
-  | DOT { us"symtoken: \"" ^. metastr $1.l ^. us".\"" }
-  | ADD { us"symtoken: \"" ^. metastr $1.l ^. us"+\"" }
-  | SUB { us"symtoken: \"" ^. metastr $1.l ^. us"-\"" }
-  | MUL { us"symtoken: \"" ^. metastr $1.l ^. us"*\"" }
-  | DIV { us"symtoken: \"" ^. metastr $1.l ^. us"/\"" }
-  | LESS { us"symtoken: \"" ^. metastr $1.l ^. us"<\"" }
-  | LESSEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"<=\"" }
-  | GREAT { us"symtoken: \"" ^. metastr $1.l ^. us">\"" }
-  | GREATEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us">=\"" }
-  | POLYEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==\"" }
-  | EQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==\"" } 
-  | NOTEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"!=\"" } 
-  | DOTADD { us"symtoken: \"" ^. metastr $1.l ^. us"+.\"" }
-  | DOTSUB { us"symtoken: \"" ^. metastr $1.l ^. us"-.\"" }
-  | DOTMUL { us"symtoken: \"" ^. metastr $1.l ^. us"*.\"" }
-  | DOTDIV { us"symtoken: \"" ^. metastr $1.l ^. us"/.\"" }
-  | DOTLESS { us"symtoken: \"" ^. metastr $1.l ^. us"<.\"" }
-  | DOTLESSEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"<=.\"" }
-  | DOTGREAT { us"symtoken: \"" ^. metastr $1.l ^. us">.\"" }
-  | DOTGREATEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us">=.\"" }
-  | DOTEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"==.\"" } 
-  | DOTNOTEQUAL { us"symtoken: \"" ^. metastr $1.l ^. us"!=.\"" } 
-  | NOT { us"symtoken: \"" ^. metastr $1.l ^. us"!\"" } 
-  | AND { us"symtoken: \"" ^. metastr $1.l ^. us"&&\"" } 
-  | OR { us"symtoken: \"" ^. metastr $1.l ^. us"||\"" } 
-  | ARROW { us"symtoken: \"" ^. metastr $1.l ^. us"->\"" } 
-
-
-
-
-
-
-
-
-      
 

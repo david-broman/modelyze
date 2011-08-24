@@ -35,8 +35,6 @@ let reserved_strings = [
   ("else",          fun(i,l) -> Parser.ELSE{i=i;l=l;v=()}); 
   ("true",          fun(i,l) -> Parser.TRUE{i=i;l=l;v=()}); 
   ("false",         fun(i,l) -> Parser.FALSE{i=i;l=l;v=()}); 
-  ("up",            fun(i,l) -> Parser.UP{i=i;l=l;v=()}); 
-  ("down",          fun(i,l) -> Parser.DOWN{i=i;l=l;v=()}); 
   ("Int",           fun(i,l) -> Parser.INT{i=i;l=l;v=()}); 
   ("Real",          fun(i,l) -> Parser.REAL{i=i;l=l;v=()}); 
   ("Bool",          fun(i,l) -> Parser.BOOL{i=i;l=l;v=()}); 
@@ -234,20 +232,13 @@ let (str_tab : (string,buildfun) Hashtbl.t) =
 let _ = List.iter (fun (str,f) -> Hashtbl.add str_tab str f) 
   reserved_strings
 
-(* Count number of '#' and return remaining string *)
-let rec metacount s k =
-  if String.length s == 0 then (s,k) else (
-    if s.[0] == '#' then metacount (String.sub s 1 ((String.length s)-1)) (k+1) 
-       else (s,k)) 
-
 (* Make identfier, keyword, or operator  *)
 let mkid fullstr =
-  let (s,l) = metacount fullstr 0 in
   try 
-    let f = Hashtbl.find str_tab s in f (mkinfo_fast fullstr,l)    
+    let f = Hashtbl.find str_tab fullstr in f (mkinfo_fast fullstr,0)    
   with Not_found ->   
-    let s2 = Ustring.from_utf8 s in
-      Parser.IDENT {i=mkinfo_ustring s2; l=l; v=Symtbl.add s2}
+    let s2 = Ustring.from_utf8 fullstr in
+      Parser.IDENT {i=mkinfo_ustring s2; l=0; v=Symtbl.add s2}
 
 (* String handling *)
 let string_buf = Buffer.create 80
@@ -291,7 +282,6 @@ let operator = "="  | "~="  | "<-"  | "mod" |
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
                 "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
                  "~"
-let metas = ['#']*
 let line_comment = "//" [^ '\013' '\010']*  
 
 
@@ -312,29 +302,26 @@ rule main = parse
       { add_colno !tabsize; main lexbuf }
   | newline
       { newrow(); main lexbuf }
-  | metas "(" operator ")" as s
-      { mkid s }
-  | metas ident | metas operator | metas symtok as s
+  | "(" operator ")" as s
+      { mkid s } 
+  | ident | operator | symtok as s
       { mkid s }
   | "@@" ident as s
       { let fi = mkinfo_fast s in
 	Parser.PRIMITIVE{i=fi; l=0; v=str2primitive fi s} }
-  | metas unsigned_integer as str
-      { let (s,l) = metacount str 0 in
-        Parser.UINT{i=mkinfo_fast str; l=l; v=int_of_string s} }
-  | metas unsigned_number as str
-      { let (s,l) = metacount str 0 in
-        Parser.UFLOAT{i=mkinfo_fast str; l=l; v=float_of_string s} }
-  | metas '"' as str 
-      { let (s,l) = metacount str 0 in
-	Buffer.reset string_buf ;  mklstring lexbuf; add_colno 1;
+  | unsigned_integer as str
+      { Parser.UINT{i=mkinfo_fast str; l=0; v=int_of_string str} }
+  | unsigned_number as str
+      { Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str} }
+  | '"'  
+      { Buffer.reset string_buf ;  mklstring lexbuf; add_colno 1;
 	let s = Ustring.from_utf8 (Buffer.contents string_buf) in
         let esc_s = Ustring.convert_escaped_chars s in
-	let rval = Parser.STRING{i=mkinfo_ustring s; l=l; v=esc_s} in
+	let rval = Parser.STRING{i=mkinfo_ustring s; l=0; v=esc_s} in
 	add_colno 1; rval}
-  | metas as s
+(*  | metas as s
     {let len = String.length (Lexing.lexeme lexbuf) in
-        Parser.METAAPP {i=mkinfo_fast s; l=len; v=()}}
+        Parser.METAAPP {i=mkinfo_fast s; l=len; v=()}} *)
   | eof
       { Parser.EOF }
   | utf8 as c

@@ -63,6 +63,10 @@ REVISIONS
 ---------
 
 Version 1.0.1
+  - Added coercion semantics for int to reals, meaning that you can
+    write 1.0 or 1 and that the type checker will insert conversions
+    if necessary. Hence, we do not need to write 1. or 0. when using
+    real constants.
   - Changed syntax for patterns 'var to ~var. 
   - Added new syntax for derivatives, e.g., der(x) can be written x' and
     der(der(y)) can be written y''

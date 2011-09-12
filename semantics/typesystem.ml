@@ -383,6 +383,9 @@ let check_arg_type_consistency fi ty' ty_elem =
 	       [pprint_ty ty'; pprint_ty ty_elem]))
 
 
+let int2real_coercion t = 
+  TmApp(NoInfo,0,TmConst(NoInfo,0,ConstPrim(PrimInt2Real,[])),t)
+
 
 let rec typeof_array_op fi l op ts env ukenv =
   match op,ts with
@@ -605,16 +608,21 @@ and typeof env ukenv t =
         let typeof_app fi ty1 t1' ty2 t2' = 
           begin match ty1 with 
 	    | TyArrow(_,l,ty11,ty12) -> 
-		if ty_consistent ty11 ty2 
-		then (ty12,TmApp(fi,l,t1',t2'))
-		else 
-		  (match ty2 with 
-		     | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
-                        (mk_tymodel ty12,TmModApp(fi,l,TmVal(fi,l,t1',ty1),t2'))
-		     | TyAnyModel(_,l3) -> 
-                        (mk_tymodel ty12,TmModApp(fi,l,TmVal(fi,l,t1',ty1),t2'))
-		     | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
-		           tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
+                (* Coercion of int to real *)
+                if ty_consistent ty11 (TyReal(NoInfo,0)) &&
+                   ty_consistent ty2 (TyInt(NoInfo,0)) 
+                then  (ty12,TmApp(fi,l,t1',int2real_coercion t2'))
+                else
+  		  if ty_consistent ty11 ty2 
+		  then (ty12,TmApp(fi,l,t1',t2'))
+		  else 
+		    (match ty2 with 
+		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
+                          (mk_tymodel ty12,TmModApp(fi,l,TmVal(fi,l,t1',ty1),t2'))
+		       | TyAnyModel(_,l3) -> 
+                          (mk_tymodel ty12,TmModApp(fi,l,TmVal(fi,l,t1',ty1),t2'))
+		       | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
+		             tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
 	    | TyModel(_,l,TyArrow(_,l3,ty11,ty12)) ->
                 if ty_ismodel ty2 then
                   let ty11b = TyModel(ty_info ty11,ty_lev ty11,ty11) in
@@ -623,10 +631,17 @@ and typeof env ukenv t =
 		  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11b; pprint_ty ty2;us"3"]))
 		else
-		  if ty_consistent ty11 ty2 then 
-                    (mk_tymodel ty12,
-                     TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,t2',ty2))) 
-		  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
+                  (* Coercion of int to real *)
+                  if ty_consistent ty11 (TyReal(NoInfo,0)) &&
+                     ty_consistent ty2 (TyInt(NoInfo,0)) 
+                  then (mk_tymodel ty12,
+                       TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,
+                                        int2real_coercion t2',TyReal(NoInfo,0))))
+                  else
+		    if ty_consistent ty11 ty2 then 
+                      (mk_tymodel ty12,
+                       TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,t2',ty2))) 
+		    else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"4"]))
 	    | TyAnyModel(fi,l)  ->
 		if ty_consistent ty1 ty2 then

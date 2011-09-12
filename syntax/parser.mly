@@ -61,6 +61,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 /* Keywords */
 %token <unit Ast.tokendata> FUN
 %token <unit Ast.tokendata> LET
+%token <unit Ast.tokendata> DEF
 %token <unit Ast.tokendata> IN
 %token <unit Ast.tokendata> IF
 %token <unit Ast.tokendata> THEN
@@ -353,7 +354,14 @@ term:
                 else mkinfo $1.i (tm_info (List.hd $4)) in
        let op = mk_daesolverop $3.i $3.v in
        TmDAESolverOp(fi,$1.l,op,List.rev $4) } 
-       
+  | LCURLY scope RCURLY 
+      { $2 }
+
+scope:
+  | DEF 
+      { TmNil($1.i,$1.l,TyBot($1.i,$1.l)) } 
+
+
 op_atom_list_rev:
      { [] }
   | atom_list_rev
@@ -541,6 +549,7 @@ paramlist:
   | paramlist ARROW tyatom
       { let (lst,_) = $1 in
         (lst,Some $3) }
+
 
 param: 
   |  IDENT COLON tyatom

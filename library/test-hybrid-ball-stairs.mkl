@@ -30,7 +30,7 @@ include ExportModelica
 include HybridModeling
 
 
-let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real -> Equations =
+let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real =
   let g = 9.81 in
   let x:Position in
   let y:Position in

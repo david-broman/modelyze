@@ -29,6 +29,7 @@ let reserved_strings = [
   (* Keywords *)
   ("fun",           fun(i,l) -> Parser.FUN{i=i;l=l;v=()}); 
   ("let",           fun(i,l) -> Parser.LET{i=i;l=l;v=()}); 
+  ("def",           fun(i,l) -> Parser.DEF{i=i;l=l;v=()}); 
   ("in",            fun(i,l) -> Parser.IN{i=i;l=l;v=()}); 
   ("if",            fun(i,l) -> Parser.IF{i=i;l=l;v=()}); 
   ("then",          fun(i,l) -> Parser.THEN{i=i;l=l;v=()}); 

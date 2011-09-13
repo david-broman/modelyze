@@ -155,6 +155,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> USCORE        /* "_"  */
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
+%token <unit Ast.tokendata> PARENAPP      /* ")("  */
 
 %start main 
 %type <Ast.top list> main
@@ -704,6 +705,16 @@ app_left:
           | t::ts -> TmApp(fi,0,mkapps ts,t)
           | [] -> tm_ident
         in mkapps $2 }
+  | LPAREN app_left PARENAPP RPAREN 
+      { let t2 = TmConst($4.i,0,ConstUnit) in
+        TmApp(mkinfo $1.i $4.i,0,$2,t2) }
+  | LPAREN app_left PARENAPP revtmseq RPAREN
+      { let fi = mkinfo $1.i $5.i in
+        let rec mkapps lst =
+          match lst with
+          | t::ts -> TmApp(fi,0,mkapps ts,t)
+          | [] -> $2
+        in mkapps $4 }
   | app_left app_right
       { let (l,t) = $2 in
         TmApp(mktminfo $1 t,l,$1,t) }

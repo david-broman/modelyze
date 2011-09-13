@@ -120,6 +120,7 @@ let reserved_strings = [
   ("_",             fun(i,l) -> Parser.USCORE{i=i;l=l;v=()});
   ("~",             fun(i,l) -> Parser.ESCAPE{i=i;l=l;v=()}); 
   ("'",             fun(i,l) -> Parser.SQUOTE{i=i;l=l;v=()}); 
+  (")(",            fun(i,l) -> Parser.PARENAPP{i=i;l=l;v=()}); 
 ]
 
 let str2primitive fi s =
@@ -288,7 +289,7 @@ let operator = "="  | "~="  | "<-"  | "mod" |
 
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
                 "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
-                 "~"
+                 "~" | ")("
 
 
 

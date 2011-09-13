@@ -34,6 +34,8 @@ let foo4 x:() -> Int = 2
 def _ = dpa(foo4())
 def _ = dpa(foo4 ())
 
+def u1,u2:<Real>
+def u3:<Real>
 
 def ff() = dpa "Hej" 
 

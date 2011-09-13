@@ -163,7 +163,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 %nonassoc WITH
 %nonassoc BAR
-%nonassoc LETUK
+%nonassoc LETUK 
 %left SEMI
 %left OR
 %left AND 
@@ -214,6 +214,10 @@ top:
   | DEF letpat COLON ty top %prec LETUK
       { let fi = mkinfo $1.i (ty_info $4) in
         TopNu(fi,$2,$4)::$5 }
+  | DEF IDENT COMMA revidentseq COLON ty top %prec LETUK
+      { let fi = mkinfo $1.i (ty_info $6) in
+        let nulst = List.map (fun x -> TopNu(fi,x,$6)) (List.rev $4) in
+        TopNu(fi,$2.v,$6)::(List.append nulst $7) }  
   | TYPE IDENT top
       { let fi = mkinfo $1.i $2.i in
         TopNewType(fi,$2.v)::$3 }
@@ -225,6 +229,8 @@ top:
         let modname = $2.v |> Symtbl.get |> Ustring.to_latin1 
                       |> String.lowercase |> us in                             
         TopInclude(fi,Symtbl.add (modname ^. us".mkl"))::$3 }
+
+
 
 identparen:
   | IDENT LPAREN
@@ -346,8 +352,12 @@ term:
       { let fi = mkinfo $1.i (tm_info $8) in
         TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
   | DEF letpat COLON ty IN term
-      { let fi = mkinfo $1.i (tm_info $6) in
-        TmNu(fi,$1.l,$2,$4,$6) } 
+      { let fi = mkinfo $1.i (ty_info $4) in
+        TmNu(fi,$1.l,$2,$4,$6) }
+  | DEF IDENT COMMA revidentseq COLON ty IN term   /* A bug here */
+      { let fi = mkinfo $1.i (ty_info $6) in
+        List.fold_left (fun a x -> TmNu(fi,$1.l,x,$6,a)) $8 
+                       ($2.v::(List.rev $4)) }
   | IF term THEN term ELSE term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmIf(fi,$1.l,$2,$4,$6) }
@@ -778,6 +788,13 @@ atom:
       { TmEscape(mkinfo $1.i (tm_info $2),$2) }
   | BEGIN term END
       { $2 }
+
+
+revidentseq:
+    |   IDENT
+        {[$1.v]}
+    |   revidentseq COMMA IDENT
+        {($3.v)::$1} 
 
 
 revtmseq: 

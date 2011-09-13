@@ -239,7 +239,7 @@ let mkid fullstr withparen =
     let f = Hashtbl.find str_tab fullstr in 
     let fi = mkinfo_fast fullstr in
     let kw = f (fi,0) in
-    if withparen then [kw; Parser.LPAREN{i=fi;l=0;v=()}] else [kw]
+    if withparen then [kw;Parser.LPAREN{i=fi;l=0;v=()}] else [kw]
   with Not_found ->   
     let s2 = Ustring.from_utf8 fullstr in
     if withparen then

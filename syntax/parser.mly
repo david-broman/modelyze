@@ -34,7 +34,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
     if n = 0 then t else TmBracket(fi,mk_brackets fi (n-1) t) 
 
   let mk_binop fi l op t1 t2 = 
-    TmApp(fi,l,TmApp(fi,l,mk_brackets fi l (TmVar(fi,Symtbl.add (us op))),t1),t2)
+    TmApp(fi,l,TmApp(fi,l,mk_brackets fi l 
+                       (TmVar(fi,Symtbl.add (us op))),t1),t2)
 
   let mk_unop fi l op t1 = 
     TmApp(fi,l,mk_brackets fi l (TmVar(fi,Symtbl.add (us op))),t1)
@@ -45,7 +46,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
   let mk_unpat_op fi l op t1 = 
     PatModApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1)
 
-  	  
+  let wildcard = Symtbl.add (us"@@wildcard")  	  
+
 %}
 
 /* Misc tokens */
@@ -198,6 +200,19 @@ top:
   | LET letpat COLON ty top %prec LETUK
       { let fi = mkinfo $1.i (ty_info $4) in
         TopNu(fi,$2,$4)::$5 }
+  | DEF identparen parenparamlist EQ term top
+      { let fi = mkinfo $1.i (tm_info $5) in
+        let (plst,endty) = $3 in
+        TopLet(fi,$2,endty,List.rev plst,$5,freein_tm $2 $5)::$6 }  
+  | DEF letpat EQ term top
+      { let fi = mkinfo $1.i (tm_info $4) in
+        TopLet(fi,$2,None,[],$4,freein_tm $2 $4)::$5 }
+  | DEF letpat COLON ty EQ term top 
+      { let fi = mkinfo $1.i (tm_info $6) in
+        TopLet(fi,$2,Some $4,[],$6,freein_tm $2 $6)::$7 }
+  | DEF letpat COLON ty top %prec LETUK
+      { let fi = mkinfo $1.i (ty_info $4) in
+        TopNu(fi,$2,$4)::$5 }
   | TYPE IDENT top
       { let fi = mkinfo $1.i $2.i in
         TopNewType(fi,$2.v)::$3 }
@@ -209,6 +224,12 @@ top:
         let modname = $2.v |> Symtbl.get |> Ustring.to_latin1 
                       |> String.lowercase |> us in                             
         TopInclude(fi,Symtbl.add (modname ^. us".mkl"))::$3 }
+
+identparen:
+  | IDENT LPAREN
+    { $1.v }
+  | IDENTPAREN
+    { $1.v }
 
 ty:
   | tyarrow
@@ -291,8 +312,7 @@ letpat:
   | IDENT
       { $1.v }
   | USCORE
-      { Symtbl.add (us"@@wildcard") }
-
+      { wildcard }
 
 
 term:
@@ -311,6 +331,22 @@ term:
   | LET letpat COLON ty EQ term IN term
       { let fi = mkinfo $1.i (tm_info $8) in
         TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
+  | LET letpat COLON ty IN term
+      { let fi = mkinfo $1.i (tm_info $6) in
+        TmNu(fi,$1.l,$2,$4,$6) }
+  | DEF identparen parenparamlist EQ term IN term
+      { let fi = mkinfo $1.i (tm_info $7) in
+        let (plst,endty) = $3 in
+        TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
+  | DEF pat_atom EQ term IN term
+      { let fi = mkinfo $1.i (tm_info $6) in
+        TmMatch(fi,$1.l,$4,[PCase(fi,[$2],None,[],$6)]) }
+  | DEF letpat COLON ty EQ term IN term
+      { let fi = mkinfo $1.i (tm_info $8) in
+        TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
+  | DEF letpat COLON ty IN term
+      { let fi = mkinfo $1.i (tm_info $6) in
+        TmNu(fi,$1.l,$2,$4,$6) } 
   | IF term THEN term ELSE term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmIf(fi,$1.l,$2,$4,$6) }
@@ -320,9 +356,6 @@ term:
   | DOWN term
       { let fi = mkinfo $1.i (tm_info $2) in
         TmDown(fi,$1.l,$2) }
-  | LET letpat COLON ty IN term
-      { let fi = mkinfo $1.i (tm_info $6) in
-        TmNu(fi,$1.l,$2,$4,$6) }
   | LCASE term OF BAR IDENT CONS IDENT ARROW term BAR LSQUARE RSQUARE ARROW term
       { let fi = mkinfo $1.i (tm_info $14) in
         TmLcase(fi,$1.l,$2,$5.v,$7.v,$9,$14) }  
@@ -550,6 +583,22 @@ paramlist:
       { let (lst,_) = $1 in
         (lst,Some $3) }
 
+parenparamlist:
+  | revtmtyseq RPAREN rettype
+      { ($1,$3) } 
+  | RPAREN
+      { ([wildcard,TyUnit($1.i,$1.l)],None) } 
+
+rettype:
+    { None }
+  | COLON tyatom
+    { Some($2) }
+
+revtmtyseq: 
+    |   param 
+        {[$1]}               
+    |   revtmtyseq COMMA param
+        {$3::$1}
 
 param: 
   |  IDENT COLON tyatom
@@ -704,9 +753,8 @@ atom:
   | LSQUARE revtmseq RSQUARE
       { let fi = mkinfo $1.i $3.i in
         TmList(fi,$1.l,$2) }
-  | LCURLY revtmseq RCURLY
-      { let fi = mkinfo $1.i $3.i in
-        TmArray(fi,$1.l,Array.of_list $2) }
+  | LCURLY term RCURLY
+      { $2 }
   | LPAREN RPAREN 
       { TmConst(mkinfo $1.i $2.i,$1.l,ConstUnit) } 
   | LPAREN revtmseq RPAREN

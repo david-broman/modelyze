@@ -30,11 +30,11 @@ include ExportModelica
 include HybridModeling
 
 
-let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real =
-  let g = 9.81 in
-  let x:Position in
-  let y:Position in
-  let ground:Position in
+def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
+  def g = 9.81 in
+  def x:Position in
+  def y:Position in
+  def ground:Position in
 
   let Pendulum:State in
   let BouncingBall:State in
@@ -76,6 +76,7 @@ let HybridBallWithStairs m:Real -> l:Real -> startAngle:Real =
 
   probe "ground" = ground;
   probe "y" = y
+}
 
 let main = 
   let angle = 45.*3.14/180. in

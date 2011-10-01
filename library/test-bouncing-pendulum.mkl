@@ -28,41 +28,39 @@ include ExportModelica
 include HybridModeling
 
 // Work in progress. Still not working correct.
-let BouncingPendulum m:Real -> l:Real -> startAngle:Real -> Equations =
-  let g = 9.81 in
-  let x:Position in
-  let y:Position in
+def BouncingPendulum(m:Real,l:Real,startAngle:Real) = {
+  def g = 9.81 in
+  def floor = -4 in
+  def x,y:Position in
+  def Pendulum,BouncingBall:State in
 
-  let Pendulum:State in
-  let BouncingBall:State in
-
-  statechart initstate Pendulum begin
-    state Pendulum begin
+  statechart initstate Pendulum {
+    state Pendulum {
       let T:Force in
 
-      init x (l*sin startAngle);
-      init y (-l*cos startAngle);
+      init x (l*sin(startAngle));
+      init y (-l*cos(startAngle));
      
       -T*x/l = m*x'';
       -T*y/l - m*g = m*y'';     
-      (x^2. + y^2.)'' = (l^2.)'';
+      (x^2 + y^2)'' = (l^2)'';
       probe "T" = T;
       transition BouncingBall when (time >= 3.2) 
         action nothing
-    end;
+    };
 
-    state BouncingBall begin    
-      x'' = 0.;
+    state BouncingBall {
+      x'' = 0;
       -m*g = m*y'';
 
-      transition BouncingBall when (y <= -4.) 
+      transition BouncingBall when (y <= floor) 
         action (y' <-  y' * -0.7)
-    end
+    }
 
-  end;
+  };
 
   probe "y" = y
-
+}
 
 
 let main = 

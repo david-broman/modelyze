@@ -1,0 +1,28 @@
+
+
+include AnalogElectrical
+include HybridSimulation
+include ExportModelica
+
+type TwoPin = Electrical -> Electrical -> Equations
+
+def SubCircuit(p:Electrical,n:Electrical) = {
+    def b2:Electrical in
+    Capacitor(0.02,p,b2);
+    Inductor(0.1,p,b2);
+    Resistor(200,b2,n)
+}
+
+def CircuitC(SC:TwoPin) = {
+    def c1,c2:Electrical in
+    SineVoltage(220,50,c1,c2);
+    SC(c1,c2);
+    Ground(c2);
+
+    VoltageSensor(c1,c2,probe "v")
+}    
+
+def main = 
+  //printsim(CircuitC(CircuitB),0.1,0.3)
+  printLine(exportModelica("Circuit",CircuitC(SubCircuit)))
+

@@ -1,0 +1,22 @@
+
+
+include AnalogElectrical
+include HybridSimulation
+include ExportModelica
+
+def CircuitA() = {
+    def a1,a2,a3:Electrical in
+    SineVoltage(220,50,a1,a3);
+    Capacitor(0.02,a1,a2);
+    Inductor(0.1,a1,a2);
+    Resistor(200,a2,a3);
+    Ground(a3);
+    Resistor(10,a1,a2);
+    
+    VoltageSensor(a1,a2,probe "v")
+}
+
+
+def main = 
+  printsim(CircuitA(),0.1,0.4)
+  //printLine(exportModelica("Circuit",CircuitA()))

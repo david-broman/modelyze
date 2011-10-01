@@ -66,6 +66,7 @@ let reserved_strings = [
   ("include",       fun(i,l) -> Parser.INCLUDE{i=i;l=l;v=()}); 
   ("begin",         fun(i,l) -> Parser.BEGIN{i=i;l=l;v=()}); 
   ("end",           fun(i,l) -> Parser.END{i=i;l=l;v=()}); 
+  ("specialize",    fun(i,l) -> Parser.SPECIALIZE{i=i;l=l;v=()}); 
 
 
   (* v *)
@@ -121,6 +122,8 @@ let reserved_strings = [
   ("~",             fun(i,l) -> Parser.ESCAPE{i=i;l=l;v=()}); 
   ("'",             fun(i,l) -> Parser.SQUOTE{i=i;l=l;v=()}); 
   (")(",            fun(i,l) -> Parser.PARENAPP{i=i;l=l;v=()}); 
+  (";;",            fun(i,l) -> Parser.EQSEMI{i=i;l=l;v=()}); 
+
 ]
 
 let str2primitive fi s =
@@ -289,7 +292,7 @@ let operator = "="  | "~="  | "<-"  | "mod" |
 
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
                 "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
-                 "~" | ")("
+                 "~" | ")(" | ";;"
 
 
 

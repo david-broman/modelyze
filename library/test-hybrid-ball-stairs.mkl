@@ -30,11 +30,12 @@ include ExportModelica
 include HybridModeling
 
 
+
 def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
   def g = 9.81 in
   //def x,y:Position in
   def x:Position in
-  def y:Position in
+  def y:Position in  //Serious error. If y is before x, we get wrong result.
   def ground:Position in
 
   let Pendulum:State in

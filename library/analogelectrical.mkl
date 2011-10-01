@@ -25,11 +25,12 @@ let Resistor R:Real -> p:Electrical -> n:Electrical -> Equations =
   ElectricalBranch i v p n;
   R * i = v 
 
-let Capacitor C:Real -> p:Electrical -> n:Electrical -> Equations =
-  let i:Current in
-  let v:Voltage in
-  ElectricalBranch i v p n;
-  C * (der v) = i
+def Capacitor(C:Real,p:Electrical,n:Electrical) = {
+    def i:Current in
+    def v:Voltage in
+    ElectricalBranch(i,v,p,n);
+    C * der(v) = i
+}
 
 let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
@@ -37,12 +38,13 @@ let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
   ElectricalBranch i v p n;
   L * (der i) = v
 
-let Ground p:Electrical -> Equations =
-  let i:Current in
-  let v:Voltage in
-  ElectricalRefBranch i v p;
-  v = 0.0
-    
+def Ground(p:Electrical) = {
+    def i:Current in
+    def v:Voltage in
+    ElectricalRefBranch(i,v,p);
+    v = 0
+}
+   
 let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical -> 
                 Equations =
   let PI = 3.1415 in

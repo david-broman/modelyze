@@ -7,6 +7,7 @@ Known issues and todos in the MKL OCaml implementation
 to have the same environment. Confusing for example when creating a
 symbol using syntax "let x:floor" because floor exists in Base.mkl
 
+
 Known issues and todos in the MKL libraries
 ---------------------------------
 2011-08-05: There is an error in the hybrid ball stairs example. The
@@ -21,3 +22,6 @@ another git branch, but not included in the main trunk.
 
 2011-08-05: y' cannot be used in probes (test in bouncing ball example).
 
+2011-09-14: The order of how unknowns are declared matters for the end
+result in test-hybrid-ball-stairs.mkl. If y is declared before x we
+get a strange result.

@@ -102,6 +102,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> INCLUDE
 %token <unit Ast.tokendata> BEGIN
 %token <unit Ast.tokendata> END
+%token <unit Ast.tokendata> SPECIALIZE
 
 /* Operators */
 %token <unit Ast.tokendata> EQ            /* "="  */
@@ -156,6 +157,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
 %token <unit Ast.tokendata> PARENAPP      /* ")("  */
+%token <unit Ast.tokendata> EQSEMI        /* ";;"  */
 
 %start main 
 %type <Ast.top list> main
@@ -216,7 +218,7 @@ top:
         TopNu(fi,$2,$4)::$5 }
   | DEF IDENT COMMA revidentseq COLON ty top %prec LETUK
       { let fi = mkinfo $1.i (ty_info $6) in
-        let nulst = List.map (fun x -> TopNu(fi,x,$6)) (List.rev $4) in
+        let nulst = List.map (fun x -> TopNu(fi,x,$6)) (List.rev $4) in        
         TopNu(fi,$2.v,$6)::(List.append nulst $7) }  
   | TYPE IDENT top
       { let fi = mkinfo $1.i $2.i in
@@ -744,7 +746,14 @@ app_left:
   | ERROR atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmError(fi,$1.l,$2) }   
- 
+  | SPECIALIZE atom atom
+      { TmApp(mktminfo $2 $3,0,$2,$3) } 
+  | SPECIALIZE IDENTPAREN atom RPAREN
+      { let tm_ident = TmVar($2.i,$2.v) in
+        TmApp(mkinfo $1.i $4.i,0,tm_ident,$3) } 
+  | SPECIALIZE LPAREN atom PARENAPP atom RPAREN
+      { TmApp(mktminfo $3 $5,0,$3,$5) } 
+  
 
 app_right:
   | atom
@@ -788,6 +797,8 @@ atom:
       { TmEscape(mkinfo $1.i (tm_info $2),$2) }
   | BEGIN term END
       { $2 }
+
+
 
 
 revidentseq:

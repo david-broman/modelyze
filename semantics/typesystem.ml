@@ -245,8 +245,8 @@ let desugar_bracket_escape tm =
 					fi,[Symtbl.get x])))
       | TmLam(fi,l,x,ty1,t2) -> 
 	  TmLam(fi,l+lev,x,ds_ty lev ty1,ds lev ((x,l+lev)::env) ukenv t2)
-      | TmApp(fi,l,t1,t2) -> 
-	  TmApp(fi,l+lev,ds lev env ukenv t1,ds lev env ukenv t2) 
+      | TmApp(fi,l,t1,t2,fs) -> 
+	  TmApp(fi,l+lev,ds lev env ukenv t1,ds lev env ukenv t2,fs) 
       | TmFix(fi,l,t) -> TmFix(fi,l+lev,ds lev env ukenv t)
       | TmLet(fi,l,x,ty,plst,t1,t2,recu) -> 
 	  let ty' = map_option (ds_ty lev) ty in
@@ -384,7 +384,7 @@ let check_arg_type_consistency fi ty' ty_elem =
 
 
 let int2real_coercion t = 
-  TmApp(NoInfo,0,TmConst(NoInfo,0,ConstPrim(PrimInt2Real,[])),t)
+  TmApp(NoInfo,0,TmConst(NoInfo,0,ConstPrim(PrimInt2Real,[])),t,false)
 
 
 let rec typeof_array_op fi l op ts env ukenv =
@@ -604,17 +604,17 @@ and typeof env ukenv t =
 		else (ty1,TmFix(fi,l,t'))
 	    | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
 	  end
-    | TmApp(fi,_,t1,t2)  -> 
+    | TmApp(fi,_,t1,t2,fs)  -> 
         let typeof_app fi ty1 t1' ty2 t2' = 
           begin match ty1 with 
 	    | TyArrow(_,l,ty11,ty12) -> 
                 (* Coercion of int to real *)
                 if ty_consistent ty11 (TyReal(NoInfo,0)) &&
                    ty_consistent ty2 (TyInt(NoInfo,0)) 
-                then  (ty12,TmApp(fi,l,t1',int2real_coercion t2'))
+                then  (ty12,TmApp(fi,l,t1',int2real_coercion t2',fs))
                 else
   		  if ty_consistent ty11 ty2 
-		  then (ty12,TmApp(fi,l,t1',t2'))
+		  then (ty12,TmApp(fi,l,t1',t2',fs))
 		  else 
 		    (match ty2 with 
 		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 

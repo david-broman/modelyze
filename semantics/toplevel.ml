@@ -94,7 +94,7 @@ and tm_typesubst typemap tm =
   match tm with
     | TmVar(fi,x) as tt -> tt 
     | TmLam(fi,l,y,ty,t) -> TmLam(fi,l,y,tysub ty,tmsub t)
-    | TmApp(fi,l,t1,t2) -> TmApp(fi,l,tmsub t1,tmsub t2)
+    | TmApp(fi,l,t1,t2,fs) -> TmApp(fi,l,tmsub t1,tmsub t2,fs)
     | TmFix(fi,l,t) -> TmFix(fi,l,tmsub t)
     | TmLet(fi,l,y,tyop,plst,t1,t2,recu) -> 
         let tyop' = map_option tysub tyop in

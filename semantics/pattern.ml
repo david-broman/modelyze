@@ -35,7 +35,7 @@ let rec fresh_var_list n =
 
 let mktm_and_equal fi l t t1 t2 =
   let candop = TmConst(fi,l,ConstPrim(PrimBoolAnd,[])) in
-  let capp t1 t2 = TmApp(fi,l,t1,t2) in
+  let capp t1 t2 = TmApp(fi,l,t1,t2,false) in
   let cand t1 t2 = capp (capp candop t1) t2 in
   let cequal t1 t2 = TmEqual(fi,l,t1,t2) in
     cand t (cequal t1 t2) 
@@ -92,7 +92,7 @@ and subst_var (x:int) (y:int) (tm:tm)  =
       | TmVar(fi,z) as tt -> if x = z then TmVar(fi,y) else tt
       | TmLam(fi,l,z,ty1,t2) as tt -> 
 	  if x = z then tt else TmLam(fi,l,z,ty1,subst_var x y t2)
-      | TmApp(fi,l,t1,t2) -> TmApp(fi,l,subst_var x y t1, subst_var x y t2)
+      | TmApp(fi,l,t1,t2,fs) -> TmApp(fi,l,subst_var x y t1, subst_var x y t2,fs)
       | TmFix(fi,l,t) -> TmFix(fi,l,subst_var x y t)  
       | TmLet(fi,l,z,ty,plst,t1,t2,recu) ->
           let in_p = List.exists (fun (p,_) -> p = x) plst in 
@@ -270,7 +270,7 @@ and generate_conditional fi l vtranss t1op e default =
     if List.length vst + (if btm = tm_true l then 1 else 0) <= 1 
     then ((fun e -> e),default)
     else ((fun e -> TmLet(fi,l,x,None,[],TmLam(fi,l,y,TyUnit(fi,l),default),e,false)),
-          TmApp(fi,l,TmVar(fi,x),TmConst(fi,l,ConstUnit)))
+          TmApp(fi,l,TmVar(fi,x),TmConst(fi,l,ConstUnit),false))
   in 
   let e' =  if btm = tm_true l then e else TmIf(fi,l,btm,e,defval) in
   let e'' = List.fold_right 
@@ -358,7 +358,7 @@ and desugar tm =
     match tm with
       | TmVar(fi,x) as tt -> tt 
       | TmLam(fi,l,x,ty1,t2) -> TmLam(fi,l,x,ty1,ds t2)
-      | TmApp(fi,l,t1,t2) -> TmApp(fi,l,ds t1,ds t2) 
+      | TmApp(fi,l,t1,t2,fs) -> TmApp(fi,l,ds t1,ds t2,fs) 
       | TmFix(fi,l,t) -> TmFix(fi,l,ds t) 
       | TmLet(fi,l,x,ty,plst,t1,t2,recu) ->
           TmLet(fi,l,x,ty,plst,ds t1,ds t2,recu)

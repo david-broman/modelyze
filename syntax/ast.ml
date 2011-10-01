@@ -38,6 +38,7 @@ type typeid = int
 type valueid = int
 type fname = int
 type recursive = bool 
+type specialize = bool
 
 (** Definition of types in the language *)
 type ty = 
@@ -208,7 +209,7 @@ and tm =
     (* Basic terms *)
   | TmVar         of info * ident
   | TmLam         of info * level * ident * ty * tm
-  | TmApp         of info * level * tm * tm
+  | TmApp         of info * level * tm * tm * specialize
   | TmFix         of info * level * tm
   | TmLet         of info * level * ident * ty option * (ident * ty) list * 
                                     tm * tm * recursive
@@ -596,7 +597,7 @@ let rec tm_info t =
   match t with
     | TmVar(fi,_) -> fi
     | TmLam(fi,_,_,_,_) -> fi
-    | TmApp(fi,_,_,_) -> fi
+    | TmApp(fi,_,_,_,_) -> fi
     | TmFix(fi,_,_) -> fi
     | TmLet(fi,_,_,_,_,_,_,_) -> fi
     | TmIf(fi,_,_,_,_) -> fi
@@ -634,7 +635,7 @@ let rec set_tm_info newfi tm =
   match tm with
     | TmVar(_,x) -> TmVar(newfi,x)
     | TmLam(_,l,y,ty,t) -> TmLam(newfi,l,y,ty,t)
-    | TmApp(_,l,t1,t2) -> TmApp(newfi,l,t1,t2)
+    | TmApp(_,l,t1,t2,fs) -> TmApp(newfi,l,t1,t2,fs)
     | TmFix(_,l,t) -> TmFix(newfi,l,t)
     | TmLet(_,l,y,tyop,plst,t1,t2,recu) -> 
          TmLet(newfi,l,y,tyop,plst,t1,t2,recu)
@@ -940,7 +941,8 @@ and pprint tm =
   | TmVar(_,id) -> Symtbl.get id        
   | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
       us":" ^. pprint_ty ty ^. us" -> " ^. pprint t ^. us")"
-  | TmApp(_,l,t1,t2) -> us"(" ^. pprint t1 ^. us" " ^. 
+  | TmApp(_,l,t1,t2,fs) -> (if fs then us"specialize(" else us"(" )
+      ^. pprint t1 ^. us" " ^. 
       (if l != 0 then metastr l ^. us" " else us"") ^. 
         pprint t2 ^. us")"
   | TmFix(_,l,t) -> metastr l ^. us"fix[" ^. pprint t ^. us"]"
@@ -1075,7 +1077,7 @@ and fv_tm t =
   match t with
     | TmVar(fi,x) -> VarSet.singleton(x)
     | TmLam(fi,l,y,ty,t) -> VarSet.diff (fv_tm t) (VarSet.singleton y)
-    | TmApp(fi,l,t1,t2) -> VarSet.union (fv_tm t1) (fv_tm t2)
+    | TmApp(fi,l,t1,t2,_) -> VarSet.union (fv_tm t1) (fv_tm t2)
     | TmFix(fi,l,t) -> fv_tm t
     | TmLet(fi,l,y,_,_,t1,t2,_) -> VarSet.union (fv_tm t1) 
 	(VarSet.diff (fv_tm t2) (VarSet.singleton y))

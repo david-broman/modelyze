@@ -26,9 +26,11 @@ type level = int
 type index = int
 type sym = int
 type typeid = int
+type specialize = bool
 
 type uenv = (int * int) list
 type env = tm list
+
 
 
 and ty =
@@ -55,7 +57,7 @@ and tm =
   | TmSymVar      of sym
   | TmLam         of tm 
   | TmClos        of tm * env 
-  | TmApp         of tm * tm 
+  | TmApp         of tm * tm * specialize
   | TmFix         of tm
   | TmIf          of tm * tm * tm
   | TmConst       of Ast.const
@@ -159,7 +161,8 @@ let rec pprint t  =
     | TmClos(t,e) -> us"(" ^. us"closure[" ^. 
         (*(e |> List.map pprint |> Ustring.concat (us",")) ^.*) us"] -> " ^. 
              pprint t ^. us")"
-    | TmApp(t1,t2) -> us"(" ^. pprint t1 ^. us" " ^. pprint t2 ^. us")"
+    | TmApp(t1,t2,fs) -> (if fs then us"specialize(" else  us"(" ) ^. 
+        pprint t1 ^. us" " ^. pprint t2 ^. us")"
     | TmFix(t) -> us"fix[" ^. pprint t ^. us"]"
     | TmIf(t1,t2,t3) -> us"if " ^. 
 	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
@@ -261,22 +264,22 @@ let translate t =
 	   with Not_found -> assert false)
       | Ast.TmLam(_,l,id,ty,t) -> 
 	  nl l d (TmLam(trans t  l ((id,l)::denv) ))
-      | Ast.TmApp(_,l,t1,t2) -> 
-	  nl l d (TmApp(trans t1 l denv ,trans t2 l denv ))
+      | Ast.TmApp(_,l,t1,t2,fs) -> 
+	  nl l d (TmApp(trans t1 l denv ,trans t2 l denv,fs))
       | Ast.TmFix(_,l,t) -> nl l d (TmFix(trans t l denv ))
       | Ast.TmLet(_,l,id,Some ty,plst,t1,t2,false) -> 
 	  nl l d (TmApp(TmLam(trans t2 l 
-		((id,l)::denv) ),mkfuns plst t1 d denv )) 
+		((id,l)::denv) ),mkfuns plst t1 d denv,false)) 
       | Ast.TmLet(fi,l,id,Some ty,plst,t1,t2,true) -> 
 	  nl l d (TmApp(TmLam(trans t2 l ((id,l)::denv) ),
-             TmFix(TmLam(mkfuns plst t1 l ((id,l)::denv) )))) 
+             TmFix(TmLam(mkfuns plst t1 l ((id,l)::denv) )),false)) 
       | Ast.TmLet(_,_,_,_,_,_,_,_) -> assert false
       | Ast.TmIf(_,l,t1,t2,t3) -> nl l d (TmIf(trans t1 l denv ,
 		trans t2 l denv ,trans t3 l denv )) 
       | Ast.TmConst(_,l,c) -> nl l d (TmConst(c))
       | Ast.TmUp(_,l,t) -> 
 	  nl l d (TmApp(TmLam(TmBrack(TmVar(0))),
-					    trans t l denv ))
+					    trans t l denv,false))
       | Ast.TmDown(_,l,t) -> nl l d (TmRun(trans t l denv ))
       | Ast.TmBracket(_,_) -> assert false
       | Ast.TmEscape(_,_) -> assert false
@@ -286,7 +289,7 @@ let translate t =
 	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
 	   with Not_found -> assert false)
       | Ast.TmNu(_,l,id,ty,t) -> 
-          nl l d (TmApp(TmLam(trans t l ((id,l)::denv)),TmUkGen(trans_ty ty)))
+          nl l d (TmApp(TmLam(trans t l ((id,l)::denv)),TmUkGen(trans_ty ty),false))
       | Ast.TmModApp(_,l,t1,t2) -> 
           nl l d (TmModApp(trans t1 l denv ,trans t2 l denv ))
       | Ast.TmModIf(_,l,t1,t2,t3) -> nl l d (TmModIf(trans t1 l denv ,
@@ -415,7 +418,8 @@ let eval_daesolver_op eval op arg_lst =
       let tmtime = TmConst(Ast.ConstReal(time)) in  
       let tmyy = TmArray(array_to_tm yy) in
       let tmyp = TmArray(array_to_tm yp) in
-      let lst = eval (TmApp(TmApp(TmApp(tmres,tmtime),tmyy),tmyp)) in
+      let lst = 
+        eval (TmApp(TmApp(TmApp(tmres,tmtime,false),tmyy,false),tmyp,false)) in
         array_from_tmlist lst 
     in
     match op,arg_lst with
@@ -475,7 +479,7 @@ let rec readback earg t =
         let earg' = (vd+1,(TmSymVar(vd+1))::venv,n) in
         TmLam(readback earg' t)  
     | TmClos(t,e) as tt -> tt
-    | TmApp(t1,t2) -> TmApp(rb t1,rb t2)
+    | TmApp(t1,t2,fs) -> TmApp(rb t1,rb t2,fs)
     | TmFix(t) -> TmFix(rb t)
     | TmIf(t1,t2,t3) -> TmIf(rb t1,rb t2,rb t3)
     | TmConst(b) -> TmConst(b)
@@ -530,13 +534,13 @@ let evaluate t =
             let tt' = TmLam(eval earg' t) in
             if vd = 0 then readback earg tt' else tt'
         | n,TmClos(t,e) -> TmClos(t,e)
-        | 0,TmApp(t1,t2) -> 
+        | 0,TmApp(t1,t2,fs) -> 
             (match eval earg t1,eval earg t2 with
 	       | (TmClos(t3,venv2),v2) -> 
                    eval (vd,(v2::venv2),0) t3  
 	       | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
 	       | t1',t2' -> assert false) 
-        | n,TmApp(t1,t2) -> TmApp(eval earg t1,eval earg t2)
+        | n,TmApp(t1,t2,fs) -> TmApp(eval earg t1,eval earg t2,fs)
         | 0,TmFix(t) ->
             (match eval earg t with
                | TmClos(t2,venv2) as tt ->                  

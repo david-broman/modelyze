@@ -1,7 +1,7 @@
 
 Unicode string library - Ustring
 --------------------------------
-Version 0.01. Copyright (C) 2010 David Broman
+Version 0.01. Copyright (C) 2010-2011 David Broman
 
 The Ustring library is a simple library for adding unicode capability to
 the OCaml language. It is designed to work in a similar manner as the 

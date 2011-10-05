@@ -1,0 +1,44 @@
+
+
+include Optimization
+
+// Defines a simple test model that includes the optimization problem
+def TestModel(c:Real) = {
+    //A simple hello world DAE (actually an ODE...)
+    def x:Signal in
+    def u:Signal in
+
+    //State the u is the unkown input signal that we are computing
+    unknown u;
+
+    //Initial value for x
+    init x 2;
+
+    //Differential equation
+    x' = c*x + u;
+    
+    //Here is an example how the user would define the 
+    //optimization problem. 
+    minimize (x*u) interval 0 4
+  
+}
+
+def main = {
+  //Get the goal function and intervals
+  def (L,start,stop) = getOptProblem(TestModel(-1)) in
+
+  def (x,y,z) = extractVariables(TestModel(-1)) in
+
+  //dpa is "DebugPrintAfter". A generic expression printer
+  //which is useful when just testing things. Here we can see
+  //that we extracted the optimization problem.
+  (dpa (L,start,stop),dpa (x,y,z))
+
+
+  //The actual DAE is already directly accessable when 
+  //instantiating the model
+}
+    
+
+
+

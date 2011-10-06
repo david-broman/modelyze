@@ -9,7 +9,7 @@ def TestModel(c:Real) = {
     def u:Signal in
 
     //State the u is the unkown input signal that we are computing
-    unknown u;
+    input u;
 
     //Initial value for x
     init x 2;
@@ -27,12 +27,12 @@ def main = {
   //Get the goal function and intervals
   def (L,start,stop) = getOptProblem(TestModel(-1)) in
 
-  def (x,y,z) = extractVariables(TestModel(-1)) in
+  def (x,y,u) = extractVariables(TestModel(-1)) in
 
   //dpa is "DebugPrintAfter". A generic expression printer
   //which is useful when just testing things. Here we can see
   //that we extracted the optimization problem.
-  (dpa (L,start,stop),dpa (x,y,z))
+  (dpa (L,start,stop),dpa (x,y,u))
 
 
   //The actual DAE is already directly accessable when 

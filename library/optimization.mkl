@@ -5,13 +5,13 @@ type KeywordInterval
 let interval : <KeywordInterval>
 let minimize : <Real -> KeywordInterval -> 
                 Real -> Real -> Eqs>
-let unknown : <Real -> Eqs>
+let input : <Real -> Eqs>
 
 type UkSet = Set Signal
 
 //Extract all types of variabels from a model. The return tuple
 //is (x,y,u), where x is the state derivatives, y the algebraic variables
-//and u the unknown (control) input signals
+//and u the  input (control) signals
 def extractVariables(model:Equations) : (UkSet,UkSet,UkSet) = {
     def trav(e:Expr,acc:(UkSet,UkSet,UkSet)) : (UkSet,UkSet,UkSet) = {
         match (e,acc) with
@@ -19,8 +19,8 @@ def extractVariables(model:Equations) : (UkSet,UkSet,UkSet) = {
              (match e with |~der x -> 
                 if Set.mem x U then (X,Y,U) 
                 else (Set.add x X,Set.remove x Y,U))
-        | (~unknown (uk:Signal),(X,Y,U)) -> 
-             (match e with |~unknown u -> 
+        | (~input (uk:Signal),(X,Y,U)) -> 
+             (match e with |~input u -> 
                (Set.remove u X,Set.remove u Y,Set.add u U))
         | (uk:Signal,(X,Y,U)) -> 
              if (Set.mem e X) || (Set.mem e U) then (X,Y,U)

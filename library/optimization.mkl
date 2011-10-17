@@ -41,8 +41,8 @@ def extractVariables(model:Equations) : ModelVars = {
              else (X,Set.add e Y,U)
         | (e1 e2,_) -> trav e2 (trav e1 acc) 
         | _ -> acc
-    } in
-    trav(model,(Set.empty,Set.empty,Set.empty))
+    };
+    trav(model,(Set.empty,Set.empty,Set.empty));
 }
   
 //Traverse the model and extract the optimixation problem. In the 
@@ -56,6 +56,6 @@ def getOptProblem(model:Equations) : (Expr,Real,Real) = {
         | (e1;e2,_) -> trav(e1,e2::rest)
         | (_,e::es) -> trav(e,es)
         | (_,[]) -> error "No optimization problem found"
-    } in
-    trav(model,[]) 
+    };
+    trav(model,[]);
 }

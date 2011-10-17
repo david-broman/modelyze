@@ -325,7 +325,7 @@ letpat:
 
 
 term:
-  | cons
+  | semi_op
       { $1 }
   | FUN IDENT COLON tyatom ARROW term
       { let fi = mkinfo $1.i (tm_info $6) in
@@ -343,20 +343,20 @@ term:
   | LET letpat COLON ty IN term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmNu(fi,$1.l,$2,$4,$6) }
-  | DEF identparen parenparamlist EQ term IN term
+  | DEF identparen parenparamlist EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $7) in
         let (plst,endty) = $3 in
         TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
-  | DEF pat_atom EQ term IN term
+  | DEF pat_atom EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmMatch(fi,$1.l,$4,[PCase(fi,[$2],None,[],$6)]) }
-  | DEF letpat COLON ty EQ term IN term
+  | DEF letpat COLON ty EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $8) in
         TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
-  | DEF letpat COLON ty IN term
+  | DEF letpat COLON ty SEMI term
       { let fi = mkinfo $1.i (ty_info $4) in
         TmNu(fi,$1.l,$2,$4,$6) }
-  | DEF IDENT COMMA revidentseq COLON ty IN term   /* A bug here */
+  | DEF IDENT COMMA revidentseq COLON ty SEMI term   /* A bug here */
       { let fi = mkinfo $1.i (ty_info $6) in
         List.fold_left (fun a x -> TmNu(fi,$1.l,x,$6,a)) $8 
                        ($2.v::(List.rev $4)) }
@@ -619,12 +619,17 @@ param:
   |  IDENT COLON tyatom
       { ($1.v,$3) }
 
+semi_op:
+  | cons
+      { $1 }
+  | cons SEMI semi_op
+      { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
+
 cons:
   | op
       { $1 }
   | op CONS cons 
       { TmCons(mktminfo $1 $3,$2.l,$1,$3) }      
-
 
      
 op:
@@ -684,8 +689,6 @@ op:
       { mk_binop (mktminfo $1 $3) $2.l "(&&)" $1 $3 }
   | op OR op
       { mk_binop (mktminfo $1 $3) $2.l "(||)" $1 $3 }
-  | op SEMI op
-      { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
   | op EQSEMI op
       { mk_binop (mktminfo $1 $3) $2.l "(;;)" $1 $3 }
   | op PLUSPLUS op

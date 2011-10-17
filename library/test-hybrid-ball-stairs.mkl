@@ -32,21 +32,21 @@ include HybridModeling
 
 
 def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
-  def g = 9.81 in
+  def g = 9.81;
   //def x,y:Position in
-  def x:Position in
-  def y:Position in  //Serious error. If y is before x, we get wrong result.
-  def ground:Position in
+  def x:Position;
+  def y:Position;  //Serious error. If y is before x, we get wrong result.
+  def ground:Position;
 
-  let Pendulum:State in
-  let BouncingBall:State in
+  def Pendulum:State;
+  def BouncingBall:State;
   
   init ground (-3);
   ground' = 0;
 
   statechart initstate Pendulum {
     state Pendulum {
-      let T:Force in
+      def T:Force;
 
       init x (l*sin(startAngle));
       init y (-l*cos(startAngle));
@@ -56,11 +56,11 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
       (x^2 + y^2)'' = (l^2)'';
 
       transition BouncingBall when (time > 2) 
-        action nothing
+        action nothing;
     };
 
     state BouncingBall {    
-      let timer:Signal in
+      def timer:Signal;
 
       timer' = 1;
 
@@ -77,11 +77,11 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
   };
 
   probe "ground" = ground;
-  probe "y" = y ;
-  }  
+  probe "y" = y;
+}  
 
 
-let main = 
-  let angle = 45.*3.14/180. in
-  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.
+def main = 
+  def angle = 45.*3.14/180;
+  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6
 //  simulate (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.

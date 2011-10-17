@@ -6,7 +6,7 @@ def x = 3 + 4
 
 def foo1(x:Int,y:Int) = x +. y
 let foo2 xx:(Int,Int) -> Int = 
-     def (x,y) = xx in
+     def (x,y) = xx;
        x +. y
 
 def _ = dpa(foo1 10 20)
@@ -40,10 +40,10 @@ def u3:<Real>
 def ff() = dpa "Hej" 
 
 def test = {
-  def foo(x:Real,y:Int) : Real = 1 + x + y  in
-  def _ = dpa ((x + 4) + foo(1.1,2)) in
-  def _ = ff() in
-  def _ = (ff)() in
-  def _ = ((ff))() in
+  def foo(x:Real,y:Int) : Real = 1 + x + y;
+  def _ = dpa ((x + 4) + foo(1.1,2));
+  def _ = ff();
+  def _ = (ff)();
+  def _ = ((ff))();
   ()
 }

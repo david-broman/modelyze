@@ -3,7 +3,7 @@ include Optimization
 
 def VanDerPol() = {
     // Define variables
-    def x1,x2,u:Signal in
+    def x1,x2,u:Signal;
 
     // State that u is an input
     input u;
@@ -17,14 +17,14 @@ def VanDerPol() = {
     x2' = x1;
 
     // Cost function
-    minimize integral (x1^2 + x1^2 + u^2) interval 0 4
+    minimize integral (x1^2 + x1^2 + u^2) interval 0 4;
 }
 
 // Defines a simple test model that includes the optimization problem
 def TestModel(c:Real) = {
     //A simple hello world DAE (actually an ODE...)
-    def x:Signal in
-    def u:Signal in
+    def x:Signal;
+    def u:Signal;
 
     //State the u is the unkown input signal that we are computing
     input u;
@@ -37,23 +37,22 @@ def TestModel(c:Real) = {
     
     //Here is an example how the user would define the 
     //optimization problem. 
-    minimize integral (x*u) interval 0 4
+    minimize integral (x*u) interval 0 4;
   
 }
 def main = {
   //def m = TestModel(-1) in
-  def m = VanDerPol() in
+  def m = VanDerPol();
 
   //Get the goal function and intervals
-  def (L,start,stop) = getOptProblem(m) in
+  def (L,start,stop) = getOptProblem(m);
 
-  def (x,y,u) = extractVariables(m) in
+  def (x,y,u) = extractVariables(m);
 
   //dpa is "DebugPrintAfter". A generic expression printer
   //which is useful when just testing things. Here we can see
   //that we extracted the optimization problem.
-  (dpa (L,start,stop),dpa (x,y,u))
-
+  (dpa (L,start,stop),dpa (x,y,u));
 
   //The actual DAE is already directly accessable when 
   //instantiating the model

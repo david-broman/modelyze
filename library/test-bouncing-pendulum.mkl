@@ -29,10 +29,10 @@ include HybridModeling
 
 // Work in progress. Still not working correct.
 def BouncingPendulum(m:Real,l:Real,startAngle:Real) = {
-  def g = 9.81 in
-  def floor = -4 in
-  def x,y:Position in
-  def Pendulum,BouncingBall:State in
+  def g = 9.81;
+  def floor = -4;
+  def x,y:Position;
+  def Pendulum,BouncingBall:State;
 
   statechart initstate Pendulum {
     state Pendulum {
@@ -46,7 +46,7 @@ def BouncingPendulum(m:Real,l:Real,startAngle:Real) = {
       (x^2 + y^2)'' = (l^2)'';
       probe "T" = T;
       transition BouncingBall when (time >= 3.2) 
-        action nothing
+        action nothing;
     };
 
     state BouncingBall {
@@ -54,17 +54,16 @@ def BouncingPendulum(m:Real,l:Real,startAngle:Real) = {
       -m*g = m*y'';
 
       transition BouncingBall when (y <= floor) 
-        action (y' <-  y' * -0.7)
-    }
-
+        action (y' <-  y' * -0.7);
+    };
   };
 
-  probe "y" = y
+  probe "y" = y;
 }
 
 
-let main = 
-  let angle = 120.*3.14/180. in
+def main = 
+  def angle = 120.*3.14/180;
   printsim (BouncingPendulum 0.13 2. angle) 0.01 8.
 
 

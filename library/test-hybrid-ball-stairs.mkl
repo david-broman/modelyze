@@ -44,8 +44,8 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
   init ground (-3);
   ground' = 0;
 
-  statechart initstate Pendulum begin
-    state Pendulum begin
+  statechart initstate Pendulum {
+    state Pendulum {
       let T:Force in
 
       init x (l*sin(startAngle));
@@ -57,9 +57,9 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
 
       transition BouncingBall when (time > 2) 
         action nothing
-    end;
+    };
 
-    state BouncingBall begin    
+    state BouncingBall {    
       let timer:Signal in
 
       timer' = 1;
@@ -71,14 +71,15 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
         action (y' <- y' * -0.7);
 
       transition BouncingBall when (timer > 0.3 && ground > -5)
-        action (timer <- 0.; ground <- ground - 0.2)
-    end
+        action (timer <- 0.; ground <- ground - 0.2);
+    };
 
-  end;
+  };
 
   probe "ground" = ground;
-  probe "y" = y
-}
+  probe "y" = y ;
+  }  
+
 
 let main = 
   let angle = 45.*3.14/180. in

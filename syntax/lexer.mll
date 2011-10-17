@@ -300,7 +300,6 @@ let line_comment = "//" [^ '\013' '\010']*
 
 
 
-
 (* Main lexing *)
 rule main = parse
   | whitespace+ as s
@@ -309,11 +308,13 @@ rule main = parse
       { main lexbuf }
   | "/*" as s 
       { Buffer.reset string_buf ;  
-	 Buffer.add_string string_buf s; section_comment lexbuf; 
+	 Buffer.add_string string_buf s; end_section_comment lexbuf; 
 	 count_utf8 (Buffer.contents string_buf);
-	 main lexbuf}
+	 main lexbuf} 
   | tab 
       { add_colno !tabsize; main lexbuf }
+  | (";" (whitespace | newline | line_comment)*) as s (('}' | ')') as c) 
+     { count_utf8 s; mkid (String.make 1 c) false} 
   | newline
       { newrow(); main lexbuf }
   | "(" operator ")" as s
@@ -359,7 +360,8 @@ and mklstring = parse
       { Buffer.add_char string_buf c; mklstring lexbuf }
 
 (* Section comment *)
-and section_comment = parse
+
+and end_section_comment = parse
   | "*/" as s
       { Buffer.add_string string_buf s }
   | eof
@@ -367,7 +369,7 @@ and section_comment = parse
 	raise (Mkl_lex_error (LEX_COMMENT_NOT_TERMINATED,ERROR, 
 	 	 mkinfo_ustring s, [s])) }
   | _ as c
-      { Buffer.add_char string_buf c; section_comment lexbuf }
+      { Buffer.add_char string_buf c; end_section_comment lexbuf }
 
 
  

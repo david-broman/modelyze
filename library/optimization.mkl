@@ -3,17 +3,31 @@ include Modeling
 
 type KeywordInterval
 let interval : <KeywordInterval>
-let minimize : <Real -> KeywordInterval -> 
+
+type KeywordIntegral
+let integral : <KeywordIntegral>
+
+let minimize : <KeywordIntegral -> Real -> KeywordInterval -> 
                 Real -> Real -> Eqs>
 let input : <Real -> Eqs>
 
-type UkSet = Set Signal
+type VarSet = Set Signal
+type VarMap = (VarSet => VarSet)
+type ModelVars = (VarSet,VarSet,VarSet)
+type MeshVars  = (VarMap,VarMap,VarMap)
+
+def generateMeshVars(mVars:ModelVars,n_e:Int) : [MeshVars] = {
+   []
+}
+
+
+
 
 //Extract all types of variabels from a model. The return tuple
 //is (x,y,u), where x is the state derivatives, y the algebraic variables
 //and u the  input (control) signals
-def extractVariables(model:Equations) : (UkSet,UkSet,UkSet) = {
-    def trav(e:Expr,acc:(UkSet,UkSet,UkSet)) : (UkSet,UkSet,UkSet) = {
+def extractVariables(model:Equations) : ModelVars = {
+    def trav(e:Expr,acc:ModelVars) : ModelVars = {
         match (e,acc) with
         | (~der (uk:Signal),(X,Y,U)) -> 
              (match e with |~der x -> 
@@ -37,7 +51,7 @@ def extractVariables(model:Equations) : (UkSet,UkSet,UkSet) = {
 def getOptProblem(model:Equations) : (Expr,Real,Real) = {
     def trav(e:Equations,rest:[Expr]) : (Expr,Real,Real) = {
         match (e,rest) with
-        | (~minimize L ~interval (val start:Real) (val stop:Real),_) 
+        | (~minimize ~integral L ~interval (val start:Real) (val stop:Real),_) 
             -> (L,start,stop)
         | (e1;e2,_) -> trav(e1,e2::rest)
         | (_,e::es) -> trav(e,es)

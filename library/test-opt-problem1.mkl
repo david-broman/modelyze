@@ -1,6 +1,24 @@
 
-
 include Optimization
+
+def VanDerPol() = {
+    // Define variables
+    def x1,x2,u:Signal in
+
+    // State that u is an input
+    input u;
+
+    // Initial values for x1 and x2
+    init x1 0;
+    init x2 1; 
+
+    // Differential equation
+    x1' = (1 - x2^2)*x1 - x2 + u;
+    x2' = x1;
+
+    // Cost function
+    minimize integral (x1^2 + x1^2 + u^2) interval 0 4
+}
 
 // Defines a simple test model that includes the optimization problem
 def TestModel(c:Real) = {
@@ -19,15 +37,17 @@ def TestModel(c:Real) = {
     
     //Here is an example how the user would define the 
     //optimization problem. 
-    minimize (x*u) interval 0 4
+    minimize integral (x*u) interval 0 4
   
 }
-
 def main = {
-  //Get the goal function and intervals
-  def (L,start,stop) = getOptProblem(TestModel(-1)) in
+  //def m = TestModel(-1) in
+  def m = VanDerPol() in
 
-  def (x,y,u) = extractVariables(TestModel(-1)) in
+  //Get the goal function and intervals
+  def (L,start,stop) = getOptProblem(m) in
+
+  def (x,y,u) = extractVariables(m) in
 
   //dpa is "DebugPrintAfter". A generic expression printer
   //which is useful when just testing things. Here we can see

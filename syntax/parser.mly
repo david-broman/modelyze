@@ -166,7 +166,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %nonassoc WITH
 %nonassoc BAR
 %nonassoc LETUK 
-%left SEMI
+%left SEMI EQSEMI
 %left OR
 %left AND 
 %nonassoc NOT
@@ -509,6 +509,8 @@ pat_op:
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(||)" $1 $3 }
   | pat_op SEMI pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(;)" $1 $3 }
+  | pat_op EQSEMI pat_op
+      { mk_binpat_op (mkpatinfo $1 $3) $2.l "(;;)" $1 $3 }
   | pat_op PLUSPLUS pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(++)" $1 $3 }
   | pat_op EXP pat_op
@@ -684,6 +686,8 @@ op:
       { mk_binop (mktminfo $1 $3) $2.l "(||)" $1 $3 }
   | op SEMI op
       { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
+  | op EQSEMI op
+      { mk_binop (mktminfo $1 $3) $2.l "(;;)" $1 $3 }
   | op PLUSPLUS op
       { mk_binop (mktminfo $1 $3) $2.l "(++)" $1 $3 }
   | op EXP op

@@ -48,6 +48,7 @@ def main = {
   def (L,start,stop) = getOptProblem(m);
 
   def (x,y,u) = extractVariables(m);
+  def meshVars = generateMeshVars((x,y,u));
 
   //dpa is "DebugPrintAfter". A generic expression printer
   //which is useful when just testing things. Here we can see

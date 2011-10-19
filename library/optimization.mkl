@@ -12,15 +12,57 @@ let minimize : <KeywordIntegral -> Real -> KeywordInterval ->
 let input : <Real -> Eqs>
 
 type VarSet = Set Signal
-type VarMap = (VarSet => VarSet)
+type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
 
-def generateMeshVars(mVars:ModelVars,n_e:Int) : [MeshVars] = {
-   []
+
+def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
+    def genvar(varlst:[Signal],acc:VarMap) : VarMap = {
+        match varlst with
+        | v::vs -> {
+             def mvar:Signal; 
+             genvar(vs,Map.add v mvar acc);
+          }
+        | [] -> acc
+    };
+    def gen(vars:VarSet) : VarMap = genvar(Set.toList vars,Map.empty);
+    def (x,y,u) = daeVars;
+    def genmesh(n:Int) : [MeshVars] = {
+        if n ==. 0 then [] 
+        else (gen(x),gen(y),gen(u))::genmesh(n-.1) 
+    };            
+    genmesh(n_e);
 }
 
-
+def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
+    Equations = {
+    def substituteVars(model:Expr, prevX:VarMap, meshVars:MeshVars) : Expr = {
+        def (xMap,yMap,uMap) = meshVars;
+        match model with
+        | ~der x -> ((Map.find x xMap) - (Map.find x prevX))/h
+        | uk:Signal if Map.mem model xMap -> Map.find model xMap
+        | uk:Signal if Map.mem model yMap -> Map.find model yMap
+        | uk:Signal if Map.mem model uMap -> Map.find model uMap
+        | e1 e2 -> {
+            def e1b = substituteVars(e1, prevX, meshVars);
+            def e2b = substituteVars(e2, prevX, meshVars);
+            e1b e2b;
+          }
+        | e -> e 
+    };
+    def genMeshPointConstraints(prevX:VarMap, meshVarList:[MeshVars], 
+                                acc:Equations) : Equations = {
+       match meshVarList with
+       | mv::mvs -> {
+           def (xMap,_,_) = mv;
+           def meshPointConstr = substituteVars(model, prevX, mv);
+           genMeshPointConstraints(xMap, mvs, acc ; meshPointConstr);
+         }
+       | [] -> acc
+    };
+    genMeshPointConstraints(x0, meshVars, NoEq);
+}
 
 
 //Extract all types of variabels from a model. The return tuple

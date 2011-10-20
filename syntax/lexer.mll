@@ -46,7 +46,7 @@ let reserved_strings = [
   ("of",            fun(i,l) -> Parser.OF{i=i;l=l;v=()}); 
   ("decon",         fun(i,l) -> Parser.DECON{i=i;l=l;v=()}); 
   ("with",          fun(i,l) -> Parser.WITH{i=i;l=l;v=()}); 
-  ("uk",            fun(i,l) -> Parser.UK{i=i;l=l;v=()}); 
+  ("sym",           fun(i,l) -> Parser.SYM{i=i;l=l;v=()}); 
   ("val",           fun(i,l) -> Parser.VAL{i=i;l=l;v=()}); 
   ("proj",          fun(i,l) -> Parser.PROJ{i=i;l=l;v=()}); 
   ("fst",           fun(i,l) -> Parser.FST{i=i;l=l;v=()});   

@@ -23,7 +23,7 @@ let extractEqNodeMap eqs:Equations -> EqNodeMap =
 let makeVarSet eqs:Expr -> acc:VarSet -> VarSet = 
   match eqs with
   | ~der x -> Set.add eqs acc
-  | uk:Signal -> Set.add eqs acc
+  | sym:Signal -> Set.add eqs acc
   | e1 e2 -> makeVarSet e2 (makeVarSet e1 acc)
   | _ -> acc
 

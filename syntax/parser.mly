@@ -82,7 +82,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> OF
 %token <unit Ast.tokendata> DECON
 %token <unit Ast.tokendata> WITH
-%token <unit Ast.tokendata> UK
+%token <unit Ast.tokendata> SYM
 %token <unit Ast.tokendata> VAL
 %token <unit Ast.tokendata> PROJ
 %token <unit Ast.tokendata> FST
@@ -298,7 +298,7 @@ revtypetupleseq:
         {$3::$1}
 
 deconpat:
-  | UK COLON ty
+  | SYM COLON ty
       { let fi = mkinfo $1.i (ty_info $3) in
         MPatUk(fi,$3) }
   | IDENT IDENT
@@ -570,7 +570,7 @@ pat_atom:
       { let fi = mkinfo $1.i $3.i in
         List.fold_right (fun p a -> PatCons(fi,p,a)) 
           (List.rev $2) (PatNil(fi)) } 
-  | UK COLON tyatom 
+  | SYM COLON tyatom 
       { PatUk(mkinfo $1.i (ty_info $3),$3) } 
   | LPAREN revpatseq RPAREN
       { let fi = mkinfo $1.i $3.i in

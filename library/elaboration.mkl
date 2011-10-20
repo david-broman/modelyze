@@ -140,7 +140,7 @@ let unknowns eqs:Equations -> UkSet =
      match e with
      | e1 e2 -> get e2 (get e1 acc)
      | ~time -> acc
-     | uk:<Real> -> Set.add e acc
+     | sym:<Real> -> Set.add e acc
      | _ -> acc 
   in get eqs (Set.empty)
 
@@ -164,14 +164,14 @@ let realUnknowns eqs:Equations -> (Int,UkMap) =
      | ~time -> acc
      | ~der x -> 
         (match x with 
-         | uk:<Real> -> 
+         | sym:<Real> -> 
              let (k,ukmap) = acc in 
              if Map.mem x ukmap 
              then (k,Map.add x (fst (Map.find x ukmap),true) ukmap)
              else ((k+.1,Map.add x (k,true) ukmap))
          | _ -> error "Illegal diffrentiation of expression") 
      | e1 e2 -> get e2 (get e1 acc)
-     | uk:<Real> -> if Map.mem e (snd acc) then acc
+     | sym:<Real> -> if Map.mem e (snd acc) then acc
                     else ((fst acc)+.1,Map.add e (fst acc,false) (snd acc))
      | e1 -> acc 
   in get eqs (0,(Map.empty))

@@ -26,7 +26,7 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
     match expr with
     | ~der e -> extractHOder e (k +. 1) dmap
     | ~time -> dmap
-    | uk:Signal -> makeHOder expr k dmap
+    | sym:Signal -> makeHOder expr k dmap
     | e1 e2 -> extractHOder e2 k (extractHOder e1 k dmap)
     | _ -> dmap
   in
@@ -43,9 +43,9 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
   | ~der _ = ~time -> (eqs,extractHOder eqs 0 dmap)
   | _ = ~der ~time -> (eqs,extractHOder eqs 0 dmap)
   | ~time = ~der _ -> (eqs,extractHOder eqs 0 dmap)
-  | ~der uk:Signal = uk:Signal ->
+  | ~der sym:Signal = sym:Signal ->
       (match eqs with | ~der x = dx -> (NoEq,Map.add x dx dmap))
-  | uk:Signal = ~der uk:Signal ->
+  | sym:Signal = ~der sym:Signal ->
       (match eqs with | dx = ~der x -> (NoEq,Map.add x dx dmap))
   | _ -> (eqs,extractHOder eqs 0 dmap)
 
@@ -56,7 +56,7 @@ let differentiateModel expr:Expr -> Expr =
   let sdiff expr:Signal -> Signal =
     match expr with
     | ~time -> val 1.
-    | uk:Signal -> hoDer expr 1
+    | sym:Signal -> hoDer expr 1
     | ~hoDer x (val k:Int) -> hoDer x (k +. 1)
     | ~der e -> sdiff (sdiff e)
     | e1 + e2 -> sdiff e1 + sdiff e2 

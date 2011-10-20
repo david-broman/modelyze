@@ -133,9 +133,9 @@ let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
     | val v:Real -> v
     | ~time -> ctime
     | ~der x -> (match x with 
-                | uk:Signal -> worker (ypfun x)  
+                | sym:Signal -> worker (ypfun x)  
                 | _ -> error "Derivatives only allowed on unknowns")
-    | uk:Signal -> worker (yyfun e)
+    | sym:Signal -> worker (yyfun e)
     | _ -> let _ = dpa e in error "Unsupported model construct" 
   in
     worker expr 

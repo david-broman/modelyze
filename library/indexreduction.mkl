@@ -44,10 +44,10 @@ let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
   let travExpr exp:Expr -> accvar:VarSet -> accvarmap:VarMap -> 
                (VarSet,VarMap) =
     match exp with
-    | ~der (uk:Signal) -> 
+    | ~der (sym:Signal) -> 
         let x = match exp with | ~der u -> u in
         (Set.add exp accvar,Map.add x exp accvarmap) 
-    | uk:Signal -> (Set.add exp accvar,accvarmap) 
+    | sym:Signal -> (Set.add exp accvar,accvarmap) 
     | e1 e2 -> let (accvar1,accvarmap1) = travExpr e1 accvar accvarmap in
                travExpr e2 accvar1 accvarmap1 
     | _ -> (accvar,accvarmap) 

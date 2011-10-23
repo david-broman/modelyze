@@ -251,8 +251,8 @@ and tm =
     (* Simulation *)
   | TmDAESolverOp      of  info * level * daesolverop * tm list
     (* Debugging and errors *)
-  | TmDpa         of tm
-  | TmDpb         of tm
+  | TmDPrint         of tm
+  | TmDPrintType         of tm
   | TmError       of info * level * tm
 
 
@@ -627,8 +627,8 @@ let rec tm_info t =
     | TmMapOp(fi,_,_,_) -> fi
     | TmSetOp(fi,_,_,_) -> fi
     | TmDAESolverOp(fi,_,_,_) -> fi
-    | TmDpa(t) -> tm_info t
-    | TmDpb(t) -> tm_info t
+    | TmDPrint(t) -> tm_info t
+    | TmDPrintType(t) -> tm_info t
     | TmError(fi,_,_) -> fi
 
 let rec set_tm_info newfi tm = 
@@ -666,8 +666,8 @@ let rec set_tm_info newfi tm =
     | TmMapOp(_,l,op,tms) -> TmMapOp(newfi,l,op,tms)
     | TmSetOp(_,l,op,tms) -> TmSetOp(newfi,l,op,tms)
     | TmDAESolverOp(_,l,op,tms) -> TmDAESolverOp(newfi,l,op,tms)
-    | TmDpa(t) -> TmDpa(set_tm_info newfi t)
-    | TmDpb(t) -> TmDpb(set_tm_info newfi t)
+    | TmDPrint(t) -> TmDPrint(set_tm_info newfi t)
+    | TmDPrintType(t) -> TmDPrintType(set_tm_info newfi t)
     | TmError(_,l,t) -> TmError(newfi,l,t)
 
 
@@ -1004,8 +1004,8 @@ and pprint tm =
       (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
   | TmDAESolverOp(_,l,op,tms) -> metastr l ^. pprint_daesolver_op op ^. us" " ^.
       (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
-  | TmDpa(t) -> pprint t
-  | TmDpb(t) -> pprint t
+  | TmDPrint(t) -> pprint t
+  | TmDPrintType(t) -> pprint t
   | TmError(fi,l,t) -> metastr l ^. us"error " ^. pprint t
 
 
@@ -1124,8 +1124,8 @@ and fv_tm t =
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmDAESolverOp(fi,l,op,tms) -> 
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
-    | TmDpa(t) -> fv_tm t
-    | TmDpb(t) -> fv_tm t
+    | TmDPrint(t) -> fv_tm t
+    | TmDPrintType(t) -> fv_tm t
     | TmError(fi,l,t) -> fv_tm t
 
 (** Function [free x t] returns true if [x] is free in term [x], else false *)

@@ -141,8 +141,8 @@ and subst_var (x:int) (y:int) (tm:tm)  =
       | TmSetOp(fi,l,op,ts) -> TmSetOp(fi,l,op,List.map (subst_var x y) ts)
       | TmDAESolverOp(fi,l,op,ts) -> 
           TmDAESolverOp(fi,l,op,List.map (subst_var x y) ts)
-      | TmDpa(t) -> TmDpa(subst_var x y t) 
-      | TmDpb(t) -> TmDpb(subst_var x y t)
+      | TmDPrint(t) -> TmDPrint(subst_var x y t) 
+      | TmDPrintType(t) -> TmDPrintType(subst_var x y t)
       | TmError(fi,l,t) -> TmError(fi,l,subst_var x y t)
 
 
@@ -391,8 +391,8 @@ and desugar tm =
       | TmMapOp(fi,l,op,ts) -> TmMapOp(fi,l,op,List.map ds ts)
       | TmSetOp(fi,l,op,ts) -> TmSetOp(fi,l,op,List.map ds ts)
       | TmDAESolverOp(fi,l,op,ts) -> TmDAESolverOp(fi,l,op,List.map ds ts)
-      | TmDpa(t) -> TmDpa(ds t)
-      | TmDpb(t) -> TmDpb(ds t)
+      | TmDPrint(t) -> TmDPrint(ds t)
+      | TmDPrintType(t) -> TmDPrintType(ds t)
       | TmError(fi,l,t) -> TmError(fi,l,ds t)
   in 
     ds tm

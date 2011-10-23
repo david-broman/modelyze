@@ -314,8 +314,8 @@ let desugar_bracket_escape tm =
           TmSetOp(fi,l+lev,op,List.map (ds lev env ukenv) ts)
       | TmDAESolverOp(fi,l,op,ts) -> 
           TmDAESolverOp(fi,l+lev,op,List.map (ds lev env ukenv) ts)
-      | TmDpa(t) -> TmDpa(ds lev env ukenv t)
-      | TmDpb(t) -> TmDpb(ds lev env ukenv t)
+      | TmDPrint(t) -> TmDPrint(ds lev env ukenv t)
+      | TmDPrintType(t) -> TmDPrintType(ds lev env ukenv t)
       | TmError(fi,l,t) -> TmError(fi,l+lev,ds lev env ukenv t)
   in ds 0 [] [] tm
 
@@ -1005,8 +1005,8 @@ and typeof env ukenv t =
     | TmDAESolverOp(fi,l,op,ts) -> 
         let (ty',ts') = typeof_daesolver_op fi l op ts env ukenv in
         (ty',TmDAESolverOp(fi,l,op,ts'))
-    | TmDpa(t) -> let (ty,t') = typeof env ukenv t in (ty,TmDpa(t'))
-    | TmDpb(t) -> let (ty,t') = typeof env ukenv t in (ty,TmDpb(t'))
+    | TmDPrint(t) -> let (ty,t') = typeof env ukenv t in (ty,TmDPrint(t'))
+    | TmDPrintType(t) -> let (ty,t') = typeof env ukenv t in (ty,TmDPrintType(t'))
     | TmError(fi,l,t) -> 
 	(match typeof env ukenv t with
 	   | ((TyString(fi2,l2) as ty),t') -> 

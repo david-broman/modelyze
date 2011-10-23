@@ -137,8 +137,8 @@ and tm_typesubst typemap tm =
     | TmMapOp(fi,l,op,tms) -> TmMapOp(fi,l,op,List.map tmsub tms)
     | TmSetOp(fi,l,op,tms) -> TmSetOp(fi,l,op,List.map tmsub tms)
     | TmDAESolverOp(fi,l,op,tms) -> TmDAESolverOp(fi,l,op,List.map tmsub tms)
-    | TmDpa(t) -> TmDpa(tmsub t)
-    | TmDpb(t) -> TmDpb(tmsub t)
+    | TmDPrint(t) -> TmDPrint(tmsub t)
+    | TmDPrintType(t) -> TmDPrintType(tmsub t)
     | TmError(fi,l,t) -> TmError(fi,l,tmsub t)
 
 let desugar tlst =

@@ -53,7 +53,7 @@ def main = {
   //dpa is "DebugPrintAfter". A generic expression printer
   //which is useful when just testing things. Here we can see
   //that we extracted the optimization problem.
-  (dpa (L,start,stop),dpa (x,y,u));
+  (dprint((L,start,stop)),dprint((x,y,u)));
 
   //The actual DAE is already directly accessable when 
   //instantiating the model

@@ -86,8 +86,8 @@ and tm =
   | TmSetOp       of Ast.setop * tm list
   | TmDAESolver    of Ida.st * tm array * tm array
   | TmDAESolverOp  of Ast.daesolverop * tm list
-  | TmDpa         of tm
-  | TmDpb         of tm
+  | TmDPrint         of tm
+  | TmDPrintType         of tm
   | TmError       of info * tm
 
 
@@ -206,8 +206,8 @@ let rec pprint t  =
     | TmDAESolver(st,_,_) -> us"sim"
     | TmDAESolverOp(op,tms) -> Ast.pprint_daesolver_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
-    | TmDpa(t) -> pprint t
-    | TmDpb(t) -> pprint t
+    | TmDPrint(t) -> pprint t
+    | TmDPrintType(t) -> pprint t
     | TmError(fi,t) -> us"error " ^. pprint t
 
 (* State when two terms are equal. Note that comparing variables, closures
@@ -323,8 +323,8 @@ let translate t =
           nl l d (TmSetOp(op,List.map (fun t -> trans t l denv ) tms))
       | Ast.TmDAESolverOp(_,l,op,tms) ->
           nl l d (TmDAESolverOp(op,List.map (fun t -> trans t l denv ) tms))
-      | Ast.TmDpa(t) -> TmDpa(trans t d denv )
-      | Ast.TmDpb(t) -> TmDpb(trans t d denv )
+      | Ast.TmDPrint(t) -> TmDPrint(trans t d denv )
+      | Ast.TmDPrintType(t) -> TmDPrintType(trans t d denv )
       | Ast.TmError(fi,l,t) -> nl l d (TmError(fi,trans t l denv ))
   in 
     trans t 0 []
@@ -508,8 +508,8 @@ let rec readback earg t =
     | TmSetOp(op,tms) -> TmSetOp(op,List.map rb tms)
     | TmDAESolver(st,_,_) as tt -> tt
     | TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map rb tms)
-    | TmDpa(t) -> TmDpa(rb t)
-    | TmDpb(t) -> TmDpb(rb t)
+    | TmDPrint(t) -> TmDPrint(rb t)
+    | TmDPrintType(t) -> TmDPrintType(rb t)
     | TmError(fi,t) -> TmError(fi,rb t)
 
 
@@ -629,9 +629,9 @@ let evaluate t =
         | 0,TmDAESolverOp(op,tms) -> 
             eval_daesolver_op (eval earg) op (List.map (eval earg) tms)
         | n,TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (eval earg) tms)
-        | n,TmDpa(t) -> let t' = eval earg t  in 
+        | n,TmDPrint(t) -> let t' = eval earg t  in 
 	    (us"dpa: " ^. pprint t') |> uprint_endline; t'
-        | n,TmDpb(t) ->  (us"dpb: " ^. pprint t) |> uprint_endline; eval earg t
+        | n,TmDPrintType(t) ->  (us"dpb: " ^. pprint t) |> uprint_endline; eval earg t
         | 0,TmError(fi,t) ->  
 	    (match eval earg t with
 	     | TmConst(Ast.ConstString(s)) ->

@@ -76,8 +76,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> REAL
 %token <unit Ast.tokendata> BOOL
 %token <unit Ast.tokendata> TYSTRING
-%token <unit Ast.tokendata> DPA
-%token <unit Ast.tokendata> DPB
+%token <unit Ast.tokendata> DPRINT
+%token <unit Ast.tokendata> DPRINTTYPE
 %token <unit Ast.tokendata> LCASE
 %token <unit Ast.tokendata> OF
 %token <unit Ast.tokendata> DECON
@@ -737,10 +737,10 @@ app_left:
   | app_left app_right
       { let (l,t) = $2 in
         TmApp(mktminfo $1 t,l,$1,t,false) }
-  | DPA atom
-      { TmDpa($2) }
-  | DPB atom
-      { TmDpb($2) }
+  | DPRINT LPAREN atom RPAREN
+      { TmDPrint($3) }
+  | DPRINTTYPE LPAREN atom  RPAREN
+      { TmDPrintType($3) }
   | FST atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmProj(fi,$1.l,0,$2) }

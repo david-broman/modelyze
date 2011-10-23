@@ -40,8 +40,8 @@ let reserved_strings = [
   ("Real",          fun(i,l) -> Parser.REAL{i=i;l=l;v=()}); 
   ("Bool",          fun(i,l) -> Parser.BOOL{i=i;l=l;v=()}); 
   ("String",        fun(i,l) -> Parser.TYSTRING{i=i;l=l;v=()}); 
-  ("dpa",           fun(i,l) -> Parser.DPA{i=i;l=l;v=()}); 
-  ("dpb",           fun(i,l) -> Parser.DPB{i=i;l=l;v=()}); 
+  ("dprint",        fun(i,l) -> Parser.DPRINT{i=i;l=l;v=()}); 
+  ("dprinttype",    fun(i,l) -> Parser.DPRINTTYPE{i=i;l=l;v=()}); 
   ("lcase",         fun(i,l) -> Parser.LCASE{i=i;l=l;v=()}); 
   ("of",            fun(i,l) -> Parser.OF{i=i;l=l;v=()}); 
   ("decon",         fun(i,l) -> Parser.DECON{i=i;l=l;v=()}); 

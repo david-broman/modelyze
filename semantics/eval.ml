@@ -31,7 +31,7 @@ type specialize = bool
 type uenv = (int * int) list
 type env = tm list
 
-
+  
 
 and ty =
   | TyBool      
@@ -84,12 +84,12 @@ and tm =
   | TmMapOp       of Ast.mapop * tm list
   | TmSet         of int * (tm,unit) PMap.t
   | TmSetOp       of Ast.setop * tm list
-  | TmDAESolver    of Ida.st * tm array * tm array
-  | TmDAESolverOp  of Ast.daesolverop * tm list
-  | TmDPrint         of tm
-  | TmDPrintType         of tm
+  | TmDAESolver   of Ida.st * tm array * tm array
+  | TmDAESolverOp of Ast.daesolverop * tm list
+  | TmDPrint      of tm
+  | TmDPrintType  of tm
   | TmError       of info * tm
-
+  | TmDebugId     of Ast.ident * tm
 
 
 
@@ -102,6 +102,36 @@ and mpat =
   | MPatModEqual     
   | MPatModProj     
   | MPatVal        of ty
+
+
+type idcount = int
+type ident = int
+let (symIdCount : (ident,idcount) Hashtbl.t) = Hashtbl.create 1024 
+let (symToId : (tm,(ident * idcount)) Hashtbl.t) = Hashtbl.create 1024 
+
+
+let debugTagTm id t =
+  match t with
+    | TmUk(s,ty) -> 
+        (try 
+           let count = Hashtbl.find symIdCount id in
+           Hashtbl.add symIdCount id (count+1);
+           Hashtbl.add symToId t (id,count+1);
+           t
+         with Not_found -> 
+	   Hashtbl.add symIdCount id 1; 
+           Hashtbl.add symToId t (id,1);
+           t)
+        
+    | t -> t
+
+let getDebugSymId t = 
+  let (id,count) = Hashtbl.find symToId t in
+  let totalCount = Hashtbl.find symIdCount id in
+  let s = Symtbl.get id in
+  if totalCount = 1 then s ^. us"#"
+  else s ^. us"#" ^. ustring_of_int count
+
 
 let no_pat_vars p = 
   match p with
@@ -137,7 +167,7 @@ let pprint_ty t =
 	| TyMap(t1,t2) -> 
 	    us"(" ^. (pprint_ty false t1) ^. us" " ^.  
 	      us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
-        | TySet(t) -> us"Set(" ^. (pprint_ty false t) ^. us")"
+        | TySet(t) -> us"{" ^. (pprint_ty false t) ^. us"}"
 	| TyDAESolver ->  us"SimInst"  
   in pprint_ty false t
 
@@ -170,7 +200,7 @@ let rec pprint t  =
     | TmBrack(t) -> us".<" ^. pprint t ^. us">."     
     | TmEsc(t) -> us".~(" ^. pprint t ^. us")"
     | TmRun(t) -> us".!(" ^. pprint t ^. us")"
-    | TmUk(idx,ty) -> ustring_of_int idx ^. us"'':" ^. pprint_ty ty
+    | TmUk(idx,ty) -> getDebugSymId t
     | TmUkGen(ty) -> us"ukgen(" ^. pprint_ty ty ^. us")"
     | TmModApp(t1,t2) -> us"(" ^. pprint t1  ^. us"@" ^. pprint t2  ^. us")"
     | TmModIf(t1,t2,t3) -> us"<if> " ^. 
@@ -187,20 +217,24 @@ let rec pprint t  =
     | TmCons(t1,t2) ->  pprint t1 ^. us"::" ^. pprint t2
     | TmNil -> us"[]" 
     | TmTuple(tms) -> 
-	us"(" ^. (tms |> List.map pprint |> Ustring.concat (us",")) ^. us")"
+	us"(" ^. (tms |> List.map pprint |> Ustring.concat (us", ")) ^. us")"
     | TmProj(i,t) -> us"proj " ^. ustring_of_int i ^. us" " ^. pprint t
     | TmArray(tms) -> us"[|" ^. 
         (tms |> Array.to_list |> List.map pprint |> Ustring.concat (us",")) ^. us"|]"
     | TmArrayOp(op,tms) -> Ast.pprint_array_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
-    | TmMap(size,tmmap) -> us"map{" ^. 
+(*    | TmMap(size,tmmap) -> us"map{" ^. 
         (PMap.foldi (fun t1 t2 a -> pprint t1 ^. us"->" ^. pprint t2 ^. us"," ^. a)  
-          tmmap (us"")) ^. us"}"
+          tmmap (us"")) ^. us"}" *)
+    | TmMap(size,tmmap) -> 
+        let lst = PMap.foldi (fun t1 t2 ts -> 
+                                (pprint t1 ^. us" => " ^. pprint t2)::ts) tmmap [] in
+          us"{" ^. (Ustring.concat (us", ") lst) ^. us"}" 
     | TmMapOp(op,tms) -> Ast.pprint_map_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
-    | TmSet(size,tmset) -> us"set{" ^. 
-        (PMap.foldi (fun t1 _ a -> pprint t1 ^. a)  
-          tmset (us"")) ^. us"}"
+    | TmSet(size,tmset) -> 
+        let lst = PMap.foldi (fun t1 _ ts -> (pprint t1)::ts) tmset [] in
+          us"{" ^. (Ustring.concat (us", ") lst) ^. us"}" 
     | TmSetOp(op,tms) -> Ast.pprint_set_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
     | TmDAESolver(st,_,_) -> us"sim"
@@ -209,6 +243,7 @@ let rec pprint t  =
     | TmDPrint(t) -> pprint t
     | TmDPrintType(t) -> pprint t
     | TmError(fi,t) -> us"error " ^. pprint t
+    | TmDebugId(_,t) -> pprint t
 
 (* State when two terms are equal. Note that comparing variables, closures
    and fix terms always return false *)
@@ -289,7 +324,8 @@ let translate t =
 	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
 	   with Not_found -> assert false)
       | Ast.TmNu(_,l,id,ty,t) -> 
-          nl l d (TmApp(TmLam(trans t l ((id,l)::denv)),TmUkGen(trans_ty ty),false))
+          nl l d (TmApp(TmLam(trans t l ((id,l)::denv)),
+                        TmDebugId(id,TmUkGen(trans_ty ty)),false))
       | Ast.TmModApp(_,l,t1,t2) -> 
           nl l d (TmModApp(trans t1 l denv ,trans t2 l denv ))
       | Ast.TmModIf(_,l,t1,t2,t3) -> nl l d (TmModIf(trans t1 l denv ,
@@ -469,48 +505,7 @@ let mk_primappvalues prim arg args =
   (v1,v2)                  
 
 
-let rec readback earg t = 
-  let (vd,venv,n) = earg in
-  let rb = readback earg in
-  match t with
-    | TmVar(id) -> assert false
-    | TmSymVar(s) -> TmVar(vd-s)
-    | TmLam(t) ->
-        let earg' = (vd+1,(TmSymVar(vd+1))::venv,n) in
-        TmLam(readback earg' t)  
-    | TmClos(t,e) as tt -> tt
-    | TmApp(t1,t2,fs) -> TmApp(rb t1,rb t2,fs)
-    | TmFix(t) -> TmFix(rb t)
-    | TmIf(t1,t2,t3) -> TmIf(rb t1,rb t2,rb t3)
-    | TmConst(b) -> TmConst(b)
-    | TmBrack(t) -> TmBrack(readback (vd,venv,(n+1)) t)
-    | TmEsc(t) -> TmEsc(readback (vd,venv,(n-1)) t)
-    | TmRun(t) -> TmRun(rb t)
-    | TmUk(s,ty) -> TmUk(s,ty) 
-    | TmUkGen(ty) -> TmUkGen(ty) 
-    | TmModApp(t1,t2) -> TmModApp(rb t1,rb t2)
-    | TmModIf(t1,t2,t3) -> TmModIf(rb t1,rb t2,rb t3)
-    | TmModEqual(t1,t2) -> TmModEqual(rb t1,rb t2)
-    | TmModProj(i,t) -> TmModProj(i,rb t)
-    | TmVal(t,ty) -> TmVal(rb t,ty)
-    | TmDecon(t1,mp,t2,t3) -> TmDecon(rb t1,mp,rb t2,rb t3)
-    | TmEqual(t1,t2) -> TmEqual(rb t1,rb t2)
-    | TmLcase(t,t1,t2) -> TmLcase(rb t,rb t1,rb t2)
-    | TmCons(t1,t2) -> TmCons(rb t1,rb t2)
-    | TmNil -> TmNil
-    | TmTuple(tms) -> TmTuple(List.map rb tms)
-    | TmProj(i,t) -> TmProj(i,rb t)
-    | TmArray(tms) -> TmArray(Array.map rb tms)
-    | TmArrayOp(op,tms) -> TmArrayOp(op,List.map rb tms)
-    | TmMap(size,tmmap) as tt -> tt
-    | TmMapOp(op,tms) -> TmMapOp(op,List.map rb tms)
-    | TmSet(size,tmset) as tt -> tt
-    | TmSetOp(op,tms) -> TmSetOp(op,List.map rb tms)
-    | TmDAESolver(st,_,_) as tt -> tt
-    | TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map rb tms)
-    | TmDPrint(t) -> TmDPrint(rb t)
-    | TmDPrintType(t) -> TmDPrintType(rb t)
-    | TmError(fi,t) -> TmError(fi,rb t)
+  
 
 
 
@@ -528,11 +523,7 @@ let evaluate t =
                | t -> t) 
         | 0,TmSymVar(s) -> assert false
         | n,TmSymVar(s) -> TmSymVar(s)
-        | 0,TmLam(t) -> TmClos(t,venv)
-        | n,TmLam(t) -> 
-            let earg' = (vd+1,(TmSymVar(vd+1))::venv,n) in
-            let tt' = TmLam(eval earg' t) in
-            if vd = 0 then readback earg tt' else tt'
+        | n,TmLam(t) -> TmClos(t,venv)
         | n,TmClos(t,e) -> TmClos(t,e)
         | 0,TmApp(t1,t2,fs) -> 
             (match eval earg t1,eval earg t2 with
@@ -630,8 +621,8 @@ let evaluate t =
             eval_daesolver_op (eval earg) op (List.map (eval earg) tms)
         | n,TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (eval earg) tms)
         | n,TmDPrint(t) -> let t' = eval earg t  in 
-	    (us"dpa: " ^. pprint t') |> uprint_endline; t'
-        | n,TmDPrintType(t) ->  (us"dpb: " ^. pprint t) |> uprint_endline; eval earg t
+	    pprint t' |> uprint_endline; t'
+        | n,TmDPrintType(t) -> pprint t |> uprint_endline; eval earg t
         | 0,TmError(fi,t) ->  
 	    (match eval earg t with
 	     | TmConst(Ast.ConstString(s)) ->
@@ -639,6 +630,9 @@ let evaluate t =
 						  Message.ERROR, fi, [s])) 
 	     | _ -> assert false)
         | n,TmError(fi,t) -> TmError(fi,eval earg t)
+        | n,TmDebugId(id,t) -> 
+            let t'= eval earg t in
+            debugTagTm id t'
   in
     eval (0,[],0) t
     

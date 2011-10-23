@@ -20,6 +20,10 @@ def VanDerPol() = {
     minimize integral (x1^2 + x1^2 + u^2) interval 0 4;
 }
 
+//Expected output
+// ({x1=>mvar#1,x2=>mvar#2},{},{u=>mvar#3})
+
+
 // Defines a simple test model that includes the optimization problem
 def TestModel(c:Real) = {
     //A simple hello world DAE (actually an ODE...)
@@ -49,11 +53,13 @@ def main = {
 
   def (x,y,u) = extractVariables(m);
   def meshVars = generateMeshVars((x,y,u));
+  
 
   //dpa is "DebugPrintAfter". A generic expression printer
   //which is useful when just testing things. Here we can see
   //that we extracted the optimization problem.
-  (dprint((L,start,stop)),dprint((x,y,u)));
+  def _ = dprint((x,y,u));
+  ()
 
   //The actual DAE is already directly accessable when 
   //instantiating the model

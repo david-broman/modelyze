@@ -737,10 +737,6 @@ app_left:
   | app_left app_right
       { let (l,t) = $2 in
         TmApp(mktminfo $1 t,l,$1,t,false) }
-  | DPRINT LPAREN atom RPAREN
-      { TmDPrint($3) }
-  | DPRINTTYPE LPAREN atom  RPAREN
-      { TmDPrintType($3) }
   | FST atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmProj(fi,$1.l,0,$2) }
@@ -803,6 +799,10 @@ atom:
       { TmEscape(mkinfo $1.i (tm_info $2),$2) }
   | BEGIN term END
       { $2 }
+  | DPRINT LPAREN term RPAREN
+      { TmDPrint($3) }
+  | DPRINTTYPE LPAREN term RPAREN
+      { TmDPrintType($3) }
 
 
 

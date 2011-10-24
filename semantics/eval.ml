@@ -214,7 +214,13 @@ let rec pprint t  =
     | TmEqual(t1,t2) -> pprint t1 ^. us" == " ^. pprint t2
     | TmLcase(t,t1,t2) -> us"lcase " ^. pprint t ^. us" of " ^.
               us":: -> (" ^. pprint t1 ^. us") | [] -> (" ^. pprint t2 ^. us")" 
-    | TmCons(t1,t2) ->  pprint t1 ^. us"::" ^. pprint t2
+    | TmCons(t1,t2) -> 
+        (let rec toList t = 
+          match t with 
+            | TmCons(t1,t2) -> (pprint t1)::(toList t2)
+            | _ -> []
+        in
+          us"[" ^. (Ustring.concat (us", ") (toList t)) ^. us"]" )
     | TmNil -> us"[]" 
     | TmTuple(tms) -> 
 	us"(" ^. (tms |> List.map pprint |> Ustring.concat (us", ")) ^. us")"

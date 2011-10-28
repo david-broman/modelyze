@@ -36,6 +36,29 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     genmesh(n_e);
 }
 
+def genNLPCostFunction(cost:Expr, h:Real, meshVars:[MeshVars]) Expr = {
+    def substituteVars(exp:Expr, meshVars:MeshVars) : Expr ={
+        def (xMap,yMap,uMap) = meshVars;
+        match exp with
+        | sym:Signal if Map.mem model xMap -> Map.find model xMap
+        | sym:Signal if Map.mem model yMap -> Map.find model yMap
+        | sym:Signal if Map.mem model uMap -> Map.find model uMap
+        | e1 e2 -> {
+            def e1b = substituteVars(e1, meshVars);
+            def e2b = substituteVars(e2, meshVars);
+            e1b e2b;
+          }
+        | e -> e 
+    };
+    def genCostFunction(meshVarList:[MeshVars], cNLP:Expr) : Expr = {
+        match meshVarList with
+        | mv::mvs -> genCostFunction(mvs, cNLP + substituteVars(cost, mv)*h)
+        | [] -> cNLP
+    };
+    genCostFunction((meshVars, 0);
+}
+
+
 def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
     Equations = {
     def substituteVars(model:Expr, prevX:VarMap, meshVars:MeshVars) : Expr = {

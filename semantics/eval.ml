@@ -113,15 +113,17 @@ let (symToId : (tm,(ident * idcount)) Hashtbl.t) = Hashtbl.create 1024
 let debugTagTm id t =
   match t with
     | TmUk(s,ty) -> 
-        (try 
-           let count = Hashtbl.find symIdCount id in
-           Hashtbl.add symIdCount id (count+1);
-           Hashtbl.add symToId t (id,count+1);
-           t
-         with Not_found -> 
-	   Hashtbl.add symIdCount id 1; 
-           Hashtbl.add symToId t (id,1);
-           t)
+        if Hashtbl.mem symToId t then t
+        else
+          (try           
+             let count = Hashtbl.find symIdCount id in
+             Hashtbl.add symIdCount id (count+1);
+             Hashtbl.add symToId t (id,count+1);
+             t
+           with Not_found -> 
+	     Hashtbl.add symIdCount id 1; 
+             Hashtbl.add symToId t (id,1);
+             t)
     | TmClos(t,env,_) -> TmClos(t,env,id)
     | t -> t
 
@@ -193,19 +195,27 @@ let rec pprint t  =
         pprint t1 ^. us" " ^. pprint t2 ^. us")"
     | TmFix(t) -> us"fix[" ^. pprint t ^. us"]"
     | TmIf(t1,t2,t3) -> us"if " ^. 
-	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
+      	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
     | TmConst(c) -> Ast.pprint_const c 0
     | TmBrack(t) -> us".<" ^. pprint t ^. us">."     
     | TmEsc(t) -> us".~(" ^. pprint t ^. us")"
     | TmRun(t) -> us".!(" ^. pprint t ^. us")"
     | TmUk(idx,ty) -> getDebugSymId t
     | TmUkGen(ty) -> us"ukgen(" ^. pprint_ty ty ^. us")"
-    | TmModApp(t1,t2) -> us"(" ^. pprint t1  ^. us"@" ^. pprint t2  ^. us")"
+    | TmModApp(t1,t2) -> 
+         let rec collect t acc = 
+           match t with
+            | TmModApp(t1,t2) -> collect t1 (t2::acc)
+            | t -> (t,acc)
+         in
+         let (f,ts) = collect t [] in  
+         pprint f ^. us"(" ^. (Ustring.concat (us", ") (List.map pprint ts))
+                  ^. us")" 
     | TmModIf(t1,t2,t3) -> us"<if> " ^. 
 	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
     | TmModEqual(t1,t2) -> pprint t1 ^. us" <==> " ^. pprint t2
     | TmModProj(i,t) -> us"proj " ^. ustring_of_int i ^. us" " ^. pprint t
-    | TmVal(t,ty) -> us"val(" ^. pprint t ^. us":" ^. pprint_ty ty ^. us")"
+    | TmVal(t,ty) -> pprint t 
     | TmDecon(t1,pat,t2,t3) -> us"(decon " ^.
          pprint t1 ^. us" with " ^. pprint_pat pat ^. us" then " ^. 
          pprint t2 ^. us" else " ^. pprint t3 ^. us")"

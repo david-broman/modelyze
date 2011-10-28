@@ -1,7 +1,6 @@
 (*
 Modeling Kernel Language (MKL) toolchain
 Copyright (C) 2010-2011 David Broman
-
 MKL toolchain is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -816,7 +815,10 @@ let pprint_const c l =
   match c with
     | ConstBool(b) -> metastr l ^. if b then us"true" else us"false"
     | ConstInt(i) -> metastr l ^. ustring_of_int i
-    | ConstReal(f) -> metastr l ^. ustring_of_float f
+    | ConstReal(f) -> 
+        let i = int_of_float f in
+        if float_of_int i = f then ustring_of_int i 
+        else ustring_of_float f
     | ConstString(s) -> metastr l ^. us"\"" ^. s ^. us"\""
     | ConstUnit -> metastr l ^. us"()"
     | ConstPrim(p,_) -> metastr l ^. pprint_primitive p

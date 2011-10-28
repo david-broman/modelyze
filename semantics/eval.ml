@@ -56,7 +56,7 @@ and tm =
   | TmVar         of index
   | TmSymVar      of sym
   | TmLam         of tm 
-  | TmClos        of tm * env 
+  | TmClos        of tm * env * Ast.ident
   | TmApp         of tm * tm * specialize
   | TmFix         of tm
   | TmIf          of tm * tm * tm
@@ -122,7 +122,7 @@ let debugTagTm id t =
 	   Hashtbl.add symIdCount id 1; 
            Hashtbl.add symToId t (id,1);
            t)
-        
+    | TmClos(t,env,_) -> TmClos(t,env,id)
     | t -> t
 
 let getDebugSymId t = 
@@ -188,9 +188,7 @@ let rec pprint t  =
     | TmVar(idx) -> ustring_of_int idx ^. us"'"
     | TmSymVar(s) -> us"sym(" ^. ustring_of_int s ^. us")"
     | TmLam(t) -> us"(" ^. us"fun -> " ^. pprint t ^. us")"
-    | TmClos(t,e) -> us"(" ^. us"closure[" ^. 
-        (*(e |> List.map pprint |> Ustring.concat (us",")) ^.*) us"] -> " ^. 
-             pprint t ^. us")"
+    | TmClos(t,e,id) -> Symtbl.get id
     | TmApp(t1,t2,fs) -> (if fs then us"specialize(" else  us"(" ) ^. 
         pprint t1 ^. us" " ^. pprint t2 ^. us")"
     | TmFix(t) -> us"fix[" ^. pprint t ^. us"]"
@@ -226,15 +224,14 @@ let rec pprint t  =
 	us"(" ^. (tms |> List.map pprint |> Ustring.concat (us", ")) ^. us")"
     | TmProj(i,t) -> us"proj " ^. ustring_of_int i ^. us" " ^. pprint t
     | TmArray(tms) -> us"[|" ^. 
-        (tms |> Array.to_list |> List.map pprint |> Ustring.concat (us",")) ^. us"|]"
+        (tms |> Array.to_list |> List.map pprint |> 
+             Ustring.concat (us",")) ^. us"|]"
     | TmArrayOp(op,tms) -> Ast.pprint_array_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
-(*    | TmMap(size,tmmap) -> us"map{" ^. 
-        (PMap.foldi (fun t1 t2 a -> pprint t1 ^. us"->" ^. pprint t2 ^. us"," ^. a)  
-          tmmap (us"")) ^. us"}" *)
     | TmMap(size,tmmap) -> 
-        let lst = PMap.foldi (fun t1 t2 ts -> 
-                                (pprint t1 ^. us" => " ^. pprint t2)::ts) tmmap [] in
+        let lst = PMap.foldi 
+          (fun t1 t2 ts -> 
+             (pprint t1 ^. us" => " ^. pprint t2)::ts) tmmap [] in
           us"{" ^. (Ustring.concat (us", ") lst) ^. us"}" 
     | TmMapOp(op,tms) -> Ast.pprint_map_op op ^. us" " ^. 
         (tms |> List.map pprint |> Ustring.concat (us" "))
@@ -310,10 +307,10 @@ let translate t =
       | Ast.TmFix(_,l,t) -> nl l d (TmFix(trans t l denv ))
       | Ast.TmLet(_,l,id,Some ty,plst,t1,t2,false) -> 
 	  nl l d (TmApp(TmLam(trans t2 l 
-		((id,l)::denv) ),mkfuns plst t1 d denv,false)) 
+		((id,l)::denv) ),TmDebugId(id,mkfuns plst t1 d denv),false)) 
       | Ast.TmLet(fi,l,id,Some ty,plst,t1,t2,true) -> 
 	  nl l d (TmApp(TmLam(trans t2 l ((id,l)::denv) ),
-             TmFix(TmLam(mkfuns plst t1 l ((id,l)::denv) )),false)) 
+           TmDebugId(id,TmFix(TmLam(mkfuns plst t1 l ((id,l)::denv) ))),false)) 
       | Ast.TmLet(_,_,_,_,_,_,_,_) -> assert false
       | Ast.TmIf(_,l,t1,t2,t3) -> nl l d (TmIf(trans t1 l denv ,
 		trans t2 l denv ,trans t3 l denv )) 
@@ -529,18 +526,18 @@ let evaluate t =
                | t -> t) 
         | 0,TmSymVar(s) -> assert false
         | n,TmSymVar(s) -> TmSymVar(s)
-        | n,TmLam(t) -> TmClos(t,venv)
-        | n,TmClos(t,e) -> TmClos(t,e)
+        | n,TmLam(t) -> TmClos(t,venv,Symtbl.empty)
+        | n,TmClos(t,e,id) -> TmClos(t,e,id)
         | 0,TmApp(t1,t2,fs) -> 
             (match eval earg t1,eval earg t2 with
-	       | (TmClos(t3,venv2),v2) -> 
+	       | (TmClos(t3,venv2,_),v2) -> 
                    eval (vd,(v2::venv2),0) t3  
 	       | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
 	       | t1',t2' -> assert false) 
         | n,TmApp(t1,t2,fs) -> TmApp(eval earg t1,eval earg t2,fs)
         | 0,TmFix(t) ->
             (match eval earg t with
-               | TmClos(t2,venv2) as tt ->                  
+               | TmClos(t2,venv2,_) as tt ->                  
                    eval (vd,TmFix(tt)::venv2,0) t2 
                | _ -> assert false)
         | n,TmFix(t) -> TmFix(eval earg t)  

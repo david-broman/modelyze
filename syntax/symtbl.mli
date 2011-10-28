@@ -25,7 +25,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 *)
 
 
-
+val empty : int
 
 val add : Ustring.t -> int
 (** Add an identifier [s] to the symbol table. Returns an 

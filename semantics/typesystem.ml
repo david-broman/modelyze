@@ -618,9 +618,11 @@ and typeof env ukenv t =
 		  else 
 		    (match ty2 with 
 		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
-                          (mk_tymodel ty12,TmModApp(fi,l,TmVal(fi,l,t1',ty1),t2'))
+                          (mk_tymodel ty12,TmModApp
+                             (fi,l,TmVal(fi,l,t1',ty1),t2'))
 		       | TyAnyModel(_,l3) -> 
-                          (mk_tymodel ty12,TmModApp(fi,l,TmVal(fi,l,t1',ty1),t2'))
+                          (mk_tymodel ty12,TmModApp
+                             (fi,l,TmVal(fi,l,t1',ty1),t2'))
 		       | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
 		             tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
 	    | TyModel(_,l,TyArrow(_,l3,ty11,ty12)) ->
@@ -682,7 +684,11 @@ and typeof env ukenv t =
 		  if recu then 
                     typeof ((x,(l,tyvar,StripNo))::t1_env) ukenv t1
 		  else typeof t1_env ukenv t1 in
-		  if not (ty_consistent ty1 ty1def) then
+                  (* Coercion of int to real *)
+                  if ty_consistent ty1def (TyReal(NoInfo,0)) &&
+                     ty_consistent ty1 (TyInt(NoInfo,0)) 
+                  then (ty1def, int2real_coercion t1')
+		  else if not (ty_consistent ty1 ty1def) then
 		    raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH,
 			ERROR,fi,[pprint_ty ty1; pprint_ty ty1def]))
 		  else (ty1,t1')
@@ -725,7 +731,14 @@ and typeof env ukenv t =
 		   raise (Mkl_type_error(TYPE_IF_EXP_LEV_MONOTONICITY,ERROR,fi,
 			 [ustring_of_int l; pprint_ty ty2; pprint_ty ty3]))
 		 else
-		   if not (ty_consistent ty2 ty3) then
+                   (* Coercion of int to real *)
+                   if      ty_consistent ty2 (TyReal(NoInfo,0)) &&
+                           ty_consistent ty3 (TyInt(NoInfo,0)) 
+                   then  (ty2,TmIf(fi,l,t1',t2',int2real_coercion t3'))
+                   else if ty_consistent ty2 (TyInt(NoInfo,0)) &&
+                           ty_consistent ty3 (TyReal(NoInfo,0))
+                   then  (ty3,TmIf(fi,l,t1',int2real_coercion t2',t3'))
+		   else if not (ty_consistent ty2 ty3) then
 		     raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
 				           [pprint_ty ty2; pprint_ty ty3]))
 		   else

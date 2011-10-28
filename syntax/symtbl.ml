@@ -25,6 +25,8 @@ let symtab1  = USHashtbl.create 1024
 let (symtab2 : (int,ustring) Hashtbl.t) = Hashtbl.create 1024 
 let idcount = ref 0
 
+let empty = 0
+
 (** Add an identifier [s] to the symbol table. Returns an 
     integer id. If the identifier already exists, the
     current integer id is returned.  *)
@@ -32,20 +34,21 @@ let add s =
   try USHashtbl.find symtab1 s
   with
       Not_found -> 
+	incr idcount;
 	USHashtbl.add symtab1 s !idcount;
 	Hashtbl.add symtab2 !idcount s;
-	incr idcount;
-	!idcount - 1
+	!idcount
 
 (** Get the ustring representation for a symbol with integer id [i] 
    Raises [Not_found] if the id value is not found *)
 
-let get i = Hashtbl.find symtab2 i
-
+let get i = if i=0 then us"" else Hashtbl.find symtab2 i
 
 let clear () =
   USHashtbl.clear symtab1;
   Hashtbl.clear symtab2;
   idcount := 0
+
+
 
 

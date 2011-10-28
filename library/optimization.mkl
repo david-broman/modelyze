@@ -36,7 +36,7 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     genmesh(n_e);
 }
 
-def genNLPCostFunction(cost:Expr, h:Real, meshVars:[MeshVars]) Expr = {
+def genNLPCostFunction(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
     def substituteVars(exp:Expr, meshVars:MeshVars) : Expr ={
         def (xMap,yMap,uMap) = meshVars;
         match exp with
@@ -55,7 +55,7 @@ def genNLPCostFunction(cost:Expr, h:Real, meshVars:[MeshVars]) Expr = {
         | mv::mvs -> genCostFunction(mvs, cNLP + substituteVars(cost, mv)*h)
         | [] -> cNLP
     };
-    genCostFunction((meshVars, 0);
+    genCostFunction(meshVars, 0);  
 }
 
 

@@ -61,15 +61,9 @@ and tm =
   | TmFix         of tm
   | TmIf          of tm * tm * tm
   | TmConst       of Ast.const
-  | TmBrack       of tm
-  | TmEsc         of tm
-  | TmRun         of tm
   | TmUk          of sym * ty 
   | TmUkGen       of ty
   | TmModApp      of tm * tm 
-  | TmModIf       of tm * tm * tm
-  | TmModEqual    of tm * tm
-  | TmModProj     of int * tm
   | TmVal         of tm * ty
   | TmDecon       of tm * mpat * tm * tm
   | TmEqual       of tm * tm
@@ -315,9 +309,7 @@ and pprint prec t  =
     | TmDecon(_,_,_,_) | TmEqual(_,_) | TmLcase(_,_,_) |
       TmVar(_) | TmSymVar(_) | TmLam(_) |
       TmProj(_,_) | TmArrayOp(_,_) | TmMapOp(_,_) |
-      TmApp(_,_,_) | TmFix(_) | TmIf(_,_,_) |
-      TmBrack(_) | TmEsc(_) | TmRun(_) | TmUkGen(_) |
-      TmModIf(_,_,_) | TmModEqual(_,_) | TmModProj(_,_) |
+      TmApp(_,_,_) | TmFix(_) | TmIf(_,_,_) | TmUkGen(_) |
       TmSetOp(_,_) | TmDAESolverOp(_,_) 
         -> failwith "PPrint not defined"
 
@@ -359,11 +351,7 @@ let trans_pat l p denv =
   | Ast.MPatVal(_,id,ty) -> (MPatVal(trans_ty ty),(id,l)::denv)
 
 let translate t =
-  let rec nl l d t = 
-    if l > d then TmBrack(nl l (d+1) t)
-    else if l < d then TmEsc(nl l (d-1) t)
-    else t 
-  in 
+  let rec nl l d t = t in
   let rec mkfuns plst t d denv  =
     match plst with
       | [] -> trans t d denv 
@@ -388,14 +376,15 @@ let translate t =
       | Ast.TmIf(_,l,t1,t2,t3) -> nl l d (TmIf(trans t1 l denv ,
 		trans t2 l denv ,trans t3 l denv )) 
       | Ast.TmConst(_,l,c) -> nl l d (TmConst(c))
-      | Ast.TmUp(_,l,t) -> 
-	  nl l d (TmApp(TmLam(TmBrack(TmVar(0))),
-					    trans t l denv,false))
-      | Ast.TmDown(_,l,t) -> nl l d (TmRun(trans t l denv ))
+      | Ast.TmUp(_,l,t) -> assert false
+      | Ast.TmDown(_,l,t) -> assert false
       | Ast.TmBracket(_,_) -> assert false
       | Ast.TmEscape(_,_) -> assert false
       | Ast.TmList(_,_,_) -> assert false
       | Ast.TmMatch(_,_,_,_) -> assert false
+      | Ast.TmModProj(_,_,_,_) -> assert false
+      | Ast.TmModEqual(_,_,_,_) -> assert false
+      | Ast.TmModIf(_,_,_,_,_) -> assert false
       | Ast.TmUk(_,l,id,ty) -> 
 	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
 	   with Not_found -> assert false)
@@ -404,11 +393,6 @@ let translate t =
                         TmDebugId(id,TmUkGen(trans_ty ty)),false))
       | Ast.TmModApp(_,l,t1,t2) -> 
           nl l d (TmModApp(trans t1 l denv ,trans t2 l denv ))
-      | Ast.TmModIf(_,l,t1,t2,t3) -> nl l d (TmModIf(trans t1 l denv ,
-		trans t2 l denv ,trans t3 l denv )) 
-      | Ast.TmModEqual(_,l,t1,t2) -> 
-	  nl l d (TmModEqual(trans t1 l denv ,trans t2 l denv ))
-      | Ast.TmModProj(_,l,i,t) -> nl l d (TmModProj(i,trans t l denv ))
       | Ast.TmVal(_,l,t,ty) -> nl l d (TmVal(trans t l denv ,trans_ty ty))
       | Ast.TmDecon(_,l,t1,p,t2,t3) ->
 	  let (p',denv') = trans_pat l p denv in
@@ -590,127 +574,89 @@ let evaluate t =
   let ukno = ref 0 in
   let gensym_uk() = incr ukno; !ukno in
   let rec eval earg t = 
-    let (vd,venv,n) = earg in
-      match n,t with 
-        | n,TmVar(i) -> 
+    let (vd,venv) = earg in
+      match t with 
+        | TmVar(i) -> 
             (match List.nth venv i with
                | TmFix(t) as tt -> 
                    eval earg tt
                | t -> t) 
-        | 0,TmSymVar(s) -> assert false
-        | n,TmSymVar(s) -> TmSymVar(s)
-        | n,TmLam(t) -> TmClos(t,venv,Symtbl.empty)
-        | n,TmClos(t,e,id) -> TmClos(t,e,id)
-        | 0,TmApp(t1,t2,fs) -> 
+        | TmSymVar(s) -> TmSymVar(s)
+        | TmLam(t) -> TmClos(t,venv,Symtbl.empty)
+        | TmClos(t,e,id) -> TmClos(t,e,id)
+        | TmApp(t1,t2,fs) -> 
             (match eval earg t1,eval earg t2 with
 	       | (TmClos(t3,venv2,_),v2) -> 
-                   eval (vd,(v2::venv2),0) t3  
+                   eval (vd,(v2::venv2)) t3  
 	       | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
 	       | t1',t2' -> assert false) 
-        | n,TmApp(t1,t2,fs) -> TmApp(eval earg t1,eval earg t2,fs)
-        | 0,TmFix(t) ->
+        | TmFix(t) ->
             (match eval earg t with
                | TmClos(t2,venv2,_) as tt ->                  
-                   eval (vd,TmFix(tt)::venv2,0) t2 
+                   eval (vd,TmFix(tt)::venv2) t2 
                | _ -> assert false)
-        | n,TmFix(t) -> TmFix(eval earg t)  
-        | 0,TmIf(t1,t2,t3) -> 
+        | TmIf(t1,t2,t3) -> 
             (match eval earg t1 with
 	       | TmConst(Ast.ConstBool(b)) -> 
-                   eval (vd,venv,n) (if b then t2 else t3)
+                   eval (vd,venv) (if b then t2 else t3)
 	       | _ -> assert false)
-        | n,TmIf(t1,t2,t3) -> TmIf(eval earg t1,eval earg t2,eval earg t3) 
-        | n,TmConst(b) -> TmConst(b)
-        | n,TmBrack(t) -> TmBrack(eval (vd,venv,(n+1)) t)
-        | 0,TmEsc(t) -> assert false
-        | 1,TmEsc(t) -> (match eval (vd,venv,0) t with 
-			   | TmBrack(v) -> v
-			   | _ -> assert false)
-        | n,TmEsc(t) -> TmEsc(eval (vd,venv,(n-1)) t)      
-        | 0,TmRun(t) -> (match eval earg t with
-			   | TmBrack(t2) -> eval earg t2
-			   | _ -> assert false)
-        | n,TmRun(t) -> TmRun(eval earg t)
-        | n,TmUk(s,ty) -> TmUk(s,ty)
-        | n,TmUkGen(ty) -> TmUk(gensym_uk(),ty)
-        | n,TmModApp(t1,t2) -> TmModApp(eval earg t1,eval earg t2)
-        | n,TmModIf(t1,t2,t3) -> TmModIf(eval earg t1,t2,t3)
-        | n,TmModEqual(t1,t2) -> TmModEqual(eval earg t1,eval earg t2)
-        | n,TmModProj(i,t) -> TmModProj(i,eval earg t)
-        | n,TmVal(t,ty) -> TmVal(eval earg t,ty)
-        | 0,TmDecon(t1,p,t2,t3) -> 
+        | TmConst(b) -> TmConst(b)
+        | TmUk(s,ty) -> TmUk(s,ty)
+        | TmUkGen(ty) -> TmUk(gensym_uk(),ty)
+        | TmModApp(t1,t2) -> TmModApp(eval earg t1,eval earg t2)
+        | TmVal(t,ty) -> TmVal(eval earg t,ty)
+        | TmDecon(t1,p,t2,t3) -> 
             (match eval earg t1,p with
 	       | TmUk(id,ty1),MPatUk(ty2) 
 		   when ty1 = ty2  ->
-                   eval (vd,venv,0) t2                  
+                   eval (vd,venv) t2                  
 	       | TmModApp(v1,v2),MPatModApp -> 
-                   eval (vd,v1::v2::venv,0) t2            
-	       | TmModIf(v1,v2,v3),MPatModIfGuard ->
-                   eval (vd,v1::venv,0) t2            
-	       | TmModIf(v1,v2,v3),MPatModIfThen ->
-                   eval (vd,v2::venv,0) t2            
-	       | TmModIf(v1,v2,v3),MPatModIfElse ->
-                   eval (vd,v3::venv,0) t2            
-	       | TmModEqual(v1,v2),MPatModEqual -> 
-                   eval (vd,v1::v2::venv,0) t2            
-	       | TmModProj(i,v2),MPatModProj -> 
-		   let v1 = TmConst(Ast.ConstInt(i)) in
-                     eval (vd,v1::v2::venv,0) t2            
+                   eval (vd,v1::v2::venv) t2            
 	       | TmVal(v1,ty1),MPatVal(ty2) when ty1 = ty2 ->	
-                   eval (vd,v1::venv,0) t2            
+                   eval (vd,v1::venv) t2            
                | TmVal(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatModApp ->
                    let (v1,v2) = mk_primappvalues prim arg args in
-                   eval (vd,v1::v2::venv,0) t2 
-               | _ -> eval (vd,venv,n) t3)
-        | n,TmDecon(t1,p,t2,t3) -> 
-            TmDecon(eval earg t1,p,eval earg t2,eval earg t3)
-        | 0,TmEqual(t1,t2) -> 
+                   eval (vd,v1::v2::venv) t2 
+               | _ -> eval (vd,venv) t3)
+        | TmEqual(t1,t2) -> 
             TmConst(Ast.ConstBool(tm_equiv (eval earg t1) 
                                        (eval earg t2)))
-        | n,TmEqual(t1,t2) -> TmEqual(eval earg t1,eval earg t2)
-        | 0,TmLcase(t,t1,t2) ->           
+        | TmLcase(t,t1,t2) ->           
             (match eval earg t with
                | TmCons(v1,v2) -> 
-                   eval (vd,(v1::v2::venv),0) t1                  
-	       | TmNil -> eval (vd,venv,n) t2
+                   eval (vd,(v1::v2::venv)) t1                  
+	       | TmNil -> eval (vd,venv) t2
 	       | tt -> assert false)
-        | n,TmLcase(t,t1,t2) -> TmLcase(eval earg t,eval earg t1,eval earg t2) 
-        | n,TmCons(t1,t2) -> TmCons(eval earg t1,eval earg t2) 
-        | n,TmNil -> TmNil
-        | n,TmTuple(tms) -> TmTuple(List.map (eval earg) tms)
-        | 0,TmProj(i,t) -> 
+        | TmCons(t1,t2) -> TmCons(eval earg t1,eval earg t2) 
+        | TmNil -> TmNil
+        | TmTuple(tms) -> TmTuple(List.map (eval earg) tms)
+        | TmProj(i,t) -> 
             (match eval earg t with
 	       | TmTuple(tms) -> List.nth tms i
 	       | _ -> assert false)
-        | n,TmProj(i,t) -> TmProj(i,eval earg t)
-        | n,TmArray(tms) -> TmArray(Array.map (eval earg) tms)     
-        | 0,TmArrayOp(op,tms) -> eval_array_op op (List.map (eval earg) tms)
-        | n,TmArrayOp(op,tms) -> TmArrayOp(op,List.map (eval earg) tms)
-        | n,TmMap(size,tms) -> TmMap(size,tms)
-        | 0,TmMapOp(op,tms) -> eval_map_op op (List.map (eval earg) tms)
-        | n,TmMapOp(op,tms) -> TmMapOp(op,List.map (eval earg) tms)
-        | n,TmSet(size,tms) -> TmSet(size,tms)
-        | 0,TmSetOp(op,tms) -> eval_set_op op (List.map (eval earg) tms)
-        | n,TmSetOp(op,tms) -> TmSetOp(op,List.map (eval earg) tms)
-        | n,TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
-        | 0,TmDAESolverOp(op,tms) -> 
+        | TmArray(tms) -> TmArray(Array.map (eval earg) tms)     
+        | TmArrayOp(op,tms) -> eval_array_op op (List.map (eval earg) tms)
+        | TmMap(size,tms) -> TmMap(size,tms)
+        | TmMapOp(op,tms) -> eval_map_op op (List.map (eval earg) tms)
+        | TmSet(size,tms) -> TmSet(size,tms)
+        | TmSetOp(op,tms) -> eval_set_op op (List.map (eval earg) tms)
+        | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
+        | TmDAESolverOp(op,tms) -> 
             eval_daesolver_op (eval earg) op (List.map (eval earg) tms)
-        | n,TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (eval earg) tms)
-        | n,TmDPrint(t) -> let t' = eval earg t  in 
+        | TmDPrint(t) -> let t' = eval earg t  in 
 	    pprint 0 t' |> uprint_endline; t'
-        | n,TmDPrintType(t) -> pprint 0 t |> uprint_endline; eval earg t
-        | 0,TmError(fi,t) ->  
+        | TmDPrintType(t) -> pprint 0 t |> uprint_endline; eval earg t
+        | TmError(fi,t) ->  
 	    (match eval earg t with
 	     | TmConst(Ast.ConstString(s)) ->
 		 raise (Ast.Mkl_runtime_error (Message.RUNTIME_ERROR,
 						  Message.ERROR, fi, [s])) 
 	     | _ -> assert false)
-        | n,TmError(fi,t) -> TmError(fi,eval earg t)
-        | n,TmDebugId(id,t) -> 
+        | TmDebugId(id,t) -> 
             let t'= eval earg t in
             debugTagTm id t'
   in
-    eval (0,[],0) t
+    eval (0,[]) t
     
 
 

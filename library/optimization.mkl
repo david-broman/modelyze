@@ -33,8 +33,8 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     def genvar(varlst:[Signal],acc:VarMap) : VarMap = {
         match varlst with
         | v::vs -> {
-             def mvar:Signal; 
-             genvar(vs,Map.add v mvar acc)
+             def m:Signal; 
+             genvar(vs,Map.add v m acc)
           }
         | [] -> acc
     };

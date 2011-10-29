@@ -1,4 +1,5 @@
 
+//Original problem 20s
 
 include AnalogElectrical
 include HybridSimulation
@@ -13,10 +14,10 @@ def CircuitA() = {
     Ground(a3);
     Resistor(10,a1,a2);
     
-    VoltageSensor(a1,a2,probe "v");
+    VoltageSensor(a1,a2,probe "v")
 }
 
 
 def main = 
-  printsim(CircuitA(),0.1,0.4)
+  printsim(CircuitA(),0.1,1)
   //printLine(exportModelica("Circuit",CircuitA()))

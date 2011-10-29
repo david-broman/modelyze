@@ -136,7 +136,7 @@ let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
                 | sym:Signal -> worker (ypfun x)  
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Signal -> worker (yyfun e)
-    | _ -> let _ = dpa e in error "Unsupported model construct" 
+    | _ -> error "Unsupported model construct" 
   in
     worker expr 
 

@@ -813,15 +813,15 @@ let pprint_primitive p =
 
 let pprint_const c l =
   match c with
-    | ConstBool(b) -> metastr l ^. if b then us"true" else us"false"
-    | ConstInt(i) -> metastr l ^. ustring_of_int i
+    | ConstBool(b) -> if b then us"true" else us"false"
+    | ConstInt(i) -> ustring_of_int i
     | ConstReal(f) -> 
         let i = int_of_float f in
         if float_of_int i = f then ustring_of_int i 
         else ustring_of_float f
-    | ConstString(s) -> metastr l ^. us"\"" ^. s ^. us"\""
-    | ConstUnit -> metastr l ^. us"()"
-    | ConstPrim(p,_) -> metastr l ^. pprint_primitive p
+    | ConstString(s) -> us"\"" ^. s ^. us"\""
+    | ConstUnit ->  us"()"
+    | ConstPrim(p,_) -> pprint_primitive p
 
 let pprint_ty t =
   let rec pprint_ty left t =

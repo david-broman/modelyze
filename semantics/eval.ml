@@ -108,31 +108,40 @@ type idcount = int
 type ident = int
 let (symIdCount : (ident,idcount) Hashtbl.t) = Hashtbl.create 1024 
 let (symToId : (tm,(ident * idcount)) Hashtbl.t) = Hashtbl.create 1024 
+let (primToId : (Ast.primitive,ident) Hashtbl.t) = Hashtbl.create 512 
 
+let isSymInfix s = Ustring.sub s 0 1 =. us"("
 
 let debugTagTm id t =
   match t with
     | TmUk(s,ty) -> 
-        if Hashtbl.mem symToId t then t
-        else
+        if Hashtbl.mem symToId t then 
+           if isSymInfix (Symtbl.get id) then
+             (Hashtbl.add symToId t (id,0); t)
+           else t  
+        else 
           (try           
              let count = Hashtbl.find symIdCount id in
              Hashtbl.add symIdCount id (count+1);
-             Hashtbl.add symToId t (id,count+1);
-             t
+             Hashtbl.add symToId t (id,count+1);t
            with Not_found -> 
 	     Hashtbl.add symIdCount id 1; 
-             Hashtbl.add symToId t (id,1);
-             t)
+             Hashtbl.add symToId t (id,1);t)
     | TmClos(t,env,_) -> TmClos(t,env,id)
+    | TmConst(Ast.ConstPrim(prim,_)) ->
+        Hashtbl.add primToId prim id; t
     | t -> t
+
 
 let getDebugSymId t = 
   let (id,count) = Hashtbl.find symToId t in
-  let totalCount = Hashtbl.find symIdCount id in
   let s = Symtbl.get id in
-  if totalCount = 1 then s ^. us"#"
-  else s ^. us"#" ^. ustring_of_int count
+  if isSymInfix s then s
+  else
+    let totalCount = Hashtbl.find symIdCount id in
+    if totalCount = 1 
+      then s ^. us"#"
+      else s ^. us"#" ^. ustring_of_int count
 
 
 let no_pat_vars p = 
@@ -173,7 +182,6 @@ let pprint_ty t =
 	| TyDAESolver ->  us"SimInst"  
   in pprint_ty false t
 
-
 let pprint_pat p = 
   match p with
   | MPatUk(ty) -> us"uk:" ^. pprint_ty ty 
@@ -185,78 +193,133 @@ let pprint_pat p =
   | MPatModProj ->   us"proj " 
   | MPatVal(ty) -> us"val:" ^.  pprint_ty ty
 
-let rec pprint t  =
+type primStyle =
+  | InfixSpace
+  | InfixNoSpace
+  | InfixNewline
+  | Prefix
+  | PrefixFun
+  | Postfix
+
+let opMap str = 
+  match Ustring.to_utf8 str with
+    | "(=)"   -> (InfixSpace,us"=",5)
+    | "(~=)"  -> (InfixSpace,us"~=",5)
+    | "(<-)"  -> (InfixSpace,us"<-",5)
+    | "(mod)" -> (InfixSpace,us"mod",10)
+    | "(+)"   -> (InfixSpace,us"+",8)
+    | "(-)"   -> (InfixSpace,us"-",8)
+    | "(*)"   -> (InfixSpace,us"*",9)
+    | "(/)"   -> (InfixSpace,us"/",9)
+    | "(<)"   -> (InfixSpace,us"<",6)
+    | "(<=)"  -> (InfixSpace,us"<=",6)
+    | "(>)"   -> (InfixSpace,us">",6)
+    | "(>=)"  -> (InfixSpace,us">=",6)
+    | "(==)"  -> (InfixSpace,us"==",6)
+    | "(!=)"  -> (InfixSpace,us"!=",6)
+    | "(+.)"  -> (InfixSpace,us"+.",8)
+    | "(-.)"  -> (InfixSpace,us"-.",8)
+    | "(*.)"  -> (InfixSpace,us"*.",9)  
+    | "(/.)"  -> (InfixSpace,us"/.",9)
+    | "(<.)"  -> (InfixSpace,us"<.",7)
+    | "(<=.)" -> (InfixSpace,us"<=.",7)
+    | "(>.)"  -> (InfixSpace,us">.",7)
+    | "(>=.)" -> (InfixSpace,us">=.",7)
+    | "(==.)" -> (InfixSpace,us"==.",7)
+    | "(!=.)" -> (InfixSpace,us"!=.",7)
+    | "(!)"   -> (Prefix,us"!",8)
+    | "(&&)"  -> (InfixSpace,us"&&",3)
+    | "(||)"  -> (InfixSpace,us"||",2)
+    | "(;)"   -> (InfixNewline,us";",1)
+    | "(;;)"  -> (InfixNewline,us";;",1)
+    | "(++)"  -> (InfixNewline,us"++",5)
+    | "(^)"   -> (InfixNoSpace,us"^",11)
+    | "(^.)"  -> (InfixNoSpace,us"^.",11)
+    | "(')"   -> (Postfix,us"'",13)
+    | "(--)"  -> (Prefix,us"-",12)
+    | "(--.)" -> (Prefix,us"-.",12)
+    | s       -> (PrefixFun,us s,0)
+
+
+let rec pprint_op prec opStr argsStrs  =
+  let (style,s,newPrec) = opMap opStr in
+  let paren s =
+    if newPrec < prec then us"(" ^. s ^. us")" else s 
+  in
+    match (style,argsStrs) with
+    | (InfixSpace,[t1;t2]) ->
+        paren (pprint newPrec t1 ^. us" " ^. s ^. us" " ^. pprint newPrec t2) 
+    | (InfixNoSpace,[t1;t2]) ->
+        paren (pprint newPrec t1 ^. s ^. pprint newPrec t2) 
+    | (InfixNewline,[t1;t2]) ->
+        pprint newPrec t1 ^. s ^. us"\n" ^. pprint newPrec t2
+    | (Postfix,[t1]) -> paren (pprint newPrec t1 ^. s) 
+    | (Prefix,[t1]) -> paren (s ^. pprint newPrec t1) 
+    | (_,ts) ->  
+         s ^. us"(" ^. 
+           (Ustring.concat (us", ") (List.map (pprint 0) ts)) ^. us")"
+ 
+and pprint_app prec t = 
   match t with
-    | TmVar(idx) -> ustring_of_int idx ^. us"'"
-    | TmSymVar(s) -> us"sym(" ^. ustring_of_int s ^. us")"
-    | TmLam(t) -> us"(" ^. us"fun -> " ^. pprint t ^. us")"
-    | TmClos(t,e,id) -> Symtbl.get id
-    | TmApp(t1,t2,fs) -> (if fs then us"specialize(" else  us"(" ) ^. 
-        pprint t1 ^. us" " ^. pprint t2 ^. us")"
-    | TmFix(t) -> us"fix[" ^. pprint t ^. us"]"
-    | TmIf(t1,t2,t3) -> us"if " ^. 
-      	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
-    | TmConst(c) -> Ast.pprint_const c 0
-    | TmBrack(t) -> us".<" ^. pprint t ^. us">."     
-    | TmEsc(t) -> us".~(" ^. pprint t ^. us")"
-    | TmRun(t) -> us".!(" ^. pprint t ^. us")"
-    | TmUk(idx,ty) -> getDebugSymId t
-    | TmUkGen(ty) -> us"ukgen(" ^. pprint_ty ty ^. us")"
-    | TmModApp(t1,t2) -> 
-         let rec collect t acc = 
+    | TmModApp(TmModApp(TmVal(TmConst(_) as c,_),t1),t2) -> 
+        pprint_op prec (pprint 0 c) [t1;t2]
+    | TmModApp(TmVal(TmConst(_) as c,_),t1) -> 
+        pprint_op prec (pprint 0 c) [t1]
+    | _ -> 
+       (let rec collect t acc = 
            match t with
             | TmModApp(t1,t2) -> collect t1 (t2::acc)
             | t -> (t,acc)
-         in
+        in          
          let (f,ts) = collect t [] in  
-         pprint f ^. us"(" ^. (Ustring.concat (us", ") (List.map pprint ts))
-                  ^. us")" 
-    | TmModIf(t1,t2,t3) -> us"<if> " ^. 
-	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
-    | TmModEqual(t1,t2) -> pprint t1 ^. us" <==> " ^. pprint t2
-    | TmModProj(i,t) -> us"proj " ^. ustring_of_int i ^. us" " ^. pprint t
-    | TmVal(t,ty) -> pprint t 
-    | TmDecon(t1,pat,t2,t3) -> us"(decon " ^.
-         pprint t1 ^. us" with " ^. pprint_pat pat ^. us" then " ^. 
-         pprint t2 ^. us" else " ^. pprint t3 ^. us")"
-    | TmEqual(t1,t2) -> pprint t1 ^. us" == " ^. pprint t2
-    | TmLcase(t,t1,t2) -> us"lcase " ^. pprint t ^. us" of " ^.
-              us":: -> (" ^. pprint t1 ^. us") | [] -> (" ^. pprint t2 ^. us")" 
+           pprint_op 0 (pprint 0 f) ts)
+
+
+and pprint prec t  =
+  match t with
+    | TmClos(t,e,id) -> Symtbl.get id
+    | TmConst(Ast.ConstPrim(primop,_) as c) ->
+          (try           
+             Symtbl.get (Hashtbl.find primToId primop) 
+           with Not_found -> 
+             Ast.pprint_const c 0)
+    | TmConst(c) -> Ast.pprint_const c 0
+    | TmUk(idx,ty) -> 
+        getDebugSymId t
+    | TmModApp(t1,t2) -> pprint_app prec t 
+    | TmVal(t,ty) -> pprint 0 t 
     | TmCons(t1,t2) -> 
         (let rec toList t = 
           match t with 
-            | TmCons(t1,t2) -> (pprint t1)::(toList t2)
+            | TmCons(t1,t2) -> (pprint 0 t1)::(toList t2)
             | _ -> []
         in
           us"[" ^. (Ustring.concat (us", ") (toList t)) ^. us"]" )
     | TmNil -> us"[]" 
     | TmTuple(tms) -> 
-	us"(" ^. (tms |> List.map pprint |> Ustring.concat (us", ")) ^. us")"
-    | TmProj(i,t) -> us"proj " ^. ustring_of_int i ^. us" " ^. pprint t
+	us"(" ^. (tms |> List.map (pprint 0) |> Ustring.concat (us", ")) ^. us")"
     | TmArray(tms) -> us"[|" ^. 
-        (tms |> Array.to_list |> List.map pprint |> 
+        (tms |> Array.to_list |> List.map (pprint 0) |> 
              Ustring.concat (us",")) ^. us"|]"
-    | TmArrayOp(op,tms) -> Ast.pprint_array_op op ^. us" " ^. 
-        (tms |> List.map pprint |> Ustring.concat (us" "))
     | TmMap(size,tmmap) -> 
         let lst = PMap.foldi 
           (fun t1 t2 ts -> 
-             (pprint t1 ^. us" => " ^. pprint t2)::ts) tmmap [] in
-          us"{" ^. (Ustring.concat (us", ") lst) ^. us"}" 
-    | TmMapOp(op,tms) -> Ast.pprint_map_op op ^. us" " ^. 
-        (tms |> List.map pprint |> Ustring.concat (us" "))
+             (pprint 0 t1 ^. us" => " ^. pprint 0 t2)::ts) tmmap [] in
+          us"{" ^. (Ustring.concat (us", ") lst) ^. us"}"  
     | TmSet(size,tmset) -> 
-        let lst = PMap.foldi (fun t1 _ ts -> (pprint t1)::ts) tmset [] in
+        let lst = PMap.foldi (fun t1 _ ts -> (pprint 0 t1)::ts) tmset [] in
           us"{" ^. (Ustring.concat (us", ") lst) ^. us"}" 
-    | TmSetOp(op,tms) -> Ast.pprint_set_op op ^. us" " ^. 
-        (tms |> List.map pprint |> Ustring.concat (us" "))
-    | TmDAESolver(st,_,_) -> us"sim"
-    | TmDAESolverOp(op,tms) -> Ast.pprint_daesolver_op op ^. us" " ^. 
-        (tms |> List.map pprint |> Ustring.concat (us" "))
-    | TmDPrint(t) -> pprint t
-    | TmDPrintType(t) -> pprint t
-    | TmError(fi,t) -> us"error " ^. pprint t
-    | TmDebugId(_,t) -> pprint t
+    | TmDAESolver(st,_,_) -> us"DAEsolver"
+    | TmDPrint(t) | TmDPrintType(t) | TmDebugId(_,t) -> pprint prec t
+    | TmError(fi,t) -> us"error " ^. pprint 0 t
+    | TmDecon(_,_,_,_) | TmEqual(_,_) | TmLcase(_,_,_) |
+      TmVar(_) | TmSymVar(_) | TmLam(_) |
+      TmProj(_,_) | TmArrayOp(_,_) | TmMapOp(_,_) |
+      TmApp(_,_,_) | TmFix(_) | TmIf(_,_,_) |
+      TmBrack(_) | TmEsc(_) | TmRun(_) | TmUkGen(_) |
+      TmModIf(_,_,_) | TmModEqual(_,_) | TmModProj(_,_) |
+      TmSetOp(_,_) | TmDAESolverOp(_,_) 
+        -> failwith "PPrint not defined"
 
 (* State when two terms are equal. Note that comparing variables, closures
    and fix terms always return false *)
@@ -634,8 +697,8 @@ let evaluate t =
             eval_daesolver_op (eval earg) op (List.map (eval earg) tms)
         | n,TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (eval earg) tms)
         | n,TmDPrint(t) -> let t' = eval earg t  in 
-	    pprint t' |> uprint_endline; t'
-        | n,TmDPrintType(t) -> pprint t |> uprint_endline; eval earg t
+	    pprint 0 t' |> uprint_endline; t'
+        | n,TmDPrintType(t) -> pprint 0 t |> uprint_endline; eval earg t
         | 0,TmError(fi,t) ->  
 	    (match eval earg t with
 	     | TmConst(Ast.ConstString(s)) ->

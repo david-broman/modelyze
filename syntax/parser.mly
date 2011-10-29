@@ -166,19 +166,19 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %nonassoc WITH
 %nonassoc BAR
 %nonassoc LETUK 
-%left SEMI EQSEMI
-%left OR
-%left AND 
-%nonassoc NOT
-%left EQ APXEQ LEFTARROW PLUSPLUS
-%left LESS LESSEQUAL GREAT GREATEQUAL EQUAL POLYEQUAL EQUAL NOTEQUAL
-%left DOTLESS DOTLESSEQUAL DOTGREAT DOTGREATEQUAL DOTEQUAL DOTNOTEQUAL
-%left ADD SUB DOTADD DOTSUB
-%left MUL DIV DOTMUL DOTDIV
-%left MOD
-%left EXP DOTEXP
-%nonassoc UNARYMINUS
-%left SQUOTE 
+%left SEMI EQSEMI /*prec 1*/
+%left OR  /*prec 2*/
+%left AND  /*prec 3*/
+%left EQ APXEQ LEFTARROW PLUSPLUS /*prec 5*/
+%left LESS LESSEQUAL GREAT GREATEQUAL EQUAL POLYEQUAL EQUAL NOTEQUAL /*prec 6*/
+%left DOTLESS DOTLESSEQUAL DOTGREAT DOTGREATEQUAL DOTEQUAL DOTNOTEQUAL /*prec 7*/
+%nonassoc NOT /*prec8 */
+%left ADD SUB DOTADD DOTSUB /*prec 8*/
+%left MUL DIV DOTMUL DOTDIV /*prec 9*/
+%left MOD /*prec 10*/
+%left EXP DOTEXP /*prec 11*/
+%nonassoc UNARYMINUS /*prec 12*/
+%left SQUOTE /*prec 13*/
 
 %%
 

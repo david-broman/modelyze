@@ -41,9 +41,9 @@ def TestModel(c:Real) = {
     
     //Here is an example how the user would define the 
     //optimization problem. 
-    minimize integral (x*u) interval 0 4;
-  
+    minimize integral (x*u) interval 0 4;  
 }
+
 def main = {
   //def m = TestModel(-1) in
   def m = VanDerPol();
@@ -51,19 +51,14 @@ def main = {
   //Get the goal function and intervals
   def (L,start,stop) = getOptProblem(m);
 
-  def (x,y,u) = extractVariables(m);
-  def meshVars = generateMeshVars((x,y,u),2);
+  def vars = extractVariables(m);
+  def meshVars = generateMeshVars(vars,4);
+  def x0 = genInitMap(m);
+  def nlp = genNLPConstraint(m,x0,0.1,meshVars);   
 
-
-  //dpa is "DebugPrintAfter". A generic expression printer
-  //which is useful when just testing things. Here we can see
-  //that we extracted the optimization problem.
-  def _ = dprint(meshVars);
-  def _ = dprint((x,y,u));
+  def _ = dprint(nlp);  // <-- Choose what to print here
   ()
 
-  //The actual DAE is already directly accessable when 
-  //instantiating the model
 }
     
 

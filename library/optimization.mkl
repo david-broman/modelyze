@@ -16,7 +16,18 @@ type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
 
- 
+
+def genInitMap(model:Equations) : VarMap = {
+    def gen(m:Expr,acc:VarMap) : VarMap = {
+        match m with
+        | ~init x v -> Map.add x v acc 
+        | e1 e2 -> gen(e2,gen(e1,acc))
+        | _ -> acc
+    };
+    gen(model,Map.empty)
+}
+
+
 
 def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     def genvar(varlst:[Signal],acc:VarMap) : VarMap = {
@@ -90,6 +101,8 @@ def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
 }
 
 
+
+
 //Extract all types of variabels from a model. The return tuple
 //is (x,y,u), where x is the state derivatives, y the algebraic variables
 //and u the  input (control) signals
@@ -112,6 +125,7 @@ def extractVariables(model:Equations) : ModelVars = {
     trav(model,(Set.empty,Set.empty,Set.empty));
 }
   
+
 //Traverse the model and extract the optimixation problem. In the 
 //return tuple, the first parameter is the cost function, the
 //second parameter t_0 and the third parameter t_f
@@ -126,3 +140,7 @@ def getOptProblem(model:Equations) : (Expr,Real,Real) = {
     };
     trav(model,[]);
 }
+
+
+
+

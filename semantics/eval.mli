@@ -24,6 +24,6 @@ val translate : Ast.tm -> tm
 
 val evaluate :  tm -> tm
 
-val pprint : tm -> ustring
+val pprint : int -> tm -> ustring
 
 

@@ -9,6 +9,9 @@ symbol using syntax "let x:floor" because floor exists in Base.mkl.
 
 2011-10-29: Type problem of coerction when returning tuples of reals.
 
+2011-10-29: There is a problem when calling curred built-in functions,
+e.g., (+) 1 u, where u is a symbol. How do we pattern match on this?
+
 Known issues and todos in the MKL libraries
 ---------------------------------
 2011-08-05: There is an error in the hybrid ball stairs example. The

@@ -313,8 +313,6 @@ rule main = parse
 	 main lexbuf} 
   | tab 
       { add_colno !tabsize; main lexbuf }
-  | (";" (whitespace | newline | line_comment)*) as s (('}' | ')') as c) 
-     { count_utf8 s; mkid (String.make 1 c) false} 
   | newline
       { newrow(); main lexbuf }
   | "(" operator ")" as s

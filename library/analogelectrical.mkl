@@ -29,7 +29,7 @@ def Capacitor(C:Real,p:Electrical,n:Electrical) = {
     def i:Current;
     def v:Voltage;
     ElectricalBranch(i,v,p,n);
-    C * der(v) = i;
+    C * der(v) = i
 }
 
 let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
@@ -42,7 +42,7 @@ def Ground(p:Electrical) = {
     def i:Current;
     def v:Voltage;
     ElectricalRefBranch(i,v,p);
-    v = 0;
+    v = 0
 }
    
 let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical -> 

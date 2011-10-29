@@ -56,7 +56,7 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
       (x^2 + y^2)'' = (l^2)'';
 
       transition BouncingBall when (time > 2) 
-        action nothing;
+        action nothing
     };
 
     state BouncingBall {    
@@ -71,13 +71,13 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
         action (y' <- y' * -0.7);
 
       transition BouncingBall when (timer > 0.3 && ground > -5)
-        action (timer <- 0.; ground <- ground - 0.2);
-    };
+        action (timer <- 0.; ground <- ground - 0.2)
+    }
 
   };
 
   probe "ground" = ground;
-  probe "y" = y;
+  probe "y" = y
 }  
 
 

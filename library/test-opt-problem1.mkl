@@ -17,7 +17,7 @@ def VanDerPol() = {
     x2' = x1;
 
     // Cost function
-    minimize integral (x1^2 + x1^2 + u^2) interval 0 4;
+    minimize integral (x1^2 + x1^2 + u^2) interval 0 4
 }
 
 //Expected output
@@ -41,7 +41,7 @@ def TestModel(c:Real) = {
     
     //Here is an example how the user would define the 
     //optimization problem. 
-    minimize integral (x*u) interval 0 4;  
+    minimize integral (x*u) interval 0 4  
 }
 
 def main = {

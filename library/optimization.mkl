@@ -34,7 +34,7 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
         match varlst with
         | v::vs -> {
              def mvar:Signal; 
-             genvar(vs,Map.add v mvar acc);
+             genvar(vs,Map.add v mvar acc)
           }
         | [] -> acc
     };
@@ -44,7 +44,7 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
         if n ==. 0 then [] 
         else (gen(x),gen(y),gen(u))::genmesh(n-.1) 
     };            
-    genmesh(n_e);
+    genmesh(n_e)
 }
 
 /*
@@ -58,7 +58,7 @@ def genNLPCostFunction(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
         | e1 e2 -> {
             def e1b = substituteVars(e1, meshVars);
             def e2b = substituteVars(e2, meshVars);
-            e1b e2b;
+            e1b e2b
           }
         | e -> e 
     };
@@ -67,7 +67,7 @@ def genNLPCostFunction(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
         | mv::mvs -> genCostFunction(mvs, cNLP + substituteVars(cost, mv)*h)
         | [] -> cNLP
     };
-    genCostFunction(meshVars, 0);  
+    genCostFunction(meshVars, 0)
 }
 */
 
@@ -83,7 +83,7 @@ def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
         | e1 e2 -> {
             def e1b = substituteVars(e1, prevX, meshVars);
             def e2b = substituteVars(e2, prevX, meshVars);
-            e1b e2b;
+            e1b e2b
           }
         | e -> e 
     };
@@ -93,11 +93,11 @@ def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
        | mv::mvs -> {
            def (xMap,_,_) = mv;
            def meshPointConstr = substituteVars(model, prevX, mv);
-           genMeshPointConstraints(xMap, mvs, acc ; meshPointConstr);
+           genMeshPointConstraints(xMap, mvs, acc ; meshPointConstr)
          }
        | [] -> acc
     };
-    genMeshPointConstraints(x0, meshVars, NoEq);
+    genMeshPointConstraints(x0, meshVars, NoEq)
 }
 
 
@@ -122,7 +122,7 @@ def extractVariables(model:Equations) : ModelVars = {
         | (e1 e2,_) -> trav e2 (trav e1 acc) 
         | _ -> acc
     };
-    trav(model,(Set.empty,Set.empty,Set.empty));
+    trav(model,(Set.empty,Set.empty,Set.empty))
 }
   
 
@@ -138,7 +138,7 @@ def getOptProblem(model:Equations) : (Expr,Real,Real) = {
         | (_,e::es) -> trav(e,es)
         | (_,[]) -> error "No optimization problem found"
     };
-    trav(model,[]);
+    trav(model,[])
 }
 
 

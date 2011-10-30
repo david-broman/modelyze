@@ -1,5 +1,7 @@
 
 //Original problem 20s
+//Removed overhead with metastuff 19s
+//Added overhead with specialize 19.3s
 
 include AnalogElectrical
 include HybridSimulation

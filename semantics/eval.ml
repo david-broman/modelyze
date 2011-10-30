@@ -175,6 +175,7 @@ let mk_primappvalues prim arg args =
   (v1,v2)                  
 
 
+
 let rec readback syms d tm = 
   let rec getidx syms s d =
     match syms with
@@ -186,6 +187,7 @@ let rec readback syms d tm =
       | TmSpecSym(s) -> TmVar(getidx syms s d)
       | TmLam(t) -> TmLam(readback syms (d+1) t)
       | TmClos(t,e,id) -> TmLam(t)  (* Incorrect - must fix *)
+      | TmByteCode(c,ext,ident,argc) -> tm
       | TmApp(t1,t2,specialize) -> 
           TmApp(readback syms d t1,readback syms d t2,specialize)
       | TmFix(t1) -> TmFix(readback syms d t1)
@@ -238,7 +240,6 @@ let rec specializeParams t venv syms norec =
           readback syms 0 t' 
 
                       
-
 and eval venv norec t = 
     match t with 
       | TmVar(i) -> 
@@ -249,14 +250,19 @@ and eval venv norec t =
       | TmSpecSym(s) -> TmSpecSym(s)
       | TmLam(t) -> TmClos(t,venv,funtext)
       | TmClos(t,e,id) -> TmClos(t,e,id)
+      | TmByteCode(code,extid,ident,args) -> t
       | TmApp(t1,t2,specialize) -> 
           (match eval venv norec t1,eval venv norec t2 with
-	     | (TmClos(t3,venv2,_),v2) -> 
+	     | (TmClos(t3,venv2,ident),v2) -> 
                  if specialize then
                    let t3' = specializeParams t3 (v2::venv2) [] norec in
-                   eval venv2 norec t3'
-                 else eval (v2::venv2) norec t3                       
+                   (*Bytecode.generate ident*) (eval venv2 norec t3') 
+                 else eval (v2::venv2) norec t3
 	     | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
+             | (TmByteCode((co,rc,argc) as code ,extid,ident,args),v2) ->
+                  if argc = (List.length args) + 1
+                  then Bytecode.run code (v2::args)
+                  else TmByteCode(code,extid,ident,v2::args)                    
 	     | t1',t2' -> TmApp(t1',t2',specialize)) 
       | TmFix(t1) -> 
           if norec then t 

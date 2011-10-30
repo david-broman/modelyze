@@ -25,8 +25,14 @@ type sym = int
 type typeid = int
 type specialize = bool
 
+type argc = int
+type code = int
+type bcode = code list * float list * argc
+type apiid = (int ref)
+
 type uenv = (int * int) list
 type env = tm list
+
 
 
 and ty =
@@ -53,6 +59,7 @@ and tm =
   | TmSpecSym     of sym
   | TmLam         of tm 
   | TmClos        of tm * env * Ast.ident
+  | TmByteCode    of bcode * apiid * Ast.ident * tm list
   | TmApp         of tm * tm * specialize
   | TmFix         of tm
   | TmIf          of tm * tm * tm

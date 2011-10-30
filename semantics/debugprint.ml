@@ -48,6 +48,7 @@ let debugTagTm id t =
     | TmClos(t,env,_) -> TmClos(t,env,id)
     | TmConst(Ast.ConstPrim(prim,_)) ->
         Hashtbl.add primToId prim id; t
+    | TmByteCode(code,apiid,_,args) -> TmByteCode(code,apiid,id,args)
     | t -> t
 
 
@@ -252,6 +253,7 @@ and pp prec t  =
     | TmGenSym(ty) -> us"TmGenSym()"
     | TmSetOp(op,tms) -> us"TmSetOp()"
     | TmDAESolverOp(op,tms) -> us"TmDAESolverOp()"
+    | TmByteCode(code,extid,ident,args) -> Symtbl.get ident
 
 let pprint t = pp 0 t
 

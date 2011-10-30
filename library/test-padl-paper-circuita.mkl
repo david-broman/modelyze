@@ -1,7 +1,12 @@
 
 //Original problem 20s
-//Removed overhead with metastuff 19s
-//Added overhead with specialize 19.3s
+//Removed overhead with metastuff 19.0s (config 0.1, 1)
+//Added overhead with specialize  19.3s (config 0.1, 1)
+//With specialization evaluation   1.1s (config 0.1, 1)
+
+//No specialization                8.9s (config 0.1,10)
+//With specialization evaluation  2m58s (config 0.1,10)
+
 
 include AnalogElectrical
 include HybridSimulation
@@ -21,5 +26,5 @@ def CircuitA() = {
 
 
 def main = 
-  printsim(CircuitA(),0.1,1)
+  printsim(CircuitA(),0.1,10)
   //printLine(exportModelica("Circuit",CircuitA()))

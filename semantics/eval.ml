@@ -22,6 +22,8 @@ open Printf
 open Info
 open Sundials
 
+exception Cannot_eval      
+
 type level = int
 type index = int
 type sym = int
@@ -31,7 +33,6 @@ type specialize = bool
 type uenv = (int * int) list
 type env = tm list
 
-      
 
 and ty =
   | TyBool      
@@ -306,12 +307,30 @@ and pprint prec t  =
     | TmDAESolver(st,_,_) -> us"DAEsolver"
     | TmDPrint(t) | TmDPrintType(t) | TmDebugId(_,t) -> pprint prec t
     | TmError(fi,t) -> us"error " ^. pprint 0 t
-    | TmDecon(_,_,_,_) | TmEqual(_,_) | TmLcase(_,_,_) |
-      TmVar(_) | TmSpecSym(_) | TmLam(_) |
-      TmProj(_,_) | TmArrayOp(_,_) | TmMapOp(_,_) |
-      TmApp(_,_,_) | TmFix(_) | TmIf(_,_,_) | TmGenSym(_) |
-      TmSetOp(_,_) | TmDAESolverOp(_,_) 
-        -> failwith "PPrint not defined"
+    | TmSpecSym(i) -> us"TmSpecSym(" ^. ustring_of_int i ^. us")"
+    | TmVar(i) -> us"TmVar(" ^. ustring_of_int i ^. us")"
+    | TmDecon(t1,p,t2,t3) -> us"TmDecon(" ^.
+        pprint 0 t1 ^. us",_," ^. pprint 0 t2 ^. us"," ^. pprint 0 t3 ^. us")"   
+    | TmEqual(t1,t2) -> us"TmEqual(" ^.
+        pprint 0 t1 ^. us"," ^. pprint 0 t2 ^. us")"
+    | TmLcase(t1,t2,t3) -> us"TmLcase(" ^.
+        pprint 0 t1 ^. us"," ^. pprint 0 t2 ^. us"," ^. pprint 0 t3 ^. us")"
+    | TmLam(t1) -> us"TmLam(" ^. pprint 0 t1 ^. us")"
+    | TmProj(i,t1) -> us"TmProj(_," ^. pprint 0 t1 ^. us")"
+    | TmArrayOp(op,tms) -> us"TmArrayOp()"
+    | TmMapOp(op,tms) -> us"TmMapOp()" 
+    | TmApp(t1,t2,s) -> us"TmApp(" ^. pprint 0 t1 ^. us"," ^. pprint 0 t2 ^. 
+        us"," ^. (if s then us"true" else us"false") ^. us")"
+    | TmFix(t1) -> us"TmFix(" ^. pprint 0 t1 ^. us")"
+    | TmIf(t1,t2,t3) -> us"TmIf(" ^.
+        pprint 0 t1 ^. us"," ^. pprint 0 t2 ^. us"," ^. pprint 0 t3 ^. us")"
+    | TmGenSym(ty) -> us"TmGenSym()"
+    | TmSetOp(op,tms) -> us"TmSetOp()"
+    | TmDAESolverOp(op,tms) -> us"TmDAESolverOp()"
+
+let pprint_env env =
+  Ustring.concat (us"\n") (List.map (pprint 0) env)
+
 
 (* State when two terms are equal. Note that comparing variables, closures
    and fix terms always return false *)
@@ -441,7 +460,8 @@ let eval_array_op op array_lst =
   | Ast.ArrayOpSet,[TmArray(ar);TmConst(Ast.ConstInt(pos));elem] ->
       (try Array.set ar pos elem;TmConst(Ast.ConstUnit) 
        with Invalid_argument _ -> raise_out_of_bounds())
-  | _ -> assert false (* Should be discovered by the type checker *)
+  | _ -> TmArrayOp(op, array_lst)
+
 
 let eval_map_op op arg_lst = 
   let raise_key_not_found() = 
@@ -466,7 +486,7 @@ let eval_map_op op arg_lst =
       else TmMap(size,m)
   | Ast.MapOpToList,[TmMap(size,m)] ->
       PMap.foldi (fun k v a -> TmCons(TmTuple([k;v]),a)) m TmNil
-  | _ -> assert false (* Should be discovered by the type checker *)
+  | _ -> TmMapOp(op,arg_lst)
 
 let eval_set_op op arg_lst = 
   match op,arg_lst with
@@ -486,7 +506,7 @@ let eval_set_op op arg_lst =
       else TmSet(size,m)
   | Ast.SetOpToList,[TmSet(size,m)] ->
       PMap.foldi (fun k _ a -> TmCons(k,a)) m TmNil
-  | _ -> assert false (* Should be discovered by the type checker *)
+  | _ -> TmSetOp(op,arg_lst)
 
 let array_update ar artm =
   Array.iteri (fun i r -> artm.(i) <- TmConst(Ast.ConstReal(r))) ar
@@ -503,8 +523,9 @@ let array_from_tmlist tm =
     match tm with
       | TmCons(TmConst(Ast.ConstReal(r)),ts) -> r::(worker ts)
       | TmNil -> []
-      | _ -> assert false
+      | _ -> raise Cannot_eval 
   in Array.of_list (worker tm)
+     
 
 
 
@@ -550,7 +571,7 @@ let eval_daesolver_op eval op arg_lst =
         TmConst(Ast.ConstUnit)
     | Ast.DAESolverOpRoots,[TmDAESolver(st,tm_yy,tm_yp)] -> 
         TmArray(Array.map (fun x -> TmConst(Ast.ConstInt(x)))(Ida.roots st))
-  | _ -> assert false (* Should be discovered by the type checker *)
+  | _ -> TmDAESolverOp(op,arg_lst)
 
 
 (* Creates two model values from a primitive function constant. Used when
@@ -613,7 +634,9 @@ let rec readback syms d tm =
 
 let symcount = ref 0 
 let gensym() = incr symcount; !symcount 
+let funtext = Symtbl.add (us"fun")
 type norec = bool
+
 
 let rec specializeParams t venv syms norec =
     match t with
@@ -621,97 +644,102 @@ let rec specializeParams t venv syms norec =
           let s = gensym() in
           let ts = TmSpecSym(s) in
             TmLam(specializeParams t1 (ts::venv) (s::syms) norec)
-      | _ -> readback syms 0 (eval (venv,norec) t)
+      | _ -> 
+          let t' = eval venv norec t in
+          readback syms 0 t' 
 
-and eval earg t = 
-  let (venv,norec) = earg in
+                      
+
+and eval venv norec t = 
     match t with 
       | TmVar(i) -> 
           (match List.nth venv i with
              | TmFix(t) as tt -> 
-                   eval earg tt
+                   eval venv norec tt
              | t -> t) 
       | TmSpecSym(s) -> TmSpecSym(s)
-      | TmLam(t) -> TmClos(t,venv,Symtbl.empty)
+      | TmLam(t) -> TmClos(t,venv,funtext)
       | TmClos(t,e,id) -> TmClos(t,e,id)
       | TmApp(t1,t2,specialize) -> 
-          (match eval earg t1,eval earg t2 with
+          (match eval venv norec t1,eval venv norec t2 with
 	     | (TmClos(t3,venv2,_),v2) -> 
-                 if specialize then specializeParams t3 (v2::venv2) [] norec
-                   else eval ((v2::venv2),norec) t3                       
+                 if specialize then
+                   let t3' = specializeParams t3 (v2::venv2) [] norec in
+                   eval venv2 norec t3'
+                 else eval (v2::venv2) norec t3                       
 	     | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
-	     | t1',t2' -> TmApp(t1,t2,specialize)) 
+	     | t1',t2' -> TmApp(t1',t2',specialize)) 
       | TmFix(t1) -> 
           if norec then t 
           else 
-            (match eval earg t1 with
+            (match eval venv norec t1 with
                | TmClos(t2,venv2,_) as tt ->                  
-                   eval (TmFix(tt)::venv2,false) t2 
-               | _ -> assert false)
+                   eval (TmFix(tt)::venv2) false t2 
+               | _ -> TmFix(t1))
       | TmIf(t1,t2,t3) -> 
-          (match eval earg t1 with
+          (match eval venv norec t1 with
 	     | TmConst(Ast.ConstBool(b)) -> 
-                   eval (venv,norec) (if b then t2 else t3)
+                   eval venv norec (if b then t2 else t3)
 	     | t1' -> 
-                 TmIf(t1',eval (venv,true) t2,eval (venv,true) t3))
+                 TmIf(t1',eval venv true t2,eval venv true t3))
       | TmConst(b) -> TmConst(b)
       | TmSym(s,ty) -> TmSym(s,ty)
       | TmGenSym(ty) -> TmSym(gensym(),ty)
-      | TmModApp(t1,t2) -> TmModApp(eval earg t1,eval earg t2)
-      | TmVal(t,ty) -> TmVal(eval earg t,ty)
+      | TmModApp(t1,t2) -> TmModApp(eval venv norec t1,eval venv norec t2)
+      | TmVal(t,ty) -> TmVal(eval venv norec t,ty)
       | TmDecon(t1,p,t2,t3) -> 
-          (match eval earg t1,p with
+          (match eval venv norec t1,p with
 	     | TmSym(id,ty1),MPatUk(ty2) 
 		 when ty1 = ty2  ->
-                 eval (venv,norec) t2                  
+                 eval venv norec  t2                  
 	     | TmModApp(v1,v2),MPatModApp -> 
-                 eval (v1::v2::venv,norec) t2            
+                 eval (v1::v2::venv) norec t2            
 	     | TmVal(v1,ty1),MPatVal(ty2) when ty1 = ty2 ->	
-                 eval (v1::venv,norec) t2            
+                 eval (v1::venv) norec t2            
              | TmVal(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatModApp ->
                  let (v1,v2) = mk_primappvalues prim arg args in
-                   eval (v1::v2::venv,norec) t2 
-             | _ -> eval (venv,norec) t3)
+                   eval (v1::v2::venv) norec t2 
+             | _ -> eval venv norec t3)
       | TmEqual(t1,t2) -> 
-          TmConst(Ast.ConstBool(tm_equiv (eval earg t1) 
-                                  (eval earg t2)))
+          TmConst(Ast.ConstBool(tm_equiv (eval venv norec t1) 
+                                  (eval venv norec t2)))
       | TmLcase(t,t1,t2) ->           
-          (match eval earg t with
+          (match eval venv norec t with
              | TmCons(v1,v2) -> 
-                   eval ((v1::v2::venv),norec) t1                  
-	     | TmNil -> eval (venv,norec) t2
-	     | tt -> assert false)
-      | TmCons(t1,t2) -> TmCons(eval earg t1,eval earg t2) 
+                   eval (v1::v2::venv) norec t1                  
+	     | TmNil -> eval venv norec t2
+	     | tt -> TmLcase(t,t1,t2))
+      | TmCons(t1,t2) -> TmCons(eval venv norec t1,eval venv norec t2) 
       | TmNil -> TmNil
-      | TmTuple(tms) -> TmTuple(List.map (eval earg) tms)
+      | TmTuple(tms) -> TmTuple(List.map (eval venv norec) tms)
       | TmProj(i,t) -> 
-          (match eval earg t with
+          (match eval venv norec t with
 	       | TmTuple(tms) -> List.nth tms i
-	       | _ -> assert false)
-      | TmArray(tms) -> TmArray(Array.map (eval earg) tms)     
-      | TmArrayOp(op,tms) -> eval_array_op op (List.map (eval earg) tms)
+	       | _ -> TmProj(i,t))
+      | TmArray(tms) -> TmArray(Array.map (eval venv norec) tms)     
+      | TmArrayOp(op,tms) -> eval_array_op op (List.map (eval venv norec) tms)
       | TmMap(size,tms) -> TmMap(size,tms)
-      | TmMapOp(op,tms) -> eval_map_op op (List.map (eval earg) tms)
+      | TmMapOp(op,tms) -> eval_map_op op (List.map (eval venv norec) tms)
       | TmSet(size,tms) -> TmSet(size,tms)
-      | TmSetOp(op,tms) -> eval_set_op op (List.map (eval earg) tms)
+      | TmSetOp(op,tms) -> eval_set_op op (List.map (eval venv norec) tms)
       | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
       | TmDAESolverOp(op,tms) -> 
-          eval_daesolver_op (eval earg) op (List.map (eval earg) tms)
-      | TmDPrint(t) -> let t' = eval earg t  in 
+          eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
+      | TmDPrint(t) -> let t' = eval venv norec t  in 
 	  pprint 0 t' |> uprint_endline; t'
-      | TmDPrintType(t) -> pprint 0 t |> uprint_endline; eval earg t
+      | TmDPrintType(t) -> pprint 0 t |> uprint_endline; eval venv norec t
       | TmError(fi,t) ->  
-	  (match eval earg t with
+	  (match eval venv norec t with
 	     | TmConst(Ast.ConstString(s)) ->
 		 raise (Ast.Mkl_runtime_error (Message.RUNTIME_ERROR,
 					       Message.ERROR, fi, [s])) 
 	     | _ -> assert false)
       | TmDebugId(id,t) -> 
-            let t'= eval earg t in
+            let t'= eval venv norec t in
               debugTagTm id t'
                 
                 
-let evaluate t = eval ([],false) t
+let evaluate t = eval [] false t
     
 
 

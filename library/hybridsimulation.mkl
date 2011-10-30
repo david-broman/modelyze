@@ -136,7 +136,7 @@ let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
                 | sym:Signal -> worker (ypfun x)  
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Signal -> worker (yyfun e)
-    | _ -> error "Unsupported model construct" 
+    | _ ->  error "Unsupported model construct" 
   in
     worker expr 
 
@@ -178,7 +178,7 @@ let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
     evalBool expr
 
 // Create the residual function of the DAE. Used by IDA/Sundials.
-let makeResidual model:Equations -> ukmap:UkMap -> 
+let makeResidual ukmap:UkMap -> model:Equations ->  
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
   let realExpr expr:Expr -> Real = evalFromArray expr ukmap ctime yy yp  in
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
@@ -192,7 +192,7 @@ let makeResidual model:Equations -> ukmap:UkMap ->
 // (detecting zero-crossings). The root function is created by
 // evaluating the transitions that are extracted from the original
 // equation system.
-let makeRootFun trans:Transitions -> ukmap:UkMap ->
+let makeRootFun ukmap:UkMap -> trans:Transitions -> 
                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
   let travGuard e:Expr -> acc:[Real] -> [Real] =
     match e with
@@ -372,7 +372,8 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let ukmap = makeUkMap model4 in
     
     // Create the DAE residual 
-    let residual = makeResidual model4 ukmap in
+    let residual = specialize (makeResidual ukmap) model4 in
+    //let residual = makeResidual ukmap model4 in
 
     // Create a map with all initial values for the current state
     let initvalmap = initValues model4 in
@@ -382,7 +383,8 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let id = initConditionCorrection ukmap in
 
     // Create the root function for detecting zero crossings
-    let rootfun = makeRootFun transitions ukmap in  
+    let rootfun = specialize (makeRootFun ukmap) transitions in  
+    //let rootfun = makeRootFun ukmap transitions in  
 
     // Create the simulation instance for continuous-time simulation using IDA
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in

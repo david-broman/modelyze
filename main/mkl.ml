@@ -13,7 +13,7 @@ let mkleval filename =
       |> Toplevel.desugar 
       |> Pattern.desugar
       |> Typesystem.typecheck 
-      |> Eval.translate 
+      |> Translate.translate 
       |> Eval.evaluate 
       |> ignore
   with

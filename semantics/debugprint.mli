@@ -18,20 +18,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 
 open Ustring.Op
-open Ast
 
-let tabsize = 2 
-let newline = us"\n"
-let space = us" "
-let empty = us""
+val debugTagTm : int -> Evalast.tm -> Evalast.tm
 
-
-(* Pretty print the C-AST *)
-and pp_ctm t indent =  us"TODO"
-
-
-
-
-let tm2str t = pp_ctm t 0
-
-
+val pprint : Evalast.tm -> ustring

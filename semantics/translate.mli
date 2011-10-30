@@ -19,8 +19,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 open Ustring.Op
 
 
-val tm2str : Ast.tm -> ustring
+val translate : Ast.tm -> Evalast.tm
 
-
+val trans_ty: Ast.ty -> Evalast.ty
 
 

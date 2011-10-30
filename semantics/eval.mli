@@ -18,12 +18,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 open Ustring.Op
 
-type tm
 
-val translate : Ast.tm -> tm
+val evaluate :  Evalast.tm -> Evalast.tm
 
-val evaluate :  tm -> tm
-
-val pprint : int -> tm -> ustring
 
 

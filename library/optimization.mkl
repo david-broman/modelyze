@@ -15,12 +15,53 @@ type VarSet = Set Signal
 type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
+type VarNameMap = (Signal => String)
 
-/*
-def pprintPythonCasadi(meshVars:[MeshVars]) : String = {
-
+def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
+    def genName(vPrefix:String, mNbr:Int, vNbr:Int) : String = {
+        vPrefix ++ "_" ++ int2string mNbr ++ "_" ++ int2string vNbr
+    };
+    def genMeshPointNames(meshPointVars:MeshVars, mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
+        def genNames(varList:[(Signal,Signal)], vPrefix:String, vNbr:Int, nameMap:VarNameMap) : VarNameMap = {
+            match varList with
+            | v::vs -> {
+                def (_,vv) = v;
+                def n = genName(vPrefix, mNbr, vNbr);
+                genNames(vs, vPrefix, vNbr+.1, (Map.add vv n nameMap))
+                }
+            | [] -> nameMap        
+        };
+	def (xMap, yMap, uMap) = meshPointVars;
+        def xList = (Map.toList xMap);
+        def nameMap_tmp1 = genNames(xList,"x",1,nameMap);
+        def yList = (Map.toList yMap);
+        def nameMap_tmp2 = genNames(yList,"y",1,nameMap_tmp1);
+        def uList = (Map.toList uMap);
+        genNames(uList,"u",1,nameMap_tmp2)
+    };
+    def iterMeshPoints(meshPointList:[MeshVars], mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
+        match meshPointList with
+        | mv::mvs -> iterMeshPoints(mvs, mNbr+.1, genMeshPointNames(mv, mNbr, nameMap)) 
+        | [] -> nameMap        
+    };
+    iterMeshPoints(meshVars, 1, Map.empty)
 }
-*/
+
+def pprintPythonCasadi(varNameMap:VarNameMap) : String = {
+    def pprintVar(name:String) : String = {
+        name ++ " = " ++ "C.SX(\"" ++ name ++ "\")"
+    };
+    def iterVars(varList:[(Signal,String)], acc:String) : String = {
+        match varList with
+        | v::vs -> {
+            def (_,name) = v; 
+            iterVars(vs, (acc ++ pprintVar(name) ++ "\n"))
+        }
+        | [] -> acc
+    };
+    def varNameList = (Map.toList varNameMap);	
+    iterVars(varNameList,"")
+}
 
 def genInitMap(model:Equations) : VarMap = {
     def gen(m:Expr,acc:VarMap) : VarMap = {
@@ -31,8 +72,6 @@ def genInitMap(model:Equations) : VarMap = {
     };
     gen(model,Map.empty)
 }
-
-
 
 def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     def genvar(varlst:[Signal],acc:VarMap) : VarMap = {
@@ -71,7 +110,7 @@ def genNLPCost(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
         | mv::mvs -> genCostFunction(mvs, cNLP + substituteVars(cost, mv)*h)
         | [] -> cNLP
     };
-    genCostFunction(meshVars, 0.0)
+    genCostFunction(meshVars, val 0.0)
 }
 
 def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :

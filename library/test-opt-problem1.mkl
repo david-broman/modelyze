@@ -17,7 +17,7 @@ def VanDerPol() = {
     x2' = x1;
 
     // Cost function
-    minimize integral (x1^2 + x1^2 + u^2) interval 0 4
+    minimize integral (x1^2 + x2^2 + u^2) interval 0 4
 }
 
 //Expected output
@@ -55,9 +55,14 @@ def main = {
   def meshVars = generateMeshVars(vars,4);
   def x0 = genInitMap(m);
   def nlp_constr = genNLPConstraint(m,x0,0.1,meshVars);   
-  /*def nlp_cost = genNLPCost(L, 0.1, meshVars);*/
+  def nlp_cost = genNLPCost(L, 0.1, meshVars);
 
   def _ = dprint(nlp_constr);  // <-- Choose what to print here
+  def _ = dprint(nlp_cost);  // <-- Choose what to print here
+
+  def varNameMap = genMeshVarNameMap(meshVars);
+  def decls = pprintPythonCasadi(varNameMap);
+  def _ = print(decls);
   ()
 
 }

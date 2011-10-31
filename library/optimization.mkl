@@ -16,6 +16,11 @@ type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
 
+/*
+def pprintPythonCasadi(meshVars:[MeshVars]) : String = {
+
+}
+*/
 
 def genInitMap(model:Equations) : VarMap = {
     def gen(m:Expr,acc:VarMap) : VarMap = {
@@ -46,7 +51,7 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     };            
     genmesh(n_e)
 }
-/*
+
 def genNLPCost(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
     def substituteVars(exp:Expr, meshVars:MeshVars) : Expr ={
         def (xMap,yMap,uMap) = meshVars;
@@ -68,7 +73,6 @@ def genNLPCost(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
     };
     genCostFunction(meshVars, 0.0)
 }
-*/
 
 def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
     Equations = {

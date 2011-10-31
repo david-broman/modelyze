@@ -54,9 +54,10 @@ def main = {
   def vars = extractVariables(m);
   def meshVars = generateMeshVars(vars,4);
   def x0 = genInitMap(m);
-  def nlp = genNLPConstraint(m,x0,0.1,meshVars);   
+  def nlp_constr = genNLPConstraint(m,x0,0.1,meshVars);   
+  /*def nlp_cost = genNLPCost(L, 0.1, meshVars);*/
 
-  def _ = dprint(nlp);  // <-- Choose what to print here
+  def _ = dprint(nlp_constr);  // <-- Choose what to print here
   ()
 
 }

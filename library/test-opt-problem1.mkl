@@ -61,8 +61,14 @@ def main = {
   def _ = dprint(nlp_cost);  // <-- Choose what to print here
 
   def varNameMap = genMeshVarNameMap(meshVars);
-  def decls = pprintPythonCasadi(varNameMap);
+  def decls = pprintPythonCasadiDecls(varNameMap);
   def _ = print(decls);
+  
+  def constrs = pprintPythonCasadiConstrs(nlp_constr, varNameMap);
+  def _ = print(constrs);
+
+  def cost = pprintPythonCasadiCost(nlp_cost, varNameMap);
+  def _ = print(cost);   
   ()
 
 }

@@ -21,7 +21,7 @@ def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     def genName(vPrefix:String, mNbr:Int, vNbr:Int) : String = {
         vPrefix ++ "_" ++ int2string mNbr ++ "_" ++ int2string vNbr
     };
-    def genMeshPointNames(meshPointVars:MeshVars, mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
+    def iterMeshVars(meshPointVars:MeshVars, mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
         def genNames(varList:[(Signal,Signal)], vPrefix:String, vNbr:Int, nameMap:VarNameMap) : VarNameMap = {
             match varList with
             | v::vs -> {
@@ -41,13 +41,13 @@ def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     };
     def iterMeshPoints(meshPointList:[MeshVars], mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
         match meshPointList with
-        | mv::mvs -> iterMeshPoints(mvs, mNbr+.1, genMeshPointNames(mv, mNbr, nameMap)) 
+        | mv::mvs -> iterMeshPoints(mvs, mNbr+.1, iterMeshVars(mv, mNbr, nameMap)) 
         | [] -> nameMap        
     };
     iterMeshPoints(meshVars, 1, Map.empty)
 }
 
-def pprintPythonCasadi(varNameMap:VarNameMap) : String = {
+def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
     def pprintVar(name:String) : String = {
         name ++ " = " ++ "C.SX(\"" ++ name ++ "\")"
     };
@@ -61,6 +61,50 @@ def pprintPythonCasadi(varNameMap:VarNameMap) : String = {
     };
     def varNameList = (Map.toList varNameMap);	
     iterVars(varNameList,"")
+}
+
+def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
+    def printExpr(expr:Expr) : String = {
+    match expr with 
+    | e1 + e2 -> "(" ++ printExpr e1 ++ " + " ++ printExpr e2 ++ ")"
+    | e1 - e2 -> "(" ++ printExpr e1 ++ " - " ++ printExpr e2 ++ ")"
+    | e1 * e2 -> printExpr e1 ++ " * " ++ printExpr e2 
+    | e1 / e2 -> printExpr e1 ++ " / " ++ printExpr e2 
+    | -e ->     "(-" ++ printExpr e ++ ")" 
+    | e1^e2 -> "(" ++ printExpr e1 ++ ")" ++ " ^ " ++ "(" ++ printExpr e2 ++ ")"
+    | ~der e ->   "der(" ++ printExpr e ++ ")"
+    | ~sin e ->   "sin(" ++ printExpr e ++ ")"
+    | ~cos e ->   "cos(" ++ printExpr e ++ ")"
+    | ~tan e ->   "tan(" ++ printExpr e ++ ")"
+    | ~asin e ->  "asin(" ++ printExpr e ++ ")"
+    | ~acos e ->  "acos(" ++ printExpr e ++ ")"
+    | ~atan e ->  "atan(" ++ printExpr e ++ ")"
+    | ~sinh e ->  "sinh(" ++ printExpr e ++ ")"
+    | ~cosh e ->  "cosh(" ++ printExpr e ++ ")"
+    | ~tanh e ->  "tanh(" ++ printExpr e ++ ")"
+    | ~sqrt e ->  "sqrt(" ++ printExpr e ++ ")"
+    | ~exp e ->   "exp(" ++ printExpr e ++ ")"
+    | ~log e ->   "log(" ++ printExpr e ++ ")"
+    | ~log10 e -> "log10(" ++ printExpr e ++ ")"
+    | ~time -> "time"
+    | sym:<Real> -> (Map.find expr varNameMap)
+    | val r:Real -> real2string r
+    };
+    printExpr(expr)
+}
+
+def pprintPythonCasadiConstrs(equations:Equations, varNameMap:VarNameMap) : String = {
+    def printEquations(equations:Equations, constrs:String) : String = {
+	match equations with
+        | eq1 ; eq2 -> printEquations(eq1, constrs) ++ printEquations(eq2,constrs)
+        | left = right -> "constr += (" ++ pprintPythonCasadiExpr(left,varNameMap) ++ ") - (" ++ pprintPythonCasadiExpr(right, varNameMap) ++ ")\n"
+        | _ -> ""
+    };
+    "constr = []\n" ++ printEquations(equations, "")
+}
+
+def pprintPythonCasadiCost(cost:Expr, varNameMap:VarNameMap) : String = {
+    "cost = " ++ pprintPythonCasadiExpr(cost, varNameMap) ++ "\n"
 }
 
 def genInitMap(model:Equations) : VarMap = {

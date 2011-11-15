@@ -210,7 +210,9 @@ let generate id tm =
           else  
             let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc lcons in
             gen t2 ((coding ListElem)::aCode1) aConst1 argc1 lcons
-      | TmNil -> (aCode,aConst,argc)
+      | TmNil -> 
+          if lcons then (aCode,aConst,argc)
+          else (0::(coding ListStart)::aCode,aConst,argc)
       | _ ->
           let _ = uprint_endline (us"No bytecode: " ^. (Debugprint.pprint tm)) in
           raise UnsupportedCode 
@@ -224,10 +226,14 @@ type codestack =
   | OpCode of int
   | OpArray of float array * index
 
+let makeTmList elemArray =
+  Array.fold_right (fun x a -> TmCons(TmConst(Ast.ConstReal(x)),a)) elemArray TmNil
 
 let run bcode args = 
   let _ = print_endline "** BYTECODE **" in
   let (code,rconsts,argc) = bcode in
+  let retArray = ref None in
+  let retArrayIdx = ref 0 in
   let rec rr code stack =
     match (code,stack) with
       | (c::i::cs,_) when c == (coding ConstReal) -> 
@@ -252,9 +258,23 @@ let run bcode args =
       | (c::cs,s1::ss) when isPrim c Ast.PrimLog10 -> rr cs ((log10 s1)::ss)
       | (c::cs,s1::ss) when isPrim c Ast.PrimSqrt  -> rr cs ((sqrt s1)::ss)
       | (c::cs,s1::ss) when isPrim c Ast.PrimExp   -> rr cs ((exp s1)::ss)
+      | (c::size::cs,ss) when c = coding ListStart -> 
+           retArray := Some(Array.make size 0.);
+           retArrayIdx := 0;
+           rr cs ss
+      | (c::cs,s1::ss) when c = coding ListElem ->
+           (match !retArray with
+              | None -> failwith "No array created"
+              | Some a -> a.(!retArrayIdx) <- s1;
+                          retArrayIdx := !retArrayIdx + 1;
+                          rr cs ss)
       | (c::cs,s1::s2::ss) when isPrim c Ast.PrimExponentiation
           -> rr cs ((s1 ** s2)::ss)
       | ([], [x]) -> TmConst(Ast.ConstReal(x)) 
+      | ([], []) -> 
+          (match !retArray with
+             | None -> failwith "No return value"
+             | Some a -> makeTmList a)
       | _ -> failwith "unknown byte code"
   in
     rr code [] 

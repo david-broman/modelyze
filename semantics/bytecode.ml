@@ -29,6 +29,8 @@ type bytecode =
   | ArgIndex      (* param1 = pointer to argvalue. 0=last argument *)
   | ListStart     (* param1 = number of elements in list *)
   | ListElem      (* pop list elem, push new list *)
+  | ArrayOpGet    (* param1 = pointer to argvalue. 
+                     param2 = index in array. 0=first element *)
   
 
 
@@ -41,6 +43,8 @@ let coding c =
     | ArgIndex            ->  10
     | ListStart           ->  11
     | ListElem            ->  12
+    | ArrayOpGet          ->  20
+        
 
 
 let prim2code p = 
@@ -213,6 +217,9 @@ let generate id tm =
       | TmNil -> 
           if lcons then (aCode,aConst,argc)
           else (0::(coding ListStart)::aCode,aConst,argc)
+      | TmArrayOp(Ast.ArrayOpGet,[TmVar(idx);TmConst(Ast.ConstInt(arrid))]) ->          
+          print_endline "*** ArrayOp";
+          (arrid::idx::(coding ArrayOpGet)::aCode,aConst,argc)
       | _ ->
           let _ = uprint_endline (us"No bytecode: " ^. (Debugprint.pprint tm)) in
           raise UnsupportedCode 
@@ -229,8 +236,11 @@ type codestack =
 let makeTmList elemArray =
   Array.fold_right (fun x a -> TmCons(TmConst(Ast.ConstReal(x)),a)) elemArray TmNil
 
+let cc = ref 0 
+
 let run bcode args = 
-  let _ = print_endline "** BYTECODE **" in
+  let _ = cc := !cc + 1 in
+  let _ = print_endline ("** BYTECODE ** " ^ (string_of_int !cc)) in
   let (code,rconsts,argc) = bcode in
   let retArray = ref None in
   let retArrayIdx = ref 0 in
@@ -268,13 +278,23 @@ let run bcode args =
               | Some a -> a.(!retArrayIdx) <- s1;
                           retArrayIdx := !retArrayIdx + 1;
                           rr cs ss)
-      | (c::cs,s1::s2::ss) when isPrim c Ast.PrimExponentiation
-          -> rr cs ((s1 ** s2)::ss)
+      | (c::cs,s1::s2::ss) when isPrim c Ast.PrimExponentiation ->
+          rr cs ((s1 ** s2)::ss)
+      | (c::refarr::idx::cs,ss) when c = coding ArrayOpGet ->
+          (match List.nth args refarr with
+             | TmArray(ar) ->  
+                 (match ar.(idx) with
+                    | TmConst(Ast.ConstReal(x)) -> rr cs (x::ss) 
+                    | _ -> failwith "Not a float array.")
+             | _ -> failwith "invalid argument")          
       | ([], [x]) -> TmConst(Ast.ConstReal(x)) 
       | ([], []) -> 
           (match !retArray with
              | None -> failwith "No return value"
-             | Some a -> makeTmList a)
+             | Some a -> 
+                 let _ = uprint_endline (us"Array size:" ^. 
+                                           ustring_of_int (Array.length a)) in
+                 makeTmList a)
       | _ -> failwith "unknown byte code"
   in
     rr code [] 

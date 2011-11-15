@@ -135,7 +135,7 @@ let eval_daesolver_op eval op arg_lst =
                        (array_from_tm tm_id) (resrootfun tmres) in
         array_update (Ida.y st) tm_yy;
         TmDAESolver(st,tm_yy,tm_yp)
-    | Ast.DAESolverOpMakeHybrid,
+    | Ast.DAESolverOpMakeHybrid, (* The problem with executing byte code is here. *)
         [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp);
          TmArray(tm_id);tmres;tmrootfinder] -> 
         let rootfun = resrootfun tmrootfinder in
@@ -256,7 +256,7 @@ and eval venv norec t =
 	     | (TmClos(t3,venv2,ident),v2) -> 
                  if specialize then
                    let t3' = specializeParams t3 (v2::venv2) [] norec in
-                   Bytecode.generate ident (eval venv2 norec t3') 
+                   (*Bytecode.generate ident *) (eval venv2 norec t3') 
                  else eval (v2::venv2) norec t3
 	     | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
              | (TmByteCode((co,rc,argc) as code ,extid,ident,args),v2) ->

@@ -367,10 +367,10 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
 
     // Add transition initializations to the current model
     let model4 = addEquations transInits model3 in
-
+   
     // Create a map of unknowns to unique integer values
     let ukmap = makeUkMap model4 in
-    
+   
     // Create the DAE residual 
     let residual = specialize (makeResidual ukmap) model4 in
     //let residual = makeResidual ukmap model4 in
@@ -383,14 +383,15 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let id = initConditionCorrection ukmap in
 
     // Create the root function for detecting zero crossings
-    let rootfun = specialize (makeRootFun ukmap) transitions in  
-    //let rootfun = makeRootFun ukmap transitions in  
+    //let rootfun = specialize (makeRootFun ukmap) transitions in  
+    let rootfun = makeRootFun ukmap transitions in  
 
     // Create the simulation instance for continuous-time simulation using IDA
     let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
     
     // Return the init values after an event or start of simulation (time 0)
     let firststepval = makeStepVal currtime yy probelist ukmap in
+
   
     // **** Start of continuous-time loop *****
     let ctloop currtime:Real -> acc:[StepVal] -> 

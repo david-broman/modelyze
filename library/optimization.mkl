@@ -88,7 +88,7 @@ def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     | ~log10 e -> "log10(" ++ printExpr e ++ ")"
     | ~time -> "time"
     | sym:<Real> -> (Map.find expr varNameMap)
-    | reify r:Real -> real2string r
+    | val r:Real -> real2string r
     };
     printExpr(expr)
 }

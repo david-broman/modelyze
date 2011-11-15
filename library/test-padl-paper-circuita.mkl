@@ -19,7 +19,6 @@ def CircuitA() = {
     Inductor(0.1,a1,a2);
     Resistor(200,a2,a3);
     Ground(a3);
-    Resistor(10,a1,a2);
     
     VoltageSensor(a1,a2,probe "v")
 }

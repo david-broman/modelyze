@@ -256,7 +256,7 @@ and eval venv norec t =
 	     | (TmClos(t3,venv2,ident),v2) -> 
                  if specialize then
                    let t3' = specializeParams t3 (v2::venv2) [] norec in
-                   (*Bytecode.generate ident*) (eval venv2 norec t3') 
+                   Bytecode.generate ident (eval venv2 norec t3') 
                  else eval (v2::venv2) norec t3
 	     | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
              | (TmByteCode((co,rc,argc) as code ,extid,ident,args),v2) ->

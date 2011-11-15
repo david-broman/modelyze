@@ -26,8 +26,10 @@ type bytecode =
   | ConstInt      (* param1 = intvalue *)
   | ConstReal     (* param1 = int index value to float list *)
   | ConstString   
-  | ArgIndex    (* param1 = pointer to argvalue. 0=last argument *)
-
+  | ArgIndex      (* param1 = pointer to argvalue. 0=last argument *)
+  | ListStart     (* param1 = number of elements in list *)
+  | ListElem      (* pop list elem, push new list *)
+  
 
 
 let coding c = 
@@ -37,6 +39,9 @@ let coding c =
     | ConstReal           ->  3
     | ConstString         ->  4
     | ArgIndex            ->  10
+    | ListStart           ->  11
+    | ListElem            ->  12
+
 
 let prim2code p = 
   match p with
@@ -170,42 +175,60 @@ let isPrim c p =
 
 let code2prim c = Hashtbl.find mapc2p c  
 
+type index = int 
+
+let rec countcons t a =
+  match t with
+    | TmCons(t1,t2) -> countcons t2 (a+1)
+    | _ -> a
+
 let generate id tm = 
-  let rec gen tm aCode aConst argc = 
+  let rec gen tm aCode aConst argc lcons = 
     match tm with
-      | TmClos(t,e,id) -> gen t aCode aConst (argc+1)
-      | TmLam(t) -> gen t aCode aConst (argc+1)
+      | TmClos(t,e,id) -> gen t aCode aConst (argc+1) lcons
+      | TmLam(t) -> gen t aCode aConst (argc+1) lcons
       | TmApp(TmConst(Ast.ConstPrim(primop,[])),t1,_) ->
-          let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc in
+          let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc lcons in
           ((prim2code primop)::aCode1,aConst1,argc1)
       | TmApp(TmConst(Ast.ConstPrim(primop,[arg1])),t2,_) ->
           let t1 = TmConst(arg1) in
-          let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc in
-          let (aCode2,aConst2,argc2) = gen t2 aCode1 aConst1 argc1 in
+          let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc lcons in
+          let (aCode2,aConst2,argc2) = gen t2 aCode1 aConst1 argc1 lcons in
           ((prim2code primop)::aCode2,aConst2,argc2)
       | TmApp(TmApp(TmConst(Ast.ConstPrim(primop,[])),t1,_),t2,_) ->
-          let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc in
-          let (aCode2,aConst2,argc2) = gen t2 aCode1 aConst1 argc1 in
+          let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc lcons in
+          let (aCode2,aConst2,argc2) = gen t2 aCode1 aConst1 argc1 lcons in
           ((prim2code primop)::aCode2,aConst2,argc2)
       | TmConst(Ast.ConstReal(realconst)) -> 
           let cId = (List.length aConst) in
           (cId::(coding ConstReal)::aCode,realconst::aConst,argc)
       | TmVar(idx) -> (idx::(coding ArgIndex)::aCode,aConst,argc)
+      | TmCons(t1,t2) -> 
+          if not lcons then 
+            let size = countcons t2 1 in
+            gen tm (size::(coding ListStart)::aCode) aConst argc true
+          else  
+            let (aCode1,aConst1,argc1) = gen t1 aCode aConst argc lcons in
+            gen t2 ((coding ListElem)::aCode1) aConst1 argc1 lcons
+      | TmNil -> (aCode,aConst,argc)
       | _ ->
-          let _ = uprint_endline (Debugprint.pprint tm) in
+          let _ = uprint_endline (us"No bytecode: " ^. (Debugprint.pprint tm)) in
           raise UnsupportedCode 
   in
     try
-      let (aCode,aConst,argc) = gen tm [] [] 0 in
+      let (aCode,aConst,argc) = gen tm [] [] 0 false in
        TmByteCode((List.rev aCode,List.rev aConst,argc),ref 0,Symtbl.empty,[]) 
     with UnsupportedCode -> tm
           
+type codestack =
+  | OpCode of int
+  | OpArray of float array * index
 
 
 let run bcode args = 
+  let _ = print_endline "** BYTECODE **" in
   let (code,rconsts,argc) = bcode in
   let rec rr code stack =
-    let _ = print_endline "******" in
     match (code,stack) with
       | (c::i::cs,_) when c == (coding ConstReal) -> 
           let realval = List.nth rconsts i in
@@ -214,10 +237,11 @@ let run bcode args =
           (match List.nth args i with
              | TmConst(Ast.ConstReal(x)) -> rr cs (x::stack)
              | _ -> failwith "invalid argument")
-      | (c::cs,s1::s2::ss) when isPrim c Ast.PrimRealAdd -> rr cs ((s1+.s2)::ss)
-      | (c::cs,s1::s2::ss) when isPrim c Ast.PrimRealSub -> rr cs ((s1-.s2)::ss)
-      | (c::cs,s1::s2::ss) when isPrim c Ast.PrimRealMul -> rr cs ((s1*.s2)::ss)
-      | (c::cs,s1::s2::ss) when isPrim c Ast.PrimRealDiv -> rr cs ((s1/.s2)::ss)
+      | (c::cs,s2::s1::ss) when isPrim c Ast.PrimRealAdd -> rr cs ((s1+.s2)::ss)
+      | (c::cs,s2::s1::ss) when isPrim c Ast.PrimRealSub -> rr cs ((s1-.s2)::ss)
+      | (c::cs,s2::s1::ss) when isPrim c Ast.PrimRealMul -> rr cs ((s1*.s2)::ss)
+      | (c::cs,s2::s1::ss) when isPrim c Ast.PrimRealDiv -> rr cs ((s1/.s2)::ss)
+      | (c::cs,s1::ss) when isPrim c Ast.PrimRealNeg     -> rr cs ((-.s1)::ss)
       | (c::cs,s1::ss) when isPrim c Ast.PrimSin   -> rr cs ((sin s1)::ss)
       | (c::cs,s1::ss) when isPrim c Ast.PrimCos   -> rr cs ((cos s1)::ss)
       | (c::cs,s1::ss) when isPrim c Ast.PrimTan   -> rr cs ((tan s1)::ss)
@@ -234,12 +258,6 @@ let run bcode args =
       | _ -> failwith "unknown byte code"
   in
     rr code [] 
-
-
-
-
-
-
 
 
 

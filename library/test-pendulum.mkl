@@ -22,15 +22,15 @@ include ExportModelica
 
 
 //Panterlides applied, with symbolic differentation
-def Pendulum(m:Real,l:Real,startAngle:Real) = {
+def Pendulum(m:Real,l:Real,angle:Real) = {
     def g = 9.81;
     def T,x,y:Real;
 
     //init x (l*sin(startAngle));
     //init y (-l*cos(startAngle));
      
-    init (x = l*sin(startAngle));
-    init (y = -l*cos(startAngle));
+    init (x = l*sin(angle));
+    init (y = -l*cos(angle));
 
     -T*x/l = m*x'';
     -T*y/l - m*g = m*y'';     

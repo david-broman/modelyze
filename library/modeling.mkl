@@ -20,25 +20,21 @@ include Base
 
 type Signal = <Real>
 
-let der : <Real -> Real>
-let (') : <Real -> Real> = der
-let hoDer : <Real -> Int -> Real>
-
+def der : <Real -> Real>
+def (') : <Real -> Real> = der
+def hoDer : <Real -> Int -> Real>
 
 
 type Equations
-let Eqn : <Real -> Real -> Equations>
-let (=) : <Real -> Real -> Equations> = Eqn
-let EquationSysNode : <Equations -> Equations -> Equations>
-let (;) : <Equations -> Equations -> Equations> = EquationSysNode
-let NoEqn : Equations
+def (=) : <Real -> Real -> Equations> 
+def (;) : <Equations -> Equations -> Equations>
+def NoEqn : Equations
 
-
-let init : <Equations -> Equations>
+def init : <Equations -> Equations>
 //let (<-) : <Equations -> Equations> = init
 
-let time : <Real>
-let probe : <String -> Real> 
+def time : <Real>
+def probe : <String -> Real> 
 
 type Expr = <>
 

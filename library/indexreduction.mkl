@@ -29,7 +29,7 @@ include Differentiation
 //the original equations
 type PEqNode
 type EqNode = <PEqNode>
-let  eqContainer:<PEqNode -> Eqs -> Eqs> 
+let  eqContainer:<PEqNode -> Equations -> Equations> 
 
 type VarSet = Set Expr
 

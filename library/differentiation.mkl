@@ -35,18 +35,18 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
       let (e1b,dmap1) = extractDerivatives e1 dmap olddmap in
       let (e2b,dmap2) = extractDerivatives e2 dmap1 olddmap in
       (match (e1b,e2b) with
-       | (~NoEq,~NoEq) -> (NoEq,dmap2)
-       | (~NoEq,_)     -> (e2b,dmap2)
-       | (_,~NoEq)     -> (e1b,dmap2)
+       | (~NoEqn,~NoEqn) -> (NoEqn,dmap2)
+       | (~NoEqn,_)     -> (e2b,dmap2)
+       | (_,~NoEqn)     -> (e1b,dmap2)
        | (_,_)         -> (e1b;e2b,dmap2))
   | ~der ~time = _ -> (eqs,extractHOder eqs 0 dmap)
   | ~der _ = ~time -> (eqs,extractHOder eqs 0 dmap)
   | _ = ~der ~time -> (eqs,extractHOder eqs 0 dmap)
   | ~time = ~der _ -> (eqs,extractHOder eqs 0 dmap)
   | ~der sym:Signal = sym:Signal ->
-      (match eqs with | ~der x = dx -> (NoEq,Map.add x dx dmap))
+      (match eqs with | ~der x = dx -> (NoEqn,Map.add x dx dmap))
   | sym:Signal = ~der sym:Signal ->
-      (match eqs with | dx = ~der x -> (NoEq,Map.add x dx dmap))
+      (match eqs with | dx = ~der x -> (NoEqn,Map.add x dx dmap))
   | _ -> (eqs,extractHOder eqs 0 dmap)
 
 //Symbolically differentiate a model (higher-order).

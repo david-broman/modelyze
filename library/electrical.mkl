@@ -18,13 +18,12 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Modeling
 
-type ElectricalNode
-type Electrical = <ElectricalNode>
+type Electrical 
 let ElectricalBranch : 
-    <Real -> Real -> ElectricalNode -> ElectricalNode -> Eqs>
-let ElectricalRefBranch : <Real -> Real -> ElectricalNode -> Eqs>
-type Voltage = <Real>
-type Current = <Real>
+    <Real -> Real -> Electrical -> Electrical -> Equations>
+let ElectricalRefBranch : <Real -> Real -> Electrical -> Equations>
+type Voltage = Real
+type Current = Real
 
 
 

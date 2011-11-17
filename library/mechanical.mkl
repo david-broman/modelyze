@@ -18,16 +18,16 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Modeling
 
-type RotationalNode
-type Rotational = <RotationalNode>
+type Rotational  
+
 let RotationalBranch : 
-    <Real -> Real -> RotationalNode -> RotationalNode -> Eqs>
-let RotationalRefBranch : <Real -> Real -> RotationalNode -> Eqs>
-type AngularVelocity = <Real>
-type AngularAcceleration = <Real>
-type Angle = <Real>
-type Torque = <Real>
-type Force = <Real>
-type Position = <Real>
-type Velocity = <Real>
-type Acceleration = <Real>
+    <Real -> Real -> Rotational -> Rotational -> Equations>
+let RotationalRefBranch : <Real -> Real -> Rotational -> Equations>
+type AngularVelocity = Real
+type AngularAcceleration = Real
+type Angle = Real
+type Torque = Real
+type Force = Real
+type Position = Real
+type Velocity = Real
+type Acceleration = Real

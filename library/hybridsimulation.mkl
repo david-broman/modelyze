@@ -54,7 +54,7 @@ type Transitions = [(State,State,Expr,Expr)]
 type StatePath = [State]
 
 // Internal transition for storing both source and target state info
-let internalTrans : <PState -> PState -> Bool -> Eqs -> Eqs>
+let internalTrans : <State -> State -> Bool -> Equations -> Equations>
 
 
 // Extract the current hierarical state of equations as well as 
@@ -75,10 +75,10 @@ let extractHState model:Equations -> freshState:Bool ->
                           else extract e true ps cs (c::updated) c)
     | ~state s e -> if s <==> cstate  
                       then extract e fresh pre curr updated s 
-                      else (NoEq,updated)
+                      else (NoEqn,updated)
     | ~transition nstate ~when g ~action i -> 
           (internalTrans cstate nstate g i,updated) 
-    | ~init x e -> if fresh then (init x e,updated) else (NoEq,updated)
+    | ~init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
     | e1 e2 ->  
          let (eqs1,up1) = extract e1 fresh pre curr updated cstate in
          let (eqs2,up2) = extract e2 fresh pre curr up1 cstate in

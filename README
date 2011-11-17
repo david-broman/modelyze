@@ -63,6 +63,8 @@ REVISIONS
 ---------
 
 Version 1.0.1
+  - Simplified the way of creating pseudo types. Now these are always
+    symbolic types. Defintions of equations and nodes are now simpler.
   - Add def-syntax, which is closer to Java or C. { } are used as
     grouping of expressions, not as defining arrays.
   - Added coercion semantics for int to reals, meaning that 1you can

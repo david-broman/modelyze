@@ -25,16 +25,17 @@ let (') : <Real -> Real> = der
 let hoDer : <Real -> Int -> Real>
 
 
-type Eqs
-type Equations = <Eqs>
-let EquationSysNode : <Eqs -> Eqs -> Eqs>
-let Eq : <Real -> Real -> Eqs>
-let (=) : <Real -> Real -> Eqs> = Eq
-let (;) : <Eqs -> Eqs -> Eqs> = EquationSysNode
-let NoEq : Equations
 
-let init : <Real -> Real -> Eqs>
-let (<-) : <Real -> Real -> Eqs> = init
+type Equations
+let Eqn : <Real -> Real -> Equations>
+let (=) : <Real -> Real -> Equations> = Eqn
+let EquationSysNode : <Equations -> Equations -> Equations>
+let (;) : <Equations -> Equations -> Equations> = EquationSysNode
+let NoEqn : Equations
+
+
+let init : <Real -> Real -> Equations>
+let (<-) : <Real -> Real -> Equations> = init
 
 let time : <Real>
 let probe : <String -> Real> 

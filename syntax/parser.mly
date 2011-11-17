@@ -620,20 +620,28 @@ param:
       { ($1.v,$3) }
 
 semi_op:
+  | app_left
+      { $1 }
+  | app_left SEMI semi_op
+      { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
+
+app_left:
   | cons
       { $1 }
-  | cons SEMI semi_op
-      { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
+  | app_left cons
+      { TmApp(mktminfo $1 $2,0,$1,$2,false) }
+  
 
 cons:
   | op
       { $1 }
   | op CONS cons 
-      { TmCons(mktminfo $1 $3,$2.l,$1,$3) }      
+      { TmCons(mktminfo $1 $3,$2.l,$1,$3) }     
+
 
      
 op:
-  | app_left
+  | atom
       { $1 }
   | op EQ op
       { mk_binop (mktminfo $1 $3) $2.l "(=)" $1 $3 }
@@ -708,10 +716,6 @@ op:
   | op POLYEQUAL op
       { let fi = mktminfo $1 $3 in
         TmEqual(fi,$2.l,$1,$3) }
-
-app_left:
-  | atom
-      { $1 }
   | IDENTPAREN RPAREN 
       { let t1 = TmVar($1.i,$1.v) in 
         let t2 = TmConst($2.i,0,ConstUnit) in
@@ -724,19 +728,16 @@ app_left:
           | t::ts -> TmApp(fi,0,mkapps ts,t,false)
           | [] -> tm_ident
         in mkapps $2 }
-  | LPAREN app_left PARENAPP RPAREN 
+  | LPAREN op PARENAPP RPAREN 
       { let t2 = TmConst($4.i,0,ConstUnit) in
         TmApp(mkinfo $1.i $4.i,0,$2,t2,false) }
-  | LPAREN app_left PARENAPP revtmseq RPAREN
+  | LPAREN op PARENAPP revtmseq RPAREN
       { let fi = mkinfo $1.i $5.i in
         let rec mkapps lst =
           match lst with
           | t::ts -> TmApp(fi,0,mkapps ts,t,false)
           | [] -> $2
         in mkapps $4 }
-  | app_left app_right
-      { let (l,t) = $2 in
-        TmApp(mktminfo $1 t,l,$1,t,false) }
   | FST atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmProj(fi,$1.l,0,$2) }
@@ -756,12 +757,7 @@ app_left:
         TmApp(mkinfo $1.i $4.i,0,tm_ident,$3,true) } 
   | SPECIALIZE LPAREN atom PARENAPP atom RPAREN
       { TmApp(mktminfo $3 $5,0,$3,$5,true) } 
-  
-app_right:
-  | atom
-      { (0,$1) }
-  | METAAPP atom
-      { ($1.l,$2) }
+
 
 atom:
   | IDENT

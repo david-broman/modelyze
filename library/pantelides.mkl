@@ -125,8 +125,8 @@ let pantelides equationGraph:EqsGraph -> variableMap:VarMap ->
               (EqMap,EqsGraph) =
     let mkEdges lst:[VNode] -> [VNode] =
        match lst with
-       | j::js -> j::(if Map.mem j A then (Map.find j A)::mkEdges js
-                      else mkEdges js)
+       | j::js -> j::(if Map.mem j A then (Map.find j A)::mkEdges(js)
+                      else mkEdges(js))
        | [] -> []
     in
       match lst with

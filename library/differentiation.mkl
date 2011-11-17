@@ -58,25 +58,25 @@ let differentiateModel expr:Expr -> Expr =
     | ~time -> val 1.
     | sym:Signal -> hoDer expr 1
     | ~hoDer x (val k:Int) -> hoDer x (k +. 1)
-    | ~der e -> sdiff (sdiff e)
-    | e1 + e2 -> sdiff e1 + sdiff e2 
-    | e1 - e2 -> sdiff e1 - sdiff e2 
-    | e1 * e2 -> sdiff e1 * e2 + e1 * sdiff e2
-    | e1 / e2 -> (sdiff e1 * e2 - e1 * sdiff e2) / (e2 * e2)
-    | ~sin e -> sdiff e * cos e
-    | ~cos e -> sdiff e * -(sin e)
-    | ~tan e -> sdiff e * 1./(cos e)^2.
-    | ~asin e -> sdiff e * (1. / (sqrt (1. - e^2.)))
-    | ~acos e -> sdiff e * -(1. / (sqrt (1. - e^2.)))
-    | ~atan e -> sdiff e * (1. / (1. + e^2.))
-    | ~sinh e -> sdiff e * cosh e
-    | ~cosh e -> sdiff e * sinh e
-    | ~tanh e -> sdiff e * (1. / (cosh e)^2.)
-    | ~log e -> sdiff e / e
-    | ~log10 e -> sdiff e * log10 eulerNumber / e 
-    | ~sqrt e -> sdiff e / (2.*(sqrt e))
-    | e1 ^ (val k:Real) -> (k * e1 ^ (k - 1.)) * sdiff e1
-    | -e -> -(sdiff e)
+    | ~der e -> sdiff(sdiff(e))
+    | e1 + e2 -> sdiff(e1) + sdiff(e2)
+    | e1 - e2 -> sdiff(e1) - sdiff(e2)
+    | e1 * e2 -> sdiff(e1) * e2 + e1 * sdiff(e2)
+    | e1 / e2 -> (sdiff(e1) * e2 - e1 * sdiff(e2)) / (e2 * e2)
+    | ~sin e -> sdiff(e) * cos(e)
+    | ~cos e -> sdiff(e) * -(sin(e))
+    | ~tan e -> sdiff(e) * 1./(cos(e))^2.
+    | ~asin e -> sdiff(e) * (1. / (sqrt(1. - e^2.)))
+    | ~acos e -> sdiff(e) * -(1. / (sqrt(1. - e^2.)))
+    | ~atan e -> sdiff(e) * (1. / (1. + e^2.))
+    | ~sinh e -> sdiff(e) * cosh(e)
+    | ~cosh e -> sdiff(e) * sinh(e)
+    | ~tanh e -> sdiff(e) * (1. / (cosh e)^2.)
+    | ~log e -> sdiff(e)/ e
+    | ~log10 e -> sdiff(e)* log10(eulerNumber) / e 
+    | ~sqrt e -> sdiff(e)/ (2.*(sqrt e))
+    | e1 ^ (val k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
+    | -e -> -(sdiff(e))
     | val x:Real -> val 0.
     | _ -> error "Cannot differentiate model"
   in 
@@ -103,8 +103,8 @@ let removeHOderivatives expr:Expr -> dmap:DerivMap -> Expr =
 //higher-order derivatives.
 let generateEquations eqs:Equations -> dlist:DerivList -> Equations =
   match dlist with
-  | (x,dx)::xs -> der x = dx; (generateEquations eqs xs)
-  | _::xs -> generateEquations eqs xs 
+  | (x,dx)::xs -> der(x) = dx; generateEquations(eqs,xs)
+  | _::xs -> generateEquations(eqs,xs) 
   | [] -> eqs
 
 //Elaborate derivatives. Symbolic differentiation of expressions and

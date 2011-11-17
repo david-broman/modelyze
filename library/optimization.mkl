@@ -19,7 +19,7 @@ type VarNameMap = (Signal => String)
 
 def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     def genName(vPrefix:String, mNbr:Int, vNbr:Int) : String = {
-        vPrefix ++ "_" ++ int2string mNbr ++ "_" ++ int2string vNbr
+        vPrefix ++ "_" ++ int2string(mNbr) ++ "_" ++ int2string(vNbr)
     };
     def iterMeshVars(meshPointVars:MeshVars, mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
         def genNames(varList:[(Signal,Signal)], vPrefix:String, vNbr:Int, nameMap:VarNameMap) : VarNameMap = {
@@ -66,29 +66,29 @@ def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
 def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     def printExpr(expr:Expr) : String = {
     match expr with 
-    | e1 + e2 -> "(" ++ printExpr e1 ++ " + " ++ printExpr e2 ++ ")"
-    | e1 - e2 -> "(" ++ printExpr e1 ++ " - " ++ printExpr e2 ++ ")"
-    | e1 * e2 -> printExpr e1 ++ " * " ++ printExpr e2 
-    | e1 / e2 -> printExpr e1 ++ " / " ++ printExpr e2 
-    | -e ->     "(-" ++ printExpr e ++ ")" 
-    | e1^e2 -> "(" ++ printExpr e1 ++ ")" ++ " ^ " ++ "(" ++ printExpr e2 ++ ")"
-    | ~der e ->   "der(" ++ printExpr e ++ ")"
-    | ~sin e ->   "sin(" ++ printExpr e ++ ")"
-    | ~cos e ->   "cos(" ++ printExpr e ++ ")"
-    | ~tan e ->   "tan(" ++ printExpr e ++ ")"
-    | ~asin e ->  "asin(" ++ printExpr e ++ ")"
-    | ~acos e ->  "acos(" ++ printExpr e ++ ")"
-    | ~atan e ->  "atan(" ++ printExpr e ++ ")"
-    | ~sinh e ->  "sinh(" ++ printExpr e ++ ")"
-    | ~cosh e ->  "cosh(" ++ printExpr e ++ ")"
-    | ~tanh e ->  "tanh(" ++ printExpr e ++ ")"
-    | ~sqrt e ->  "sqrt(" ++ printExpr e ++ ")"
-    | ~exp e ->   "exp(" ++ printExpr e ++ ")"
-    | ~log e ->   "log(" ++ printExpr e ++ ")"
-    | ~log10 e -> "log10(" ++ printExpr e ++ ")"
+    | e1 + e2 -> "(" ++ printExpr(e1) ++ " + " ++ printExpr(e2) ++ ")"
+    | e1 - e2 -> "(" ++ printExpr(e1) ++ " - " ++ printExpr(e2) ++ ")"
+    | e1 * e2 -> printExpr(e1) ++ " * " ++ printExpr(e2) 
+    | e1 / e2 -> printExpr(e1) ++ " / " ++ printExpr(e2) 
+    | -e ->     "(-" ++ printExpr(e) ++ ")" 
+    | e1^e2 -> "(" ++ printExpr(e1) ++ ")" ++ " ^ " ++ "(" ++ printExpr(e2) ++ ")"
+    | ~der e ->   "der(" ++ printExpr(e) ++ ")"
+    | ~sin e ->   "sin(" ++ printExpr(e) ++ ")"
+    | ~cos e ->   "cos(" ++ printExpr(e) ++ ")"
+    | ~tan e ->   "tan(" ++ printExpr(e) ++ ")"
+    | ~asin e ->  "asin(" ++ printExpr(e) ++ ")"
+    | ~acos e ->  "acos(" ++ printExpr(e) ++ ")"
+    | ~atan e ->  "atan(" ++ printExpr(e) ++ ")"
+    | ~sinh e ->  "sinh(" ++ printExpr(e) ++ ")"
+    | ~cosh e ->  "cosh(" ++ printExpr(e) ++ ")"
+    | ~tanh e ->  "tanh(" ++ printExpr(e) ++ ")"
+    | ~sqrt e ->  "sqrt(" ++ printExpr(e) ++ ")"
+    | ~exp e ->   "exp(" ++ printExpr(e) ++ ")"
+    | ~log e ->   "log(" ++ printExpr(e) ++ ")"
+    | ~log10 e -> "log10(" ++ printExpr(e) ++ ")"
     | ~time -> "time"
     | sym:<Real> -> (Map.find expr varNameMap)
-    | val r:Real -> real2string r
+    | val r:Real -> real2string(r)
     };
     printExpr(expr)
 }

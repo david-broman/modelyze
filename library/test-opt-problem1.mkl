@@ -9,15 +9,15 @@ def VanDerPol() = {
     input u;
 
     // Initial values for x1 and x2
-    init(x1 = 0);
-    init(x2 = 1); 
+    init x1 = 0;
+    init x2 = 1; 
 
     // Differential equation
     x1' = (1 - x2^2)*x1 - x2 + u;
     x2' = x1;
 
     // Cost function
-    minimize integral (x1^2 + x2^2 + u^2) interval 0 4
+    minimize integral x1^2 + x2^2 + u^2 interval 0 4
 }
 
 //Expected output

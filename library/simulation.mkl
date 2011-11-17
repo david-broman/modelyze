@@ -41,7 +41,7 @@ let makeResidual model:Equations -> ukmap:UkMap ->
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with
     | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr e1 - realExpr e2) :: acc
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
     | _ -> acc
   in traverseEq model [] 
 
@@ -64,7 +64,7 @@ let makeNewResidual model:Equations -> ukmap:UkMap ->
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with
     | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr e1 - realExpr e2) :: acc
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
     | _ -> acc
   in traverseEq model [] 
 
@@ -97,7 +97,7 @@ let makeStepVal currtime:Real -> yy:{Real} ->
 let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
   match probes with
   | (s,u::us)::ss -> 
-    let s2 = s ++ (if n >. 1 then "_" ++ int2string n else "") in
+    let s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "") in
     s2::(makeProbeNames ((s,us)::ss) (n +. 1))
   | (s,[])::ss -> makeProbeNames ss 1
   | [] -> []
@@ -140,12 +140,12 @@ let pprintSimulation res:SimulationResult -> String =
   let psteps step:[StepVal] -> first:Bool -> String =
     match step with
     | (t,x::xs)::xxs if first ->        
-        real2string t ++ "\t" ++ psteps ((t,x::xs)::xxs) false
+        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
     | (t,x::xs)::xxs -> 
-        real2string x ++ "\t" ++ psteps ((t,xs)::xxs) false
-    | (t,[])::xxs -> "\n" ++ psteps xxs true
+        real2string(x) ++ "\t" ++ psteps((t,xs)::xxs,false)
+    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
     | [] -> ""
-  in psteps stepvals true
+  in psteps(stepvals,true)
  
 let printsim model:Equations -> steptime:Real -> endtime:Real -> () =
       print (pprintSimulation (simulate model steptime endtime))

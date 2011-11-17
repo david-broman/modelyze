@@ -110,7 +110,7 @@ def pprintPythonCasadiCost(cost:Expr, varNameMap:VarNameMap) : String = {
 def genInitMap(model:Equations) : VarMap = {
     def gen(m:Expr,acc:VarMap) : VarMap = {
         match m with
-        | ~init x v -> Map.add x v acc 
+        | ~init (x=v) -> Map.add x v acc 
         | e1 e2 -> gen(e2,gen(e1,acc))
         | _ -> acc
     };

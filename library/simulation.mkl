@@ -36,7 +36,7 @@ let makeResidual model:Equations -> ukmap:UkMap ->
                 | sym:Signal -> Array.get yp (fst (Map.find x ukmap))
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Signal -> Array.get yy (fst(Map.find e ukmap))
-    | _ -> let _ = dpa e in error "Unsupported model construct" 
+    | _ -> error "Unsupported model construct" 
   in
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with

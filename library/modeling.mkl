@@ -34,8 +34,8 @@ let (;) : <Equations -> Equations -> Equations> = EquationSysNode
 let NoEqn : Equations
 
 
-let init : <Real -> Real -> Equations>
-let (<-) : <Real -> Real -> Equations> = init
+let init : <Equations -> Equations>
+//let (<-) : <Equations -> Equations> = init
 
 let time : <Real>
 let probe : <String -> Real> 

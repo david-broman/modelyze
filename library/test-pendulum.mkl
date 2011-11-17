@@ -22,21 +22,24 @@ include ExportModelica
 
 
 //Panterlides applied, with symbolic differentation
-let Pendulum m:Real -> l:Real -> startAngle:Real -> Equations =
-  let g = 9.81 in
-  let T:Force in
-  let x:Position in
-  let y:Position in
+def Pendulum(m:Real,l:Real,startAngle:Real) = {
+    def g = 9.81;
+    def T,x,y:Real;
 
-  init x (l*sin startAngle);
-  init y (-l*cos startAngle);
+    //init x (l*sin(startAngle));
+    //init y (-l*cos(startAngle));
      
-  -T*x/l = m*x'';
-  -T*y/l - m*g = m*y'';     
+    init (x = l*sin(startAngle));
+    init (y = -l*cos(startAngle));
 
-  (x^2. + y^2.)'' = (l^2.)'';
-  probe "x" = x;
-  probe "Lenght" = (sqrt(x*x+y*y))
+    -T*x/l = m*x'';
+    -T*y/l - m*g = m*y'';     
+    (x^2 + y^2)'' = (l^2)'';
+
+    probe "x" = x;
+    probe "Lenght" = (sqrt(x*x+y*y))
+}
+
 
 
 let _ = 

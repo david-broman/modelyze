@@ -1,7 +1,7 @@
 
 include Optimization
 
-def VanDerPol() = {
+def VanDerPol()  = {
     // Define variables
     def x1,x2,u:Signal;
 
@@ -19,6 +19,28 @@ def VanDerPol() = {
     // Cost function
     minimize integral x1^2 + x2^2 + u^2 interval 0 4
 }
+
+/*
+def VanDerPol() : OptProblem  = {
+    // Cost function
+    minimize integral x1^2 + x2^2 + u^2 interval 0 4 
+    {    
+        // Define variables
+        def x1,x2,u:Signal;
+
+        // State that u is an input
+        input u;
+
+        // Initial values for x1 and x2
+        init x1 = 0;
+        init x2 = 1; 
+
+        // Differential equation
+        x1' = (1 - x2^2)*x1 - x2 + u;
+        x2' = x1;
+    };
+}
+*/
 
 //Expected output
 // ({x1=>mvar#1,x2=>mvar#2},{},{u=>mvar#3})
@@ -41,7 +63,8 @@ def TestModel(c:Real) = {
     
     //Here is an example how the user would define the 
     //optimization problem. 
-    minimize integral (x*u) interval 0 4  
+    minimize integral (x*u) interval 0 4
+        
 }
 
 def main = {

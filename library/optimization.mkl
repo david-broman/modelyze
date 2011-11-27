@@ -17,6 +17,13 @@ type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
 type VarNameMap = (Signal => String)
 
+// TODO:
+// 1. Introduce type OCP: equations, initial conditions, L-function (cost), startTime, finalTime
+//  - getOCP(equations : Equations)
+// 2. Introduce type NLP: meshVars, constraints, cost
+//  - getNLP(ocp : OCP)
+// 3. A function codeGen(nlp: NLP)
+
 def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     def genName(vPrefix:String, mNbr:Int, vNbr:Int) : String = {
         vPrefix ++ "_" ++ int2string(mNbr) ++ "_" ++ int2string(vNbr)

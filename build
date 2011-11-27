@@ -60,6 +60,7 @@ mkclean()
   rm -f *~
   rm -f *#
   rm -f myocamlbuild.ml
+  rm -f _tags
   cleandymola dynamic/testdata
   cleandymola static/testdata
   cleandymola parser/testdata

@@ -13,11 +13,11 @@ def VanDerPol()  = {
     init x2 = 1; 
 
     // Differential equation
-    x1' = (1 - x2^2)*x1 - x2 + u;
+    x1' = (1 - x2*x2)*x1 - x2 + u;
     x2' = x1;
 
     // Cost function
-    minimize integral x1^2 + x2^2 + u^2 interval 0 4
+    minimize integral x1*x1 + x2*x2 + u*u interval 0 5
 }
 
 /*
@@ -75,7 +75,9 @@ def main = {
   def (L,start,stop) = getOptProblem(m);
 
   def vars = extractVariables(m);
-  def meshVars = generateMeshVars(vars,4);
+  def (nx,ny,nu) = getModelSizes(vars);
+  def n_e = 50;
+  def meshVars = generateMeshVars(vars,n_e);
   def x0 = genInitMap(m);
   def nlp_constr = genNLPConstraint(m,x0,0.1,meshVars);   
   def nlp_cost = genNLPCost(L, 0.1, meshVars);
@@ -84,6 +86,10 @@ def main = {
   def _ = dprint(nlp_cost);  // <-- Choose what to print here
 
   def varNameMap = genMeshVarNameMap(meshVars);
+
+  def header = pprintPythonCasadiHeader(varNameMap);
+  def _ = print(header);
+
   def decls = pprintPythonCasadiDecls(varNameMap);
   def _ = print(decls);
   
@@ -92,6 +98,10 @@ def main = {
 
   def cost = pprintPythonCasadiCost(nlp_cost, varNameMap);
   def _ = print(cost);   
+
+  def solve = pprintPythonCasadiIpoptSolve(n_e,start,stop,nx,ny,nu);
+  def _ = print(solve);
+
   ()
 
 }

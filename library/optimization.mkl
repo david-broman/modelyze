@@ -17,13 +17,31 @@ type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
 type VarNameMap = (Signal => String)
 
+// There may be something built-in to do this...
+def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
+    def setSize(varLst:[Signal], n:Int) : Int = {
+        match varLst with
+        | v::vs -> {
+            setSize(vs, n+.1)
+            }
+        | [] -> n        
+    };	
+    def (x,y,u) = modelVars;
+    def xList = (Set.toList x);
+    def yList = (Set.toList y);
+    def uList = (Set.toList u);
+    def nx = setSize(xList,0);
+    def ny = setSize(yList,0);
+    def nu = setSize(uList,0);
+    (nx,ny,nu)
+}
+
 // TODO:
 // 1. Introduce type OCP: equations, initial conditions, L-function (cost), startTime, finalTime
 //  - getOCP(equations : Equations)
 // 2. Introduce type NLP: meshVars, constraints, cost
 //  - getNLP(ocp : OCP)
 // 3. A function codeGen(nlp: NLP)
-
 def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     def genName(vPrefix:String, mNbr:Int, vNbr:Int) : String = {
         vPrefix ++ "_" ++ int2string(mNbr) ++ "_" ++ int2string(vNbr)
@@ -54,9 +72,76 @@ def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     iterMeshPoints(meshVars, 1, Map.empty)
 }
 
+// The input argument here is actually not needed, not sure how to
+// define a function witout arguments.
+def pprintPythonCasadiHeader(varNameMap:VarNameMap) : String = {
+   "import casadi as C\n" ++
+   "import numpy as N\n" ++
+   "import matplotlib.pyplot as plt\n\n"
+}
+
+def pprintPythonCasadiIpoptSolve(n_e:Int, start_time:Real, final_time:Real, nx:Int, ny:Int, nu:Int) : String = {
+    "# Create the NLP cost function\n"++
+    "cost_func = C.SXFunction([z],[cost])\n"++
+    "cost_func.init()\n"++
+    "# Create the NLP constraints\n"++
+    "constr_func = C.SXFunction([z],[constr])\n"++
+    "constr_func.init()\n"++
+    "# Create the IPOPT solver object\n"++
+    "solver = C.IpoptSolver(cost_func,constr_func)\n"++
+    "solver.init()\n"++
+    "# Set initial guess and variable bounds\n"++
+    "z_init = N.zeros(len(z))\n"++
+    "z_ub = 1e20*N.ones(len(z))\n"++
+    "z_lb = -1e20*N.ones(len(z))\n"++
+    "solver.setInput(z_init,C.NLP_X_INIT)\n"++
+    "solver.setInput(z_ub,C.NLP_UBX)\n"++
+    "solver.setInput(z_lb,C.NLP_LBX)\n"++
+    "# Set constratint bounds (equality constratins)\n"++
+    "constr_ub = N.zeros(len(constr))\n"++
+    "constr_lb = N.zeros(len(constr))\n"++           
+    "solver.setInput(constr_ub,C.NLP_UBG)\n"++
+    "solver.setInput(constr_lb,C.NLP_LBG)\n"++
+    "# Solve the problem\n"++
+    "solver.solve()\n"++
+    "# Extract the solution\n"++
+    "z_opt = solver.output(C.NLP_X_OPT)\n"++
+    "n_x = " ++ int2string(nx) ++ "\n"++
+    "n_w = " ++ int2string(ny) ++ "\n"++
+    "n_u = " ++ int2string(nu) ++ "\n"++
+    "n_e = " ++ int2string(n_e) ++ "\n"++
+    "start_time = " ++ real2string(start_time)  ++ "\n"++
+    "final_time = " ++ real2string(final_time)  ++ "\n"++
+    "time = N.arange(start_time,final_time,(final_time-start_time)/n_e)\n"++
+    "xx = N.zeros((n_e,n_x))\n"++
+    "ww = N.zeros((n_e,n_w))\n"++
+    "uu = N.zeros((n_e,n_u))\n"++
+    "for i in range(n_x):\n"++
+    "    xx[:,i] = N.array(z_opt[n_u + n_w + i::(n_x + n_u + n_w)])[:,0]\n"++
+    "for i in range(n_w):\n"++
+    "    ww[:,i] = N.array(z_opt[n_u + i::(n_x + n_u + n_w)])[:,0]\n"++
+    "for i in range(n_u):\n"++
+    "    uu[:,i] = N.array(z_opt[i::(n_x + n_u + n_w)])[:,0]\n"++
+    "if n_x>0:\n"++
+    "    plt.figure(1)\n"++
+    "    plt.plot(time,xx)\n"++
+    "    plt.grid(True)\n"++
+    "    plt.show()\n"++
+    "if n_w>0:\n"++
+    "    plt.figure(2)\n"++
+    "    plt.plot(time,ww)\n"++
+    "    plt.grid(True)\n"++
+    "    plt.show()\n"++
+    "if n_u>0:\n"++
+    "    plt.figure(3)\n"++
+    "    plt.plot(time,uu)\n"++
+    "    plt.grid(True)\n"++
+    "    plt.show()\n"
+}
+
 def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
     def pprintVar(name:String) : String = {
-        name ++ " = " ++ "C.SX(\"" ++ name ++ "\")"
+        name ++ " = " ++ "C.SX(\"" ++ name ++ "\")\nz.append(" ++ name ++ ")"
     };
     def iterVars(varList:[(Signal,String)], acc:String) : String = {
         match varList with
@@ -67,7 +152,7 @@ def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
         | [] -> acc
     };
     def varNameList = (Map.toList varNameMap);	
-    iterVars(varNameList,"")
+    iterVars(varNameList,"z = []\n")
 }
 
 def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
@@ -104,7 +189,7 @@ def pprintPythonCasadiConstrs(equations:Equations, varNameMap:VarNameMap) : Stri
     def printEquations(equations:Equations, constrs:String) : String = {
 	match equations with
         | eq1 ; eq2 -> printEquations(eq1, constrs) ++ printEquations(eq2,constrs)
-        | left = right -> "constr += (" ++ pprintPythonCasadiExpr(left,varNameMap) ++ ") - (" ++ pprintPythonCasadiExpr(right, varNameMap) ++ ")\n"
+        | left = right -> "constr.append((" ++ pprintPythonCasadiExpr(left,varNameMap) ++ ") - (" ++ pprintPythonCasadiExpr(right, varNameMap) ++ "))\n"
         | _ -> ""
     };
     "constr = []\n" ++ printEquations(equations, "")
@@ -192,9 +277,6 @@ def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
     };
     genMeshPointConstraints(x0, meshVars, NoEqn)
 }
-
-
-
 
 //Extract all types of variabels from a model. The return tuple
 //is (x,y,u), where x is the state derivatives, y the algebraic variables

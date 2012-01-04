@@ -27,7 +27,7 @@ def VanDerPol() : OptProblem =
     def x1,x2,u:Signal;
 
     // Dynamic optimization problem
-    minimize integral x1^2 + x2^2 + u^2 interval 0 4 
+    minimize integral x1*x1 + x2*x2 + u*u interval 0 5 
     {    
         // State that u is an input
         input u;
@@ -68,9 +68,16 @@ def TestModel(c:Real) = {
         
 }
 
-
-
 def main = {
+  def m = VanDerPol();
+  def (dae,initmap,cost,start,stop) = getOCP(m);
+  //def _ = dprint((start,stop));
+  () 
+}
+
+
+def oldmain = {
+
   //def m = TestModel(-1) in
   def m = OldVanDerPol();
 

@@ -8,6 +8,7 @@ type KeywordIntegral
 let integral : KeywordIntegral
 
 type OptProblem
+
 let minimize : <KeywordIntegral -> Real -> KeywordInterval -> 
                 Real -> Real -> Equations -> OptProblem>
 
@@ -21,6 +22,10 @@ type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
 type VarNameMap = (Signal => String)
+
+
+type OCP = (Equations, VarMap, <Real>, Real, Real)
+
 
 // There may be something built-in to do this...
 def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
@@ -321,6 +326,31 @@ def getOptProblem(model:Equations) : (Expr,Real,Real) = {
     trav(model,[])
 }
 
-
-
+//Extract the different components from an optimal control problem (OCP).
+//Input: 
+//    optProb = The optimal control problem of type OptProblem
+//Putput:
+//    Tuple with the following items
+//    1. The DAE without any init value equations
+//    2. A mapping of type VarMap, mapping variables to initial values
+//    3. The cost function of type <Real>
+//    4. The start time of type Real
+//    5. The end time of type Real
+def getOCP(optProb:OptProblem) : OCP = {
+    def genInits(m:Expr,acc:VarMap) : (Expr,VarMap) = {
+        match m with
+        | ~init (x=v) -> (NoEqn,Map.add x v acc)
+        | e1 e2 -> {
+             def (e1b,acc2) = genInits(e1,acc);
+             def (e2b,acc3) = genInits(e2,acc2);
+             (e1b e2b,acc3)
+          }
+        | _ -> (m,acc)
+    };
+    match optProb with 
+    | ~minimize ~integral cost ~interval (val start:Real) (val stop:Real) eqs -> {
+         def (dae, initvals) = genInits(eqs, Map.empty);
+         (dae,initvals,cost,start,stop)      
+      }
+}
 

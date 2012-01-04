@@ -38,4 +38,16 @@ def probe : <String -> Real>
 
 type Expr = <>
 
+def cleanupEquations(eq:Equations) : Equations = {
+    match eq with
+    | e1; e2 -> 
+       {
+          match (cleanupEquations e1, cleanupEquations e2) with
+          | (~NoEqn,~NoEqn) -> NoEqn
+          | (~NoEqn,e) -> e
+          | (e,~NoEqn) -> e
+          | (e1b,e2b) -> e1b; e2b
+       }
+    | _ -> eq
+}
 

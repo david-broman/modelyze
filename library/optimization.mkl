@@ -21,11 +21,13 @@ type VarSet = Set Signal
 type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
 type MeshVars  = (VarMap,VarMap,VarMap)
+type MeshVarsList  = [MeshVars]
 type VarNameMap = (Signal => String)
+type Constraints = Equations
 
-
-type OCP = (Equations, VarMap, <Real>, Real, Real)
-
+type Cost = <Real>
+type OCP = (Equations, VarMap, Cost, Real, Real)
+type NLP = (MeshVarsList, Constraints, Cost)
 
 // There may be something built-in to do this...
 def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
@@ -285,7 +287,7 @@ def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
          }
        | [] -> acc
     };
-    genMeshPointConstraints(x0, meshVars, NoEqn)
+    cleanupEquations(genMeshPointConstraints(x0, meshVars, NoEqn))
 }
 
 //Extract all types of variabels from a model. The return tuple
@@ -326,12 +328,20 @@ def getOptProblem(model:Equations) : (Expr,Real,Real) = {
     trav(model,[])
 }
 
-//Extract the different components from an optimal control problem (OCP).
-//Input: 
+def removeInputEqs(eq:Equations) : Equations = {
+    match eq with
+    | ~input _ -> NoEqn
+    | e1;e2 -> removeInputEqs(e1); removeInputEqs(e2)
+    | _ -> eq
+}
+
+
+// Extract the different components from an optimal control problem (OCP).
+// Input: 
 //    optProb = The optimal control problem of type OptProblem
-//Putput:
+// Output:
 //    Tuple with the following items
-//    1. The DAE without any init value equations
+//    1. The DAE without any init value equations 
 //    2. A mapping of type VarMap, mapping variables to initial values
 //    3. The cost function of type <Real>
 //    4. The start time of type Real
@@ -353,4 +363,23 @@ def getOCP(optProb:OptProblem) : OCP = {
          (dae,initvals,cost,start,stop)      
       }
 }
+
+// Create a NLP problem out of the OCP
+// Input:
+//    ocpProb = OCP problem
+// Output: 
+//    A tuple representing the NLP
+//    1. A list of mesh variables (type MeshVarsList)
+//    2. New constraints
+//    3. Cost function
+def getNLP(ocpProb:OCP, n_e:Int) : NLP = {
+    def (dae,initvals,cost,start,stop) = ocpProb;
+    def modelVars = extractVariables(dae);
+    def meshVars = generateMeshVars(modelVars,n_e);
+    def newDAE = cleanupEquations(removeInputEqs(dae));
+    def h = (stop - start) / n_e;
+    def constraints = genNLPConstraint(newDAE,initvals,h,meshVars);   
+    (meshVars,constraints,cost)
+}
+
 

@@ -1,7 +1,7 @@
 
 include Optimization
 
-def VanDerPol()  = {
+def OldVanDerPol()  = {
     // Define variables
     def x1,x2,u:Signal;
 
@@ -17,17 +17,18 @@ def VanDerPol()  = {
     x2' = x1;
 
     // Cost function
-    minimize integral x1*x1 + x2*x2 + u*u interval 0 5
+    minimize2 integral x1*x1 + x2*x2 + u*u interval 0 5
 }
 
-/*
-def VanDerPol() : OptProblem  = {
-    // Cost function
+
+def VanDerPol() : OptProblem = 
+{
+    // Define variables
+    def x1,x2,u:Signal;
+
+    // Dynamic optimization problem
     minimize integral x1^2 + x2^2 + u^2 interval 0 4 
     {    
-        // Define variables
-        def x1,x2,u:Signal;
-
         // State that u is an input
         input u;
 
@@ -37,10 +38,10 @@ def VanDerPol() : OptProblem  = {
 
         // Differential equation
         x1' = (1 - x2^2)*x1 - x2 + u;
-        x2' = x1;
-    };
+        x2' = x1
+    }
 }
-*/
+
 
 //Expected output
 // ({x1=>mvar#1,x2=>mvar#2},{},{u=>mvar#3})
@@ -63,13 +64,15 @@ def TestModel(c:Real) = {
     
     //Here is an example how the user would define the 
     //optimization problem. 
-    minimize integral (x*u) interval 0 4
+    minimize2 integral (x*u) interval 0 4
         
 }
 
+
+
 def main = {
   //def m = TestModel(-1) in
-  def m = VanDerPol();
+  def m = OldVanDerPol();
 
   //Get the goal function and intervals
   def (L,start,stop) = getOptProblem(m);
@@ -82,8 +85,8 @@ def main = {
   def nlp_constr = genNLPConstraint(m,x0,0.1,meshVars);   
   def nlp_cost = genNLPCost(L, 0.1, meshVars);
 
-  def _ = dprint(nlp_constr);  // <-- Choose what to print here
-  def _ = dprint(nlp_cost);  // <-- Choose what to print here
+  //def _ = dprint(nlp_constr);  // <-- Choose what to print here
+  //def _ = dprint(nlp_cost);  // <-- Choose what to print here
 
   def varNameMap = genMeshVarNameMap(meshVars);
 

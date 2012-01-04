@@ -207,6 +207,10 @@ top:
       { let fi = mkinfo $1.i (tm_info $5) in
         let (plst,endty) = $3 in
         TopLet(fi,$2,endty,List.rev plst,$5,freein_tm $2 $5)::$6 }  
+  | DEF identparen parenparamlist COLON ty EQ term top
+      { let fi = mkinfo $1.i (tm_info $7) in
+        let (plst,_) = $3 in
+        TopLet(fi,$2,Some $5,List.rev plst,$7,freein_tm $2 $7)::$8 }  
   | DEF letpat EQ term top
       { let fi = mkinfo $1.i (tm_info $4) in
         TopLet(fi,$2,None,[],$4,freein_tm $2 $4)::$5 }
@@ -347,6 +351,10 @@ term:
       { let fi = mkinfo $1.i (tm_info $7) in
         let (plst,endty) = $3 in
         TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
+  | DEF identparen parenparamlist COLON ty EQ cons SEMI term
+      { let fi = mkinfo $1.i (tm_info $7) in
+        let (plst,endty) = $3 in
+        TmLet(fi,$1.l,$2,Some $5,List.rev plst,$7,$9,freein_tm $2 $7) }
   | DEF pat_atom EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmMatch(fi,$1.l,$4,[PCase(fi,[$2],None,[],$6)]) }

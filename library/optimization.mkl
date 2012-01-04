@@ -7,7 +7,12 @@ let interval : KeywordInterval
 type KeywordIntegral
 let integral : KeywordIntegral
 
+type OptProblem
 let minimize : <KeywordIntegral -> Real -> KeywordInterval -> 
+                Real -> Real -> Equations -> OptProblem>
+
+
+let minimize2 : <KeywordIntegral -> Real -> KeywordInterval -> 
                 Real -> Real -> Equations>
 let input : <Real -> Equations>
 
@@ -307,7 +312,7 @@ def extractVariables(model:Equations) : ModelVars = {
 def getOptProblem(model:Equations) : (Expr,Real,Real) = {
     def trav(e:Equations,rest:[Expr]) : (Expr,Real,Real) = {
         match (e,rest) with
-        | (~minimize ~integral L ~interval (val start:Real) (val stop:Real),_) 
+        | (~minimize2 ~integral L ~interval (val start:Real) (val stop:Real),_) 
             -> (L,start,stop)
         | (e1;e2,_) -> trav(e1,e2::rest)
         | (_,e::es) -> trav(e,es)

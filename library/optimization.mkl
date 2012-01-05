@@ -1,6 +1,32 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010-2011 David Broman 
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/******************************************************************** 
+  Module:       Optimization
+  Author(s):    Johan Åkesson and David Broman
+  Year(s):      2011-2012
+  Description:  Module for generating NLP code (Phyton/Casadi) from a
+                dynamic optimization problem (MKL).        
+*********************************************************************/
 
 include Modeling
 
+// New syntax for the optimiation module
 type KeywordInterval
 let interval : KeywordInterval
 
@@ -12,11 +38,9 @@ type OptProblem
 let minimize : <KeywordIntegral -> Real -> KeywordInterval -> 
                 Real -> Real -> Equations -> OptProblem>
 
-
-let minimize2 : <KeywordIntegral -> Real -> KeywordInterval -> 
-                Real -> Real -> Equations>
 let input : <Real -> Equations>
 
+// Internal types
 type VarSet = Set Signal
 type VarMap = (Signal => Signal)
 type ModelVars = (VarSet,VarSet,VarSet)
@@ -29,31 +53,16 @@ type Cost = <Real>
 type OCP = (Equations, ModelVars, VarMap, Cost, Real, Real)
 type NLP = (MeshVarsList, Constraints, Cost)
 
-// There may be something built-in to do this...
-def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
-    def setSize(varLst:[Signal], n:Int) : Int = {
-        match varLst with
-        | v::vs -> {
-            setSize(vs, n+.1)
-            }
-        | [] -> n        
-    };	
-    def (x,y,u) = modelVars;
-    def xList = (Set.toList x);
-    def yList = (Set.toList y);
-    def uList = (Set.toList u);
-    def nx = setSize(xList,0);
-    def ny = setSize(yList,0);
-    def nu = setSize(uList,0);
-    (nx,ny,nu)
-}
 
+// Generate a unique readable mapping from variables to variable strings
 def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
     def genName(vPrefix:String, mNbr:Int, vNbr:Int) : String = {
         vPrefix ++ "_" ++ int2string(mNbr) ++ "_" ++ int2string(vNbr)
     };
-    def iterMeshVars(meshPointVars:MeshVars, mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
-        def genNames(varList:[(Signal,Signal)], vPrefix:String, vNbr:Int, nameMap:VarNameMap) : VarNameMap = {
+    def iterMeshVars(meshPointVars:MeshVars, mNbr:Int, 
+                     nameMap:VarNameMap) : VarNameMap = {
+        def genNames(varList:[(Signal,Signal)], vPrefix:String, vNbr:Int, 
+                     nameMap:VarNameMap) : VarNameMap = {
             match varList with
             | v::vs -> {
                 def (_,vv) = v;
@@ -70,9 +79,11 @@ def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
         def uList = (Map.toList uMap);
         genNames(uList,"u",1,nameMap_tmp2)
     };
-    def iterMeshPoints(meshPointList:[MeshVars], mNbr:Int, nameMap:VarNameMap) : VarNameMap = {
+    def iterMeshPoints(meshPointList:[MeshVars], mNbr:Int, 
+                       nameMap:VarNameMap) : VarNameMap = {
         match meshPointList with
-        | mv::mvs -> iterMeshPoints(mvs, mNbr+.1, iterMeshVars(mv, mNbr, nameMap)) 
+        | mv::mvs -> 
+             iterMeshPoints(mvs, mNbr+.1, iterMeshVars(mv, mNbr, nameMap)) 
         | [] -> nameMap        
     };
     iterMeshPoints(meshVars, 1, Map.empty)
@@ -86,7 +97,9 @@ def pprintPythonCasadiHeader(varNameMap:VarNameMap) : String = {
    "import matplotlib.pyplot as plt\n\n"
 }
 
-def pprintPythonCasadiIpoptSolve(n_e:Int, start_time:Real, final_time:Real, nx:Int, ny:Int, nu:Int) : String = {
+// Generate the probelm to be solved.
+def pprintPythonCasadiIpoptSolve(n_e:Int, start_time:Real, final_time:Real, 
+                                 nx:Int, ny:Int, nu:Int) : String = {
     "# Create the NLP cost function\n"++
     "cost_func = C.SXFunction([z],[cost])\n"++
     "cost_func.init()\n"++
@@ -145,6 +158,7 @@ def pprintPythonCasadiIpoptSolve(n_e:Int, start_time:Real, final_time:Real, nx:I
     "    plt.show()\n"
 }
 
+// Generate Python headers
 def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
     def pprintVar(name:String) : String = {
         name ++ " = " ++ "C.SX(\"" ++ name ++ "\")\nz.append(" ++ name ++ ")"
@@ -161,6 +175,7 @@ def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
     iterVars(varNameList,"z = []\n")
 }
 
+// Generate a Python expression from MKL expressions.
 def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     def printExpr(expr:Expr) : String = {
     match expr with 
@@ -169,7 +184,8 @@ def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     | e1 * e2 -> printExpr(e1) ++ " * " ++ printExpr(e2) 
     | e1 / e2 -> printExpr(e1) ++ " / " ++ printExpr(e2) 
     | -e ->     "(-" ++ printExpr(e) ++ ")" 
-    | e1^e2 -> "(" ++ printExpr(e1) ++ ")" ++ " ^ " ++ "(" ++ printExpr(e2) ++ ")"
+    | e1^e2 -> "(" ++ printExpr(e1) ++ ")" ++ " ^ " 
+                ++ "(" ++ printExpr(e2) ++ ")"
     | ~der e ->   "der(" ++ printExpr(e) ++ ")"
     | ~sin e ->   "sin(" ++ printExpr(e) ++ ")"
     | ~cos e ->   "cos(" ++ printExpr(e) ++ ")"
@@ -191,30 +207,27 @@ def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     printExpr(expr)
 }
 
-def pprintPythonCasadiConstrs(equations:Equations, varNameMap:VarNameMap) : String = {
+// Generate constraints in Python code
+def pprintPythonCasadiConstrs(equations:Equations, 
+                              varNameMap:VarNameMap) : String = {
     def printEquations(equations:Equations, constrs:String) : String = {
 	match equations with
-        | eq1 ; eq2 -> printEquations(eq1, constrs) ++ printEquations(eq2,constrs)
-        | left = right -> "constr.append((" ++ pprintPythonCasadiExpr(left,varNameMap) ++ ") - (" ++ pprintPythonCasadiExpr(right, varNameMap) ++ "))\n"
+        | eq1 ; eq2 -> printEquations(eq1, constrs) ++ 
+                       printEquations(eq2,constrs)
+        | left = right -> 
+             "constr.append((" ++ pprintPythonCasadiExpr(left,varNameMap) ++ 
+             ") - (" ++ pprintPythonCasadiExpr(right, varNameMap) ++ "))\n"
         | _ -> ""
     };
     "constr = []\n" ++ printEquations(equations, "")
 }
 
+// Generate the cost function in Python code
 def pprintPythonCasadiCost(cost:Expr, varNameMap:VarNameMap) : String = {
     "cost = " ++ pprintPythonCasadiExpr(cost, varNameMap) ++ "\n"
 }
 
-def genInitMap(model:Equations) : VarMap = {
-    def gen(m:Expr,acc:VarMap) : VarMap = {
-        match m with
-        | ~init (x=v) -> Map.add x v acc 
-        | e1 e2 -> gen(e2,gen(e1,acc))
-        | _ -> acc
-    };
-    gen(model,Map.empty)
-}
-
+// Generate a list of all mesh variables that are needed in the NLP problem
 def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     def genvar(varlst:[Signal],acc:VarMap) : VarMap = {
         match varlst with
@@ -308,21 +321,25 @@ def extractVariables(model:Equations) : ModelVars = {
     trav(model,(Set.empty,Set.empty,Set.empty))
 }
   
-
-//Traverse the model and extract the optimixation problem. In the 
-//return tuple, the first parameter is the cost function, the
-//second parameter t_0 and the third parameter t_f
-def getOptProblem(model:Equations) : (Expr,Real,Real) = {
-    def trav(e:Equations,rest:[Expr]) : (Expr,Real,Real) = {
-        match (e,rest) with
-        | (~minimize2 ~integral L ~interval (val start:Real) (val stop:Real),_) 
-            -> (L,start,stop)
-        | (e1;e2,_) -> trav(e1,e2::rest)
-        | (_,e::es) -> trav(e,es)
-        | (_,[]) -> error "No optimization problem found"
-    };
-    trav(model,[])
+// Compute sizes of variables
+def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
+    def setSize(varLst:[Signal], n:Int) : Int = {
+        match varLst with
+        | v::vs -> {
+            setSize(vs, n+.1)
+            }
+        | [] -> n        
+    };	
+    def (x,y,u) = modelVars;
+    def xList = (Set.toList x);
+    def yList = (Set.toList y);
+    def uList = (Set.toList u);
+    def nx = setSize(xList,0);
+    def ny = setSize(yList,0);
+    def nu = setSize(uList,0);
+    (nx,ny,nu)
 }
+
 
 // Replaces input equations with NoEqn, which later are cleaned up.
 def removeInputEqs(eq:Equations) : Equations = {
@@ -356,7 +373,8 @@ def getOCP(optProb:OptProblem) : OCP = {
         | _ -> (m,acc)
     };
     match optProb with 
-    | ~minimize ~integral cost ~interval (val start:Real) (val stop:Real) eqs -> {
+    | ~minimize ~integral cost ~interval (val start:Real) 
+       (val stop:Real) eqs -> {
          def (dae, initvals) = genInits(eqs, Map.empty);
          def vars = extractVariables(dae);
          def newDAE = cleanupEquations(removeInputEqs(dae));

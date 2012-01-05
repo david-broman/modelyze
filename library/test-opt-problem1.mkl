@@ -1,25 +1,23 @@
+/*
+Modeling Kernel Language (MKL) library 
+Copyright (C) 2010-2011 David Broman 
+
+MKL library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MKL library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 
 include Optimization
-
-def OldVanDerPol()  = {
-    // Define variables
-    def x1,x2,u:Signal;
-
-    // State that u is an input
-    input u;
-
-    // Initial values for x1 and x2
-    init x1 = 0;
-    init x2 = 1; 
-
-    // Differential equation
-    x1' = (1 - x2*x2)*x1 - x2 + u;
-    x2' = x1;
-
-    // Cost function
-    minimize2 integral x1*x1 + x2*x2 + u*u interval 0 5
-}
-
 
 def VanDerPol() : OptProblem = 
 {
@@ -42,75 +40,11 @@ def VanDerPol() : OptProblem =
     }
 }
 
-
-// Defines a simple test model that includes the optimization problem
-def TestModel(c:Real) = {
-    //A simple hello world DAE (actually an ODE...)
-    def x:Signal;
-    def u:Signal;
-
-    //State the u is the unkown input signal that we are computing
-    input u;
-
-    //Initial value for x
-    init(x=2);
-   
-    //Differential equation
-    x' = c*x + u;
-    
-    //Here is an example how the user would define the 
-    //optimization problem. 
-    minimize2 integral (x*u) interval 0 4
-        
-}
-
 def main = {
-  def m = VanDerPol();
-  def code = codeGenOptProblem(m,50);
+  def code = codeGenOptProblem(VanDerPol(),50);
   print(code)
 }
 
-
-def oldmain = {
-
-  //def m = TestModel(-1) in
-  def m = OldVanDerPol();
-
-  //Get the goal function and intervals
-  def (L,start,stop) = getOptProblem(m);
-
-  def vars = extractVariables(m);
-  def (nx,ny,nu) = getModelSizes(vars);
-  def n_e = 50;
-  def meshVars = generateMeshVars(vars,n_e);
-  def x0 = genInitMap(m);
-  def nlp_constr = genNLPConstraint(m,x0,0.1,meshVars);   
-  def nlp_cost = genNLPCost(L, 0.1, meshVars);
-
-  //def _ = dprint(nlp_constr);  // <-- Choose what to print here
-  //def _ = dprint(nlp_cost);  // <-- Choose what to print here
-
-  def varNameMap = genMeshVarNameMap(meshVars);
-
-  def header = pprintPythonCasadiHeader(varNameMap);
-  //def _ = print(header);
-
-  def decls = pprintPythonCasadiDecls(varNameMap);
-  //def _ = print(decls);
-  
-  def constrs = pprintPythonCasadiConstrs(nlp_constr, varNameMap);
-  //def _ = print(constrs);
-
-  def cost = pprintPythonCasadiCost(nlp_cost, varNameMap);
-  //def _ = print(cost);   
-
-  def solve = pprintPythonCasadiIpoptSolve(n_e,start,stop,nx,ny,nu);
-  //def _ = print(solve);
-
-  ()
-
-}
-    
 
 
 

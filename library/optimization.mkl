@@ -406,19 +406,19 @@ def getNLP(ocp:OCP, n_e:Int) : NLP = {
 // Output:
 //    Python code as string
 def codeGenOptProblem(optProb:OptProblem, n_e:Int) : String = {
-  def ocp = getOCP(optProb);
-  def nlp = getNLP(ocp,n_e);
-  def (dae,modelVars,initvals,cost,start,stop) = ocp;
-  def (meshVars,constraints,nlpCost) = nlp;
-  def (nx,ny,nu) = getModelSizes(modelVars);
+    def ocp = getOCP(optProb);
+    def nlp = getNLP(ocp,n_e);
+    def (dae,modelVars,initvals,cost,start,stop) = ocp;
+    def (meshVars,constraints,nlpCost) = nlp;
+    def (nx,ny,nu) = getModelSizes(modelVars);
 
-  def varNameMap = genMeshVarNameMap(meshVars);
-  def header = pprintPythonCasadiHeader(varNameMap);
-  def decls = pprintPythonCasadiDecls(varNameMap);
-  def constrs = pprintPythonCasadiConstrs(constraints, varNameMap);
-  def cost = pprintPythonCasadiCost(nlpCost, varNameMap);
-  def solve = pprintPythonCasadiIpoptSolve(n_e,start,stop,nx,ny,nu);
-  header ++ decls ++ constrs ++ cost ++ solve
+    def varNameMap = genMeshVarNameMap(meshVars);
+    def header = pprintPythonCasadiHeader(varNameMap);
+    def decls = pprintPythonCasadiDecls(varNameMap);
+    def constrs = pprintPythonCasadiConstrs(constraints, varNameMap);
+    def cost = pprintPythonCasadiCost(nlpCost, varNameMap);
+    def solve = pprintPythonCasadiIpoptSolve(n_e,start,stop,nx,ny,nu);
+    header ++ decls ++ constrs ++ cost ++ solve
 }
 
 

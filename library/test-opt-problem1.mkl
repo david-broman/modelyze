@@ -34,15 +34,15 @@ def VanDerPol() : OptProblem =
         init x1 = 0;
         init x2 = 1; 
 
-        // Differential equation
+        // Differential equations
         x1' = (1 - x2*x2)*x1 - x2 + u;
         x2' = x1
     }
 }
 
 def main = {
-  def code = codeGenOptProblem(VanDerPol(),50);
-  print(code)
+    def code = codeGenOptProblem(VanDerPol(),50);
+    print(code)
 }
 
 

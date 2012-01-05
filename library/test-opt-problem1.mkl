@@ -37,14 +37,10 @@ def VanDerPol() : OptProblem =
         init x2 = 1; 
 
         // Differential equation
-        x1' = (1 - x2^2)*x1 - x2 + u;
+        x1' = (1 - x2*x2)*x1 - x2 + u;
         x2' = x1
     }
 }
-
-
-//Expected output
-// ({x1=>mvar#1,x2=>mvar#2},{},{u=>mvar#3})
 
 
 // Defines a simple test model that includes the optimization problem
@@ -70,10 +66,8 @@ def TestModel(c:Real) = {
 
 def main = {
   def m = VanDerPol();
-  def (dae,initmap,cost,start,stop) = getOCP(m);
-  def (meshvars,constraints,cost) = getNLP((dae,initmap,cost,start,stop),50);
-  //def _ = dprint(constraints);
-  () 
+  def code = codeGenOptProblem(m,50);
+  print(code)
 }
 
 
@@ -99,19 +93,19 @@ def oldmain = {
   def varNameMap = genMeshVarNameMap(meshVars);
 
   def header = pprintPythonCasadiHeader(varNameMap);
-  def _ = print(header);
+  //def _ = print(header);
 
   def decls = pprintPythonCasadiDecls(varNameMap);
-  def _ = print(decls);
+  //def _ = print(decls);
   
   def constrs = pprintPythonCasadiConstrs(nlp_constr, varNameMap);
-  def _ = print(constrs);
+  //def _ = print(constrs);
 
   def cost = pprintPythonCasadiCost(nlp_cost, varNameMap);
-  def _ = print(cost);   
+  //def _ = print(cost);   
 
   def solve = pprintPythonCasadiIpoptSolve(n_e,start,stop,nx,ny,nu);
-  def _ = print(solve);
+  //def _ = print(solve);
 
   ()
 

@@ -1,4 +1,4 @@
 #!/bin/bash
 ../bin/mkl $1  > mklplot.dat 
-gnuplot mklplot.cfg > /dev/null 2>&1
+gnuplot -persist mklplot.cfg > /dev/null 2>&1
 rm -f mklplot.dat

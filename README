@@ -38,6 +38,16 @@ do the following steps:
 4. Unzip the MKL source code and compile the project using command
    >> build byte
 
+INSTALLATION (Ubuntu 10.11)
+---------------------------
+1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal
+   >>sudo apt-get install ocaml ocaml-findlib gnuplot libsundials-serial
+2. Unzip the MKL source code and compile the project using command
+   >> build byte
+ 
+ 
+
+
 EXAMPLES
 --------
 Under folder "library", a simple standard library for MKL is provided.

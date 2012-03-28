@@ -23,7 +23,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-include Simulation
+include HybridSimulation
 
 type Population = <Real>
 
@@ -34,14 +34,14 @@ let LotkaVolterra =
   let efficiencyGrowthFoxes = 0.1 in
   let rabbits:Population in
   let foxes:Population in
-  init rabbits 700.;
-  init foxes 10.;
+  init rabbits = 700.;
+  init foxes = 10.;
   der(rabbits) = growthRateRabbits*rabbits - 
                  deathRateRabbits*rabbits*foxes;
   der(foxes)   = efficiencyGrowthFoxes*deathRateRabbits*
                  rabbits*foxes - deathRateFoxes*foxes;
-  probe "foxes" = foxes;
-  probe "animals" = foxes + rabbits
+  probe("foxes") = foxes;
+  probe("rabbits") = rabbits
 
 
 let main = 

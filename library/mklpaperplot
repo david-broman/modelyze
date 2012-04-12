@@ -1,0 +1,16 @@
+#!/bin/bash
+
+plot_ps()
+{
+../bin/mkl $1  > mklplot.dat 
+gnuplot mklplotps.cfg > /dev/null 2>&1
+rm -f mklplot.dat
+ps2pdf mklplot.ps
+rm -f mklplot.ps
+mv -f mklplot.pdf $2
+}
+
+
+plot_ps "paper-pendulum.mkl" "../../paper-mkl/pendulumplot.pdf"
+plot_ps "paper-breakingpendulum.mkl" "../../paper-mkl/breakingpendulumplot.pdf"
+

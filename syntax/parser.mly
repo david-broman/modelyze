@@ -285,7 +285,7 @@ tyatom:
 	  | [ty] -> Typesystem.ty_lev_up $1.l ty
 	  | tys ->  TyTuple(fi,$1.l,List.rev tys) }
   | LESS GREAT
-      { TyAnyModel(mkinfo $1.i $2.i,$1.l) }
+      { TyModel(mkinfo $1.i $2.i,$1.l,TyAnyModel(mkinfo $1.i $2.i,$1.l))}
   | LESS ty GREAT
       { TyModel(mkinfo $1.i $3.i,$1.l,$2) }
   | MAP tyatom tyatom 

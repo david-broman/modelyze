@@ -37,7 +37,7 @@ let ty_normalize ty =
       | TyUnit(_,_) -> ty
       | TyList(fi,l,ty1) -> TyList(fi,l,norm isSym ty1)
       | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map (norm isSym) tys)
-      | TyModel(fi,l,(TyAnyModel(_,_) as tty)) -> tty
+      | TyModel(fi,l,(TyModel(_,_,TyAnyModel(_,_)) as tty)) -> tty
       | TyModel(fi,l,ty1) -> 
           if isSym then norm true ty1 else TyModel(fi,l,norm true ty1)
       | TyAnyModel(_,_) -> ty 

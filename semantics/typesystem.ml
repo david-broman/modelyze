@@ -173,7 +173,7 @@ let rec remove_dup_assoc l =
 let ty_ismodel ty = 
   match ty with
     | TyModel(_,_,_) -> true
-    | TyAnyModel(_,_) -> true
+    (* | TyAnyModel(_,_) -> true  *)
     | _ -> false
 
 let rel_union rl1 rl2 = remove_dup_assoc (rl1 @ rl2)
@@ -620,9 +620,9 @@ and typeof env ukenv t =
 		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
                           (mk_tymodel ty12,TmModApp
                              (fi,l,TmVal(fi,l,t1',ty1),t2'))
-		       | TyAnyModel(_,l3) -> 
+		   (*    | TyAnyModel(_,l3) -> 
                           (mk_tymodel ty12,TmModApp
-                             (fi,l,TmVal(fi,l,t1',ty1),t2'))
+                             (fi,l,TmVal(fi,l,t1',ty1),t2')) *)
 		       | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
 		             tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
 	    | TyModel(_,l,TyArrow(_,l3,ty11,ty12)) ->
@@ -645,12 +645,12 @@ and typeof env ukenv t =
                        TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,t2',ty2))) 
 		    else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"4"]))
-	    | TyAnyModel(fi,l)  ->
+	    | TyModel(fi,l,TyAnyModel(_,_))  ->
 		if ty_consistent ty1 ty2 then
 		  (TyAnyModel(fi,l),TmModApp(fi,l,t1',t2'))
 		else
                   (TyAnyModel(fi,l),TmModApp(fi,l,t1',
-                                    TmVal(ty_info ty2,ty_lev ty2,t2',ty2)))
+                                    TmVal(ty_info ty2,ty_lev ty2,t2',ty2)))  
 	    | _ -> raise (Mkl_type_error(TYPE_APP_NO_FUNC_TYPE,ERROR,tm_info t1,
 					   [pprint_ty ty1]))
 	  end
@@ -785,8 +785,8 @@ and typeof env ukenv t =
 	  (typeof env ukenv t1,typeof env ukenv t2) in
           begin match (ty1',ty2') with 
             (* (TT-MODAPP1) *)
-            | (TyAnyModel(fi,l2) as any),ty2' when ty_consistent any ty2' ->
-		  (TyAnyModel(fi,l2),TmModApp(fi,l,t1',t2'))
+       (*      | (TyAnyModel(fi,l2) as any),ty2' when ty_consistent any ty2' ->
+		  (TyAnyModel(fi,l2),TmModApp(fi,l,t1',t2')) *)
             (* (TT-MODAPP2) *)
 	    | TyModel(_,l1,TyArrow(_,_,ty11,ty12)),ty2' 
                 when ty_consistent (TyModel(NoInfo,l1,ty11)) ty2' ->
@@ -851,36 +851,35 @@ and typeof env ukenv t =
         let ((ty1',t1'),(ty3',t3')) = 
 	  (typeof env ukenv t1,typeof env ukenv t3) in
 	  (match ty1' with
-	     | TyModel(_,l,_) | TyAnyModel(_,l) -> (
+	     | TyModel(_,l,_)  -> (
+                 let anymod = TyModel(NoInfo,l,TyAnyModel(NoInfo,l)) in
 		 let (ty2',t2') = 
 		   (match p with
-		      | MPatUk(_,TyAnyModel(_,_)) -> typeof env ukenv t2 
+		    (*  | MPatUk(_,TyAnyModel(_,_)) -> typeof env ukenv t2  *)
 		      | MPatUk(_,TyModel(_,_,_)) -> typeof env ukenv t2 
 		      | MPatUk(_,ty3) -> raise (Mkl_type_error
 			    (TYPE_DECON_PAT_UK_NOT_MODEL_TYPE,ERROR,ty_info ty3,
 			     [pprint_ty ty3]))   
 		      | MPatModApp(_,x1,x2) -> 
-			  let tt = TyAnyModel(NoInfo,l) in
 			   typeof 
-			   ((x1,(l,tt,StripNo))::(x2,(l,tt,StripNo))::env) ukenv
+			   ((x1,(l,anymod,StripNo))::(x2,(l,anymod,StripNo))::env) ukenv
                               t2
 		      | MPatModIfGuard(_,x) -> typeof 
-			  ((x,(l,TyAnyModel(NoInfo,l),StripNo))::env) ukenv
+			  ((x,(l,anymod,StripNo))::env) ukenv
                             t2
 		      | MPatModIfThen(_,x) -> typeof 
-			  ((x,(l,TyAnyModel(NoInfo,l),StripNo))::env) ukenv
+			  ((x,(l,anymod,StripNo))::env) ukenv
                             t2
 		      | MPatModIfElse(_,x) -> typeof 
-			  ((x,(l,TyAnyModel(NoInfo,l),StripNo))::env) ukenv   
+			  ((x,(l,anymod,StripNo))::env) ukenv   
                             t2 
 		      | MPatModEqual(_,x1,x2) -> 
-			  let tt = TyAnyModel(NoInfo,l) in
 			    typeof 
-			  ((x1,(l,tt,StripNo))::(x2,(l,tt,StripNo))::env) ukenv
+			  ((x1,(l,anymod,StripNo))::(x2,(l,anymod,StripNo))::env) ukenv
                               t2
 		      | MPatModProj(_,x1,x2) -> 
 			  typeof ((x1,(l,TyInt(NoInfo,l),StripNo))::
-			       (x2,(l,TyAnyModel(NoInfo,l),StripNo))::env) ukenv
+			       (x2,(l,anymod,StripNo))::env) ukenv
                                 t2
 		      | MPatVal(_,x,ty2) -> typeof 
 			  ((x,(l,ty2,StripNo))::env) ukenv t2) 
@@ -903,17 +902,25 @@ and typeof env ukenv t =
         let ((ty1,t1'),(ty2,t2')) = 
 	  (typeof env ukenv t1,typeof env ukenv t2) in
           (* (L-EQUAL1) *)
-          if (not (ty_consistent (TyAnyModel(fi,l)) ty1)) &&
+       (*  if (not (ty_consistent (TyAnyModel(fi,l)) ty1)) &&
              (ty_consistent (TyAnyModel(fi,l)) ty2) &&
              (ty_consistent (TyModel(fi,l,ty1)) ty2) 
           then 
               (TyBool(NoInfo,l),(TmEqual(fi,l,TmVal(fi,l,t1',ty1),t2')))
+        *)
+          if (not (ty_ismodel ty1)) && ty_consistent (TyModel(fi,l,ty1)) ty2
+          then 
+              (TyBool(NoInfo,l),(TmEqual(fi,l,TmVal(fi,l,t1',ty1),t2')))
           else           
           (* (L-EQUAL2) *)
-          if (ty_consistent (TyAnyModel(fi,l)) ty1) &&
+       (* if (ty_consistent (TyAnyModel(fi,l)) ty1) &&
              (not (ty_consistent (TyAnyModel(fi,l)) ty2)) &&
              (ty_consistent ty1 (TyModel(fi,l,ty2))) 
           then 
+              (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmVal(fi,l,t2',ty2)))) 
+      *)
+          if ty_consistent ty1 (TyModel(fi,l,ty2))  && (not (ty_ismodel ty2)) 
+           then 
               (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmVal(fi,l,t2',ty2))))
           else 
           (* (L-EQUAL3) *)

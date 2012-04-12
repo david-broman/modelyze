@@ -282,8 +282,13 @@ let rec ty_equiv ty1 ty2 =
 
 let rec ty_restriction ty1 ty2 =
   match ty1,ty2 with
-    | TyModel(_,_,_),TyAnyModel(fi,ty) -> TyAnyModel(fi,ty)
-    | TyBot(_,_),_ -> ty2
+    | TyModel(fi,l,ty),TyModel(_,_,ty') -> TyModel(fi,l,ty_restriction ty ty')
+    | _,TyAnyModel(fi,ty) -> TyAnyModel(fi,ty)
+    | TyBot(_,_),_ -> ty2 
+
+(*    | TyModel(_,_,_),TyAnyModel(fi,ty) -> TyAnyModel(fi,ty)
+    | TyBot(_,_),_ -> ty2 
+*)
     | TyArrow(fi,l,ty1,ty2),TyArrow(fi',l',ty1',ty2') -> 
 	TyArrow(fi,l,ty_restriction ty1 ty1',ty_restriction ty2 ty2')
     | TyList(fi,l,ty),TyList(fi',l',ty') -> 

@@ -45,7 +45,7 @@ and ty =
   | TyList      of ty
   | TyTuple     of ty list
   | TyModel     of ty
-  | TyAnyModel  
+  | TyDynamic  
   | TyBot        
   | TyUserdef   of typeid
   | TyArray     of ty

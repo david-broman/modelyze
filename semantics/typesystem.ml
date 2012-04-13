@@ -48,7 +48,7 @@ let rec ty_constlev ty =
     | TyTuple(_,l,tylst) -> List.for_all 
         (fun t -> ty_constlev t && ty_lev t == l) tylst
     | TyModel(_,l,t) -> ty_constlev t && ty_lev t == l
-    | TyAnyModel(_,l) -> true
+    | TyDynamic(_,l) -> true
     | TyBot(_,l) -> true
     | TyUserdef(_,l,tyid,id) -> true
     | TyIdent(fi,l1,id1) -> assert false 
@@ -71,7 +71,7 @@ let rec ty_mono ty =
     | TyTuple(_,l,tylst) -> List.for_all 
         (fun t -> ty_mono t && ty_lev t >= l) tylst
     | TyModel(_,l,t) -> ty_mono t && ty_lev t >= l
-    | TyAnyModel(_,l) -> true
+    | TyDynamic(_,l) -> true
     | TyBot(_,l) -> true
     | TyUserdef(_,l,tyid,id) -> true
     | TyIdent(fi,l1,id1) -> assert false 
@@ -93,7 +93,7 @@ let rec ty_gl ty =
     | TyList(_,l,t) -> max l (ty_gl t)
     | TyTuple(_,l,tylst) -> List.fold_left (fun l t -> max l (ty_gl t)) l tylst
     | TyModel(_,l,t) -> max l (ty_gl t)
-    | TyAnyModel(_,l) -> l
+    | TyDynamic(_,l) -> l
     | TyBot(_,l) -> l
     | TyUserdef(_,l,tyid,id) -> l
     | TyIdent(fi,l1,id1) -> l1
@@ -113,7 +113,7 @@ let rec ty_up ty =
     | TyList(fi,l,t) -> TyList(fi,l+1,ty_up t)
     | TyTuple(fi,l,tylst) -> TyTuple(fi,l+1,List.map ty_up tylst)  
     | TyModel(fi,l,t) -> TyModel(fi,l+1,ty_up t)
-    | TyAnyModel(fi,l) -> TyAnyModel(fi,l+1)
+    | TyDynamic(fi,l) -> TyDynamic(fi,l+1)
     | TyBot(fi,l) -> TyBot(fi,l+1)
     | TyUserdef(fi,l,tyid,id) -> TyUserdef(fi,l+1,tyid,id)
     | TyIdent(fi,l,id) -> TyIdent(fi,l+1,id)
@@ -133,7 +133,7 @@ let rec ty_down ty =
     | TyList(fi,l,t) -> TyList(fi,l-1,ty_down t)
     | TyTuple(fi,l,tylst) -> TyTuple(fi,l-1,List.map ty_down tylst)
     | TyModel(fi,l,t) -> TyModel(fi,l-1,ty_down t)
-    | TyAnyModel(fi,l) -> TyAnyModel(fi,l-1)
+    | TyDynamic(fi,l) -> TyDynamic(fi,l-1)
     | TyBot(fi,l) -> TyBot(fi,l-1)
     | TyUserdef(fi,l,tyid,id) -> TyUserdef(fi,l-1,tyid,id)
     | TyIdent(fi,l,id) -> TyIdent(fi,l-1,id)
@@ -173,7 +173,6 @@ let rec remove_dup_assoc l =
 let ty_ismodel ty = 
   match ty with
     | TyModel(_,_,_) -> true
-    (* | TyAnyModel(_,_) -> true  *)
     | _ -> false
 
 let rel_union rl1 rl2 = remove_dup_assoc (rl1 @ rl2)
@@ -191,7 +190,7 @@ let desugar_bracket_escape tm =
       | TyList(fi,l,t) -> TyList(fi,l+lev,ds_ty lev t)  
       | TyTuple(fi,l,t) -> TyTuple(fi,l+lev,List.map (ds_ty lev) t)
       | TyModel(fi,l,t) -> TyModel(fi,l+lev,ds_ty lev t)
-      | TyAnyModel(fi,l) -> TyAnyModel(fi,l+lev)
+      | TyDynamic(fi,l) -> TyDynamic(fi,l+lev)
       | TyBot(fi,l) -> TyBot(fi,l+lev)
       | TyUserdef(fi,l,tyid,id) -> TyUserdef(fi,l+lev,tyid,id)
       | TyIdent(fi,l,id) -> TyIdent(fi,l+lev,id)
@@ -607,12 +606,14 @@ and typeof env ukenv t =
     | TmApp(fi,_,t1,t2,fs)  -> 
         let typeof_app fi ty1 t1' ty2 t2' = 
           begin match ty1 with 
+            | TyDynamic(_,l) ->
+                (TyDynamic(NoInfo,0), TmApp(fi,l,t1',t2',fs))
 	    | TyArrow(_,l,ty11,ty12) -> 
                 (* Coercion of int to real *)
-                if ty_consistent ty11 (TyReal(NoInfo,0)) &&
-                   ty_consistent ty2 (TyInt(NoInfo,0)) 
-                then  (ty12,TmApp(fi,l,t1',int2real_coercion t2',fs))
-                else
+                if (match ty11 with TyReal(_,_) -> true | _ -> false) &&
+                   (match ty2 with TyInt(_,_) -> true | _ -> false) 
+                then  (ty12,TmApp(fi,l,t1',int2real_coercion t2',fs)) 
+                else 
   		  if ty_consistent ty11 ty2 
 		  then (ty12,TmApp(fi,l,t1',t2',fs))
 		  else 
@@ -620,9 +621,6 @@ and typeof env ukenv t =
 		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
                           (mk_tymodel ty12,TmModApp
                              (fi,l,TmVal(fi,l,t1',ty1),t2'))
-		   (*    | TyAnyModel(_,l3) -> 
-                          (mk_tymodel ty12,TmModApp
-                             (fi,l,TmVal(fi,l,t1',ty1),t2')) *)
 		       | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
 		             tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
 	    | TyModel(_,l,TyArrow(_,l3,ty11,ty12)) ->
@@ -634,8 +632,8 @@ and typeof env ukenv t =
                               tm_info t2,[pprint_ty ty11b; pprint_ty ty2;us"3"]))
 		else
                   (* Coercion of int to real *)
-                  if ty_consistent ty11 (TyReal(NoInfo,0)) &&
-                     ty_consistent ty2 (TyInt(NoInfo,0)) 
+                  if  (match ty11 with TyReal(_,_) -> true | _ -> false) &&
+                      (match ty2 with TyInt(_,_) -> true | _ -> false) 
                   then (mk_tymodel ty12,
                        TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,
                                         int2real_coercion t2',TyReal(NoInfo,0))))
@@ -645,11 +643,11 @@ and typeof env ukenv t =
                        TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,t2',ty2))) 
 		    else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"4"]))
-	    | TyModel(fi,l,TyAnyModel(_,_))  ->
+	    | TyModel(fi,l,TyDynamic(_,_))  ->
 		if ty_consistent ty1 ty2 then
-		  (TyAnyModel(fi,l),TmModApp(fi,l,t1',t2'))
+		  (TyModel(fi,l,TyDynamic(fi,l)),TmModApp(fi,l,t1',t2'))
 		else
-                  (TyAnyModel(fi,l),TmModApp(fi,l,t1',
+                  (TyModel(fi,l,TyDynamic(fi,l)),TmModApp(fi,l,t1',
                                     TmVal(ty_info ty2,ty_lev ty2,t2',ty2)))  
 	    | _ -> raise (Mkl_type_error(TYPE_APP_NO_FUNC_TYPE,ERROR,tm_info t1,
 					   [pprint_ty ty1]))
@@ -685,8 +683,8 @@ and typeof env ukenv t =
                     typeof ((x,(l,tyvar,StripNo))::t1_env) ukenv t1
 		  else typeof t1_env ukenv t1 in
                   (* Coercion of int to real *)
-                  if ty_consistent ty1def (TyReal(NoInfo,0)) &&
-                     ty_consistent ty1 (TyInt(NoInfo,0)) 
+                  if  (match ty1def with TyReal(_,_) -> true | _ -> false) &&
+                      (match ty1 with TyInt(_,_) -> true | _ -> false) 
                   then (ty1def, int2real_coercion t1')
 		  else if not (ty_consistent ty1 ty1def) then
 		    raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH,
@@ -732,12 +730,12 @@ and typeof env ukenv t =
 			 [ustring_of_int l; pprint_ty ty2; pprint_ty ty3]))
 		 else
                    (* Coercion of int to real *)
-                   if      ty_consistent ty2 (TyReal(NoInfo,0)) &&
-                           ty_consistent ty3 (TyInt(NoInfo,0)) 
+                   if  (match ty2 with TyReal(_,_) -> true | _ -> false) &&
+                       (match ty3 with TyInt(_,_) -> true | _ -> false) 
                    then  (ty2,TmIf(fi,l,t1',t2',int2real_coercion t3'))
-                   else if ty_consistent ty2 (TyInt(NoInfo,0)) &&
-                           ty_consistent ty3 (TyReal(NoInfo,0))
-                   then  (ty3,TmIf(fi,l,t1',int2real_coercion t2',t3'))
+                   else if  (match ty3 with TyReal(_,_) -> true | _ -> false) &&
+                            (match ty2 with TyInt(_,_) -> true | _ -> false) 
+                    then  (ty3,TmIf(fi,l,t1',int2real_coercion t2',t3'))
 		   else if not (ty_consistent ty2 ty3) then
 		     raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
 				           [pprint_ty ty2; pprint_ty ty3]))
@@ -784,10 +782,6 @@ and typeof env ukenv t =
         let ((ty1',t1'),(ty2',t2')) = 
 	  (typeof env ukenv t1,typeof env ukenv t2) in
           begin match (ty1',ty2') with 
-            (* (TT-MODAPP1) *)
-       (*      | (TyAnyModel(fi,l2) as any),ty2' when ty_consistent any ty2' ->
-		  (TyAnyModel(fi,l2),TmModApp(fi,l,t1',t2')) *)
-            (* (TT-MODAPP2) *)
 	    | TyModel(_,l1,TyArrow(_,_,ty11,ty12)),ty2' 
                 when ty_consistent (TyModel(NoInfo,l1,ty11)) ty2' ->
 		  (TyModel(NoInfo,l1,ty12),TmModApp(fi,l,t1',t2'))
@@ -852,10 +846,9 @@ and typeof env ukenv t =
 	  (typeof env ukenv t1,typeof env ukenv t3) in
 	  (match ty1' with
 	     | TyModel(_,l,_)  -> (
-                 let anymod = TyModel(NoInfo,l,TyAnyModel(NoInfo,l)) in
+                 let anymod = TyModel(NoInfo,l,TyDynamic(NoInfo,l)) in
 		 let (ty2',t2') = 
 		   (match p with
-		    (*  | MPatUk(_,TyAnyModel(_,_)) -> typeof env ukenv t2  *)
 		      | MPatUk(_,TyModel(_,_,_)) -> typeof env ukenv t2 
 		      | MPatUk(_,ty3) -> raise (Mkl_type_error
 			    (TYPE_DECON_PAT_UK_NOT_MODEL_TYPE,ERROR,ty_info ty3,
@@ -902,23 +895,11 @@ and typeof env ukenv t =
         let ((ty1,t1'),(ty2,t2')) = 
 	  (typeof env ukenv t1,typeof env ukenv t2) in
           (* (L-EQUAL1) *)
-       (*  if (not (ty_consistent (TyAnyModel(fi,l)) ty1)) &&
-             (ty_consistent (TyAnyModel(fi,l)) ty2) &&
-             (ty_consistent (TyModel(fi,l,ty1)) ty2) 
-          then 
-              (TyBool(NoInfo,l),(TmEqual(fi,l,TmVal(fi,l,t1',ty1),t2')))
-        *)
           if (not (ty_ismodel ty1)) && ty_consistent (TyModel(fi,l,ty1)) ty2
           then 
               (TyBool(NoInfo,l),(TmEqual(fi,l,TmVal(fi,l,t1',ty1),t2')))
           else           
           (* (L-EQUAL2) *)
-       (* if (ty_consistent (TyAnyModel(fi,l)) ty1) &&
-             (not (ty_consistent (TyAnyModel(fi,l)) ty2)) &&
-             (ty_consistent ty1 (TyModel(fi,l,ty2))) 
-          then 
-              (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmVal(fi,l,t2',ty2)))) 
-      *)
           if ty_consistent ty1 (TyModel(fi,l,ty2))  && (not (ty_ismodel ty2)) 
            then 
               (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmVal(fi,l,t2',ty2))))

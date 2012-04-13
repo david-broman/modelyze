@@ -123,6 +123,7 @@ let reserved_strings = [
   ("'",             fun(i,l) -> Parser.SQUOTE{i=i;l=l;v=()}); 
   (")(",            fun(i,l) -> Parser.PARENAPP{i=i;l=l;v=()}); 
   (";;",            fun(i,l) -> Parser.EQSEMI{i=i;l=l;v=()}); 
+  ("?",             fun(i,l) -> Parser.QUESTIONMARK{i=i;l=l;v=()}); 
 
 ]
 
@@ -292,7 +293,7 @@ let operator = "="  | "~="  | "<-"  | "mod" |
 
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
                 "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
-                 "~" | ")(" | ";;"
+                 "~" | ")(" | ";;" | "?"
 
 
 

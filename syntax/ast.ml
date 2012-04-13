@@ -50,7 +50,7 @@ type ty =
   | TyList      of info * level * ty
   | TyTuple     of info * level * ty list
   | TyModel     of info * level * ty
-  | TyAnyModel  of info * level 
+  | TyDynamic   of info * level 
   | TyBot       of info * level
   | TyUserdef   of info * level * typeid * ident
   | TyIdent     of info * level * ident
@@ -213,7 +213,7 @@ and tm =
   | TmLet         of info * level * ident * ty option * (ident * ty) list * 
                                     tm * tm * recursive
   | TmIf          of info * level * tm * tm * tm
-  | TmConst       of info * level * const 
+  | TmConst       of info * level * const  
     (* Meta lambda calculus *)
   | TmUp          of info * level * tm
   | TmDown        of info * level * tm
@@ -255,6 +255,272 @@ and tm =
   | TmError       of info * level * tm
 
 
+let rec metastr n = 
+  if n == 0 then us"" else us"#" ^. metastr (n-1)      
+
+
+
+let pprint_primitive p = 
+  match p with
+    | PrimIntMod -> us"int_mod"
+    | PrimIntAdd -> us"int_add"
+    | PrimIntSub -> us"int_sub"
+    | PrimIntMul -> us"int_mul"
+    | PrimIntDiv -> us"int_div"
+    | PrimIntLess -> us"int_less"
+    | PrimIntLessEqual -> us"int_less_equal"
+    | PrimIntGreat -> us"int_great"
+    | PrimIntGreatEqual -> us"int_great_equal"
+    | PrimIntEqual -> us"int_equal"
+    | PrimIntNotEqual -> us"int_not_equal"
+    | PrimIntNeg -> us"int_neg"
+    | PrimRealAdd -> us"real_add"
+    | PrimRealSub -> us"real_sub"
+    | PrimRealMul -> us"real_mul"
+    | PrimRealDiv -> us"real_div"
+    | PrimRealLess -> us"real_less"
+    | PrimRealLessEqual -> us"real_less_equal"
+    | PrimRealGreat -> us"real_great"
+    | PrimRealGreatEqual -> us"real_great_equal" 
+    | PrimRealEqual -> us"real_equal"
+    | PrimRealNotEqual -> us"real_not_equal"
+    | PrimRealNeg -> us"real_neg"
+    | PrimBoolAnd -> us"bool_and"
+    | PrimBoolOr -> us"bool_or"
+    | PrimBoolNot -> us"bool_not"
+    | PrimPrint -> us"print"
+    | PrimBool2String -> us"bool2string"
+    | PrimInt2String -> us"int2string"
+    | PrimReal2String -> us"real2string"
+    | PrimInt2Real -> us"int2real"
+    | PrimReal2Int -> us"real2int"
+    | PrimString2Bool -> us"string2bool"
+    | PrimString2Int -> us"string2int"
+    | PrimString2Real -> us"string2real"
+    | PrimIsBoolString -> us"isboolstring"
+    | PrimIsRealString -> us"isrealstring"
+    | PrimIsIntString -> us"isintstring"
+    | PrimSin -> us"sin"
+    | PrimCos -> us"cos"
+    | PrimTan -> us"tan"
+    | PrimASin -> us"asin"
+    | PrimACos -> us"acos"
+    | PrimATan -> us"atan"
+    | PrimSinh -> us"sinh"
+    | PrimCosh -> us"cosh"
+    | PrimTanh -> us"tanh"
+    | PrimCeil -> us"ceil"
+    | PrimFloor -> us"floor"
+    | PrimLog -> us"log"
+    | PrimLog10 -> us"log10"
+    | PrimSqrt -> us"sqrt"
+    | PrimExp -> us"exp"
+    | PrimExponentiation -> us"exponentiation"
+    | PrimStringConcat -> us"string_concat"
+    | PrimStringStrlen -> us"string_strlen"
+    | PrimStringSubstr -> us"string_substr"
+
+let pprint_const c l =
+  match c with
+    | ConstBool(b) -> if b then us"true" else us"false"
+    | ConstInt(i) -> ustring_of_int i
+    | ConstReal(f) -> 
+        let i = int_of_float f in
+        if float_of_int i = f then ustring_of_int i 
+        else ustring_of_float f
+    | ConstString(s) -> us"\"" ^. s ^. us"\""
+    | ConstUnit ->  us"()"
+    | ConstPrim(p,_) -> pprint_primitive p
+
+let pprint_ty t =
+  let rec pprint_ty left t =
+      match t with 
+	| TyBool(_,l) -> metastr l ^. us"Bool"  
+	| TyInt(_,l) -> metastr l ^. us"Int"  
+	| TyReal(_,l) -> metastr l ^. us"Real"  
+	| TyString(_,l) -> metastr l ^. us"String"  
+	| TyArrow(_,l,t1,t2) -> 
+	    (if left then us"(" else us"") ^. (pprint_ty true t1) ^. us" " ^.  
+	      metastr l ^. us"->" ^. us" " ^. (pprint_ty false t2) ^.
+	      (if left then us")" else us"")
+ 	| TyUnit(_,l) -> metastr l ^. us"()"
+        | TyList(_,l,t) -> metastr l ^. us"[" ^. (pprint_ty false t) ^. us"]"
+        | TyTuple(_,l,tylst) -> metastr l ^. us"(" ^. (tylst |> 
+	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
+        | TyModel(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
+	| TyDynamic(_,l) -> metastr l ^. us"<>"  
+	| TyBot(_,l) -> metastr l ^. us"bot"  
+        | TyUserdef(_,l,tyid,id) -> metastr l ^. Symtbl.get id 
+        | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^. 
+            Symtbl.get id ^. us")"
+        | TyArray(_,l,t) -> metastr l ^. us"{" ^. (pprint_ty false t) ^. us"}"
+	| TyMap(_,l,t1,t2) -> 
+	    us"(" ^. (pprint_ty false t1) ^. us" " ^.  
+	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
+        | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
+	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
+  in pprint_ty false t
+
+let pprint_array_op op =
+  match op with
+  | ArrayOpLength -> us"length"
+  | ArrayOpMake -> us"make"
+  | ArrayOpGet -> us"get"
+  | ArrayOpSet -> us"set"
+
+let pprint_map_op op =
+  match op with
+  | MapOpSize -> us"size"
+  | MapOpEmpty -> us"empty"
+  | MapOpAdd -> us"add"
+  | MapOpFind -> us"find"
+  | MapOpMem -> us"mem"
+  | MapOpRemove -> us"remove"
+  | MapOpToList -> us"fold"
+
+let pprint_set_op op =
+  match op with
+  | SetOpSize -> us"size"
+  | SetOpEmpty -> us"empty"
+  | SetOpAdd -> us"add"
+  | SetOpMem -> us"mem"
+  | SetOpRemove -> us"remove"
+  | SetOpToList -> us"toList"
+
+let pprint_daesolver_op op =
+  match op with
+  | DAESolverOpMake -> us"make"
+  | DAESolverOpMakeHybrid -> us"makehybrid"
+  | DAESolverOpStep -> us"step"
+  | DAESolverOpReinit -> us"reinit"
+  | DAESolverOpClose -> us"close"
+  | DAESolverOpRoots -> us"roots"
+
+let pprint_mpat p = 
+  match p with
+  | MPatUk(_,ty) -> us"uk:" ^. pprint_ty ty 
+  | MPatModApp(_,x,y) -> us"app " ^. Symtbl.get x ^. us" " ^. Symtbl.get y
+  | MPatModIfGuard(_,x) -> us"ifguard " ^. Symtbl.get x 
+  | MPatModIfThen(_,x) -> us"ifthen " ^. Symtbl.get x
+  | MPatModIfElse(_,x) -> us"ifelse " ^. Symtbl.get x
+  | MPatModEqual(_,x,y) -> Symtbl.get x ^. us"== " ^. Symtbl.get y
+  | MPatModProj(_,x,y) ->   
+      us"proj " ^. Symtbl.get x ^. us" from " ^. Symtbl.get y
+  | MPatVal(_,x,ty) -> us"val: " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
+
+
+let rec pprint_pat p =
+  match p with 
+  | PatVar(_,x) -> Symtbl.get x
+  | PatExpr(_,t) -> pprint t
+  | PatUk(_,ty) -> pprint_ty ty
+  | PatModApp(_,p1,p2) -> pprint_pat p1 ^. us" " ^. pprint_pat p2 
+  | PatModIf(_,p1,p2,p3) -> us"if " ^. pprint_pat p1 ^. us" then " ^.
+      pprint_pat p2 ^. us" else " ^. pprint_pat p3
+  | PatModEqual(_,p1,p2) -> pprint_pat p1 ^. us"==" ^. pprint_pat p2 
+  | PatModProj(_,p1,p2) -> us"proj " ^. pprint_pat p1 ^. us" from " ^. 
+      pprint_pat p2 
+  | PatModVal(_,x,ty) -> us"val " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
+  | PatCons(_,p1,p2) ->  pprint_pat p1 ^. us"::" ^. pprint_pat p2 
+  | PatNil(_) -> us"[]"
+  | PatTuple(_,ps) -> us"(" ^. 
+      (ps |> List.map pprint_pat |> Ustring.concat (us",")) ^. us")"
+  | PatWildcard(_) -> us"_"
+
+and pprint_vartrans_list vts = 
+  us"{" ^. (vts |> List.map (function 
+     | VTransExpr(_,x,t) -> 
+         us"VTExpr(" ^. Symtbl.get x ^. us"," ^. pprint t ^. us")"
+     | VTransModUk(_,x,ty) ->
+         us"VTModUk(" ^. Symtbl.get x ^. us"," ^. pprint_ty ty ^. us")"
+     | VTransModVal(_,x,y,ty) ->
+         us"VTModVal(" ^. Symtbl.get x ^. us"," ^. Symtbl.get x ^. us"," ^.
+           pprint_ty ty ^. us")") 
+     |>  Ustring.concat (us".")) ^. us"}"
+
+
+and pprint_case (PCase(_,ps,tm1op,vtrans,t2)) = 
+  us"| " ^. (ps |> List.map pprint_pat |> Ustring.concat (us",")) ^. 
+  (match tm1op with Some t -> us" when " ^. pprint t | None -> us" ") ^.
+  pprint_vartrans_list vtrans ^. us"-> " ^. pprint t2
+
+and pprint_cases cases =
+  cases |> List.map pprint_case |> Ustring.concat (us" ")
+
+and pprint tm = 
+  match tm with
+  | TmVar(_,id) -> Symtbl.get id        
+  | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
+      us":" ^. pprint_ty ty ^. us" -> " ^. pprint t ^. us")"
+  | TmApp(_,l,t1,t2,fs) -> (if fs then us"specialize(" else us"(" )
+      ^. pprint t1 ^. us" " ^. 
+      (if l != 0 then metastr l ^. us" " else us"") ^. 
+        pprint t2 ^. us")"
+  | TmFix(_,l,t) -> metastr l ^. us"fix[" ^. pprint t ^. us"]"
+  | TmLet(_,l,id,tyop,arglst,t1,t2,recursive) ->
+      let params = us" " ^. (arglst 
+        |> List.map (fun (x,ty) -> Symtbl.get x ^. us":" ^. pprint_ty ty) 
+        |> Ustring.concat (us" -> ")) in
+      metastr l ^. us"let " ^.  Symtbl.get id ^. params ^. us" = " ^. 
+      pprint t1 ^. us" in " ^. pprint t2
+  | TmIf(_,l,t1,t2,t3) -> metastr l ^. us"(if " ^. 
+	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 ^. us")"
+  | TmConst(_,l,c) -> pprint_const c l  
+  | TmUp(_,l,t) -> us"(" ^. metastr l ^. us"up " ^. pprint t ^. us")"
+  | TmDown(_,l,t) -> us"(" ^. metastr l ^. us"down " ^. pprint t ^. us")"
+  | TmBracket(_,t) -> us"#(" ^. pprint t ^. us")" 
+  | TmEscape(_,t) -> us"~(" ^. pprint t ^. us")" 
+  | TmList(_,l,ts) -> metastr l ^. us"[" ^. 
+      (ts |> List.map pprint |> Ustring.concat (us",")) ^. us"]"
+  | TmMatch(_,l,t,cases) ->
+      metastr l ^. us"match " ^. pprint t ^. us" with " ^. pprint_cases cases
+  | TmUk(_,l,idx,ty) -> metastr l ^. ustring_of_int idx ^. 
+      us"':" ^. pprint_ty ty
+  | TmNu(_,l,x,ty,t) -> 
+      us"(" ^. metastr l ^. us"nu " ^. Symtbl.get x ^. us":" ^. 
+      pprint_ty ty ^. us". "^. pprint t ^. us")"  
+  | TmModApp(_,l,t1,t2) -> us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
+      pprint t2  ^. us")"
+  | TmModIf(_,l,t1,t2,t3) -> metastr l ^. us"<if> " ^. 
+      pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
+  | TmModEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 
+      metastr l ^. us"<==> " ^. pprint t2
+  | TmModProj(_,l,i,t1) -> metastr l ^. us"<proj> " ^. ustring_of_int i ^. 
+      us" " ^. pprint t1
+  | TmVal(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
+        us":" ^. pprint_ty ty ^. us")"
+  | TmDecon(_,l,t1,pat,t2,t3) -> metastr l ^. us"(decon " ^.
+      pprint t1 ^. us" with " ^. pprint_mpat pat ^. us" then " ^. 
+        pprint t2 ^. us" else " ^. pprint t3 ^. us")"
+  | TmEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 
+      metastr l ^. us"== " ^. pprint t2        
+  | TmLcase(_,l,t,x,y,t1,t2) -> metastr l ^.
+      us"lcase " ^. pprint t ^.  us" of " ^. Symtbl.get x ^. us"::"  ^.
+        Symtbl.get y ^. us" -> (" ^. pprint t1 ^. us") | [] -> (" 
+      ^. pprint t2 ^. us")" 
+  | TmCons(_,l,t1,t2) ->  pprint t1 ^. metastr l ^. us"::" ^. pprint t2
+  | TmNil(_,l,ty) -> metastr l ^. us"[" ^. pprint_ty ty ^. us"]"
+  | TmTuple(_,l,ts) -> metastr l ^. us"(" ^. 
+      (ts |> List.map pprint |> Ustring.fast_concat (us",")) ^. us")"
+  | TmProj(_,l,i,t1) -> metastr l ^. us"proj " ^. ustring_of_int i ^. 
+      us" " ^. pprint t1
+  | TmArray(_,l,tms) -> metastr l ^. us"[|" ^.
+      (tms |> Array.to_list |> List.map pprint |> 
+           Ustring.fast_concat (us",")) ^. us"|]"
+  | TmArrayOp(_,l,op,tms) -> metastr l ^. pprint_array_op op ^. us" " ^.
+      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
+  | TmMapOp(_,l,op,tms) -> metastr l ^. pprint_map_op op ^. us" " ^.
+      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
+  | TmSetOp(_,l,op,tms) -> metastr l ^. pprint_set_op op ^. us" " ^.
+      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
+  | TmDAESolverOp(_,l,op,tms) -> metastr l ^. pprint_daesolver_op op ^. us" " ^.
+      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
+  | TmDPrint(t) -> pprint t
+  | TmDPrintType(t) -> pprint t
+  | TmError(fi,l,t) -> metastr l ^. us"error " ^. pprint t
+
+
+
 (** Test equivalence of types. Ignores the info field. *)
 let rec ty_equiv ty1 ty2 = 
   match ty1,ty2 with
@@ -270,7 +536,7 @@ let rec ty_equiv ty1 ty2 =
       List.fold_left2 (fun a ty1 ty2 -> a && ty_equiv ty1 ty2) 
       true tylst1 tylst2
   | TyModel(_,l1,ty1),TyModel(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
-  | TyAnyModel(_,l1),TyAnyModel(_,l2) -> l1 = l2  
+  | TyDynamic(_,l1),TyDynamic(_,l2) -> l1 = l2  
   | TyBot(_,l1),TyBot(_,l2) -> l1 = l2  
   | TyUserdef(_,l1,tyid1,_),TyUserdef(_,l2,tyid2,_) -> l1 = l2 && tyid1 = tyid2
   | TyArray(_,l1,ty1),TyArray(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
@@ -282,13 +548,8 @@ let rec ty_equiv ty1 ty2 =
 
 let rec ty_restriction ty1 ty2 =
   match ty1,ty2 with
-    | TyModel(fi,l,ty),TyModel(_,_,ty') -> TyModel(fi,l,ty_restriction ty ty')
-    | _,TyAnyModel(fi,ty) -> TyAnyModel(fi,ty)
+    | _,TyDynamic(fi,ty) -> TyDynamic(fi,ty)
     | TyBot(_,_),_ -> ty2 
-
-(*    | TyModel(_,_,_),TyAnyModel(fi,ty) -> TyAnyModel(fi,ty)
-    | TyBot(_,_),_ -> ty2 
-*)
     | TyArrow(fi,l,ty1,ty2),TyArrow(fi',l',ty1',ty2') -> 
 	TyArrow(fi,l,ty_restriction ty1 ty1',ty_restriction ty2 ty2')
     | TyList(fi,l,ty),TyList(fi',l',ty') -> 
@@ -433,8 +694,15 @@ let delta c1 c2 =
     | (ConstPrim(PrimStringSubstr,[ConstInt(pos);ConstString(s)]),
        ConstInt(len)) -> 
 	ConstString(try Ustring.sub s pos len with Invalid_argument _ -> us"")  
-    | _ -> assert false 
-
+    | _ -> 
+        raise (Mkl_runtime_error (Message.RUNTIME_TYPE_ERROR,Message.ERROR, NoInfo, 
+                                     [pprint (TmConst(NoInfo,0,c1));
+                                      pprint (TmConst(NoInfo,0,c2))])) 
+(*in 
+        let _ = uprint_endline (pprint (TmConst(NoInfo,0,c1))) in
+        let _ = uprint_endline (pprint (TmConst(NoInfo,0,c2))) in
+        assert false 
+*)
 let deltatype fi c1 l  =
   let tybool = TyBool(fi,l) in
   let tyint = TyInt(fi,l) in
@@ -701,7 +969,7 @@ let ty_info ty =
     | TyList(fi,_,_) -> fi
     | TyTuple(fi,_,_) -> fi
     | TyModel(fi,_,_) -> fi
-    | TyAnyModel(fi,_) -> fi
+    | TyDynamic(fi,_) -> fi
     | TyBot(fi,_) -> fi
     | TyUserdef(fi,_,_,_) -> fi
     | TyIdent(fi,_,_) -> fi
@@ -722,7 +990,7 @@ let rec set_ty_info newfi ty =
     | TyList(_,l,ty) -> TyList(newfi,l,set_ty_info newfi ty)
     | TyTuple(_,l,tys) -> TyTuple(newfi,l,List.map (set_ty_info newfi) tys)
     | TyModel(_,l,ty) -> TyModel(newfi,l,set_ty_info newfi ty)
-    | TyAnyModel(_,l) -> TyAnyModel(newfi,l)
+    | TyDynamic(_,l) -> TyDynamic(newfi,l)
     | TyBot(_,l) -> TyBot(newfi,l)
     | TyUserdef(_,l,tyid,id) -> TyUserdef(newfi,l,tyid,id)
     | TyIdent(_,l,id) -> TyIdent(newfi,l,id)
@@ -743,7 +1011,7 @@ let ty_lev ty =
     | TyList(_,l,_) -> l
     | TyTuple(_,l,_) -> l
     | TyModel(_,l,_) -> l
-    | TyAnyModel(_,l) -> l
+    | TyDynamic(_,l) -> l
     | TyBot(_,l) -> l
     | TyUserdef(_,l,_,_) -> l
     | TyIdent(_,l,_) -> l
@@ -753,267 +1021,6 @@ let ty_lev ty =
     | TyDAESolver(_,l) -> l
 
 
-let rec metastr n = 
-  if n == 0 then us"" else us"#" ^. metastr (n-1)      
-
-let pprint_primitive p = 
-  match p with
-    | PrimIntMod -> us"int_mod"
-    | PrimIntAdd -> us"int_add"
-    | PrimIntSub -> us"int_sub"
-    | PrimIntMul -> us"int_mul"
-    | PrimIntDiv -> us"int_div"
-    | PrimIntLess -> us"int_less"
-    | PrimIntLessEqual -> us"int_less_equal"
-    | PrimIntGreat -> us"int_great"
-    | PrimIntGreatEqual -> us"int_great_equal"
-    | PrimIntEqual -> us"int_equal"
-    | PrimIntNotEqual -> us"int_not_equal"
-    | PrimIntNeg -> us"int_neg"
-    | PrimRealAdd -> us"real_add"
-    | PrimRealSub -> us"real_sub"
-    | PrimRealMul -> us"real_mul"
-    | PrimRealDiv -> us"real_div"
-    | PrimRealLess -> us"real_less"
-    | PrimRealLessEqual -> us"real_less_equal"
-    | PrimRealGreat -> us"real_great"
-    | PrimRealGreatEqual -> us"real_great_equal" 
-    | PrimRealEqual -> us"real_equal"
-    | PrimRealNotEqual -> us"real_not_equal"
-    | PrimRealNeg -> us"real_neg"
-    | PrimBoolAnd -> us"bool_and"
-    | PrimBoolOr -> us"bool_or"
-    | PrimBoolNot -> us"bool_not"
-    | PrimPrint -> us"print"
-    | PrimBool2String -> us"bool2string"
-    | PrimInt2String -> us"int2string"
-    | PrimReal2String -> us"real2string"
-    | PrimInt2Real -> us"int2real"
-    | PrimReal2Int -> us"real2int"
-    | PrimString2Bool -> us"string2bool"
-    | PrimString2Int -> us"string2int"
-    | PrimString2Real -> us"string2real"
-    | PrimIsBoolString -> us"isboolstring"
-    | PrimIsRealString -> us"isrealstring"
-    | PrimIsIntString -> us"isintstring"
-    | PrimSin -> us"sin"
-    | PrimCos -> us"cos"
-    | PrimTan -> us"tan"
-    | PrimASin -> us"asin"
-    | PrimACos -> us"acos"
-    | PrimATan -> us"atan"
-    | PrimSinh -> us"sinh"
-    | PrimCosh -> us"cosh"
-    | PrimTanh -> us"tanh"
-    | PrimCeil -> us"ceil"
-    | PrimFloor -> us"floor"
-    | PrimLog -> us"log"
-    | PrimLog10 -> us"log10"
-    | PrimSqrt -> us"sqrt"
-    | PrimExp -> us"exp"
-    | PrimExponentiation -> us"exponentiation"
-    | PrimStringConcat -> us"string_concat"
-    | PrimStringStrlen -> us"string_strlen"
-    | PrimStringSubstr -> us"string_substr"
-
-let pprint_const c l =
-  match c with
-    | ConstBool(b) -> if b then us"true" else us"false"
-    | ConstInt(i) -> ustring_of_int i
-    | ConstReal(f) -> 
-        let i = int_of_float f in
-        if float_of_int i = f then ustring_of_int i 
-        else ustring_of_float f
-    | ConstString(s) -> us"\"" ^. s ^. us"\""
-    | ConstUnit ->  us"()"
-    | ConstPrim(p,_) -> pprint_primitive p
-
-let pprint_ty t =
-  let rec pprint_ty left t =
-      match t with 
-	| TyBool(_,l) -> metastr l ^. us"Bool"  
-	| TyInt(_,l) -> metastr l ^. us"Int"  
-	| TyReal(_,l) -> metastr l ^. us"Real"  
-	| TyString(_,l) -> metastr l ^. us"String"  
-	| TyArrow(_,l,t1,t2) -> 
-	    (if left then us"(" else us"") ^. (pprint_ty true t1) ^. us" " ^.  
-	      metastr l ^. us"->" ^. us" " ^. (pprint_ty false t2) ^.
-	      (if left then us")" else us"")
- 	| TyUnit(_,l) -> metastr l ^. us"()"
-        | TyList(_,l,t) -> metastr l ^. us"[" ^. (pprint_ty false t) ^. us"]"
-        | TyTuple(_,l,tylst) -> metastr l ^. us"(" ^. (tylst |> 
-	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
-        | TyModel(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
-	| TyAnyModel(_,l) -> metastr l ^. us"<>"  
-	| TyBot(_,l) -> metastr l ^. us"bot"  
-        | TyUserdef(_,l,tyid,id) -> metastr l ^. Symtbl.get id 
-        | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^. 
-            Symtbl.get id ^. us")"
-        | TyArray(_,l,t) -> metastr l ^. us"{" ^. (pprint_ty false t) ^. us"}"
-	| TyMap(_,l,t1,t2) -> 
-	    us"(" ^. (pprint_ty false t1) ^. us" " ^.  
-	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
-        | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
-	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
-  in pprint_ty false t
-
-let pprint_array_op op =
-  match op with
-  | ArrayOpLength -> us"length"
-  | ArrayOpMake -> us"make"
-  | ArrayOpGet -> us"get"
-  | ArrayOpSet -> us"set"
-
-let pprint_map_op op =
-  match op with
-  | MapOpSize -> us"size"
-  | MapOpEmpty -> us"empty"
-  | MapOpAdd -> us"add"
-  | MapOpFind -> us"find"
-  | MapOpMem -> us"mem"
-  | MapOpRemove -> us"remove"
-  | MapOpToList -> us"fold"
-
-let pprint_set_op op =
-  match op with
-  | SetOpSize -> us"size"
-  | SetOpEmpty -> us"empty"
-  | SetOpAdd -> us"add"
-  | SetOpMem -> us"mem"
-  | SetOpRemove -> us"remove"
-  | SetOpToList -> us"toList"
-
-let pprint_daesolver_op op =
-  match op with
-  | DAESolverOpMake -> us"make"
-  | DAESolverOpMakeHybrid -> us"makehybrid"
-  | DAESolverOpStep -> us"step"
-  | DAESolverOpReinit -> us"reinit"
-  | DAESolverOpClose -> us"close"
-  | DAESolverOpRoots -> us"roots"
-
-let pprint_mpat p = 
-  match p with
-  | MPatUk(_,ty) -> us"uk:" ^. pprint_ty ty 
-  | MPatModApp(_,x,y) -> us"app " ^. Symtbl.get x ^. us" " ^. Symtbl.get y
-  | MPatModIfGuard(_,x) -> us"ifguard " ^. Symtbl.get x 
-  | MPatModIfThen(_,x) -> us"ifthen " ^. Symtbl.get x
-  | MPatModIfElse(_,x) -> us"ifelse " ^. Symtbl.get x
-  | MPatModEqual(_,x,y) -> Symtbl.get x ^. us"== " ^. Symtbl.get y
-  | MPatModProj(_,x,y) ->   
-      us"proj " ^. Symtbl.get x ^. us" from " ^. Symtbl.get y
-  | MPatVal(_,x,ty) -> us"val: " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
-
-
-let rec pprint_pat p =
-  match p with 
-  | PatVar(_,x) -> Symtbl.get x
-  | PatExpr(_,t) -> pprint t
-  | PatUk(_,ty) -> pprint_ty ty
-  | PatModApp(_,p1,p2) -> pprint_pat p1 ^. us" " ^. pprint_pat p2 
-  | PatModIf(_,p1,p2,p3) -> us"if " ^. pprint_pat p1 ^. us" then " ^.
-      pprint_pat p2 ^. us" else " ^. pprint_pat p3
-  | PatModEqual(_,p1,p2) -> pprint_pat p1 ^. us"==" ^. pprint_pat p2 
-  | PatModProj(_,p1,p2) -> us"proj " ^. pprint_pat p1 ^. us" from " ^. 
-      pprint_pat p2 
-  | PatModVal(_,x,ty) -> us"val " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
-  | PatCons(_,p1,p2) ->  pprint_pat p1 ^. us"::" ^. pprint_pat p2 
-  | PatNil(_) -> us"[]"
-  | PatTuple(_,ps) -> us"(" ^. 
-      (ps |> List.map pprint_pat |> Ustring.concat (us",")) ^. us")"
-  | PatWildcard(_) -> us"_"
-
-and pprint_vartrans_list vts = 
-  us"{" ^. (vts |> List.map (function 
-     | VTransExpr(_,x,t) -> 
-         us"VTExpr(" ^. Symtbl.get x ^. us"," ^. pprint t ^. us")"
-     | VTransModUk(_,x,ty) ->
-         us"VTModUk(" ^. Symtbl.get x ^. us"," ^. pprint_ty ty ^. us")"
-     | VTransModVal(_,x,y,ty) ->
-         us"VTModVal(" ^. Symtbl.get x ^. us"," ^. Symtbl.get x ^. us"," ^.
-           pprint_ty ty ^. us")") 
-     |>  Ustring.concat (us".")) ^. us"}"
-
-
-and pprint_case (PCase(_,ps,tm1op,vtrans,t2)) = 
-  us"| " ^. (ps |> List.map pprint_pat |> Ustring.concat (us",")) ^. 
-  (match tm1op with Some t -> us" when " ^. pprint t | None -> us" ") ^.
-  pprint_vartrans_list vtrans ^. us"-> " ^. pprint t2
-
-and pprint_cases cases =
-  cases |> List.map pprint_case |> Ustring.concat (us" ")
-
-and pprint tm = 
-  match tm with
-  | TmVar(_,id) -> Symtbl.get id        
-  | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
-      us":" ^. pprint_ty ty ^. us" -> " ^. pprint t ^. us")"
-  | TmApp(_,l,t1,t2,fs) -> (if fs then us"specialize(" else us"(" )
-      ^. pprint t1 ^. us" " ^. 
-      (if l != 0 then metastr l ^. us" " else us"") ^. 
-        pprint t2 ^. us")"
-  | TmFix(_,l,t) -> metastr l ^. us"fix[" ^. pprint t ^. us"]"
-  | TmLet(_,l,id,tyop,arglst,t1,t2,recursive) ->
-      let params = us" " ^. (arglst 
-        |> List.map (fun (x,ty) -> Symtbl.get x ^. us":" ^. pprint_ty ty) 
-        |> Ustring.concat (us" -> ")) in
-      metastr l ^. us"let " ^.  Symtbl.get id ^. params ^. us" = " ^. 
-      pprint t1 ^. us" in " ^. pprint t2
-  | TmIf(_,l,t1,t2,t3) -> metastr l ^. us"(if " ^. 
-	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 ^. us")"
-  | TmConst(_,l,c) -> pprint_const c l  
-  | TmUp(_,l,t) -> us"(" ^. metastr l ^. us"up " ^. pprint t ^. us")"
-  | TmDown(_,l,t) -> us"(" ^. metastr l ^. us"down " ^. pprint t ^. us")"
-  | TmBracket(_,t) -> us"#(" ^. pprint t ^. us")" 
-  | TmEscape(_,t) -> us"~(" ^. pprint t ^. us")" 
-  | TmList(_,l,ts) -> metastr l ^. us"[" ^. 
-      (ts |> List.map pprint |> Ustring.concat (us",")) ^. us"]"
-  | TmMatch(_,l,t,cases) ->
-      metastr l ^. us"match " ^. pprint t ^. us" with " ^. pprint_cases cases
-  | TmUk(_,l,idx,ty) -> metastr l ^. ustring_of_int idx ^. 
-      us"':" ^. pprint_ty ty
-  | TmNu(_,l,x,ty,t) -> 
-      us"(" ^. metastr l ^. us"nu " ^. Symtbl.get x ^. us":" ^. 
-      pprint_ty ty ^. us". "^. pprint t ^. us")"  
-  | TmModApp(_,l,t1,t2) -> us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
-      pprint t2  ^. us")"
-  | TmModIf(_,l,t1,t2,t3) -> metastr l ^. us"<if> " ^. 
-      pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
-  | TmModEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 
-      metastr l ^. us"<==> " ^. pprint t2
-  | TmModProj(_,l,i,t1) -> metastr l ^. us"<proj> " ^. ustring_of_int i ^. 
-      us" " ^. pprint t1
-  | TmVal(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
-        us":" ^. pprint_ty ty ^. us")"
-  | TmDecon(_,l,t1,pat,t2,t3) -> metastr l ^. us"(decon " ^.
-      pprint t1 ^. us" with " ^. pprint_mpat pat ^. us" then " ^. 
-        pprint t2 ^. us" else " ^. pprint t3 ^. us")"
-  | TmEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 
-      metastr l ^. us"== " ^. pprint t2        
-  | TmLcase(_,l,t,x,y,t1,t2) -> metastr l ^.
-      us"lcase " ^. pprint t ^.  us" of " ^. Symtbl.get x ^. us"::"  ^.
-        Symtbl.get y ^. us" -> (" ^. pprint t1 ^. us") | [] -> (" 
-      ^. pprint t2 ^. us")" 
-  | TmCons(_,l,t1,t2) ->  pprint t1 ^. metastr l ^. us"::" ^. pprint t2
-  | TmNil(_,l,ty) -> metastr l ^. us"[" ^. pprint_ty ty ^. us"]"
-  | TmTuple(_,l,ts) -> metastr l ^. us"(" ^. 
-      (ts |> List.map pprint |> Ustring.fast_concat (us",")) ^. us")"
-  | TmProj(_,l,i,t1) -> metastr l ^. us"proj " ^. ustring_of_int i ^. 
-      us" " ^. pprint t1
-  | TmArray(_,l,tms) -> metastr l ^. us"[|" ^.
-      (tms |> Array.to_list |> List.map pprint |> 
-           Ustring.fast_concat (us",")) ^. us"|]"
-  | TmArrayOp(_,l,op,tms) -> metastr l ^. pprint_array_op op ^. us" " ^.
-      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
-  | TmMapOp(_,l,op,tms) -> metastr l ^. pprint_map_op op ^. us" " ^.
-      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
-  | TmSetOp(_,l,op,tms) -> metastr l ^. pprint_set_op op ^. us" " ^.
-      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
-  | TmDAESolverOp(_,l,op,tms) -> metastr l ^. pprint_daesolver_op op ^. us" " ^.
-      (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
-  | TmDPrint(t) -> pprint t
-  | TmDPrintType(t) -> pprint t
-  | TmError(fi,l,t) -> metastr l ^. us"error " ^. pprint t
 
 
 (** Free pattern variables in model patterns *)

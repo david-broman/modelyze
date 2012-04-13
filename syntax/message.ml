@@ -259,7 +259,10 @@ type id =
   | STATIC_CIRCULAR_DEP_INCLUDE
       (* arg1 = name of the include *)
   | STATIC_ERROR_OPEN_FILE
-     (* arg1 = file name *)
+     (*  arg1 = file name *)
+  | RUNTIME_TYPE_ERROR
+     (*  arg1 = operation
+         arg2 = argument *)
 
 type severity =
   | ERROR
@@ -373,6 +376,8 @@ let id2str id =
     | TYPE_EXPECTED_RESROOT_TYPE -> us"TYPE_EXPECTED_RESROOT_TYPE"
     | STATIC_CIRCULAR_DEP_INCLUDE -> us"STATIC_CIRCULAR_DEP_INCLUDE"
     | STATIC_ERROR_OPEN_FILE -> us"STATIC_ERROR_OPEN_FILE"
+    | RUNTIME_TYPE_ERROR -> us"RUNTIME_TYPE_ERROR"
+
 
 (** [severity2str s] returns the severity strings ["ERROR"] or 
     ["WARNING"]. *)

@@ -158,6 +158,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
 %token <unit Ast.tokendata> PARENAPP      /* ")("  */
 %token <unit Ast.tokendata> EQSEMI        /* ";;"  */
+%token <unit Ast.tokendata> QUESTIONMARK  /* "?"   */
 
 %start main 
 %type <Ast.top list> main
@@ -285,9 +286,11 @@ tyatom:
 	  | [ty] -> Typesystem.ty_lev_up $1.l ty
 	  | tys ->  TyTuple(fi,$1.l,List.rev tys) }
   | LESS GREAT
-      { TyModel(mkinfo $1.i $2.i,$1.l,TyAnyModel(mkinfo $1.i $2.i,$1.l))}
+      { TyModel(mkinfo $1.i $2.i,$1.l,TyDynamic(mkinfo $1.i $2.i,$1.l))}
   | LESS ty GREAT
       { TyModel(mkinfo $1.i $3.i,$1.l,$2) }
+  | QUESTIONMARK
+      { TyDynamic($1.i, $1.l) }
   | MAP tyatom tyatom 
       { TyMap(mkinfo $1.i (ty_info $3),$1.l,$2,$3) }
   | SET tyatom  

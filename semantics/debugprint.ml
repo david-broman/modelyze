@@ -92,7 +92,7 @@ let pprint_ty t =
         | TyTuple(tylst) -> us"(" ^. (tylst |> 
 	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
         | TyModel(t) ->  us"<" ^. (pprint_ty false t) ^. us">"
-	| TyAnyModel -> us"<>"  
+	| TyDynamic -> us"<>"  
 	| TyBot ->  us"bot"  
         | TyUserdef(tyid) -> ustring_of_int tyid 
         | TyArray(t) ->  us"{" ^. (pprint_ty false t) ^. us"}"

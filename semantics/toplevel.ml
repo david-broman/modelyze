@@ -37,10 +37,10 @@ let ty_normalize ty =
       | TyUnit(_,_) -> ty
       | TyList(fi,l,ty1) -> TyList(fi,l,norm isSym ty1)
       | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map (norm isSym) tys)
-      | TyModel(fi,l,(TyModel(_,_,TyAnyModel(_,_)) as tty)) -> tty
+      | TyModel(fi,l,(TyModel(_,_,TyDynamic(_,_)) as tty)) -> tty
       | TyModel(fi,l,ty1) -> 
           if isSym then norm true ty1 else TyModel(fi,l,norm true ty1)
-      | TyAnyModel(_,_) -> ty 
+      | TyDynamic(_,_) -> ty 
       | TyBot(_,_) -> ty 
       | TyUserdef(_,_,_,_) -> ty
       | TyIdent(fi,l,id) -> ty
@@ -65,7 +65,7 @@ let ty_typesubst typemap ty =
       | TyList(fi,l,ty) -> TyList(fi,l,subst ty)
       | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map subst tys)
       | TyModel(fi,l,ty) -> TyModel(fi,l,subst ty)
-      | TyAnyModel(_,_) as tt -> tt 
+      | TyDynamic(_,_) as tt -> tt 
       | TyBot(_,_) as tt -> tt 
       | TyUserdef(_,_,_,_) as tt -> tt 
       | TyIdent(fi,l,id) -> 

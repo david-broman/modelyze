@@ -31,7 +31,7 @@ let rec trans_ty ty =
   | Ast.TyList(_,_,ty) -> TyList(trans_ty ty)    
   | Ast.TyTuple(_,_,tys) -> TyTuple(List.map trans_ty tys)
   | Ast.TyModel(_,_,ty) -> TyModel(trans_ty ty)    
-  | Ast.TyAnyModel(_,_) -> TyAnyModel
+  | Ast.TyDynamic(_,_) -> TyDynamic
   | Ast.TyBot(_,_) -> TyBot
   | Ast.TyUserdef(_,_,id,_) -> TyUserdef(id)
   | Ast.TyIdent(_,_,_) -> assert false

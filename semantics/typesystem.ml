@@ -877,17 +877,11 @@ and typeof env ukenv t =
 		      | MPatVal(_,x,ty2) -> typeof 
 			  ((x,(l,ty2,StripNo))::env) ukenv t2) 
 		 in 
-		   if not (ty_lev ty1' >= l && ty_lev ty2' >= l 
-			   && ty_lev ty3' >= l) then
-		     raise (Mkl_type_error(TYPE_DECON_LEV_MONOTONICITY,ERROR,fi,
-			    [ustring_of_int l; pprint_ty ty1'; pprint_ty ty2'
-			        ;pprint_ty ty3']))
+		   if not (ty_consistent ty2' ty3') then
+		     raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,
+                                           fi,[pprint_ty ty2'; pprint_ty ty3']))
 		   else
-		     if not (ty_consistent ty2' ty3') then
-		       raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,
-                                       fi,[pprint_ty ty2'; pprint_ty ty3']))
-		     else
-		       (ty_restriction ty2' ty3', TmDecon(fi,l,t1',p,t2',t3')))
+		     (ty_restriction ty2' ty3', TmDecon(fi,l,t1',p,t2',t3')))
 	     | _ -> raise (Mkl_type_error(TYPE_DECON_TYPE_NOT_MODEL,ERROR,
 					  fi,[pprint_ty ty1']))		    
 	  )

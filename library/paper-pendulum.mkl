@@ -21,28 +21,95 @@ include HybridSimulation
 include ExportModelica
 
 
-//Panterlides applied, with symbolic differentation
-let Pendulum m:Real -> l:Real -> angle:Real -> Equations =
-  let g = 9.81 in
-  let T:Force in
-  let x:Position in
-  let y:Position in
+let g = 9.81
 
-  init x (l*sin angle);
-  init y (-l*cos angle);
+def Pendulum(m:Real,l:Real,angle:Real) = {
+    def x,y,T:Real;
+    init x = l*sin(angle);
+    init y = -l*cos(angle);
      
-  -T*x/l = m*x'';
-  -T*y/l - m*g = m*y'';     
+    -T*x/l = m*x'';
+    -T*y/l - m*g = m*y'';     
+    x^2 + y^2 = l^2
+}
 
-  (x^2. + y^2.)'' = (l^2.)'';
-  probe "x" = x;
-  probe "y" = y
+def PendulumPantelides(m:Real,l:Real,angle:Real) = {
+    def x,y,T:Real;
+    init x = l*sin(angle);
+    init y = -l*cos(angle);
+     
+    -T*x/l = m*x'';
+    -T*y/l - m*g = m*y'';     
+    (x^2 + y^2)'' = (l^2)''
+}
 
 
-let _ = 
-  let angle = 45.*3.14/180. in
-  printsim (Pendulum 5.0 2.0 angle) 0.01 5.
-  //printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
+/* Using lists
+def getVars(exp:<?>, acc:[<Real>]) : [<Real>] = {
+    match exp {
+      e1 e2 -> getVars(e2,getVars(e1,acc));
+      sym:<Real> -> exp::acc;
+       _ -> acc;
+    }
+}*/
+
+/* //New syntax with sets
+def getVars(exp:<?>, acc:{<Real>}) : {<Real>} = {
+    match exp with
+    | e1 e2 -> getVars(e2,getVars(e1,acc))
+    | sym:<Real> -> {exp} ++ acc
+    | _ -> acc
+}
+*/
+
+
+type InitValMap = (<Real> => <Real>)
+
+let getInitValues eqs:Equations -> InitValMap =
+  let get eqs:Equations -> acc:InitValMap -> InitValMap =
+    match eqs with
+    | e1 ; e2 -> get e2 (get e1 acc)
+    | ~init (x = v) -> Map.add x v acc
+    | _ -> acc
+  in get eqs (Map.empty)
+
+
+def getUnknowns(exp:<?>, acc:(Set <Real>)) : (Set <Real>) = {
+    match exp with
+    | e1 e2 -> getUnknowns(e2,getUnknowns(e1,acc))
+    | sym:<Real> -> Set.add exp acc
+    | _ -> acc
+}
+
+
+def TwoEqs(x:<Real>) = {
+    def y:Real;
+    x + 12 = 3 * y;
+    2 * y = 33 * x
+}
+
+def LinearEqs = {
+    def a,b:Real;
+    TwoEqs(2*a+b);
+    TwoEqs(a-3*b)
+}
+
+
+let pi = 3.1415
+
+let main = 
+  let inst = Pendulum(5,3,45*pi/180) in
+  let (inst2,newmap) = elaborateDerivatives(inst,Map.empty) in
+  let _ = dprint(inst2) in
+  let _ = dprint("---------") in
+  let _ = dprint(getUnknowns(inst2,Set.empty)) in
+  let _ = dprint("---------") in
+  let _ = dprint(getInitValues(inst2)) in
+  let _ = dprint("---------") in
+  let _ = dprint(getUnknowns(LinearEqs,Set.empty)) in
+  let _ = dprint("---------") in
+  let _ = dprint(LinearEqs) in
+  ()
 
 
 

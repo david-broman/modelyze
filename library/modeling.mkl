@@ -21,17 +21,20 @@ include Base
 type Signal = <Real>
 
 def der : <Real -> Real>
-def (') : <Real -> Real> = der
+def (')  = der
+
 def hoDer : <Real -> Int -> Real>
 
 
+
 type Equations
-def (=) : <Real -> Real -> Equations> 
-def (;) : <Equations -> Equations -> Equations>
+def (=) : Real -> Real -> Equations
+def (;) : Equations -> Equations -> Equations
 def NoEqn : Equations
 
 def init : <Equations -> Equations>
-//let (<-) : <Equations -> Equations> = init
+//def init : Real -> Real 
+let (<-) : <Equations -> Equations> = init
 
 def time : <Real>
 def probe : <String -> Real> 

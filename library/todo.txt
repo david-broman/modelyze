@@ -1,0 +1,10 @@
+
+
+TODOS
+
+1 Add the Set type { }
+1 Change to --> For types
+1 Remove <> symbol1
+1 Fix ; problem
+2 Fix Pantelides algorithm 
+1 Add types with syntax -->

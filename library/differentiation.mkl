@@ -18,8 +18,8 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
           let dx = Map.find x olddmap in
           makeHOder dx (k -. 1) (Map.add x dx dmap)
         else
-          let dx:Signal in
-          makeHOder dx (k -. 1) (Map.add x dx dmap)
+          let u:Signal in
+          makeHOder u (k -. 1) (Map.add x u dmap)
     else dmap
   in
   let extractHOder expr:Expr -> k:Int -> dmap:DerivMap -> DerivMap =

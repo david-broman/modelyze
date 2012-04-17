@@ -36,7 +36,6 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
   let mk_binop fi l op t1 t2 = 
     TmApp(fi,l,TmApp(fi,l,mk_brackets fi l 
                        (TmVar(fi,Symtbl.add (us op))),t1,false),t2,false)
-
   let mk_unop fi l op t1 = 
     TmApp(fi,l,mk_brackets fi l (TmVar(fi,Symtbl.add (us op))),t1,false)
 
@@ -47,6 +46,9 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
     PatModApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1)
 
   let wildcard = Symtbl.add (us"@@wildcard")  	  
+
+  let floatval v = TmConst(NoInfo,0,ConstReal(v)) 
+
 
 %}
 
@@ -103,6 +105,10 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> BEGIN
 %token <unit Ast.tokendata> END
 %token <unit Ast.tokendata> SPECIALIZE
+%token <unit Ast.tokendata> BEGINTOP
+%token <unit Ast.tokendata> ENDTOP
+%token <unit Ast.tokendata> BEGINEXPR
+%token <unit Ast.tokendata> ENDEXPR
 
 /* Operators */
 %token <unit Ast.tokendata> EQ            /* "="  */
@@ -164,11 +170,11 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %start main 
 %type <Ast.top list> main
 
-
 %nonassoc WITH
 %nonassoc BAR
 %nonassoc LETUK 
 %left SEMI EQSEMI /*prec 1*/
+%nonassoc MYAPP
 %left OR  /*prec 2*/
 %left AND  /*prec 3*/
 %left EQ APXEQ LEFTARROW PLUSPLUS /*prec 5*/
@@ -184,6 +190,223 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 %%
 
+/* ==================== EXPERIMENTAL SYNTAX =============================== */
+/* Why so many commas?
+   1. To be able to separate defining expressions. 
+   2. To have a uniform syntax when using brackets within DSL languages.
+   3. Do distinguese between sets and scopes.
+*/
+
+
+ttop:
+  | DEF letpat EQ term ttop
+      { let fi =  mkinfo $1.i (tm_info $4) in
+        TopLet(fi,$2,None,[],$4,freein_tm $2 $4)::$5 }
+  | 
+      { [] }
+
+
+expr:
+  | t__app_left
+      { $1 }
+  | LCURLY rev_comma_exprseq RCURLY
+      { floatval 1. } 
+  | LCURLY rev_darrow_exprseq RCURLY
+      { floatval 2. } 
+  | LCURLY semi_exprseq RCURLY
+      { floatval 3. }
+
+
+t__app_left:
+  | t__op
+      { $1 }
+/*  | t__app_left expr
+      { floatval 5. }
+*/
+
+def_expr:
+  | expr
+      { $1 }
+  | DEF def_var EQ expr
+      { floatval 4.}
+  
+      
+/*expr_scope:
+  | DEF def_var def_params def_type def_val expr_scope
+*/
+  
+
+def_var:
+  | IDENT
+      { $1.v }
+  | USCORE
+      { wildcard }
+  
+
+
+rev_comma_exprseq: 
+    |   expr
+        {[$1]}               
+    |   rev_comma_exprseq COMMA expr
+        {$3::$1}
+
+rev_darrow_exprseq: 
+    |   expr DARROW expr
+        {[$1]}               
+    |   rev_darrow_exprseq COMMA expr DARROW expr
+        {$3::$1}
+
+
+
+semi_exprseq: 
+    |   
+        {[]}               
+    |   def_expr SEMI semi_exprseq
+        {$1::$3}
+
+
+t__op:
+  | t__atom
+      { $1 }
+  | t__op EQ t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(=)" $1 $3 }
+  | t__op APXEQ t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(~=)" $1 $3 }
+  | t__op LEFTARROW t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(<-)" $1 $3 }
+  | t__op MOD t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(mod)" $1 $3 }
+  | t__op ADD t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(+)" $1 $3 }
+  | t__op SUB t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(-)" $1 $3 }
+  | t__op MUL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(*)" $1 $3 }
+  | t__op DIV t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(/)" $1 $3 }
+  | t__op LESS t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(<)" $1 $3 }
+  | t__op LESSEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(<=)" $1 $3 }
+  | t__op GREAT t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(>)" $1 $3 }
+  | t__op GREATEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(>=)" $1 $3 }
+  | t__op EQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(==)" $1 $3 }
+  | t__op NOTEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(!=)" $1 $3 }
+  | t__op DOTADD t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(+.)" $1 $3 }
+  | t__op DOTSUB t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(-.)" $1 $3 }
+  | t__op DOTMUL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(*.)" $1 $3 }
+  | t__op DOTDIV t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(/.)" $1 $3 }
+  | t__op DOTLESS t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(<.)" $1 $3 }
+  | t__op DOTLESSEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(<=.)" $1 $3 }
+  | t__op DOTGREAT t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(>.)" $1 $3 }
+  | t__op DOTGREATEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(>=.)" $1 $3 }
+  | t__op DOTEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(==.)" $1 $3 }
+  | t__op DOTNOTEQUAL t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(!=.)" $1 $3 }
+  | NOT t__op
+      { mk_unop (mkinfo $1.i (tm_info $2)) $1.l "(!)" $2 }
+  | t__op AND t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(&&)" $1 $3 }
+  | t__op OR t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(||)" $1 $3 }
+  | t__op EQSEMI t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(;;)" $1 $3 }
+  | t__op PLUSPLUS t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(++)" $1 $3 }
+  | t__op EXP t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(^)" $1 $3 }
+  | t__op DOTEXP t__op
+      { mk_binop (mktminfo $1 $3) $2.l "(^.)" $1 $3 }
+  | t__op SQUOTE 
+      { mk_unop (mkinfo (tm_info $1) $2.i) $2.l "(')" $1 }
+  | SUB t__op %prec UNARYMINUS
+      { mk_unop (mkinfo $1.i (tm_info $2)) $1.l "(--)" $2 }
+  | DOTSUB t__op %prec UNARYMINUS
+      { mk_unop (mkinfo $1.i (tm_info $2)) $1.l "(--.)" $2 }
+  | t__op POLYEQUAL t__op
+      { let fi = mktminfo $1 $3 in
+        TmEqual(fi,$2.l,$1,$3) }
+
+
+
+t__atom:
+  | IDENT
+      { TmVar($1.i,$1.v) }
+  | TRUE 
+      { TmConst($1.i,$1.l,ConstBool(true)) }
+  | FALSE 
+      { TmConst($1.i,$1.l,ConstBool(false)) }
+  | UINT
+      { TmConst($1.i,$1.l,ConstInt($1.v)) }
+  | UFLOAT
+      { TmConst($1.i,$1.l,ConstReal($1.v)) }
+  | STRING
+      { TmConst($1.i,$1.l,ConstString($1.v)) }
+  | PRIMITIVE
+      { TmConst($1.i,$1.l,ConstPrim($1.v,[])) }
+/*  | LSQUARE RSQUARE
+      { let fi = mkinfo $1.i $2.i in
+	TmNil(fi,$1.l,TyBot(fi,$1.l)) }     
+  | LSQUARE revtmseq RSQUARE
+      { let fi = mkinfo $1.i $3.i in
+        TmList(fi,$1.l,$2) }
+  | LCURLY term RCURLY
+      { $2 } */
+  | LPAREN RPAREN 
+      { TmConst(mkinfo $1.i $2.i,$1.l,ConstUnit) } 
+/*  | LPAREN revtmseq RPAREN
+      { let fi = mkinfo $1.i $3.i in
+        match $2 with
+	  | [] -> TmConst(fi,$1.l,ConstUnit)
+	  | [t] -> if $1.l = 0 then t else mk_brackets fi $1.l t
+	  | ts ->  TmTuple(fi,$1.l,List.rev ts) }  */
+  | DPRINT LPAREN expr RPAREN
+      { TmDPrint($3) }
+  | DPRINTTYPE LPAREN expr RPAREN
+      { TmDPrintType($3) }
+
+
+
+
+/* ================================================================= */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 main:
   | top 
@@ -192,6 +415,8 @@ main:
 top:
   | EOF
       { [] }
+  | BEGINTOP ttop ENDTOP top
+      { $2@$4 }
   | LET letpat paramlist EQ term top
       { let fi = mkinfo $1.i (tm_info $5) in
         let (plst,endty) = $3 in
@@ -332,9 +557,13 @@ letpat:
       { wildcard }
 
 
+
+
 term:
   | semi_op
       { $1 }
+  | BEGINEXPR expr ENDEXPR
+      { $2 }
   | FUN IDENT COLON tyatom ARROW term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmLam(fi,$1.l,$2.v,$4,$6) }
@@ -720,6 +949,10 @@ op:
   | op POLYEQUAL op
       { let fi = mktminfo $1 $3 in
         TmEqual(fi,$2.l,$1,$3) }
+
+
+
+
 
 app_left:
   | atom

@@ -40,7 +40,7 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
 
   def Pendulum:State;
   def BouncingBall:State;
-  
+
   init(ground = -3);
   ground' = 0;
 

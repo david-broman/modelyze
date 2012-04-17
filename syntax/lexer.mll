@@ -67,6 +67,10 @@ let reserved_strings = [
   ("begin",         fun(i,l) -> Parser.BEGIN{i=i;l=l;v=()}); 
   ("end",           fun(i,l) -> Parser.END{i=i;l=l;v=()}); 
   ("specialize",    fun(i,l) -> Parser.SPECIALIZE{i=i;l=l;v=()}); 
+  ("begin_top",     fun(i,l) -> Parser.BEGINTOP{i=i;l=l;v=()}); 
+  ("end_top",       fun(i,l) -> Parser.ENDTOP{i=i;l=l;v=()}); 
+  ("begin_expr",    fun(i,l) -> Parser.BEGINEXPR{i=i;l=l;v=()}); 
+  ("end_expr",      fun(i,l) -> Parser.ENDEXPR{i=i;l=l;v=()}); 
 
 
   (* v *)

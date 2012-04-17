@@ -158,7 +158,8 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> SQUOTE        /* "'"  */
 %token <unit Ast.tokendata> PARENAPP      /* ")("  */
 %token <unit Ast.tokendata> EQSEMI        /* ";;"  */
-%token <unit Ast.tokendata> QUESTIONMARK  /* "?"   */
+%token <unit Ast.tokendata> QUESTIONMARK  /* "?"  */
+
 
 %start main 
 %type <Ast.top list> main
@@ -208,10 +209,10 @@ top:
       { let fi = mkinfo $1.i (tm_info $5) in
         let (plst,endty) = $3 in
         TopLet(fi,$2,endty,List.rev plst,$5,freein_tm $2 $5)::$6 }  
-  | DEF identparen parenparamlist COLON ty EQ term top
+/*  | DEF identparen parenparamlist COLON ty EQ term top   //Results in a shift/reduce conflict.
       { let fi = mkinfo $1.i (tm_info $7) in
         let (plst,_) = $3 in
-        TopLet(fi,$2,Some $5,List.rev plst,$7,freein_tm $2 $7)::$8 }  
+        TopLet(fi,$2,Some $5,List.rev plst,$7,freein_tm $2 $7)::$8 }  */
   | DEF letpat EQ term top
       { let fi = mkinfo $1.i (tm_info $4) in
         TopLet(fi,$2,None,[],$4,freein_tm $2 $4)::$5 }
@@ -354,10 +355,10 @@ term:
       { let fi = mkinfo $1.i (tm_info $7) in
         let (plst,endty) = $3 in
         TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
-  | DEF identparen parenparamlist COLON ty EQ cons SEMI term
+/*  | DEF identparen parenparamlist COLON ty EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $7) in
         let (plst,endty) = $3 in
-        TmLet(fi,$1.l,$2,Some $5,List.rev plst,$7,$9,freein_tm $2 $7) }
+        TmLet(fi,$1.l,$2,Some $5,List.rev plst,$7,$9,freein_tm $2 $7) }  */
   | DEF pat_atom EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmMatch(fi,$1.l,$4,[PCase(fi,[$2],None,[],$6)]) }
@@ -631,28 +632,20 @@ param:
       { ($1.v,$3) }
 
 semi_op:
-  | app_left
-      { $1 }
-  | app_left SEMI semi_op
-      { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
-
-app_left:
   | cons
       { $1 }
-  | app_left cons
-      { TmApp(mktminfo $1 $2,0,$1,$2,false) }
-  
+  | cons SEMI semi_op
+      { mk_binop (mktminfo $1 $3) $2.l "(;)" $1 $3 }
 
 cons:
   | op
       { $1 }
   | op CONS cons 
-      { TmCons(mktminfo $1 $3,$2.l,$1,$3) }     
-
+      { TmCons(mktminfo $1 $3,$2.l,$1,$3) }      
 
      
 op:
-  | atom
+  | app_left
       { $1 }
   | op EQ op
       { mk_binop (mktminfo $1 $3) $2.l "(=)" $1 $3 }
@@ -727,6 +720,10 @@ op:
   | op POLYEQUAL op
       { let fi = mktminfo $1 $3 in
         TmEqual(fi,$2.l,$1,$3) }
+
+app_left:
+  | atom
+      { $1 }
   | IDENTPAREN RPAREN 
       { let t1 = TmVar($1.i,$1.v) in 
         let t2 = TmConst($2.i,0,ConstUnit) in
@@ -739,16 +736,19 @@ op:
           | t::ts -> TmApp(fi,0,mkapps ts,t,false)
           | [] -> tm_ident
         in mkapps $2 }
-  | LPAREN op PARENAPP RPAREN 
+  | LPAREN app_left PARENAPP RPAREN 
       { let t2 = TmConst($4.i,0,ConstUnit) in
         TmApp(mkinfo $1.i $4.i,0,$2,t2,false) }
-  | LPAREN op PARENAPP revtmseq RPAREN
+  | LPAREN app_left PARENAPP revtmseq RPAREN
       { let fi = mkinfo $1.i $5.i in
         let rec mkapps lst =
           match lst with
           | t::ts -> TmApp(fi,0,mkapps ts,t,false)
           | [] -> $2
         in mkapps $4 }
+  | app_left app_right
+      { let (l,t) = $2 in
+        TmApp(mktminfo $1 t,l,$1,t,false) }
   | FST atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmProj(fi,$1.l,0,$2) }
@@ -768,7 +768,12 @@ op:
         TmApp(mkinfo $1.i $4.i,0,tm_ident,$3,true) } 
   | SPECIALIZE LPAREN atom PARENAPP atom RPAREN
       { TmApp(mktminfo $3 $5,0,$3,$5,true) } 
-
+  
+app_right:
+  | atom
+      { (0,$1) }
+  | METAAPP atom
+      { ($1.l,$2) }
 
 atom:
   | IDENT

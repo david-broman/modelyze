@@ -19,20 +19,21 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Optimization
 
-def VanDerPol() : OptProblem = 
+//def VanDerPol() : OptProblem = 
+def VanDerPol() = 
 {
     // Define variables
     def x1,x2,u:Signal;
 
     // Dynamic optimization problem
-    minimize integral x1*x1 + x2*x2 + u*u interval 0 5 
+    minimize integral (x1*x1 + x2*x2 + u*u) interval 0 5 
     {    
         // State that u is an input
         input u;
 
         // Initial values for x1 and x2
-        init x1 = 0;
-        init x2 = 1; 
+        init (x1 = 0);
+        init (x2 = 1); 
 
         // Differential equations
         x1' = (1 - x2*x2)*x1 - x2 + u;

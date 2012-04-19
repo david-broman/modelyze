@@ -103,87 +103,99 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
 //           For an equation map 'emap()', equation 
 //           'emap(e1) = e2' states that equation 'e2' should
 //           be created by differentiating 'e1'. 
-let pantelides equationGraph:EqsGraph -> variableMap:VarMap -> 
-                makeVNode:(()->VNode) -> makeENode:(()->ENode) -> 
-                (VarMap,EqMap) =
+def pantelides(equationGraph:EqsGraph, variableMap:VarMap,  
+                makeVNode:(()->VNode), makeENode:(()->ENode)) 
+                : (VarMap,EqMap) = {
   // Delete V-nodes that has a derivative (3b-1)
-  let deleteVNodes list:EqsGraphList -> A:VarMap -> accEq:EqsGraph -> 
-                   accV:[VNode]-> EqsGraph =
+  def deleteVNodes(list:EqsGraphList, A:VarMap, accEq:EqsGraph, 
+                   accV:[VNode]) :  EqsGraph = {
     match list with
     | (e,v::vs)::es -> 
         deleteVNodes ((e,vs)::es) A accEq 
                      (if Map.mem v A then accV else v::accV)
     | (e,[])::es -> deleteVNodes es A (Map.add e [] accEq) [] 
     | [] -> accEq
-  in
+  };
+
   // Differentiate variables (3b-5 (i))
-  let diffVars lst:ColorVList -> A:VarMap -> VarMap = 
+  def diffVars(lst:ColorVList, A:VarMap) : VarMap = {
     match lst with
-    | j::js -> let M = makeVNode() in diffVars js (Map.add j M A)
+    | j::js -> def M = makeVNode();
+               diffVars js (Map.add j M A)
     | [] -> A
-  in
+  };
+
   // Differentiate equations (3b-5 (ii))
-  let diffEqs lst:ColorEList -> A:VarMap -> B:EqMap -> graph:EqsGraph -> 
-              (EqMap,EqsGraph) =
-    let mkEdges lst:[VNode] -> [VNode] =
+  def diffEqs(lst:ColorEList, A:VarMap, B:EqMap, graph:EqsGraph) 
+              : (EqMap,EqsGraph) = {
+    def mkEdges(lst:[VNode]) : [VNode] = {
        match lst with
        | j::js -> j::(if Map.mem j A then (Map.find j A)::mkEdges(js)
                       else mkEdges(js))
        | [] -> []
-    in
+    };
+
       match lst with
       | l::ls ->
-          let N = makeENode() in
-          let edges = mkEdges (Map.find l graph) in
-          let graph2 = Map.add N edges graph in
-          let B2 = Map.add l N B in
+          def N = makeENode();
+          def edges = mkEdges (Map.find l graph);
+          def graph2 = (Map.add N edges graph);
+          def B2 = (Map.add l N B); 
           diffEqs ls A B2 graph2 
       | [] -> (B,graph)
-  in
+  };
+
   //Update matching edges (assignment) (3b-5 (iii))
-  let updateAssign lst:ColorVList -> A:VarMap -> B:EqMap -> 
-                   assign:AssignMap -> AssignMap =
+  def updateAssign(lst:ColorVList, A:VarMap, B:EqMap,
+                   assign:AssignMap) : AssignMap = {
     match lst with
     | j::js -> let e = Map.find (Map.find j assign) B in
                let v = Map.find j A in
                updateAssign js A B (Map.add v e assign)
     | [] -> assign
-  in
+  };
+
   // The repeat loop (3b)
-  let repeat i:ENode -> graph:EqsGraph -> assign:AssignMap -> 
-             A:VarMap -> B:EqMap -> (EqsGraph,AssignMap,VarMap,EqMap) =
+  def repeat(i:ENode, graph:EqsGraph, assign:AssignMap,
+             A:VarMap, B:EqMap) : (EqsGraph,AssignMap,VarMap,EqMap) = {
     // Call (3b-1)
-    let graph2 = deleteVNodes (Map.toList graph) A (Map.empty) [] in
+    def graph2 = deleteVNodes (Map.toList graph) A (Map.empty) [];
     // Call (3b-4)
-    let (pathFound,colorE,colorV,assign2) = 
-          augmentPath graph2 i (Set.empty) (Set.empty) assign in
+    def (pathFound,colorE,colorV,assign2) = 
+          augmentPath graph2 i (Set.empty) (Set.empty) assign;
     // End repeat if path is found
     if pathFound then (graph2,assign2,A,B)      
     // Differentiate and repeat
-    else 
-      let colorVList = Set.toList colorV in
-      let colorEList = Set.toList colorE in
-      let A2 = diffVars colorVList A in
-      let (B2,graph3) = diffEqs colorEList A2 B graph2 in 
-      let assign3 = updateAssign colorVList A2 B2 assign2 in
-      let i2 = Map.find i B2 in
+    else {
+      def colorVList = (Set.toList colorV);
+      def colorEList = (Set.toList colorE);
+      def A2 = diffVars colorVList A;
+      def (B2,graph3) = diffEqs colorEList A2 B graph2;
+      def assign3 = updateAssign colorVList A2 B2 assign2;
+      def i2 = (Map.find i B2);
       repeat i2 graph3 assign3 A2 B2 
-  in
+    }
+  };
+
   // Step (2), loop through each original equation node
-  let foreachEq eqlist:EqsGraphList -> graph:EqsGraph -> assign:AssignMap -> 
-                A:VarMap -> B:EqMap -> (VarMap,EqMap) = 
+  def foreachEq(eqlist:EqsGraphList, graph:EqsGraph, assign:AssignMap,
+                A:VarMap, B:EqMap) : (VarMap,EqMap) = {
     match eqlist with
     | [] -> (A,B)
-    | (k,_)::eqs -> 
-      let (graph2,assign2,A2,B2) = repeat k graph assign A B in
-      foreachEq eqs graph2 assign2 A2 B2
-  in
-    // Initializiation (1)
-    let assign = Map.empty in
-    let B = Map.empty in 
-    // Execute the for loop over all equations
-    foreachEq (Map.toList equationGraph) equationGraph assign variableMap B
-    
+    | (k,_)::eqs -> {
+        def (graph2,assign2,A2,B2) = repeat k graph assign A B;
+        foreachEq eqs graph2 assign2 A2 B2
+      }
+  };
+
+  // Initializiation (1)
+  def assign = (Map.empty);
+  def B = (Map.empty);
+
+  // Execute the for loop over all equations
+  foreachEq (Map.toList equationGraph) equationGraph assign variableMap B
+  
+}
     
 
 

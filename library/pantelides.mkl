@@ -92,7 +92,9 @@ let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet ->
 //           If a variable does not exist in the co-domain
 //           of vmap, but is part of the graph, it is a 
 //           algebraic variable, i.e. it does not appear
-//           differentiated.
+//           differentiated. The variable map is modeling
+//           the Variable Association map A, as stated in
+//           Pentelides original paper.
 // return value:  
 //           Returns two maps, one from variables to variables
 //           (derivative relation) and one for equation nodes

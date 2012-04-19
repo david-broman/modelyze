@@ -94,4 +94,27 @@ let printIntLine i:Int -> () =
 let printRealLine i:Real -> () =
     printLine  (real2string i)
 
+/* Reverse function */
+def rev(lst:[?]) = {
+  def work(lst:[?],acc:[?]) : [?] = {
+      match lst with
+      | l::ls -> work(ls,l::acc) 
+      | [] -> acc
+  };
+  work(lst,[])
+}
+
+// Note. Should we be gradual for everything, including cons etc.?
+
+/* What we want
+def rev(lst) = {
+  def work(lst,acc) = {
+      match lst with
+      | l::ls -> work(ls,l::acc) 
+      | [] -> acc
+  };
+  work(lst,[])
+}
+
+*/
 

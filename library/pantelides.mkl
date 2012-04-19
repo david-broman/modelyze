@@ -43,41 +43,49 @@ type VarList = [VNode]
 
 //Algorithm AUGMENTPATH according to page 217 by Pantelides (1988)
 // What is the variable set A?
-let augmentPath graph:EqsGraph -> i:ENode -> colE:ColorESet -> colV:ColorVSet -> 
-    assign:AssignMap -> (PathFound,ColorESet,ColorVSet,AssignMap) =
-  let assignPath jlist:VarList -> (PathFound,AssignMap) = 
+def augmentPath(graph:EqsGraph, i:ENode, colE:ColorESet, colV:ColorVSet, 
+    assign:AssignMap) : (PathFound,ColorESet,ColorVSet,AssignMap) = {
+
+  // Step (2) in the Pantelides paper
+  def assignPath(jlist:VarList) : (PathFound,AssignMap) = {
     match jlist with  //Step (2)
     | j::js -> 
-      if Map.mem j assign then
-        assignPath js 
-      else 
-        (true,Map.add j i assign)
+      if Map.mem j assign then assignPath js 
+      else (true,Map.add j i assign)
     | [] -> (false,assign)
-  in
-  let everyJ vlist:VarList -> colE:ColorESet -> 
-             colV:ColorVSet -> assign:AssignMap ->
-            (PathFound,ColorESet,ColorVSet,AssignMap) =
-    match vlist with //(Step (3)
-    | j::js if Set.mem j colV -> everyJ js colE colV assign
-    | j::js -> 
-      let colV2 = Set.add j colV in
-      let k = Map.find j assign in
-      let (found,colE3,colV3,assign3) = 
-         augmentPath graph k colE colV2 assign in
-      if found then
-        (true,colE3,colV3,Map.add j i assign3)
-      else
-        everyJ js colE3 colV3 assign3 
-    | [] -> (false,colE,colV,assign)
-  in 
-    let colE2 = Set.add i colE in  //Step (1) 
-    let jList = Map.find i graph in
-    let (found,assign2) = assignPath jList in
-    if found then
-      (true,colE2,colV,assign2)
-    else
-       everyJ jList colE2 colV assign2 
+  };
 
+  // Step (3) in the Pantelides paper
+  def everyJ(vlist:VarList, colE:ColorESet, colV:ColorVSet, assign:AssignMap) :
+            (PathFound,ColorESet,ColorVSet,AssignMap) = {
+    match vlist with //(Step (3)
+    | j::js if Set.mem j colV -> everyJ(js, colE, colV, assign)
+    | j::js -> {
+         def colV2 = (Set.add j colV);
+         def k = (Map.find j assign);
+         def (found,colE3,colV3,assign3) = 
+           augmentPath(graph, k, colE, colV2, assign);
+
+         if found then
+           (true,colE3,colV3,Map.add j i assign3)
+         else
+           everyJ(js, colE3, colV3, assign3)
+      }
+    | [] -> (false,colE,colV,assign)
+  };
+
+  def colE2 = (Set.add i colE);  //Step (1) 
+  def jList = (Map.find i graph);
+  def (found,assign2) = assignPath(jList);
+  //def _ = dprint("------------");
+  //def _ = dprint(colE2); 
+  //def _ = dprint(found);
+  //def _ = error "stop";
+  if found then 
+     (true,colE2,colV,assign2)
+  else 
+     everyJ(jList, colE2, colV, assign2)
+}
 
 
 //Algorithm 4.1 according to page 218 by Pantelides (1988)
@@ -111,9 +119,9 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
                    accV:[VNode]) :  EqsGraph = {
     match list with
     | (e,v::vs)::es -> 
-        deleteVNodes ((e,vs)::es) A accEq 
-                     (if Map.mem v A then accV else v::accV)
-    | (e,[])::es -> deleteVNodes es A (Map.add e [] accEq) [] 
+        deleteVNodes((e,vs)::es, A, accEq, 
+                     if Map.mem v A then accV else v::accV)
+    | (e,[])::es -> deleteVNodes es A (Map.add e accV accEq) [] 
     | [] -> accEq
   };
 
@@ -135,7 +143,7 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
        | [] -> []
     };
 
-      match lst with
+    match lst with
       | l::ls ->
           def N = makeENode();
           def edges = mkEdges (Map.find l graph);
@@ -159,18 +167,31 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
   def repeat(i:ENode, graph:EqsGraph, assign:AssignMap,
              A:VarMap, B:EqMap) : (EqsGraph,AssignMap,VarMap,EqMap) = {
     // Call (3b-1)
-    def graph2 = deleteVNodes (Map.toList graph) A (Map.empty) [];
+    def graph2 = deleteVNodes(Map.toList graph, A, Map.empty, []);
     // Call (3b-4)
+    def _ = dprint("------------");
+    def _ = dprint(graph2);
+    
     def (pathFound,colorE,colorV,assign2) = 
-          augmentPath graph2 i (Set.empty) (Set.empty) assign;
-    // End repeat if path is found
-    if pathFound then (graph2,assign2,A,B)      
-    // Differentiate and repeat
+          augmentPath(graph2, i, Set.empty, Set.empty, assign);
+    //def _ = dprint("------------");
+    //def _ = dprint(colorE);
+    //def _ = error "stop";
+
+    //def _ = dprint((colorE,colorV));
+    //def _ = dprint(assign2);
+
+    if pathFound then 
+        (graph,assign2,A,B)      
     else {
+      // Differentiate and repeat
       def colorVList = (Set.toList colorV);
       def colorEList = (Set.toList colorE);
-      def A2 = diffVars colorVList A;
-      def (B2,graph3) = diffEqs colorEList A2 B graph2;
+      def A2 = diffVars(colorVList,A);
+      def (B2,graph3) = diffEqs(colorEList, A2, B, graph);  
+      //def _ = dprint(("** colorEList: ", colorEList));
+      def _ = dprint(("** graph: ", graph3));
+      //def _ = dprint(("** A2: ", A2));
       def assign3 = updateAssign colorVList A2 B2 assign2;
       def i2 = (Map.find i B2);
       repeat i2 graph3 assign3 A2 B2 
@@ -183,8 +204,9 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
     match eqlist with
     | [] -> (A,B)
     | (k,_)::eqs -> {
-        def (graph2,assign2,A2,B2) = repeat k graph assign A B;
-        foreachEq eqs graph2 assign2 A2 B2
+        //Do repreat loop for each equation. k is the equation identifier.
+        def (graph2,assign2,A2,B2) = repeat(k,graph,assign,A,B);
+        foreachEq(eqs,graph2,assign2,A2,B2)
       }
   };
 
@@ -193,7 +215,7 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
   def B = (Map.empty);
 
   // Execute the for loop over all equations
-  foreachEq (Map.toList equationGraph) equationGraph assign variableMap B
+  foreachEq(rev(Map.toList equationGraph), equationGraph, assign, variableMap, B)
   
 }
     

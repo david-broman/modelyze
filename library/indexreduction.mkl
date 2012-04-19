@@ -92,7 +92,7 @@ def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) :
   };
     // Generate the equation graph and augmented equation system
     def (graph,varmap,augmentedEqs) = makeEquationGraph(eqs);
-    def _ = dprint(varmap);
+    def _ = dprint(graph);
 
     // Execute Pantelides algorithm
     def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);

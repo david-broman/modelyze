@@ -641,12 +641,6 @@ term:
                 else mkinfo $1.i (tm_info (List.hd $4)) in
        let op = mk_daesolverop $3.i $3.v in
        TmDAESolverOp(fi,$1.l,op,List.rev $4) } 
-  | LCURLY scope RCURLY 
-      { $2 }
-
-scope:
-  | DEF 
-      { TmNil($1.i,$1.l,TyBot($1.i,$1.l)) } 
 
 
 op_atom_list_rev:

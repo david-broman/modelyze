@@ -33,8 +33,8 @@ def  eqContainer: EqNode -> Equations -> Equations
 type VarSet = Set Expr
 
 //Functions for generating fresh equation and variable nodes
-let makeVNode x:() -> VNode = let newVnode:Signal in newVnode 
-let makeENode x:() -> ENode = let newEnode:EqNode in newEnode
+let makeVNode x:() -> VNode = let nv:Signal in nv 
+let makeENode x:() -> ENode = let ne:EqNode in ne
 
 // Generates an equation graph from an equation system. This
 // function can be used together with pantelides algrithm, 
@@ -95,8 +95,14 @@ def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) :
 
     // Execute Pantelides algorithm
     def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);
+
+
     // Wrap equations to be differentiated into der expressions
     def eqs2 = addDerEqs(augmentedEqs,eqmap);
+    def _ = dprint(("------\n",eqmap));    
+    def _ = dprint(("------\n",eqs));
+    def _ = dprint(("------\n",augmentedEqs));
+
     // Differentiate 
     elaborateDerivatives(eqs2,olddermap)
 }

@@ -77,10 +77,6 @@ def augmentPath(graph:EqsGraph, i:ENode, colE:ColorESet, colV:ColorVSet,
   def colE2 = (Set.add i colE);  //Step (1) 
   def jList = (Map.find i graph);
   def (found,assign2) = assignPath(jList);
-  //def _ = dprint("------------");
-  //def _ = dprint(colE2); 
-  //def _ = dprint(found);
-  //def _ = error "stop";
   if found then 
      (true,colE2,colV,assign2)
   else 
@@ -169,17 +165,9 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
     // Call (3b-1)
     def graph2 = deleteVNodes(Map.toList graph, A, Map.empty, []);
     // Call (3b-4)
-    def _ = dprint("------------");
-    def _ = dprint(graph2);
     
     def (pathFound,colorE,colorV,assign2) = 
           augmentPath(graph2, i, Set.empty, Set.empty, assign);
-    //def _ = dprint("------------");
-    //def _ = dprint(colorE);
-    //def _ = error "stop";
-
-    //def _ = dprint((colorE,colorV));
-    //def _ = dprint(assign2);
 
     if pathFound then 
         (graph,assign2,A,B)      
@@ -189,10 +177,7 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
       def colorEList = (Set.toList colorE);
       def A2 = diffVars(colorVList,A);
       def (B2,graph3) = diffEqs(colorEList, A2, B, graph);  
-      //def _ = dprint(("** colorEList: ", colorEList));
-      def _ = dprint(("** graph: ", graph3));
-      //def _ = dprint(("** A2: ", A2));
-      def assign3 = updateAssign colorVList A2 B2 assign2;
+      def assign3 = updateAssign(colorVList, A2, B2, assign2);
       def i2 = (Map.find i B2);
       repeat i2 graph3 assign3 A2 B2 
     }

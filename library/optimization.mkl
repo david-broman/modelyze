@@ -364,7 +364,7 @@ def removeInputEqs(eq:Equations) : Equations = {
 def getOCP(optProb:OptProblem) : OCP = {
     def genInits(m:Expr,acc:VarMap) : (Expr,VarMap) = {
         match m with
-        | ~init (x=v) -> (NoEqn,Map.add x v acc)
+        | ~init x v -> (NoEqn,Map.add x v acc)
         | e1 e2 -> {
              def (e1b,acc2) = genInits(e1,acc);
              def (e2b,acc3) = genInits(e2,acc2);

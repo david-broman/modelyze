@@ -32,9 +32,9 @@ def (=) : Real -> Real -> Equations
 def (;) : Equations -> Equations -> Equations
 def NoEqn : Equations
 
-def init : <Equations -> Equations>
+def init : Real -> Real -> Equations 
 //def init : Real -> Real 
-let (<-) : <Equations -> Equations> = init
+let (<-)  = init
 
 def time : <Real>
 def probe : <String -> Real> 

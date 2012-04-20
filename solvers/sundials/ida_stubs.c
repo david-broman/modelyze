@@ -160,6 +160,7 @@ CAMLprim value ida_make_ext_c(value params, value init_y, value init_yder, value
   /* Correct initial values */
   retval1 = IDASetId((*ctx).ida,(*ctx).id);
   retval2 = IDACalcIC((*ctx).ida,IDA_YA_YDP_INIT,0.00000001);
+  //retval2 = IDACalcIC((*ctx).ida,IDA_Y_INIT,0.00000001);
   retval3 = IDAGetConsistentIC((*ctx).ida,(*ctx).yy, (*ctx).yp);
   if(retval1 != IDA_SUCCESS || retval2 != IDA_SUCCESS || retval3 != IDA_SUCCESS){
     free_ida(ctx);

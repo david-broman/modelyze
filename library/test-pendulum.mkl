@@ -21,16 +21,34 @@ include HybridSimulation
 include ExportModelica
 
 
-//Panterlides applied, with symbolic differentation
+//Manual apply diff on last equation
 def Pendulum(m:Real,l:Real,startAngle:Real) = {
     def g = 9.81;
     def T,x,y:Real;
 
-    init x = l*sin(startAngle);
-    init y = -l*cos(startAngle);
+    init x (l*sin(startAngle));
+    init y (-l*cos(startAngle));
      
     -T*x/l = m*x'';
     -T*y/l - m*g = m*y'';     
+    (x^2 + y^2) = (l^2);
+
+    probe("x") = x;
+    probe("Lenght") = (sqrt(x*x+y*y))
+}
+
+//Apply differentiation according to pantelides, but removing old
+def PendulumP(m:Real,l:Real,startAngle:Real) = {
+    def g = 9.81;
+    def T,x,y,dx,dy:Real;
+
+    init x (l*sin(startAngle));
+    init y (-l*cos(startAngle));
+     
+    -T*x/l = m*dx';
+    x'' = dx';
+    -T*y/l - m*g = m*dy';     
+    y'' = dy';    
     (x^2 + y^2)'' = (l^2)'';
 
     probe("x") = x;
@@ -39,9 +57,31 @@ def Pendulum(m:Real,l:Real,startAngle:Real) = {
 
 
 
+//Manually Apply dummy derivateive
+def PendulumD(m:Real,l:Real,startAngle:Real) = {
+    def g = 9.81;
+    def T,x,y,dx,dy:Real;
+
+    init x (l*sin(startAngle));
+    init y (-l*cos(startAngle));
+     
+    -T*x/l = m*dx';
+    x' = dx;
+    -T*y/l - m*g = m*dy';     
+    y' = dy;    
+    x^2 + y^2 = l^2;
+    x * dx + y * dy = 0;
+    //x * x'' + x' * x' + y * y'' + y' * y' = 0;
+    x * dx' + dx * dx + y * dy' + dy * dy = 0;
+
+    probe("x") = x;
+    probe("Lenght") = (sqrt(x*x+y*y))
+}
+
+
 let _ = 
   let angle = 45.*3.14/180. in
-  printsim (Pendulum 5.0 2.0 angle) 0.01 10.
+  printsim (PendulumP 5.0 2.0 angle) 0.01 10.
   //printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
 
 

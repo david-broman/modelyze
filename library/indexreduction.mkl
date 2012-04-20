@@ -86,7 +86,8 @@ def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) :
              else exp
       };
       match eqs with
-        | ~eqContainer n e1 e2 -> (wrapder n e1) = (wrapder n e2)
+        | ~eqContainer n (e1 = e2) -> 
+          (wrapder n e1) = (wrapder n e2)
         | e1 e2 -> (addDerEqs e1 eqmap) (addDerEqs e2 eqmap)
         | e -> e
   };
@@ -94,17 +95,14 @@ def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) :
     def (graph,varmap,augmentedEqs) = makeEquationGraph(eqs);
 
     // Execute Pantelides algorithm
-    def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);
-
+    def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);    
 
     // Wrap equations to be differentiated into der expressions
     def eqs2 = addDerEqs(augmentedEqs,eqmap);
-    def _ = dprint(("------\n",eqmap));    
-    def _ = dprint(("------\n",eqs));
-    def _ = dprint(("------\n",augmentedEqs));
 
     // Differentiate 
     elaborateDerivatives(eqs2,olddermap)
+
 }
 
 

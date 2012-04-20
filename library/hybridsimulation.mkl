@@ -78,7 +78,7 @@ let extractHState model:Equations -> freshState:Bool ->
                       else (NoEqn,updated)
     | ~transition nstate ~when g ~action i -> 
           (internalTrans cstate nstate g i,updated) 
-    | ~init (x = e) -> if fresh then (init (x = e),updated) else (NoEqn,updated)
+    | ~init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
     | e1 e2 ->  
          let (eqs1,up1) = extract e1 fresh pre curr updated cstate in
          let (eqs2,up2) = extract e2 fresh pre curr up1 cstate in
@@ -102,7 +102,7 @@ let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | ~init (x = v) -> Map.add x v acc
+    | ~init x v -> Map.add x v acc
     | _ -> acc
   in get eqs (Map.empty)
 

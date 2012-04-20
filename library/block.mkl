@@ -34,8 +34,8 @@ let Integrator k:Real -> y0:Real -> u:Signal -> y:Signal -> Equations =
 
 let Derivative k:Real -> T:Real -> u:Signal -> y:Signal -> Equations =
   let state:Signal in
-  state' = (if (abs k) >= eps then (u - state)/T else val 0.);
-  y = (if (abs k) >= eps then (k/T)*(u - state) else val 0.)
+  state' = (if (abs k) >= eps then (u - state)/T else 0.);
+  y = (if (abs k) >= eps then (k/T)*(u - state) else 0.)
 
 let Add u1:Signal -> u2:Signal -> y:Signal -> Equations =
   y = u1 + u2

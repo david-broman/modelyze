@@ -21,7 +21,7 @@ include MechsysBasics
 include Block
 include Simulation
 
-let DCMotor V:Voltage -> flange:Rotational -> Equations =
+def DCMotor2(V:Voltage,flange:Rotational) : Equations = {
   let e1:Electrical in
   let e2:Electrical in
   let e3:Electrical in
@@ -31,6 +31,7 @@ let DCMotor V:Voltage -> flange:Rotational -> Equations =
   Inductor 0.1 e2 e3;
   EMF 1. e3 e4 flange;
   Ground e4
+}
 
 let Shaft flangeA:Rotational -> flangeB:Rotational -> Equations =
   let r1:Rotational in
@@ -60,12 +61,13 @@ let ControlSys =
 */
 
 def ControlSys() = {
-    def s1,s2,s3,s4:Signal in
-    def r1,r2,r3:Rotational in
+    def s1,s2,s3,s4:Signal;
+    def r1,r2,r3:Rotational;
     ConstantSource(1,s1);
     Feedback(s1,s4,s2);
     PID(3,0.7,0.1,10,s2,s3);
-    DCMotor(s3,r1);
+    //DCMotor2(s3,r1);
+    DCMotor(r1);
     IdealGear(4.0,r1,r2);
     Shaft(r2,r3);
     SpeedSensor(r3,s4);

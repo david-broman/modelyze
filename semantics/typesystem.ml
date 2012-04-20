@@ -704,43 +704,34 @@ and typeof env ukenv t =
 				     [ustring_of_int l;pprint_ty ty2]))
 		 else
 		   (ty2,TmLet(fi,l,x,Some ty1,plst,t1',t2',recu)) 
-    | TmIf(fi,l,t1,t2,t3) -> 
+      | TmIf(fi,l,t1,t2,t3) -> 
         let ((ty1,t1'),(ty2,t2'),(ty3,t3')) = 
-	  (typeof env ukenv t1,typeof env ukenv t2,
-           typeof env ukenv t3) in
-	  (match ty1 with
-	     | TyModel(_,_l2,TyBool(_,l3)) -> 
-		 if ty_ismodel ty2 && ty_ismodel ty3 then
-		   typeof env ukenv (TmModIf(fi,l,t1,t2,t3))
-	         else if ty_ismodel ty2 then
-		   typeof env ukenv 
-                     (TmModIf(fi,l,t1,t2,TmVal(fi,l,t3,ty3)))
-	         else if ty_ismodel ty3 then 
-		   typeof env ukenv 
-                     (TmModIf(fi,l,t1,TmVal(fi,l,t2,ty2),t3))
-		 else
-		   typeof env ukenv 
-                     (TmModIf(fi,l,t1,TmVal(fi,l,t2,ty2),TmVal(fi,l,t3,ty3)))
-	     | _ -> (
-		 if not (ty_consistent ty1 (TyBool(NoInfo,l))) then
-		  raise (Mkl_type_error(TYPE_MISMATCH_IF_GUARD,ERROR,tm_info t1,
-			[pprint_ty (TyBool(NoInfo,l)); pprint_ty ty1]))
-		 else if not (ty_lev ty2 >= l && ty_lev ty3 >= l) then
-		   raise (Mkl_type_error(TYPE_IF_EXP_LEV_MONOTONICITY,ERROR,fi,
-			 [ustring_of_int l; pprint_ty ty2; pprint_ty ty3]))
-		 else
-                   (* Coercion of int to real *)
-                   if  (match ty2 with TyReal(_,_) -> true | _ -> false) &&
-                       (match ty3 with TyInt(_,_) -> true | _ -> false) 
-                   then  (ty2,TmIf(fi,l,t1',t2',int2real_coercion t3'))
-                   else if  (match ty3 with TyReal(_,_) -> true | _ -> false) &&
-                            (match ty2 with TyInt(_,_) -> true | _ -> false) 
-                    then  (ty3,TmIf(fi,l,t1',int2real_coercion t2',t3'))
-		   else if not (ty_consistent ty2 ty3) then
-		     raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
-				           [pprint_ty ty2; pprint_ty ty3]))
-		   else
-		     (ty_restriction ty2 ty3,TmIf(fi,l,t1',t2',t3'))))
+	  (typeof env ukenv t1,typeof env ukenv t2,typeof env ukenv t3) in
+	  if not (ty_consistent ty1 (TyBool(NoInfo,l))) then
+            raise (Mkl_type_error(TYPE_MISMATCH_IF_GUARD,ERROR,tm_info t1,
+	                          [pprint_ty (TyBool(NoInfo,l)); pprint_ty ty1]))
+          else 
+          if ty_consistent ty2 ty3 then 
+            (ty_restriction ty2 ty3, TmIf(fi,0,t1',t2',t3'))
+          else
+          if (not (ty_ismodel ty2)) && ty_consistent (TyModel(fi,l,ty2)) ty3 then 
+              (ty_restriction (TyModel(fi,l,ty2)) ty3,
+               TmIf(fi,0,t1',TmVal(fi,l,t2',ty2),t3'))
+          else           
+          if (not (ty_ismodel ty3)) && ty_consistent  ty2 (TyModel(fi,l,ty3)) then 
+              (ty_restriction  ty2 (TyModel(fi,l,ty3)),
+               TmIf(fi,0,t1',t2',TmVal(fi,l,t3',ty3)))
+          else   
+          if  (match ty2 with TyReal(_,_) -> true | _ -> false) &&
+            (match ty3 with TyInt(_,_) -> true | _ -> false) 
+          then  (ty2,TmIf(fi,l,t1',t2',int2real_coercion t3'))
+          else if  (match ty3 with TyReal(_,_) -> true | _ -> false) &&
+            (match ty2 with TyInt(_,_) -> true | _ -> false) 
+          then  (ty3,TmIf(fi,l,t1',int2real_coercion t2',t3'))
+          else raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
+		                   [pprint_ty ty2; pprint_ty ty3]))
+            
+
     | TmConst(fi,l,c) as tt -> (deltatype fi c l,tt)
     | TmUp(fi,l,t) -> 
 	let (ty1,t') = typeof (strip env fi l true) ukenv t in
@@ -764,7 +755,7 @@ and typeof env ukenv t =
 			 (fun a t -> TmCons(tm_info t,l,t,a)) 
 		         (TmNil(fi,l,ty')) ts))
     | TmMatch(fi,l,t,cases) -> assert false
-    | TmUk(fi,l,u,ty) as tt-> (ty,tt)
+    | TmUk(fi,l,u,ty) -> failwith "Should not happen"
     | TmNu(fi,l,u,ty1,t2) ->
 	if not (ty_mono ty1) then
 	  raise (Mkl_type_error(TYPE_NU_LET_VAR_LEV_MONOTONICITY,ERROR,
@@ -778,16 +769,7 @@ and typeof env ukenv t =
 	      raise (Mkl_type_error(TYPE_NU_LET_EXP_LEV_MONOTONICITY,ERROR,fi,
 			    [ustring_of_int l; pprint_ty ty1; pprint_ty ty2]))
 	    else (ty2,TmNu(fi,l,u,ty1,t2'))
-    | TmModApp(fi,l,t1,t2) ->
-        let ((ty1',t1'),(ty2',t2')) = 
-	  (typeof env ukenv t1,typeof env ukenv t2) in
-          begin match (ty1',ty2') with 
-	    | TyModel(_,l1,TyArrow(_,_,ty11,ty12)),ty2' 
-                when ty_consistent (TyModel(NoInfo,l1,ty11)) ty2' ->
-		  (TyModel(NoInfo,l1,ty12),TmModApp(fi,l,t1',t2'))
-	    | _ -> raise (Mkl_type_error(TYPE_MODAPP_TYPE_MISMATCH,ERROR,
-			   fi,[pprint_ty ty1'; pprint_ty ty2']))
-	  end
+    | TmModApp(fi,l,t1,t2) -> failwith "Should not happen."
     | TmModIf(fi,l,t1,t2,t3) -> 
 	(match typeof env ukenv t1,typeof env ukenv t2,
            typeof env ukenv t3 with

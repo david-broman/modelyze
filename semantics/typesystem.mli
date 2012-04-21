@@ -23,10 +23,3 @@ val typeofterm :   Ast.tm -> Ast.ty
 
 val typecheck : Ast.tm -> Ast.tm
 
-val ty_up : Ast.ty -> Ast.ty
-
-val ty_down : Ast.ty -> Ast.ty
-
-val ty_lev_up : int -> Ast.ty -> Ast.ty
-
-val ty_lev_down : int -> Ast.ty -> Ast.ty

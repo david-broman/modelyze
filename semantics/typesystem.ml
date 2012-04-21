@@ -35,128 +35,7 @@ type tyenv = (ident * (level * ty * strip))
 let rec tylst_equiv tylst1 tylst2 = List.combine tylst1 tylst2 
    |> List.fold_left (fun inp (ty1,ty2) -> ty_equiv ty1 ty2) true
 
-let rec ty_constlev ty = 
-  match ty with 
-    | TyBool(_,l) -> true
-    | TyInt(_,l) -> true
-    | TyReal(_,l) -> true
-    | TyString(_,l) -> true
-    | TyArrow(_,l,t1,t2) -> 
-	ty_constlev t1 && ty_constlev t2 && ty_lev t1 = l && ty_lev t2 = l
-    | TyUnit(_,l) -> true
-    | TyList(_,l,t) -> ty_constlev t && ty_lev t == l
-    | TyTuple(_,l,tylst) -> List.for_all 
-        (fun t -> ty_constlev t && ty_lev t == l) tylst
-    | TyModel(_,l,t) -> ty_constlev t && ty_lev t == l
-    | TyDynamic(_,l) -> true
-    | TyBot(_,l) -> true
-    | TyUserdef(_,l,tyid,id) -> true
-    | TyIdent(fi,l1,id1) -> assert false 
-    | TyArray(_,l,t) -> ty_constlev t && ty_lev t = l  
-    | TyMap(_,l,t1,t2) -> 
-	ty_constlev t1 && ty_constlev t2 && ty_lev t1 == l && ty_lev t2 == l
-    | TySet(_,l,t) -> ty_constlev t && ty_lev t = l  
-    | TyDAESolver(_,l) -> true
-
-let rec ty_mono ty = 
-  match ty with 
-    | TyBool(_,l) -> true
-    | TyInt(_,l) -> true
-    | TyReal(_,l) -> true
-    | TyString(_,l) -> true
-    | TyArrow(_,l,t1,t2) -> 
-	ty_mono t1 && ty_mono t2 && ty_lev t1 >= l && ty_lev t2 >= l
-    | TyUnit(_,l) -> true
-    | TyList(_,l,t) -> ty_mono t && ty_lev t >= l
-    | TyTuple(_,l,tylst) -> List.for_all 
-        (fun t -> ty_mono t && ty_lev t >= l) tylst
-    | TyModel(_,l,t) -> ty_mono t && ty_lev t >= l
-    | TyDynamic(_,l) -> true
-    | TyBot(_,l) -> true
-    | TyUserdef(_,l,tyid,id) -> true
-    | TyIdent(fi,l1,id1) -> assert false 
-    | TyArray(_,l,t) -> ty_constlev t && ty_lev t = l  (* Note! Equal *)
-    | TyMap(_,l,t1,t2) -> 
-	ty_mono t1 && ty_mono t2 && ty_lev t1 >= l && ty_lev t2 >= l
-    | TySet(_,l,t) -> ty_mono t && ty_lev t = l  (* Note! Equal *)
-    | TyDAESolver(_,l) -> true
-
-(* Greatest level *)
-let rec ty_gl ty = 
-  match ty with 
-    | TyBool(_,l) -> l
-    | TyInt(_,l) -> l
-    | TyReal(_,l) -> l
-    | TyString(_,l) -> l
-    | TyArrow(_,l,t1,t2) -> max l (max (ty_gl t1) (ty_gl t2))
-    | TyUnit(_,l) -> l
-    | TyList(_,l,t) -> max l (ty_gl t)
-    | TyTuple(_,l,tylst) -> List.fold_left (fun l t -> max l (ty_gl t)) l tylst
-    | TyModel(_,l,t) -> max l (ty_gl t)
-    | TyDynamic(_,l) -> l
-    | TyBot(_,l) -> l
-    | TyUserdef(_,l,tyid,id) -> l
-    | TyIdent(fi,l1,id1) -> l1
-    | TyArray(_,l,t) -> max l (ty_gl t)
-    | TyMap(_,l,t1,t2) -> max l (max (ty_gl t1) (ty_gl t2))
-    | TySet(_,l,t) -> max l (ty_gl t)
-    | TyDAESolver(_,l) -> l
-
-let rec ty_up ty = 
-  match ty with 
-    | TyBool(fi,l) -> TyBool(fi,l+1)
-    | TyInt(fi,l) -> TyInt(fi,l+1)
-    | TyReal(fi,l) -> TyReal(fi,l+1)
-    | TyString(fi,l) -> TyString(fi,l+1)
-    | TyArrow(fi,l,t1,t2) -> TyArrow(fi,l+1,ty_up t1,ty_up t2) 
-    | TyUnit(fi,l) -> TyUnit(fi,l+1)
-    | TyList(fi,l,t) -> TyList(fi,l+1,ty_up t)
-    | TyTuple(fi,l,tylst) -> TyTuple(fi,l+1,List.map ty_up tylst)  
-    | TyModel(fi,l,t) -> TyModel(fi,l+1,ty_up t)
-    | TyDynamic(fi,l) -> TyDynamic(fi,l+1)
-    | TyBot(fi,l) -> TyBot(fi,l+1)
-    | TyUserdef(fi,l,tyid,id) -> TyUserdef(fi,l+1,tyid,id)
-    | TyIdent(fi,l,id) -> TyIdent(fi,l+1,id)
-    | TyArray(fi,l,t) -> TyArray(fi,l+1,ty_up t)
-    | TyMap(fi,l,t1,t2) -> TyMap(fi,l+1,ty_up t1,ty_up t2) 
-    | TySet(fi,l,t) -> TySet(fi,l+1,ty_up t)
-    | TyDAESolver(fi,l) -> TyDAESolver(fi,l+1)
-
-let rec ty_down ty = 
-  match ty with 
-    | TyBool(fi,l) -> TyBool(fi,l-1)
-    | TyInt(fi,l) -> TyInt(fi,l-1)
-    | TyReal(fi,l) -> TyReal(fi,l-1)
-    | TyString(fi,l) -> TyString(fi,l-1)
-    | TyArrow(fi,l,t1,t2) -> TyArrow(fi,l-1,ty_down t1,ty_down t2) 
-    | TyUnit(fi,l) -> TyUnit(fi,l-1)
-    | TyList(fi,l,t) -> TyList(fi,l-1,ty_down t)
-    | TyTuple(fi,l,tylst) -> TyTuple(fi,l-1,List.map ty_down tylst)
-    | TyModel(fi,l,t) -> TyModel(fi,l-1,ty_down t)
-    | TyDynamic(fi,l) -> TyDynamic(fi,l-1)
-    | TyBot(fi,l) -> TyBot(fi,l-1)
-    | TyUserdef(fi,l,tyid,id) -> TyUserdef(fi,l-1,tyid,id)
-    | TyIdent(fi,l,id) -> TyIdent(fi,l-1,id)
-    | TyArray(fi,l,t) -> TyArray(fi,l-1,ty_down t)
-    | TyMap(fi,l,t1,t2) -> TyMap(fi,l-1,ty_down t1,ty_down t2) 
-    | TySet(fi,l,t) -> TySet(fi,l-1,ty_down t)
-    | TyDAESolver(fi,l) -> TyDAESolver(fi,l-1)
-
-let rec ty_lev_up l ty = 
-  if l = 0 then ty else ty_lev_up (l-1) (ty_up ty)
-
-let rec ty_lev_down l ty = 
-  if l = 0 then ty else ty_lev_down (l-1) (ty_down ty)
-    
-let rec strip env fi l up = 
-  match env with
-    | (x,(k,ty,s))::res ->  
-  	(if k <= l then (x,(k,ty,s))
-	 else if up then (x,(k,ty,StripMetaup(fi,l))) 
-	 else (x,(k,ty,StripMetadown(fi,l)))
-        )::strip res fi l up
-    | [] -> []
-
+let rec ty_mono ty = true  (* should be removed *)
 	
 let rec mk_letenv plst l env =
   match plst with
@@ -177,145 +56,6 @@ let ty_ismodel ty =
 
 let rel_union rl1 rl2 = remove_dup_assoc (rl1 @ rl2)
             
-
-let desugar_bracket_escape tm =
-  let rec ds_ty lev ty = 
-    match ty with 
-      | TyBool(fi,l) -> TyBool(fi,l+lev)
-      | TyInt(fi,l) -> TyInt(fi,l+lev)
-      | TyReal(fi,l) -> TyReal(fi,l+lev)
-      | TyString(fi,l) -> TyString(fi,l+lev)
-      | TyArrow(fi,l,ty1,ty2) -> TyArrow(fi,l+lev,ds_ty lev ty1,ds_ty lev ty2)
-      | TyUnit(fi,l) -> TyUnit(fi,l+lev) 
-      | TyList(fi,l,t) -> TyList(fi,l+lev,ds_ty lev t)  
-      | TyTuple(fi,l,t) -> TyTuple(fi,l+lev,List.map (ds_ty lev) t)
-      | TyModel(fi,l,t) -> TyModel(fi,l+lev,ds_ty lev t)
-      | TyDynamic(fi,l) -> TyDynamic(fi,l+lev)
-      | TyBot(fi,l) -> TyBot(fi,l+lev)
-      | TyUserdef(fi,l,tyid,id) -> TyUserdef(fi,l+lev,tyid,id)
-      | TyIdent(fi,l,id) -> TyIdent(fi,l+lev,id)
-      | TyArray(fi,l,t) -> TyArray(fi,l+lev,ds_ty lev t)  
-      | TyMap(fi,l,ty1,ty2) -> TyMap(fi,l+lev,ds_ty lev ty1,ds_ty lev ty2)
-      | TySet(fi,l,t) -> TySet(fi,l+lev,ds_ty lev t)  
-      | TyDAESolver(fi,l) -> TyDAESolver(fi,l+lev)
-  in  
-  let rec liftlev l lev fi t = 
-    if lev > l then TmUp(fi,l,liftlev l (lev-1) fi t) else t in 
-  let mpat_env p l lev env = 
-    match p with 
-      | MPatUk(fi,ty) -> env
-      | MPatModApp(fi,x1,x2) -> (x1,l+lev)::(x2,l+lev)::env    
-      | MPatModIfGuard(fi,x) -> (x,l+lev)::env    
-      | MPatModIfThen(fi,x) -> (x,l+lev)::env     
-      | MPatModIfElse(fi,x) -> (x,l+lev)::env   
-      | MPatModEqual(fi,x1,x2) -> (x1,l+lev)::(x2,l+lev)::env    
-      | MPatModProj(fi,x1,x2) -> (x1,l+lev)::(x2,l+lev)::env    
-      | MPatVal(fi,x,ty)  -> (x,l+lev)::env
-  in
-  let rec ds_pat lev env  p  =
-    match p with 
-      | PatVar(fi,x) as tt -> tt
-      | PatExpr(fi,t) -> PatExpr(fi,ds lev env  t) 
-      | PatUk(fi,ty) as tt -> tt 
-      | PatModApp(fi,p1,p2) -> 
-	  PatModApp(fi,ds_pat lev env  p1,ds_pat lev env  p2)
-      | PatModIf(fi,p1,p2,p3) -> 
-	  PatModIf(fi,ds_pat lev env  p1,ds_pat lev env  p2,
-		   ds_pat lev env  p3)
-      | PatModEqual(fi,p1,p2) -> 
-	  PatModEqual(fi,ds_pat lev env  p1,ds_pat lev env  p2)
-      | PatModProj(fi,p1,p2) -> 
-	  PatModProj(fi,ds_pat lev env  p1,ds_pat lev env  p2)
-      | PatModVal(fi,x,ty) -> PatModVal(fi,x,ty)
-      | PatCons(fi,p1,p2) -> 
-	  PatCons(fi,ds_pat lev env  p1,ds_pat lev env  p2)
-      | PatNil(fi) as tt -> tt
-      | PatTuple(fi,ps) -> PatTuple(fi,List.map (ds_pat lev env ) ps)
-      | PatWildcard(fi) as tt -> tt
-  and ds lev env  tm =
-    match tm with
-      | TmVar(fi,x) as tt ->  
-	  (try let l = List.assoc x env in
-             liftlev l lev fi tt
-	   with Not_found -> 
-               raise (Mkl_type_error(TYPE_VAR_NOT_DEFINED,ERROR,
-					fi,[Symtbl.get x])))
-      | TmLam(fi,l,x,ty1,t2) -> 
-	  TmLam(fi,l+lev,x,ds_ty lev ty1,ds lev ((x,l+lev)::env)  t2)
-      | TmApp(fi,l,t1,t2,fs) -> 
-	  TmApp(fi,l+lev,ds lev env  t1,ds lev env  t2,fs) 
-      | TmFix(fi,l,t) -> TmFix(fi,l+lev,ds lev env  t)
-      | TmLet(fi,l,x,ty,plst,t1,t2,recu) -> 
-	  let ty' = map_option (ds_ty lev) ty in
-	  let plst' = plst |> List.map (fun (id,ty) -> (id,ds_ty lev ty)) in
-          let env1' = (x,l+lev)::
-	    (plst |> List.map (fun (x,_) -> (x,l+lev)))@env in
-	  let env2' = (x,l+lev)::env in
-	  TmLet(fi,l+lev,x,ty',plst',ds lev env1'  t1,
-		ds lev env2'  t2,recu)
-      | TmIf(fi,l,t1,t2,t3) -> 
-	  TmIf(fi,l+lev,ds lev env  t1,ds lev env  t2,
-	       ds lev env  t3) 
-      | TmConst(fi,l,c) -> TmConst(fi,l+lev,c)
-      | TmUp(fi,l,t) -> TmUp(fi,l+lev,ds lev env  t) 
-      | TmDown(fi,l,t) -> TmDown(fi,l+lev,ds lev env  t)
-      | TmBracket(fi,t) -> ds (lev+1) env  t
-      | TmEscape(fi,t) -> if lev > 0 then ds (lev-1) env   t else
-		raise (Mkl_type_error(TYPE_DESUGAR_ESC_LEV_ZERO,ERROR,fi,[]))
-      | TmList(fi,l,tms) ->
-	  TmList(fi,l+lev,List.map (ds lev env ) tms)
-      | TmMatch(fi,l,t,pcases) -> 
-	  let pcases' = pcases |> 
-	      List.map (fun (PCase(fi2,ps,t1_op,mlst,t2)) ->
-			  let freevar  = ps |> List.map fpv_pat |> 
-			      List.fold_left VarSet.union VarSet.empty in 
-			  let env' =    
-			      VarSet.fold (fun x e -> (x,l+lev)::e) 
-                              freevar env in
-			  PCase(fi2,List.map (ds_pat lev env ) ps,
-				map_option (ds lev env' ) t1_op, mlst,
-				ds lev env'  t2)) in
-          TmMatch(fi,l+lev,ds lev env   t,pcases')
-      | TmUk(fi,l,x,ty) -> TmUk(fi,l+lev,x,ds_ty lev ty) 
-      | TmNu(fi,l,x,ty,t) -> 
-           TmNu(fi,l+lev,x,ds_ty lev ty,ds lev env t)
-      | TmModApp(fi,l,t1,t2) ->
-	  TmModApp(fi,l+lev,ds lev env   t1,ds lev env  t2)
-      | TmModIf(fi,l,t1,t2,t3) -> 
-	  TmModIf(fi,l+lev,ds lev env  t1,ds lev env  t2,
-	       ds lev env  t3) 
-      | TmModEqual(fi,l,t1,t2) -> TmModEqual(fi,l+lev,ds lev env  t1,
-				       ds lev env  t2)
-      | TmModProj(fi,l,i,t) -> TmModProj(fi,l+lev,i,ds lev env  t) 
-      | TmVal(fi,l,t,ty) -> TmVal(fi,l+lev,ds lev env  t,ds_ty lev ty)
-      | TmDecon(fi,l,t1,p,t2,t3) -> let env' = mpat_env p l lev env in 
-	  TmDecon(fi,l+lev,ds lev env  t1,p,ds lev env'  t2,
-		  ds lev env'  t3)
-      | TmEqual(fi,l,t1,t2) -> TmEqual(fi,l+lev,ds lev env  t1,
-				       ds lev env  t2)
-      | TmLcase(fi,l,t,id1,id2,t1,t2) -> 
-	  TmLcase(fi,l+lev,ds lev env  t,id1,id2,ds lev  
-		    ((id1,l+lev)::(id2,l+lev)::env)  t1,
-                                   ds lev env  t2)
-      | TmCons(fi,l,t1,t2) -> TmCons(fi,l+lev,ds lev env  t1,
-				     ds lev env  t2)
-      | TmTuple(fi,l,ts) -> TmTuple(fi,l+lev,List.map (ds lev env ) ts)
-      | TmProj(fi,l,i,t) -> TmProj(fi,l+lev,i,ds lev env  t) 
-      | TmNil(fi,l,ty) -> TmNil(fi,l+lev,ds_ty lev ty)
-      | TmArray(fi,l,ts) -> TmArray(fi,l+lev,Array.map (ds lev env ) ts)
-      | TmArrayOp(fi,l,op,ts) -> 
-          TmArrayOp(fi,l+lev,op,List.map (ds lev env ) ts)
-      | TmMapOp(fi,l,op,ts) -> 
-          TmMapOp(fi,l+lev,op,List.map (ds lev env ) ts)
-      | TmSetOp(fi,l,op,ts) -> 
-          TmSetOp(fi,l+lev,op,List.map (ds lev env ) ts)
-      | TmDAESolverOp(fi,l,op,ts) -> 
-          TmDAESolverOp(fi,l+lev,op,List.map (ds lev env ) ts)
-      | TmDPrint(t) -> TmDPrint(ds lev env  t)
-      | TmDPrintType(t) -> TmDPrintType(ds lev env  t)
-      | TmError(fi,l,t) -> TmError(fi,l+lev,ds lev env  t)
-  in ds 0 [] tm
-
 
 let mk_tymodel ty =
   TyModel(ty_info ty,ty_lev ty,ty)
@@ -368,12 +108,6 @@ let check_istype_resroot fi l ty_residual =
 		    [pprint_ty tyexp; pprint_ty ty_residual]))
 
      
-
-let check_type_is_constlev fi l ty_elem =
-  if ty_lev ty_elem = l && ty_constlev ty_elem then ()
-  else raise (Mkl_type_error(TYPE_EXPECTED_CONSTANT_LEV,ERROR,fi,
-	       [pprint_ty ty_elem; ustring_of_int l]))
-        
 let check_arg_type_consistency fi ty' ty_elem =
   if ty_consistent ty' ty_elem then ty_restriction ty' ty_elem
   else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,
@@ -394,7 +128,6 @@ let rec typeof_array_op fi l op ts env  =
       let (ty_len,len') = typeof env  len in
       let (ty_elem,elem') = typeof env  elem in
       check_istype_int (tm_info len)l ty_len;
-      check_type_is_constlev (tm_info elem)l ty_elem;
       (TyArray(fi,l,ty_elem),[len';elem'])
   | ArrayOpGet,[ar;pos] -> 
       let (ty_ar,ar') = typeof env  ar in
@@ -408,7 +141,6 @@ let rec typeof_array_op fi l op ts env  =
       let (ty_elem,elem') = typeof env  elem in
       let ty' = check_istype_array (tm_info ar) l ty_ar in
       check_istype_int (tm_info pos) l ty_pos;
-      check_type_is_constlev (tm_info elem) l ty_elem;
       let _ = check_arg_type_consistency (tm_info elem) ty' ty_elem in
       (TyUnit(fi,l),[ar';pos';elem'])
   | _ -> raise (Mkl_type_error

@@ -161,7 +161,7 @@ let rec strip env fi l up =
 let rec mk_letenv plst l env =
   match plst with
     | [] -> env
-    | (x,ty)::res -> (x,(l,ty,StripNo))::(mk_letenv res l env)
+    | (x,ty)::res -> (x,ty)::(mk_letenv res l env)
 
 
 let rec remove_dup_assoc l =
@@ -559,40 +559,15 @@ and typeof_daesolver_op fi l op ts env ukenv =
 
 and typeof env ukenv t =
   match t with
-    | TmVar(fi,x) -> begin
-	(* Is variable? *)
-        try let (l1,ty1,strip) = List.assoc x env in
-          begin match strip with
-	    | StripMetaup(strip_fi,striplev) ->
-		raise (Mkl_type_error(TYPE_META_UP_ON_FREE_VAR,ERROR,fi,
-		    [Symtbl.get x; ustring_of_int l1; ustring_of_int striplev;
-                     ustring_of_int (info2str_startline strip_fi)]))
-	    | StripMetadown(strip_fi,striplev) ->
-		raise (Mkl_type_error(TYPE_META_DOWN_ON_FREE_VAR,ERROR,fi,
-		     [Symtbl.get x; ustring_of_int l1; ustring_of_int striplev;
-                     ustring_of_int (info2str_startline strip_fi)]))
-	    | StripNo -> (ty1,TmVar(fi,x))
-          end
+    | TmVar(fi,x) -> ( 
+        try 
+          let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
 	with Not_found -> (
-	  (* Is unknown? *)
-          try let (l1,ty1) = List.assoc x ukenv in
-	    (ty1,TmUk(fi,l1,x,ty1))
-	  with
-	      (* Variable or unknown not found... *)
-	      Not_found -> 
-                raise (Mkl_type_error
-	                 (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x])))
-      end
+          raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))))
+
     | TmLam(fi,l,x,ty1,t2) ->
-	if not (ty_mono ty1) then
-	  raise (Mkl_type_error(TYPE_LAM_VAR_LEV_MONOTONICITY,ERROR,
-				    ty_info ty1,[pprint_ty ty1]))
-	else
-          let (ty2,t2') = typeof ((x,(l,ty1,StripNo))::env) ukenv t2 in
-	    if not (ty_lev ty1 >= l && ty_lev ty2 >= l) then
-	      raise (Mkl_type_error(TYPE_LAM_EXP_LEV_MONOTONICITY,ERROR,fi,
-			   [ustring_of_int l; pprint_ty ty1; pprint_ty ty2]))
-	    else (TyArrow(NoInfo,l,ty1,ty2),TmLam(fi,l,x,ty1,t2'))
+          let (ty2,t2') = typeof ((x,ty1)::env) ukenv t2 in
+	    (TyArrow(NoInfo,l,ty1,ty2),TmLam(fi,l,x,ty1,t2'))
     | TmFix(fi,l,t) ->
 	let (ty,t') = typeof env ukenv t in
 	  begin match ty with
@@ -680,7 +655,7 @@ and typeof env ukenv t =
 		let tyvar = Ast.mk_lettype plst l ty1def in
 		let (ty1,t1') = 
 		  if recu then 
-                    typeof ((x,(l,tyvar,StripNo))::t1_env) ukenv t1
+                    typeof ((x,tyvar)::t1_env) ukenv t1
 		  else typeof t1_env ukenv t1 in
                   (* Coercion of int to real *)
                   if  (match ty1def with TyReal(_,_) -> true | _ -> false) &&
@@ -697,7 +672,7 @@ and typeof env ukenv t =
 				     [ustring_of_int l;pprint_ty ty1]))
 	     else 		   
 	       let tyvar = Ast.mk_lettype plst l ty1 in
-	       let (ty2,t2') = typeof ((x,(l,tyvar,StripNo))::env)
+	       let (ty2,t2') = typeof ((x,tyvar)::env)
                  ukenv t2 in
 		 if not (ty_lev ty2 >= l) then 
 		   raise (Mkl_type_error(TYPE_LET_TM2_LOWER,ERROR,tm_info t2,
@@ -733,18 +708,8 @@ and typeof env ukenv t =
             
 
     | TmConst(fi,l,c) as tt -> (deltatype fi c l,tt)
-    | TmUp(fi,l,t) -> 
-	let (ty1,t') = typeof (strip env fi l true) ukenv t in
-	  if not (ty_lev ty1 >= l) then
-	    raise (Mkl_type_error(TYPE_METAUP_LEV_MONOTONICITY,ERROR,fi,
-			          [ustring_of_int l; pprint_ty ty1]))
-	  else (ty_up ty1,TmUp(fi,l,t')) 
-    | TmDown(fi,l,t) -> 
-	let (ty1,t') = typeof (strip env fi l false) ukenv t in
-	  if not (ty_lev ty1 > l) then
-	    raise (Mkl_type_error(TYPE_METADOWN_LEV_STRICT_MONOTONICITY,
-				  ERROR,fi,[ustring_of_int l; pprint_ty ty1]))
-	  else (ty_down ty1,TmDown(fi,l,t'))
+    | TmUp(fi,l,t) -> failwith "Should remove..."
+    | TmDown(fi,l,t) -> failwith "Should remove..."
     | TmBracket(_,_) -> assert false
     | TmEscape(_,_) -> assert false
     | TmList(fi,l,ts) ->
@@ -757,18 +722,13 @@ and typeof env ukenv t =
     | TmMatch(fi,l,t,cases) -> assert false
     | TmUk(fi,l,u,ty) -> failwith "Should not happen"
     | TmNu(fi,l,u,ty1,t2) ->
-	if not (ty_mono ty1) then
-	  raise (Mkl_type_error(TYPE_NU_LET_VAR_LEV_MONOTONICITY,ERROR,
-				    ty_info ty1,[pprint_ty ty1]))
-	else if not (ty_ismodel ty1) then
+	if not (ty_ismodel ty1) then
 	  raise (Mkl_type_error(TYPE_NU_LET_NOT_MODELTYPE,ERROR,
 				    ty_info ty1,[pprint_ty ty1]))
         else
-          let (ty2,t2') = typeof env ((u,(l,ty1))::ukenv) t2 in
-	    if not (ty_lev ty1 >= l && ty_lev ty2 >= l) then
-	      raise (Mkl_type_error(TYPE_NU_LET_EXP_LEV_MONOTONICITY,ERROR,fi,
-			    [ustring_of_int l; pprint_ty ty1; pprint_ty ty2]))
-	    else (ty2,TmNu(fi,l,u,ty1,t2'))
+          let (ty2,t2') = typeof ((u,ty1)::env) ukenv t2 in
+	  (ty2,TmNu(fi,l,u,ty1,t2'))
+
     | TmModApp(fi,l,t1,t2) -> failwith "Should not happen."
     | TmModIf(fi,l,t1,t2,t3) -> 
 	(match typeof env ukenv t1,typeof env ukenv t2,
@@ -837,27 +797,27 @@ and typeof env ukenv t =
 			     [pprint_ty ty3]))   
 		      | MPatModApp(_,x1,x2) -> 
 			   typeof 
-			   ((x1,(l,anymod,StripNo))::(x2,(l,anymod,StripNo))::env) ukenv
+			   ((x1,anymod)::(x2,anymod)::env) ukenv
                               t2
 		      | MPatModIfGuard(_,x) -> typeof 
-			  ((x,(l,anymod,StripNo))::env) ukenv
+			  ((x,anymod)::env) ukenv
                             t2
 		      | MPatModIfThen(_,x) -> typeof 
-			  ((x,(l,anymod,StripNo))::env) ukenv
+			  ((x,anymod)::env) ukenv
                             t2
 		      | MPatModIfElse(_,x) -> typeof 
-			  ((x,(l,anymod,StripNo))::env) ukenv   
+			  ((x,anymod)::env) ukenv   
                             t2 
 		      | MPatModEqual(_,x1,x2) -> 
 			    typeof 
-			  ((x1,(l,anymod,StripNo))::(x2,(l,anymod,StripNo))::env) ukenv
+			  ((x1,anymod)::(x2,anymod)::env) ukenv
                               t2
 		      | MPatModProj(_,x1,x2) -> 
-			  typeof ((x1,(l,TyInt(NoInfo,l),StripNo))::
-			       (x2,(l,anymod,StripNo))::env) ukenv
+			  typeof ((x1,TyInt(NoInfo,l))::
+			       (x2,anymod)::env) ukenv
                                 t2
 		      | MPatVal(_,x,ty2) -> typeof 
-			  ((x,(l,ty2,StripNo))::env) ukenv t2) 
+			  ((x,ty2)::env) ukenv t2) 
 		 in 
 		   if not (ty_consistent ty2' ty3') then
 		     raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,
@@ -898,8 +858,8 @@ and typeof env ukenv t =
 		  raise (Mkl_type_error(TYPE_LCASE_LEVEL_MISMATCH,ERROR,
 			 tm_info t1,[ustring_of_int l; pprint_ty ty1lst]))
 		else
-		  let (ty2,t2') = typeof ((id2,(l,ty1lst,StripNo))::
-		                   (id1,(l,ty1,StripNo))::env) ukenv t2  in
+		  let (ty2,t2') = typeof ((id2,ty1lst)::
+		                   (id1,ty1)::env) ukenv t2  in
 		  let (ty3,t3') = typeof env ukenv t3 in
 		    if not (ty_lev ty2 >= l && ty_lev ty3 >= l) then
 		      raise (Mkl_type_error(TYPE_LCASE_LEV_MONOTONICITY,ERROR,fi,

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Argument 1: Modelyze file 
+# Argument 2: Path to where eps and tex file should be copied (must end with /)
+# Argument 3: Name without sufix of the new file
+# Argument 4: Size of generated figure. 1.0 is full size.
+
+../bin/mkl $1  > mozplot.dat 
+cp mozlatexplot.cfg mozlatexplottemp.cfg
+rpl customsize $4 mozlatexplottemp.cfg
+gnuplot -persist mozlatexplottemp.cfg > /dev/null 2>&1
+rm mozlatexplottemp.cfg
+rm -f mozplot.dat
+mv graph.eps $2$3.eps
+rpl "{graph}" "{$3}" graph.tex
+mv graph.tex $2$3.tex
+rm -f graph.tex graph.eps

@@ -1,17 +1,17 @@
 #!/bin/bash
 
 # Test EOO elaboration
-mkl test-mechsys.mkl > t.mo
+moz test-mechsys.mkl > t.mo
 diff t.mo test-mechsys-output.mo 
 rm -f t.mo
 
 # Test optimization module
-mkl test-opt-problem1.mkl > t.py
+moz test-opt-problem1.mkl > t.py
 diff t.py casadi_opt_fixture.py 
 rm -f t.py
 
 # Test hybrid modeling and simulation
-mklplot test-hybrid-ball-stairs.mkl 
+mozplot test-hybrid-ball-stairs.mkl 
 
 
 

@@ -120,7 +120,6 @@ let reserved_strings = [
   ("|",             fun(i,l) -> Parser.BAR{i=i;l=l;v=()});
   ("->",            fun(i,l) -> Parser.ARROW{i=i;l=l;v=()}); 
   ("=>",            fun(i,l) -> Parser.DARROW{i=i;l=l;v=()}); 
-  ("~",             fun(i,l) -> Parser.ESCAPE{i=i;l=l;v=()}); 
   ("<==>",          fun(i,l) -> Parser.POLYEQUAL{i=i;l=l;v=()});
   ("_",             fun(i,l) -> Parser.USCORE{i=i;l=l;v=()});
   ("~",             fun(i,l) -> Parser.ESCAPE{i=i;l=l;v=()}); 

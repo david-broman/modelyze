@@ -30,14 +30,10 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
   let rec metastr n = if n = 0 then us"" else us"#" ^. metastr (n-1) 
 
-  let rec mk_brackets fi n t = 
-    if n = 0 then t else TmBracket(fi,mk_brackets fi (n-1) t) 
-
   let mk_binop fi l op t1 t2 = 
-    TmApp(fi,l,TmApp(fi,l,mk_brackets fi l 
-                       (TmVar(fi,Symtbl.add (us op))),t1,false),t2,false)
+    TmApp(fi,l,TmApp(fi,l,(TmVar(fi,Symtbl.add (us op))),t1,false),t2,false)
   let mk_unop fi l op t1 = 
-    TmApp(fi,l,mk_brackets fi l (TmVar(fi,Symtbl.add (us op))),t1,false)
+    TmApp(fi,l,(TmVar(fi,Symtbl.add (us op))),t1,false)
 
   let mk_binpat_op fi l op t1 t2 = 
     PatModApp(fi,PatModApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1),t2)
@@ -72,8 +68,6 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> ELSE
 %token <unit Ast.tokendata> TRUE
 %token <unit Ast.tokendata> FALSE
-%token <unit Ast.tokendata> UP
-%token <unit Ast.tokendata> DOWN
 %token <unit Ast.tokendata> INT
 %token <unit Ast.tokendata> REAL
 %token <unit Ast.tokendata> BOOL
@@ -157,7 +151,6 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> BAR           /* "|"  */
 %token <unit Ast.tokendata> ARROW         /* "->" */
 %token <unit Ast.tokendata> DARROW        /* "=>" */
-%token <unit Ast.tokendata> ESCAPE        /* "~"  */
 %token <unit Ast.tokendata> POLYEQUAL     /* "<==>" */
 %token <unit Ast.tokendata> USCORE        /* "_"  */
 %token <unit Ast.tokendata> ESCAPE        /* "~"  */
@@ -371,7 +364,7 @@ t__atom:
       { let fi = mkinfo $1.i $3.i in
         match $2 with
 	  | [] -> TmConst(fi,$1.l,ConstUnit)
-	  | [t] -> if $1.l = 0 then t else mk_brackets fi $1.l t
+	  | [t] -> if $1.l = 0 then t else t
 	  | ts ->  TmTuple(fi,$1.l,List.rev ts) }  */
   | DPRINT LPAREN expr RPAREN
       { TmDPrint($3) }
@@ -604,12 +597,6 @@ term:
   | IF term THEN term ELSE term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmIf(fi,$1.l,$2,$4,$6) }
-  | UP term
-      { let fi = mkinfo $1.i (tm_info $2) in
-        TmUp(fi,$1.l,$2) }
-  | DOWN term
-      { let fi = mkinfo $1.i (tm_info $2) in
-        TmDown(fi,$1.l,$2) }
   | LCASE term OF BAR IDENT CONS IDENT ARROW term BAR LSQUARE RSQUARE ARROW term
       { let fi = mkinfo $1.i (tm_info $14) in
         TmLcase(fi,$1.l,$2,$5.v,$7.v,$9,$14) }  
@@ -1005,7 +992,7 @@ app_right:
 atom:
   | IDENT
       { if $1.l = 0 then TmVar($1.i,$1.v)
-        else mk_brackets $1.i $1.l (TmVar($1.i,$1.v)) }
+        else  (TmVar($1.i,$1.v)) }
   | TRUE 
       { TmConst($1.i,$1.l,ConstBool(true)) }
   | FALSE 
@@ -1032,10 +1019,8 @@ atom:
       { let fi = mkinfo $1.i $3.i in
         match $2 with
 	  | [] -> TmConst(fi,$1.l,ConstUnit)
-	  | [t] -> if $1.l = 0 then t else mk_brackets fi $1.l t
+	  | [t] -> if $1.l = 0 then t else  t
 	  | ts ->  TmTuple(fi,$1.l,List.rev ts) } 
-  | ESCAPE atom
-      { TmEscape(mkinfo $1.i (tm_info $2),$2) }
   | BEGIN term END
       { $2 }
   | DPRINT LPAREN term RPAREN

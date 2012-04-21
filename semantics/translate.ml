@@ -77,10 +77,6 @@ let translate t =
       | Ast.TmIf(_,l,t1,t2,t3) -> nl l d (TmIf(trans t1 l denv ,
 		trans t2 l denv ,trans t3 l denv )) 
       | Ast.TmConst(_,l,c) -> nl l d (TmConst(c))
-      | Ast.TmUp(_,l,t) -> assert false
-      | Ast.TmDown(_,l,t) -> assert false
-      | Ast.TmBracket(_,_) -> assert false
-      | Ast.TmEscape(_,_) -> assert false
       | Ast.TmList(_,_,_) -> assert false
       | Ast.TmMatch(_,_,_,_) -> assert false
       | Ast.TmModProj(_,_,_,_) -> assert false

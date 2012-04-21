@@ -214,12 +214,7 @@ and tm =
                                     tm * tm * recursive
   | TmIf          of info * level * tm * tm * tm
   | TmConst       of info * level * const  
-    (* Meta lambda calculus *)
-  | TmUp          of info * level * tm
-  | TmDown        of info * level * tm
     (* Syntactic sugar *)
-  | TmBracket     of info * tm                          
-  | TmEscape      of info * tm                          
   | TmList        of info * level * tm list 
   | TmMatch       of info * level * tm * patcase list
     (* Model calculus *)
@@ -466,10 +461,6 @@ and pprint tm =
   | TmIf(_,l,t1,t2,t3) -> metastr l ^. us"(if " ^. 
 	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 ^. us")"
   | TmConst(_,l,c) -> pprint_const c l  
-  | TmUp(_,l,t) -> us"(" ^. metastr l ^. us"up " ^. pprint t ^. us")"
-  | TmDown(_,l,t) -> us"(" ^. metastr l ^. us"down " ^. pprint t ^. us")"
-  | TmBracket(_,t) -> us"#(" ^. pprint t ^. us")" 
-  | TmEscape(_,t) -> us"~(" ^. pprint t ^. us")" 
   | TmList(_,l,ts) -> metastr l ^. us"[" ^. 
       (ts |> List.map pprint |> Ustring.concat (us",")) ^. us"]"
   | TmMatch(_,l,t,cases) ->
@@ -874,10 +865,6 @@ let rec tm_info t =
     | TmLet(fi,_,_,_,_,_,_,_) -> fi
     | TmIf(fi,_,_,_,_) -> fi
     | TmConst(fi,_,_) -> fi
-    | TmUp(fi,_,_) -> fi
-    | TmDown(fi,_,_) -> fi
-    | TmBracket(fi,_) -> fi
-    | TmEscape(fi,_) -> fi
     | TmList(fi,_,_) -> fi
     | TmMatch(fi,_,_,_) -> fi
     | TmUk(fi,_,_,_) -> fi
@@ -913,10 +900,6 @@ let rec set_tm_info newfi tm =
          TmLet(newfi,l,y,tyop,plst,t1,t2,recu)
     | TmIf(_,l,t1,t2,t3) -> TmIf(newfi,l,t1,t2,t3)
     | TmConst(_,l,c) -> TmConst(newfi,l,c) 
-    | TmUp(_,l,t) -> TmUp(newfi,l,t)
-    | TmDown(_,l,t) -> TmDown(newfi,l,t)
-    | TmBracket(_,t) -> TmBracket(newfi,t)
-    | TmEscape(_,t) -> TmEscape(newfi,t)
     | TmList(_,l,tms) -> TmList(newfi,l,tms)
     | TmMatch(_,l,t,cases) -> TmMatch(newfi,l,t,cases)
     | TmUk(_,l,id,ty) -> TmUk(newfi,l,id,ty)
@@ -1098,10 +1081,6 @@ and fv_tm t =
     | TmIf(fi,l,t1,t2,t3) -> 
 	VarSet.union (fv_tm t1) (VarSet.union (fv_tm t2) (fv_tm t3))
     | TmConst(fi,_,_) -> VarSet.empty
-    | TmUp(fi,_,t) -> fv_tm t
-    | TmDown(fi,_,t) -> fv_tm t
-    | TmBracket(fi,t) -> fv_tm t
-    | TmEscape(fi,t) -> fv_tm t
     | TmList(fi,l,tms) ->
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmMatch(fi,l,t,cases) -> 

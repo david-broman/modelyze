@@ -134,10 +134,6 @@ and tm_typesubst typemap tm =
         TmLet(fi,l,y,tyop',plst',tmsub t1,tmsub t2,recu)
     | TmIf(fi,l,t1,t2,t3) -> TmIf(fi,l,tmsub t1,tmsub t2,tmsub t3)
     | TmConst(fi,l,c) as tt -> tt
-    | TmUp(fi,l,t) -> TmUp(fi,l,tmsub t)
-    | TmDown(fi,l,t) -> TmDown(fi,l,tmsub t)
-    | TmBracket(fi,t) -> TmBracket(fi,tmsub t)
-    | TmEscape(fi,t) -> TmEscape(fi,tmsub t)
     | TmList(fi,l,tms) -> TmList(fi,l,List.map tmsub tms)
     | TmMatch(fi,l,t,cases) ->
         let cases' = List.map 

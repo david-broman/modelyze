@@ -290,11 +290,9 @@ and typeof_daesolver_op fi l op ts env  =
 and typeof env  t =
   match t with
     | TmVar(fi,x) -> ( 
-        try 
-          let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
+        try let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
 	with Not_found -> (
           raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))))
-
     | TmLam(fi,l,x,ty1,t2) ->
           let (ty2,t2') = typeof ((x,ty1)::env)  t2 in
 	    (TyArrow(NoInfo,l,ty1,ty2),TmLam(fi,l,x,ty1,t2'))
@@ -438,10 +436,6 @@ and typeof env  t =
             
 
     | TmConst(fi,l,c) as tt -> (deltatype fi c l,tt)
-    | TmUp(fi,l,t) -> failwith "Should remove..."
-    | TmDown(fi,l,t) -> failwith "Should remove..."
-    | TmBracket(_,_) -> assert false
-    | TmEscape(_,_) -> assert false
     | TmList(fi,l,ts) ->
 	(match ts with
 	   | [] -> assert false

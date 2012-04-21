@@ -102,10 +102,6 @@ and subst_var (x:int) (y:int) (tm:tm)  =
       | TmIf(fi,l,t1,t2,t3) -> 
 	  TmIf(fi,l,subst_var x y t1,subst_var x y t2,subst_var x y t3)
       | TmConst(fi,l,c) as tt -> tt
-      | TmUp(fi,l,t) -> TmUp(fi,l,subst_var x y t)
-      | TmDown(fi,l,t) -> TmDown(fi,l,subst_var x y t)
-      | TmBracket(fi,t) -> TmBracket(fi,subst_var x y t)
-      | TmEscape(fi,t) -> TmEscape(fi,subst_var x y t)
       | TmList(fi,l,tms) -> TmList(fi,l,List.map (subst_var x y) tms)
       | TmMatch(fi,l,t,eqs) -> 
 	  TmMatch(fi,l,subst_var x y t,(subst_var_pateqs x y eqs)) 
@@ -364,10 +360,6 @@ and desugar tm =
           TmLet(fi,l,x,ty,plst,ds t1,ds t2,recu)
       | TmIf(fi,l,t1,t2,t3) -> TmIf(fi,l,ds t1,ds t2,ds t3) 
       | TmConst(fi,l,c) -> TmConst(fi,l,c)
-      | TmUp(fi,l,t) -> TmUp(fi,l,ds t) 
-      | TmDown(fi,l,t) -> TmDown(fi,l,ds t)
-      | TmBracket(fi,t) -> assert false
-      | TmEscape(fi,t) -> assert false
       | TmList(fi,l,tms) -> TmList(fi,l,List.map ds tms)
       | TmMatch(fi,l,t,cases) -> 
           desugar_match fi l (ds t) cases 

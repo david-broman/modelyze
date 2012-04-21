@@ -311,15 +311,15 @@ and typeof env t =
 		  else 
 		    (match ty2 with 
 		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
-                          (mk_tymodel ty12,TmModApp
-                             (fi,l,TmVal(fi,l,t1',ty1),t2'))
+                          (mk_tymodel ty12,TmSymApp
+                             (fi,l,TmLift(fi,l,t1',ty1),t2'))
 		       | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
 		             tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
 	    | TyModel(_,l,TyArrow(_,l3,ty11,ty12)) ->
                 if ty_ismodel ty2 then
                   let ty11b = TyModel(ty_info ty11,ty_lev ty11,ty11) in
 		  if ty_consistent ty11b ty2 
-		  then (TyModel(fi,l,ty12),TmModApp(fi,l,t1',t2'))
+		  then (TyModel(fi,l,ty12),TmSymApp(fi,l,t1',t2'))
 		  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11b; pprint_ty ty2;us"3"]))
 		else
@@ -327,20 +327,20 @@ and typeof env t =
                   if  (match ty11 with TyReal(_,_) -> true | _ -> false) &&
                       (match ty2 with TyInt(_,_) -> true | _ -> false) 
                   then (mk_tymodel ty12,
-                       TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,
+                       TmSymApp(fi,l,t1',TmLift(ty_info ty2,ty_lev ty2,
                                         int2real_coercion t2',TyReal(NoInfo,0))))
                   else
 		    if ty_consistent ty11 ty2 then 
                       (mk_tymodel ty12,
-                       TmModApp(fi,l,t1',TmVal(ty_info ty2,ty_lev ty2,t2',ty2))) 
+                       TmSymApp(fi,l,t1',TmLift(ty_info ty2,ty_lev ty2,t2',ty2))) 
 		    else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"4"]))
 	    | TyModel(fi,l,TyDynamic(_,_))  ->
 		if ty_consistent ty1 ty2 then
-		  (TyModel(fi,l,TyDynamic(fi,l)),TmModApp(fi,l,t1',t2'))
+		  (TyModel(fi,l,TyDynamic(fi,l)),TmSymApp(fi,l,t1',t2'))
 		else
-                  (TyModel(fi,l,TyDynamic(fi,l)),TmModApp(fi,l,t1',
-                                    TmVal(ty_info ty2,ty_lev ty2,t2',ty2)))  
+                  (TyModel(fi,l,TyDynamic(fi,l)),TmSymApp(fi,l,t1',
+                                    TmLift(ty_info ty2,ty_lev ty2,t2',ty2)))  
 	    | _ -> raise (Mkl_type_error(TYPE_APP_NO_FUNC_TYPE,ERROR,tm_info t1,
 					   [pprint_ty ty1]))
 	  end
@@ -408,11 +408,11 @@ and typeof env t =
           else
           if (not (ty_ismodel ty2)) && ty_consistent (TyModel(fi,l,ty2)) ty3 then 
               (ty_restriction (TyModel(fi,l,ty2)) ty3,
-               TmIf(fi,0,t1',TmVal(fi,l,t2',ty2),t3'))
+               TmIf(fi,0,t1',TmLift(fi,l,t2',ty2),t3'))
           else           
           if (not (ty_ismodel ty3)) && ty_consistent  ty2 (TyModel(fi,l,ty3)) then 
               (ty_restriction  ty2 (TyModel(fi,l,ty3)),
-               TmIf(fi,0,t1',t2',TmVal(fi,l,t3',ty3)))
+               TmIf(fi,0,t1',t2',TmLift(fi,l,t3',ty3)))
           else   
           if  (match ty2 with TyReal(_,_) -> true | _ -> false) &&
             (match ty3 with TyInt(_,_) -> true | _ -> false) 
@@ -433,7 +433,7 @@ and typeof env t =
 			 (fun a t -> TmCons(tm_info t,l,t,a)) 
 		         (TmNil(fi,l,ty')) ts))
     | TmMatch(fi,l,t,cases) -> assert false
-    | TmUk(fi,l,u,ty) -> failwith "Only in the internal language."
+    | TmSym(fi,l,u,ty) -> failwith "Only in the internal language."
     | TmNu(fi,l,u,ty1,t2) ->
 	if not (ty_ismodel ty1) then
 	  raise (Mkl_type_error(TYPE_NU_LET_NOT_MODELTYPE,ERROR,
@@ -442,11 +442,11 @@ and typeof env t =
           let (ty2,t2') = typeof ((u,ty1)::env)  t2 in
 	  (ty2,TmNu(fi,l,u,ty1,t2'))
 
-    | TmModApp(fi,l,t1,t2) -> failwith "Only in internal language."
-    | TmVal(fi,l,t,_) -> 
+    | TmSymApp(fi,l,t1,t2) -> failwith "Only in internal language."
+    | TmLift(fi,l,t,_) -> 
 	let (ty',t') = typeof env  t in
-	  (TyModel(ty_info ty',ty_lev ty',ty'),TmVal(fi,l,t',ty'))
-    | TmDecon(fi,l,t1,p,t2,t3) ->
+	  (TyModel(ty_info ty',ty_lev ty',ty'),TmLift(fi,l,t',ty'))
+    | TmCase(fi,l,t1,p,t2,t3) ->
         let ((ty1',t1'),(ty3',t3')) = 
 	  (typeof env  t1,typeof env  t3) in
 	  (match ty1' with
@@ -486,7 +486,7 @@ and typeof env t =
 		     raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,
                                            fi,[pprint_ty ty2'; pprint_ty ty3']))
 		   else
-		     (ty_restriction ty2' ty3', TmDecon(fi,l,t1',p,t2',t3')))
+		     (ty_restriction ty2' ty3', TmCase(fi,l,t1',p,t2',t3')))
 	     | _ -> raise (Mkl_type_error(TYPE_DECON_TYPE_NOT_MODEL,ERROR,
 					  fi,[pprint_ty ty1']))		    
 	  )
@@ -496,12 +496,12 @@ and typeof env t =
           (* (L-EQUAL1) *)
           if (not (ty_ismodel ty1)) && ty_consistent (TyModel(fi,l,ty1)) ty2
           then 
-              (TyBool(NoInfo,l),(TmEqual(fi,l,TmVal(fi,l,t1',ty1),t2')))
+              (TyBool(NoInfo,l),(TmEqual(fi,l,TmLift(fi,l,t1',ty1),t2')))
           else           
           (* (L-EQUAL2) *)
           if ty_consistent ty1 (TyModel(fi,l,ty2))  && (not (ty_ismodel ty2)) 
            then 
-              (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmVal(fi,l,t2',ty2))))
+              (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmLift(fi,l,t2',ty2))))
           else 
           (* (L-EQUAL3) *)
           if (ty_consistent ty1 ty2)  

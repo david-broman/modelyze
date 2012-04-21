@@ -169,9 +169,9 @@ let eval_daesolver_op eval op arg_lst =
 let mk_primappvalues prim arg args = 
   let c1 = Ast.ConstPrim(prim,args) in
   let ty1 = Ast.deltatype NoInfo c1 0 in
-  let v1 = TmVal(TmConst(c1),Translate.trans_ty ty1) in
+  let v1 = TmLift(TmConst(c1),Translate.trans_ty ty1) in
   let ty2 = match ty1 with Ast.TyArrow(_,_,ty,_) -> ty | _ -> assert false in
-  let v2 = TmVal(TmConst(arg),Translate.trans_ty ty2) in
+  let v2 = TmLift(TmConst(arg),Translate.trans_ty ty2) in
   (v1,v2)                  
 
 
@@ -196,9 +196,9 @@ let rec readback syms d tm =
       | TmConst(b) -> tm
       | TmSym(s,ty) -> tm
       | TmGenSym(ty) -> tm
-      | TmModApp(t1,t2) -> TmModApp(readback syms d t1,readback syms d t2) 
-      | TmVal(t,ty) -> TmVal(readback syms d t,ty)
-      | TmDecon(t1,p,t2,t3) -> TmDecon(readback syms d t1,p,
+      | TmSymApp(t1,t2) -> TmSymApp(readback syms d t1,readback syms d t2) 
+      | TmLift(t,ty) -> TmLift(readback syms d t,ty)
+      | TmCase(t1,p,t2,t3) -> TmCase(readback syms d t1,p,
                                        readback syms d t2,readback syms d t3)
       | TmEqual(t1,t2) -> TmEqual(readback syms d t1,readback syms d t2)
       | TmLcase(t,t1,t2) -> TmLcase(readback syms d t,readback syms d t1,
@@ -280,20 +280,20 @@ and eval venv norec t =
       | TmConst(b) -> TmConst(b)
       | TmSym(s,ty) -> TmSym(s,ty)
       | TmGenSym(ty) -> TmSym(gensym(),ty)
-      | TmModApp(t1,t2) -> TmModApp(eval venv norec t1,eval venv norec t2)
-      | TmVal(t,ty) -> TmVal(eval venv norec t,ty)
-      | TmDecon(t1,p,t2,t3) -> 
+      | TmSymApp(t1,t2) -> TmSymApp(eval venv norec t1,eval venv norec t2)
+      | TmLift(t,ty) -> TmLift(eval venv norec t,ty)
+      | TmCase(t1,p,t2,t3) -> 
           (match eval venv norec t1,p with
 	     | TmSym(id,ty1),MPatUk(ty2) 
 		 when ty1 = ty2  ->
                  eval venv norec  t2                  
-	     | TmModApp(v1,v2),MPatModApp -> 
+	     | TmSymApp(v1,v2),MPatModApp -> 
                  eval (v1::v2::venv) norec t2            
-	     | TmVal(v1,ty1),MPatVal(ty2) when ty1 = ty2 ->	
+	     | TmLift(v1,ty1),MPatVal(ty2) when ty1 = ty2 ->	
                  eval (v1::venv) norec t2      
-	     | TmVal(v1,ty1),MPatVal(TyDynamic)  ->	
+	     | TmLift(v1,ty1),MPatVal(TyDynamic)  ->	
                  eval (v1::venv) norec t2                          
-             | TmVal(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatModApp ->
+             | TmLift(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatModApp ->
                  let (v1,v2) = mk_primappvalues prim arg args in
                    eval (v1::v2::venv) norec t2 
              | _ -> eval venv norec t3)

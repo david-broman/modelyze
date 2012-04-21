@@ -217,12 +217,12 @@ and tm =
     (* Syntactic sugar *)
   | TmList        of info * level * tm list 
   | TmMatch       of info * level * tm * patcase list
-    (* Model calculus *)
-  | TmUk          of info * level * ident * ty 
+    (* Symbolic extension *)
+  | TmSym         of info * level * ident * ty 
   | TmNu          of info * level * ident * ty * tm
-  | TmModApp      of info * level * tm * tm 
-  | TmVal         of info * level * tm * ty
-  | TmDecon       of info * level * tm * mpat * tm * tm
+  | TmSymApp      of info * level * tm * tm 
+  | TmLift        of info * level * tm * ty
+  | TmCase        of info * level * tm * mpat * tm * tm
     (* Polymorphic equality *)
   | TmEqual       of info * level * tm * tm
     (* List *)
@@ -462,16 +462,16 @@ and pprint tm =
       (ts |> List.map pprint |> Ustring.concat (us",")) ^. us"]"
   | TmMatch(_,l,t,cases) ->
       metastr l ^. us"match " ^. pprint t ^. us" with " ^. pprint_cases cases
-  | TmUk(_,l,idx,ty) -> metastr l ^. ustring_of_int idx ^. 
+  | TmSym(_,l,idx,ty) -> metastr l ^. ustring_of_int idx ^. 
       us"':" ^. pprint_ty ty
   | TmNu(_,l,x,ty,t) -> 
       us"(" ^. metastr l ^. us"nu " ^. Symtbl.get x ^. us":" ^. 
       pprint_ty ty ^. us". "^. pprint t ^. us")"  
-  | TmModApp(_,l,t1,t2) -> us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
+  | TmSymApp(_,l,t1,t2) -> us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
       pprint t2  ^. us")"
-  | TmVal(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
+  | TmLift(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
         us":" ^. pprint_ty ty ^. us")"
-  | TmDecon(_,l,t1,pat,t2,t3) -> metastr l ^. us"(decon " ^.
+  | TmCase(_,l,t1,pat,t2,t3) -> metastr l ^. us"(decon " ^.
       pprint t1 ^. us" with " ^. pprint_mpat pat ^. us" then " ^. 
         pprint t2 ^. us" else " ^. pprint t3 ^. us")"
   | TmEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 
@@ -858,11 +858,11 @@ let rec tm_info t =
     | TmConst(fi,_,_) -> fi
     | TmList(fi,_,_) -> fi
     | TmMatch(fi,_,_,_) -> fi
-    | TmUk(fi,_,_,_) -> fi
+    | TmSym(fi,_,_,_) -> fi
     | TmNu(fi,_,_,_,_) -> fi    
-    | TmModApp(fi,_,_,_) -> fi    
-    | TmVal(fi,_,_,_) -> fi     
-    | TmDecon(fi,_,_,_,_,_) -> fi    
+    | TmSymApp(fi,_,_,_) -> fi    
+    | TmLift(fi,_,_,_) -> fi     
+    | TmCase(fi,_,_,_,_,_) -> fi    
     | TmEqual(fi,_,_,_) -> fi
     | TmLcase(fi,_,_,_,_,_,_) -> fi
     | TmCons(fi,_,_,_) -> fi
@@ -890,11 +890,11 @@ let rec set_tm_info newfi tm =
     | TmConst(_,l,c) -> TmConst(newfi,l,c) 
     | TmList(_,l,tms) -> TmList(newfi,l,tms)
     | TmMatch(_,l,t,cases) -> TmMatch(newfi,l,t,cases)
-    | TmUk(_,l,id,ty) -> TmUk(newfi,l,id,ty)
+    | TmSym(_,l,id,ty) -> TmSym(newfi,l,id,ty)
     | TmNu(_,l,id,ty,t) -> TmNu(newfi,l,id,ty,t)
-    | TmModApp(_,l,t1,t2) -> TmModApp(newfi,l,t1,t2)
-    | TmVal(_,l,t,ty) -> TmVal(newfi,l,t,ty)
-    | TmDecon(_,l,t1,p,t2,t3) -> TmDecon(newfi,l,t1,p,t2,t3)
+    | TmSymApp(_,l,t1,t2) -> TmSymApp(newfi,l,t1,t2)
+    | TmLift(_,l,t,ty) -> TmLift(newfi,l,t,ty)
+    | TmCase(_,l,t1,p,t2,t3) -> TmCase(newfi,l,t1,p,t2,t3)
     | TmEqual(_,l,t1,t2) -> TmEqual(newfi,l,t1,t2)
     | TmLcase(_,l,t,x,y,t1,t2) -> TmLcase(newfi,l,t,x,y,t1,t2)  
     | TmCons(_,l,t1,t2) -> TmCons(newfi,l,t1,t2)
@@ -1070,11 +1070,11 @@ and fv_tm t =
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmMatch(fi,l,t,cases) -> 
 	VarSet.union (fv_tm t) (fv_patcases cases)
-    | TmUk(fi,_,_,_) -> VarSet.empty       
+    | TmSym(fi,_,_,_) -> VarSet.empty       
     | TmNu(fi,_,_,_,t) -> fv_tm t
-    | TmModApp(fi,l,t1,t2) -> VarSet.union (fv_tm t1) (fv_tm t2)
-    | TmVal(fi,_,t,_) -> fv_tm t
-    | TmDecon(fi,l,t1,p,t2,t3) -> 
+    | TmSymApp(fi,l,t1,t2) -> VarSet.union (fv_tm t1) (fv_tm t2)
+    | TmLift(fi,_,t,_) -> fv_tm t
+    | TmCase(fi,l,t1,p,t2,t3) -> 
 	let fv_t = VarSet.union (fv_tm t1) 
           (VarSet.union (fv_tm t2) (fv_tm t3)) in
 	VarSet.diff fv_t (fpv_mpat p) 

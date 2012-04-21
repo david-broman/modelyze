@@ -602,7 +602,7 @@ term:
         TmLcase(fi,$1.l,$2,$5.v,$7.v,$9,$14) }  
   | DECON term WITH deconpat THEN term ELSE term
       { let fi = mkinfo $1.i (tm_info $8) in
-	TmDecon(fi,$1.l,$2,$4,$6,$8) }
+	TmCase(fi,$1.l,$2,$4,$6,$8) }
   | PROJ UINT FROM term
       { let fi = mkinfo $1.i (tm_info $4) in
         TmProj(fi,$1.l,$2.v,$4) }
@@ -971,7 +971,7 @@ app_left:
         TmProj(fi,$1.l,1,$2) }
   | VAL atom
       { let fi = mkinfo $1.i (tm_info $2) in
-        TmVal(fi,$1.l,$2,TyUnit(NoInfo,$1.l)) } 
+        TmLift(fi,$1.l,$2,TyUnit(NoInfo,$1.l)) } 
   | ERROR atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmError(fi,$1.l,$2) }   

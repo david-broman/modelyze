@@ -182,14 +182,14 @@ let rec pprint_op prec opStr argsStrs  =
  
 and pprint_app prec t = 
   match t with
-    | TmModApp(TmModApp(TmVal(TmConst(_) as c,_),t1),t2) -> 
+    | TmSymApp(TmSymApp(TmLift(TmConst(_) as c,_),t1),t2) -> 
         pprint_op prec (pp 0 c) [t1;t2]
-    | TmModApp(TmVal(TmConst(_) as c,_),t1) -> 
+    | TmSymApp(TmLift(TmConst(_) as c,_),t1) -> 
         pprint_op prec (pp 0 c) [t1]
     | _ -> 
        (let rec collect t acc = 
            match t with
-            | TmModApp(t1,t2) -> collect t1 (t2::acc)
+            | TmSymApp(t1,t2) -> collect t1 (t2::acc)
             | t -> (t,acc)
         in          
          let (f,ts) = collect t [] in  
@@ -207,8 +207,8 @@ and pp prec t  =
     | TmConst(c) -> Ast.pprint_const c 0
     | TmSym(idx,ty) -> 
         getDebugSymId t
-    | TmModApp(t1,t2) -> pprint_app prec t 
-    | TmVal(t,ty) -> pp 0 t 
+    | TmSymApp(t1,t2) -> pprint_app prec t 
+    | TmLift(t,ty) -> pp 0 t 
     | TmCons(t1,t2) -> 
         (let rec toList t = 
           match t with 
@@ -235,7 +235,7 @@ and pp prec t  =
     | TmError(fi,t) -> us"error " ^. pp 0 t
     | TmSpecSym(i) -> us"TmSpecSym(" ^. ustring_of_int i ^. us")"
     | TmVar(i) -> us"TmVar(" ^. ustring_of_int i ^. us")"
-    | TmDecon(t1,p,t2,t3) -> us"TmDecon(" ^.
+    | TmCase(t1,p,t2,t3) -> us"TmCase(" ^.
         pp 0 t1 ^. us",_," ^. pp 0 t2 ^. us"," ^. pp 0 t3 ^. us")"   
     | TmEqual(t1,t2) -> us"TmEqual(" ^.
         pp 0 t1 ^. us"," ^. pp 0 t2 ^. us")"

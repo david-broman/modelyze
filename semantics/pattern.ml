@@ -105,14 +105,14 @@ and subst_var (x:int) (y:int) (tm:tm)  =
       | TmList(fi,l,tms) -> TmList(fi,l,List.map (subst_var x y) tms)
       | TmMatch(fi,l,t,eqs) -> 
 	  TmMatch(fi,l,subst_var x y t,(subst_var_pateqs x y eqs)) 
-      | TmUk(fi,l,x,ty) as tt -> tt
+      | TmSym(fi,l,x,ty) as tt -> tt
       | TmNu(fi,l,z,ty,t) -> TmNu(fi,l,z,ty,subst_var x y t) 
-      | TmModApp(fi,l,t1,t2) ->
-	  TmModApp(fi,l,subst_var x y t1,subst_var x y t2)
-      | TmVal(fi,l,t,ty) -> TmVal(fi,l,subst_var x y t,ty)
-      | TmDecon(fi,l,t1,p,t2,t3) ->
+      | TmSymApp(fi,l,t1,t2) ->
+	  TmSymApp(fi,l,subst_var x y t1,subst_var x y t2)
+      | TmLift(fi,l,t,ty) -> TmLift(fi,l,subst_var x y t,ty)
+      | TmCase(fi,l,t1,p,t2,t3) ->
 	  let dosubst = not (VarSet.mem x (fpv_mpat p)) in
-	  TmDecon(fi,l,subst_var x y t1,p,
+	  TmCase(fi,l,subst_var x y t1,p,
 		  (if dosubst then subst_var x y t2 else t2),
 		  (if dosubst then subst_var x y t3 else t3))
       | TmEqual(fi,l,t1,t2) -> 
@@ -223,7 +223,7 @@ and dsmatch_model l u us eqs default =
         let fi = eqs_info eqs in
         let (x1,x2) = (fresh_var(), fresh_var ()) in
         let tm1 = dsmatch l (x1::x2::us) eqs def in
-          TmDecon(fi,l,TmVar(fi,u),mpatcon fi x1 x2,tm1,def) 
+          TmCase(fi,l,TmVar(fi,u),mpatcon fi x1 x2,tm1,def) 
     in
       mk_mod qsapp (fun fi x1 x2 -> MPatModApp(fi,x1,x2)) 
         (mk_mod qseql (fun fi x1 x2 -> MPatModEqual(fi,x1,x2))
@@ -268,9 +268,9 @@ and generate_conditional fi l vtranss t1op e default =
     (fun vt e -> match vt with
        | VTransExpr(_,_,_) -> assert false
        | VTransModUk(fi,u,ty) -> 
-            TmDecon(fi,l,TmVar(fi,u),MPatUk(fi,ty),e,defval)
+            TmCase(fi,l,TmVar(fi,u),MPatUk(fi,ty),e,defval)
        | VTransModVal(fi,u,x,ty) ->
-            TmDecon(fi,l,TmVar(fi,u),MPatVal(fi,x,ty),e,defval)) vst e' in
+            TmCase(fi,l,TmVar(fi,u),MPatVal(fi,x,ty),e,defval)) vst e' in
   deffun e''
 
 and dsmatch l uvars eqs default  = 
@@ -358,11 +358,11 @@ and desugar tm =
       | TmList(fi,l,tms) -> TmList(fi,l,List.map ds tms)
       | TmMatch(fi,l,t,cases) -> 
           desugar_match fi l (ds t) cases 
-      | TmUk(fi,l,x,ty) -> TmUk(fi,l,x,ty) 
+      | TmSym(fi,l,x,ty) -> TmSym(fi,l,x,ty) 
       | TmNu(fi,l,x,ty,t) -> TmNu(fi,l,x,ty,ds t)
-      | TmModApp(fi,l,t1,t2) -> TmModApp(fi,l,ds t1,ds t2)
-      | TmVal(fi,l,t,ty) -> TmVal(fi,l,ds t,ty)
-      | TmDecon(fi,l,t1,p,t2,t3) -> TmDecon(fi,l,ds t1,p,ds t2,ds t3)
+      | TmSymApp(fi,l,t1,t2) -> TmSymApp(fi,l,ds t1,ds t2)
+      | TmLift(fi,l,t,ty) -> TmLift(fi,l,ds t,ty)
+      | TmCase(fi,l,t1,p,t2,t3) -> TmCase(fi,l,ds t1,p,ds t2,ds t3)
       | TmEqual(fi,l,t1,t2) -> TmEqual(fi,l,ds t1,ds t2)
       | TmLcase(fi,l,t,id1,id2,t1,t2) -> 
 	  TmLcase(fi,l,ds t,id1,id2,ds t1,ds t2)

@@ -79,18 +79,18 @@ let translate t =
       | Ast.TmConst(_,l,c) -> nl l d (TmConst(c))
       | Ast.TmList(_,_,_) -> assert false
       | Ast.TmMatch(_,_,_,_) -> assert false
-      | Ast.TmUk(_,l,id,ty) -> 
+      | Ast.TmSym(_,l,id,ty) -> 
 	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
 	   with Not_found -> assert false)
       | Ast.TmNu(_,l,id,ty,t) -> 
           nl l d (TmApp(TmLam(trans t l ((id,l)::denv)),
                         TmDebugId(id,TmGenSym(trans_ty ty)),false))
-      | Ast.TmModApp(_,l,t1,t2) -> 
-          nl l d (TmModApp(trans t1 l denv ,trans t2 l denv ))
-      | Ast.TmVal(_,l,t,ty) -> nl l d (TmVal(trans t l denv ,trans_ty ty))
-      | Ast.TmDecon(_,l,t1,p,t2,t3) ->
+      | Ast.TmSymApp(_,l,t1,t2) -> 
+          nl l d (TmSymApp(trans t1 l denv ,trans t2 l denv ))
+      | Ast.TmLift(_,l,t,ty) -> nl l d (TmLift(trans t l denv ,trans_ty ty))
+      | Ast.TmCase(_,l,t1,p,t2,t3) ->
 	  let (p',denv') = trans_pat l p denv in
-	  nl l d (TmDecon(trans t1 l denv ,p',trans t2 l denv' ,
+	  nl l d (TmCase(trans t1 l denv ,p',trans t2 l denv' ,
 		   trans t3 l denv ))
       | Ast.TmEqual(_,l,t1,t2) -> 
 	  nl l d (TmEqual(trans t1 l denv ,trans t2 l denv ))

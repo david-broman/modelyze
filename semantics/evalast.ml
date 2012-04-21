@@ -66,9 +66,9 @@ and tm =
   | TmConst       of Ast.const
   | TmSym         of sym * ty 
   | TmGenSym      of ty
-  | TmModApp      of tm * tm 
-  | TmVal         of tm * ty
-  | TmDecon       of tm * mpat * tm * tm
+  | TmSymApp      of tm * tm 
+  | TmLift         of tm * ty
+  | TmCase       of tm * mpat * tm * tm
   | TmEqual       of tm * tm
   | TmLcase       of tm * tm * tm
   | TmCons        of tm * tm

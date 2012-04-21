@@ -143,12 +143,12 @@ and tm_typesubst typemap tm =
                   let vtrans' = List.map vtranssub vtrans in
                   PCase(fi,plst',t1op',vtrans',tmsub t2)) cases in
         TmMatch(fi,l,tmsub t,cases')
-    | TmUk(fi,l,id,ty) -> TmUk(fi,l,id,tysub ty)
+    | TmSym(fi,l,id,ty) -> TmSym(fi,l,id,tysub ty)
     | TmNu(fi,l,id,ty,t) -> TmNu(fi,l,id,tysub (TyModel(NoInfo,0,ty)),tmsub t)
-    | TmModApp(fi,l,t1,t2) -> TmModApp(fi,l,tmsub t1,tmsub t2)
-    | TmVal(fi,l,t,ty) -> TmVal(fi,l,tmsub t,tysub ty)
-    | TmDecon(fi,l,t1,p,t2,t3) -> 
-        TmDecon(fi,l,tmsub t1,mpatsub p,tmsub t2,tmsub t3)
+    | TmSymApp(fi,l,t1,t2) -> TmSymApp(fi,l,tmsub t1,tmsub t2)
+    | TmLift(fi,l,t,ty) -> TmLift(fi,l,tmsub t,tysub ty)
+    | TmCase(fi,l,t1,p,t2,t3) -> 
+        TmCase(fi,l,tmsub t1,mpatsub p,tmsub t2,tmsub t3)
     | TmEqual(fi,l,t1,t2) -> TmEqual(fi,l,tmsub t1,tmsub t2)
     | TmLcase(fi,l,t,x,y,t1,t2) -> 
         TmLcase(fi,l,tmsub t,x,y,tmsub t1,tmsub t2)  

@@ -79,9 +79,6 @@ let translate t =
       | Ast.TmConst(_,l,c) -> nl l d (TmConst(c))
       | Ast.TmList(_,_,_) -> assert false
       | Ast.TmMatch(_,_,_,_) -> assert false
-      | Ast.TmModProj(_,_,_,_) -> assert false
-      | Ast.TmModEqual(_,_,_,_) -> assert false
-      | Ast.TmModIf(_,_,_,_,_) -> assert false
       | Ast.TmUk(_,l,id,ty) -> 
 	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
 	   with Not_found -> assert false)

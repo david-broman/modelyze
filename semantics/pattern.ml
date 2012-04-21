@@ -109,11 +109,6 @@ and subst_var (x:int) (y:int) (tm:tm)  =
       | TmNu(fi,l,z,ty,t) -> TmNu(fi,l,z,ty,subst_var x y t) 
       | TmModApp(fi,l,t1,t2) ->
 	  TmModApp(fi,l,subst_var x y t1,subst_var x y t2)
-      | TmModIf(fi,l,t1,t2,t3) -> 
-	  TmModIf(fi,l,subst_var x y t1,subst_var x y t2,subst_var x y t3)
-      | TmModEqual(fi,l,t1,t2) -> 
-	  TmModEqual(fi,l,subst_var x y t1,subst_var x y t2)
-      | TmModProj(fi,l,i,t) -> TmModProj(fi,l,i,subst_var x y t)
       | TmVal(fi,l,t,ty) -> TmVal(fi,l,subst_var x y t,ty)
       | TmDecon(fi,l,t1,p,t2,t3) ->
 	  let dosubst = not (VarSet.mem x (fpv_mpat p)) in
@@ -366,9 +361,6 @@ and desugar tm =
       | TmUk(fi,l,x,ty) -> TmUk(fi,l,x,ty) 
       | TmNu(fi,l,x,ty,t) -> TmNu(fi,l,x,ty,ds t)
       | TmModApp(fi,l,t1,t2) -> TmModApp(fi,l,ds t1,ds t2)
-      | TmModIf(fi,l,t1,t2,t3) -> TmModIf(fi,l,ds t1,ds t2,ds t3) 
-      | TmModEqual(fi,l,t1,t2) -> TmModEqual(fi,l,ds t1,ds t2)
-      | TmModProj(fi,l,i,t) -> TmModProj(fi,l,i,ds t) 
       | TmVal(fi,l,t,ty) -> TmVal(fi,l,ds t,ty)
       | TmDecon(fi,l,t1,p,t2,t3) -> TmDecon(fi,l,ds t1,p,ds t2,ds t3)
       | TmEqual(fi,l,t1,t2) -> TmEqual(fi,l,ds t1,ds t2)

@@ -444,7 +444,7 @@ and typeof env  t =
 			 (fun a t -> TmCons(tm_info t,l,t,a)) 
 		         (TmNil(fi,l,ty')) ts))
     | TmMatch(fi,l,t,cases) -> assert false
-    | TmUk(fi,l,u,ty) -> failwith "Should not happen"
+    | TmUk(fi,l,u,ty) -> failwith "Only in the internal language."
     | TmNu(fi,l,u,ty1,t2) ->
 	if not (ty_ismodel ty1) then
 	  raise (Mkl_type_error(TYPE_NU_LET_NOT_MODELTYPE,ERROR,
@@ -453,57 +453,7 @@ and typeof env  t =
           let (ty2,t2') = typeof ((u,ty1)::env)  t2 in
 	  (ty2,TmNu(fi,l,u,ty1,t2'))
 
-    | TmModApp(fi,l,t1,t2) -> failwith "Should not happen."
-    | TmModIf(fi,l,t1,t2,t3) -> 
-	(match typeof env  t1,typeof env  t2,
-           typeof env  t3 with
-	   |((TyModel(_,l1,ty1) as ty1'),t1'),((TyModel(_,l2,ty2) as ty2'),t2'),
-             ((TyModel(_,l3,ty3) as ty3'),t3') ->
-	      if not (ty_consistent ty1 (TyBool(NoInfo,l))) then
-		raise (Mkl_type_error(TYPE_MISMATCH_IF_GUARD,ERROR,tm_info t1,
-			[pprint_ty (TyBool(NoInfo,l)); pprint_ty ty1]))
-	      else if not (ty_lev ty1' >= l && ty_lev ty2' >= l && 
-			     ty_lev ty3' >= l) then
-		raise (Mkl_type_error(TYPE_IF_EXP_LEV_MONOTONICITY,ERROR,fi,
-			 [ustring_of_int l; pprint_ty ty2; pprint_ty ty3]))
-	      else
-		if not (ty_consistent ty2' ty3') then
-		  raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
-				        [pprint_ty ty2; pprint_ty ty3]))
-		else 
-		  (ty_restriction ty2' ty3',TmModIf(fi,l,t1',t2',t3'))
-  	   | (ty1,t1'),(ty2,t2'),(ty3,t3') ->  raise (Mkl_type_error(
-				TYPE_MODIF_NOT_CONCRETE_MODELTYPE,ERROR,fi,
-				[pprint_ty ty1; pprint_ty ty2;pprint_ty ty3])))
-    | TmModEqual(fi,l,t1,t2) -> 
-	(match typeof env  t1,typeof env  t2 with
-	   | ((TyModel(_,l1,ty1) as ty1'),t1'),
-	     ((TyModel(_,l2,ty2) as ty2'),t2') ->
-	       if not (ty_consistent ty1 ty2) then
-		 raise (Mkl_type_error(TYPE_EQUAL_EXP_DIFF_TYPE,ERROR,fi,
-					  [pprint_ty ty1; pprint_ty ty2]))
-	       else if not (ty_lev ty1' >= l && ty_lev ty2' >= l) then
-	         raise (Mkl_type_error(TYPE_EQUAL_EXP_LEV_MONOTONICITY,ERROR,fi,
-			[ustring_of_int l; pprint_ty ty1; pprint_ty ty2]))
-	       else  
-		     (TyModel(NoInfo,l,TyBool(NoInfo,l)),
-                      TmModEqual(fi,l,t1',t2'))
-	   | (ty1,t1'),(ty2,t2') ->
-		 raise (Mkl_type_error(TYPE_MODEQUAL_NOT_CONCRETE_MODELTYPE,
-                                       ERROR,fi,
-				       [pprint_ty ty1; pprint_ty ty2])))
-    | TmModProj(fi,l,i,t) -> 
-        (match typeof env  t  with
-	   | (TyModel(fi,l2,(TyTuple(fi2,l3,tys) as ty')),t')  ->
-               if not (l2 >= l && l3 >= l)  then
-		 raise (Mkl_type_error(TYPE_PROJ_LEV_MONOTONICITY,ERROR,
-			    fi,[ustring_of_int l; pprint_ty ty']))
-	       else if i >= List.length tys then
-		 raise (Mkl_type_error(TYPE_PROJ_TUPLE_SIZE,ERROR,
-		        fi,[ustring_of_int i; ustring_of_int (List.length tys)])) 
-               else (List.nth tys i,TmModProj(fi,l,i,t'))
-	   | (ty,t') -> raise (Mkl_type_error(TYPE_MODPROJ_NOT_MODELTUPLE,
-				ERROR,ty_info ty,[pprint_ty ty])))
+    | TmModApp(fi,l,t1,t2) -> failwith "Only in internal language."
     | TmVal(fi,l,t,_) -> 
 	let (ty',t') = typeof env  t in
 	  (TyModel(ty_info ty',ty_lev ty',ty'),TmVal(fi,l,t',ty'))
@@ -628,8 +578,6 @@ and typeof env  t =
 	  (TyTuple(fi,l,ty'),TmTuple(fi,l,ts'))
     | TmProj(fi,l,i,t) -> 
         (match typeof env  t with
-	   | (TyModel(fi,l2,ty1),t') ->
-	       typeof  env  (TmModProj(fi,l,i,t))
            | ((TyTuple(fi2,l2,tys) as ty'),t')  -> 		   
                if not (l2 >= l) then
 		 raise (Mkl_type_error(TYPE_PROJ_LEV_MONOTONICITY,ERROR,

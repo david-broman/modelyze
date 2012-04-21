@@ -146,10 +146,6 @@ and tm_typesubst typemap tm =
     | TmUk(fi,l,id,ty) -> TmUk(fi,l,id,tysub ty)
     | TmNu(fi,l,id,ty,t) -> TmNu(fi,l,id,tysub (TyModel(NoInfo,0,ty)),tmsub t)
     | TmModApp(fi,l,t1,t2) -> TmModApp(fi,l,tmsub t1,tmsub t2)
-    | TmModIf(fi,l,t1,t2,t3) -> 
-        TmModIf(fi,l,tmsub t1,tmsub t2,tmsub t3)
-    | TmModEqual(fi,l,t1,t2) -> TmModEqual(fi,l,tmsub t1,tmsub t2)
-    | TmModProj(fi,l,i,t1) -> TmModProj(fi,l,i,tmsub t1)
     | TmVal(fi,l,t,ty) -> TmVal(fi,l,tmsub t,tysub ty)
     | TmDecon(fi,l,t1,p,t2,t3) -> 
         TmDecon(fi,l,tmsub t1,mpatsub p,tmsub t2,tmsub t3)

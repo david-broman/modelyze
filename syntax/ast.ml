@@ -221,9 +221,6 @@ and tm =
   | TmUk          of info * level * ident * ty 
   | TmNu          of info * level * ident * ty * tm
   | TmModApp      of info * level * tm * tm 
-  | TmModIf       of info * level * tm * tm * tm
-  | TmModEqual    of info * level * tm * tm
-  | TmModProj     of info * level * int * tm
   | TmVal         of info * level * tm * ty
   | TmDecon       of info * level * tm * mpat * tm * tm
     (* Polymorphic equality *)
@@ -472,12 +469,6 @@ and pprint tm =
       pprint_ty ty ^. us". "^. pprint t ^. us")"  
   | TmModApp(_,l,t1,t2) -> us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
       pprint t2  ^. us")"
-  | TmModIf(_,l,t1,t2,t3) -> metastr l ^. us"<if> " ^. 
-      pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 
-  | TmModEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 
-      metastr l ^. us"<==> " ^. pprint t2
-  | TmModProj(_,l,i,t1) -> metastr l ^. us"<proj> " ^. ustring_of_int i ^. 
-      us" " ^. pprint t1
   | TmVal(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
         us":" ^. pprint_ty ty ^. us")"
   | TmDecon(_,l,t1,pat,t2,t3) -> metastr l ^. us"(decon " ^.
@@ -870,9 +861,6 @@ let rec tm_info t =
     | TmUk(fi,_,_,_) -> fi
     | TmNu(fi,_,_,_,_) -> fi    
     | TmModApp(fi,_,_,_) -> fi    
-    | TmModIf(fi,_,_,_,_) -> fi
-    | TmModEqual(fi,_,_,_) -> fi
-    | TmModProj(fi,_,_,_) -> fi
     | TmVal(fi,_,_,_) -> fi     
     | TmDecon(fi,_,_,_,_,_) -> fi    
     | TmEqual(fi,_,_,_) -> fi
@@ -905,9 +893,6 @@ let rec set_tm_info newfi tm =
     | TmUk(_,l,id,ty) -> TmUk(newfi,l,id,ty)
     | TmNu(_,l,id,ty,t) -> TmNu(newfi,l,id,ty,t)
     | TmModApp(_,l,t1,t2) -> TmModApp(newfi,l,t1,t2)
-    | TmModIf(_,l,t1,t2,t3) -> TmModIf(newfi,l,t1,t2,t3)
-    | TmModEqual(_,l,t1,t2) -> TmModEqual(newfi,l,t1,t2)
-    | TmModProj(_,l,i,t1) -> TmModProj(newfi,l,i,t1)
     | TmVal(_,l,t,ty) -> TmVal(newfi,l,t,ty)
     | TmDecon(_,l,t1,p,t2,t3) -> TmDecon(newfi,l,t1,p,t2,t3)
     | TmEqual(_,l,t1,t2) -> TmEqual(newfi,l,t1,t2)
@@ -1088,10 +1073,6 @@ and fv_tm t =
     | TmUk(fi,_,_,_) -> VarSet.empty       
     | TmNu(fi,_,_,_,t) -> fv_tm t
     | TmModApp(fi,l,t1,t2) -> VarSet.union (fv_tm t1) (fv_tm t2)
-    | TmModIf(fi,l,t1,t2,t3) -> 
-	VarSet.union (fv_tm t1) (VarSet.union (fv_tm t2) (fv_tm t3))
-    | TmModEqual(fi,l,t1,t2) -> VarSet.union (fv_tm t1) (fv_tm t2)
-    | TmModProj(fi,l,i,t1) -> fv_tm t1
     | TmVal(fi,_,t,_) -> fv_tm t
     | TmDecon(fi,l,t1,p,t2,t3) -> 
 	let fv_t = VarSet.union (fv_tm t1) 

@@ -17,11 +17,14 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-include MechsysBasics
+//include MechsysBasics
+include AnalogElectrical
+include RotationalMechanical
 include Block
 include Simulation
 
-def DCMotor2(V:Voltage,flange:Rotational) : Equations = {
+
+def DCMotor(V:Voltage,flange:Rotational) : Equations = {
   let e1:Electrical in
   let e2:Electrical in
   let e3:Electrical in
@@ -41,24 +44,6 @@ let Shaft flangeA:Rotational -> flangeB:Rotational -> Equations =
   Damper 0.02 r1 r2;
   Inertia 0.1 r2 flangeB
 
-/*
-let ControlSys =
-  let s1:Signal in
-  let s2:Signal in
-  let s3:Signal in
-  let s4:Signal in
-  let r1:Rotational in
-  let r2:Rotational in
-  let r3:Rotational in
-  ConstantSource 1.0 s1;
-  Feedback s1 s4 s2;
-  PID 3.0 0.7 0.1 10.0 s2 s3;
-  DCMotor s3 r1;
-  IdealGear 4.0 r1 r2;
-  Shaft r2 r3;
-  SpeedSensor r3 s4;
-  probe "angularVelocity" = s4 
-*/
 
 def ControlSys() = {
     def s1,s2,s3,s4:Signal;
@@ -66,8 +51,7 @@ def ControlSys() = {
     ConstantSource(1,s1);
     Feedback(s1,s4,s2);
     PID(3,0.7,0.1,10,s2,s3);
-    //DCMotor2(s3,r1);
-    DCMotor(r1);
+    DCMotor(s3,r1);
     IdealGear(4.0,r1,r2);
     Shaft(r2,r3);
     SpeedSensor(r3,s4);
@@ -75,5 +59,5 @@ def ControlSys() = {
 }
 
 let main = 
-  //printsim MechSys 0.1 1.
-  printLine(exportModelica("ControlSys",ControlSys()))
+  printsim(ControlSys(), 0.01, 20)
+  //printLine(exportModelica("ControlSys",ControlSys()))

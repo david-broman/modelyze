@@ -30,5 +30,5 @@ let MechSys =
   AngleSensor r3 (probe "phi") 
 
 let main = 
-  //printsim MechSys 0.1 0.2
+  //printsim MechSys 0.1 30
   printLine (exportModelica "MechSys" MechSys)

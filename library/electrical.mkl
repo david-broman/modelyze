@@ -22,8 +22,8 @@ type Electrical
 let ElectricalBranch : 
     <Real -> Real -> Electrical -> Electrical -> Equations>
 let ElectricalRefBranch : <Real -> Real -> Electrical -> Equations>
-type Voltage = Real
-type Current = Real
+type Voltage = <Real>
+type Current = <Real>
 
 
 

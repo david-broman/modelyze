@@ -34,8 +34,53 @@ def Pendulum(m:Real,l:Real,startAngle:Real) = {
     (x^2 + y^2) = (l^2);
 
     probe("x") = x;
+    probe("y") = y;
     probe("Lenght") = (sqrt(x*x+y*y))
 }
+
+
+
+
+//Apply differentiation according to pantelides, but removing old
+def Pendulum2(m:Real,l:Real,startAngle:Real) = {
+    def g = 9.81;
+    def T,x,y,dx,dy:Real;
+
+    init x (l*sin(startAngle));
+    init y (-l*cos(startAngle));
+     
+    -T*x/l = m*dx';
+    x' = dx;
+    -T*y/l - m*g = m*dy';     
+    y' = dy;    
+    (x^2 + y^2) = (l^2);
+
+    probe("x") = x;
+    probe("y") = y;
+    probe("Lenght") = (sqrt(x*x+y*y))
+}
+
+
+//Apply differentiation according to pantelides, but removing old
+def Pendulum2P(m:Real,l:Real,startAngle:Real) = {
+    def g = 9.81;
+    def T,x,y,dx,dy:Real;
+
+    init x (l*sin(startAngle));
+    init y (-l*cos(startAngle));
+     
+    -T*x/l = m*dx';
+    x'' = dx';
+    -T*y/l - m*g = m*dy';     
+    y'' = dy';    
+    (x^2 + y^2)'' = (l^2)'';
+
+    probe("x") = x;
+    probe("y") = y;
+    probe("Lenght") = (sqrt(x*x+y*y))
+}
+
+
 
 //Apply differentiation according to pantelides, but removing old
 def PendulumP(m:Real,l:Real,startAngle:Real) = {
@@ -52,13 +97,14 @@ def PendulumP(m:Real,l:Real,startAngle:Real) = {
     (x^2 + y^2)'' = (l^2)'';
 
     probe("x") = x;
+    probe("y") = y;
     probe("Lenght") = (sqrt(x*x+y*y))
 }
 
 
 
 //Manually Apply dummy derivateive
-def PendulumD(m:Real,l:Real,startAngle:Real) = {
+def PendulumD1(m:Real,l:Real,startAngle:Real) = {
     def g = 9.81;
     def T,x,y,dx,dy:Real;
 
@@ -79,9 +125,33 @@ def PendulumD(m:Real,l:Real,startAngle:Real) = {
 }
 
 
+//Manually Apply dummy derivateive
+def PendulumD2(m:Real,l:Real,startAngle:Real) = {
+    def g = 9.81;
+    def T,x,y,dx,dy,ddx,ddy,dx2,ddx2:Real;
+
+    init x (l*sin(startAngle));
+    init y (-l*cos(startAngle));
+     
+    -T*x/l = m*dx';
+    x' = dx;
+    ddx = dx';
+    -T*y/l - m*g = m*dy';     
+    y' = dy;    
+    ddy = dy';    
+    x^2 + y^2 = l^2;
+    x * dx2 + y * y' = 0;
+    x * ddx2 + x' * x' + y * y'' + y' * y' = 0;
+
+    probe("x") = x;
+    probe("Lenght") = (sqrt(x*x+y*y))
+}
+
+
 let _ = 
-  let angle = 45.*3.14/180. in
-  printsim (PendulumP 5.0 2.0 angle) 0.01 10.
+  let angle = 25.*3.14/180. in
+  //simulate (Pendulum2 5.0 2.0 angle) 0.01 10.
+  printsim (Pendulum 5.0 2.0 angle) 0.01 10.
   //printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
 
 

@@ -374,20 +374,25 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let model2 = (elaborateConnections isMechatronicBranch 
                   isMechatronicRefBranch modelNoState) in
 
+
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
 
+
     // Peforme index reduction
-    //let (model3,newdmap) = indexReducationPantelides model3 newdmap in
+    let (model3,newdmap) = indexReducationPantelides model3 (Map.empty) in
+
 
     // Extract transitions
     let transitions = extractTransitions model3 in
 
     // Add transition initializations to the current model
     let model4 = addEquations transInits model3 in
+
    
     // Create a map of unknowns to unique integer values
     let ukmap = makeUkMap model4 in
+
    
     // Create the DAE residual 
     let residual = specialize (makeResidual ukmap) model4 in
@@ -396,6 +401,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Create a map with all initial values for the current state
     let initvalmap = initValues model4 in
     let (yy,yp) = makeInitStateArrays initvalmap yymap ypmap currtime ukmap in
+
 
     // Auto correct initial conditions of the DAE
     let id = initConditionCorrection ukmap in

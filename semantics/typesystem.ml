@@ -42,24 +42,13 @@ let rec mk_letenv plst l env =
     | [] -> env
     | (x,ty)::res -> (x,ty)::(mk_letenv res l env)
 
-
-let rec remove_dup_assoc l =
-  match l with
-    | (k,v)::ls -> (k,v)::(remove_dup_assoc (List.remove_assoc k ls))
-    | [] -> []
-
-
 let ty_ismodel ty = 
   match ty with
     | TyModel(_,_,_) -> true
     | _ -> false
 
-let rel_union rl1 rl2 = remove_dup_assoc (rl1 @ rl2)
-            
-
 let mk_tymodel ty =
   TyModel(ty_info ty,ty_lev ty,ty)
-
 
 	
 let check_istype_array fi l ty_ar =
@@ -287,7 +276,7 @@ and typeof_daesolver_op fi l op ts env  =
 	       (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                 [ustring_of_int (List.length ts)]))
 
-and typeof env  t =
+and typeof env t =
   match t with
     | TmVar(fi,x) -> ( 
         try let ty1 = List.assoc x env in (ty1,TmVar(fi,x))

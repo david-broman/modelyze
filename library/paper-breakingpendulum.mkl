@@ -27,8 +27,9 @@ include HybridSimulation
 include ExportModelica
 include HybridModeling
 
-def BouncingPendulum(m:Real, l:Real, startAngle:Real) = {
-    def g = 9.81;
+def g = 9.81
+
+def BreakingPendulum(m:Real, l:Real, startAngle:Real) = {
     def x,y:Position;
     def Pendulum, BouncingBall:State;
 
@@ -54,14 +55,13 @@ def BouncingPendulum(m:Real, l:Real, startAngle:Real) = {
                 when (y <= -4) action (y' <-  y' * -0.7);
         };
     };
-
-    probe("y") = y
+    probe("y") = y;
 }
 
 
 let main = 
   let angle = 120.*3.14/180. in
-  printsim (BouncingPendulum 0.13 2. angle) 0.01 8.
+  printsim (BreakingPendulum 0.13 2. angle) 0.01 8.
 
 
 

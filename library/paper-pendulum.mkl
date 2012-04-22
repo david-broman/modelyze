@@ -36,15 +36,14 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
 }
 
 
-type InitValMap = (<Real> => <Real>)
+type InitValMap = <Real> => <Real>
 
-let getInitValues eqs:Equations -> InitValMap =
-  let get eqs:Equations -> acc:InitValMap -> InitValMap =
+def getInitValues(eqs:Equations, acc:InitValMap) -> InitValMap = {
     match eqs with
-    | e1 ; e2 -> get e2 (get e1 acc)
-    | ~init (x = v) -> Map.add x v acc
+    | e1 ; e2 -> getInitValues(e2, getInitValues(e1,acc))
+    | ~init x v -> Map.add x v acc
     | _ -> acc
-  in get eqs (Map.empty)
+}
 
 
 def getUnknowns(exp:<?>, acc:(Set <Real>)) -> (Set <Real>) = {
@@ -77,7 +76,7 @@ def paperInfo() = {
   let _ = dprint("---------") in
   let _ = dprint(getUnknowns(inst2,Set.empty)) in
   let _ = dprint("---------") in
-  let _ = dprint(getInitValues(inst2)) in
+  let _ = dprint(("Init vals: ",  getInitValues(inst2,Map.empty))) in
   let _ = dprint("---------") in
   let _ = dprint(getUnknowns(LinearEqs,Set.empty)) in
   let _ = dprint("---------") in

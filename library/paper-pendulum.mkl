@@ -47,7 +47,7 @@ let getInitValues eqs:Equations -> InitValMap =
   in get eqs (Map.empty)
 
 
-def getUnknowns(exp:<?>, acc:(Set <Real>)) : (Set <Real>) = {
+def getUnknowns(exp:<?>, acc:(Set <Real>)) -> (Set <Real>) = {
     match exp with
     | e1 e2 -> getUnknowns(e2,getUnknowns(e1,acc))
     | sym:<Real> -> Set.add exp acc
@@ -86,7 +86,8 @@ def paperInfo() = {
 }
 
 let main = 
-  printsim (Pendulum(5,3,45*pi/180)) 0.01 10
+  //printsim (Pendulum(5,3,45*pi/180)) 0.01 10
+  paperInfo()
    
 
 

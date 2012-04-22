@@ -607,6 +607,8 @@ rettype:
     { None }
   | COLON tyatom
     { Some($2) }
+  | ARROW tyatom
+    { Some($2) }
 
 revtmtyseq: 
     |   param 

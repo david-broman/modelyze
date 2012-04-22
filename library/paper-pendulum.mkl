@@ -50,7 +50,7 @@ let getInitValues eqs:Equations -> InitValMap =
 def getUnknowns(exp:<?>, acc:(Set <Real>)) -> (Set <Real>) = {
     match exp with
     | e1 e2 -> getUnknowns(e2,getUnknowns(e1,acc))
-    | sym:<Real> -> Set.add exp acc
+    | sym:Real -> Set.add exp acc
     | _ -> acc
 }
 

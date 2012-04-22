@@ -305,7 +305,7 @@ revtypetupleseq:
 deconpat:
   | SYM COLON ty
       { let fi = mkinfo $1.i (ty_info $3) in
-        MPatUk(fi,$3) }
+        MPatUk(fi,TyModel($1.i, 0, $3)) }
   | IDENT IDENT
       { MPatModApp(mkinfo $1.i $2.i,$1.v,$2.v) }
   | IDENT POLYEQUAL IDENT
@@ -570,7 +570,7 @@ pat_atom:
         List.fold_right (fun p a -> PatCons(fi,p,a)) 
           (List.rev $2) (PatNil(fi)) } 
   | SYM COLON tyatom 
-      { PatUk(mkinfo $1.i (ty_info $3),$3) } 
+      { PatUk(mkinfo $1.i (ty_info $3),TyModel(ty_info $3, 0, $3)) } 
   | LPAREN revpatseq RPAREN
       { let fi = mkinfo $1.i $3.i in
         match $2 with

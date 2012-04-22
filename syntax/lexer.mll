@@ -277,6 +277,7 @@ let us_letter = ['A'-'Z'] | ['a'-'z']
 let newline = ('\013' | '\010' | "\013\010")
 let whitespace = (' '| '\012') 
 let tab = '\t'
+let white = whitespace | newline | tab
 let digit = ['0'-'9']
 let s_escape = "\\'" | "\\\"" | "\\?"  | "\\\\" |
                "\\a"  | "\\b" | "\\f"  | "\\n" | "\\r" | "\\t" | "\\v"
@@ -323,6 +324,9 @@ rule main = parse
       { mkid s false } 
   | (ident as s) "(" 
       { mkid s true }  
+  | ";" (white+ as s) "}"   (* Not a perfect solution. We cannot have comments
+                               on the same line... *)
+      { count_utf8 s; mkid "}" false }
   | ident | operator | symtok as s
       { mkid s false }
   | "@@" ident as s

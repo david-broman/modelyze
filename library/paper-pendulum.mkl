@@ -32,7 +32,7 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
     -T*y/l - m*g = m*y'';     
     x^2 + y^2 = l^2;
     probe "x" = x;
-    probe "y" = y
+    probe "y" = y;
 }
 
 
@@ -58,13 +58,13 @@ def getUnknowns(exp:<?>, acc:(Set <Real>)) : (Set <Real>) = {
 def TwoEqs(x:<Real>) = {
     def y:Real;
     x + 12 = 3 * y;
-    2 * y = 33 * x
+    2 * y = 33 * x;
 }
 
 def LinearEqs = {
     def a,b:Real;
     TwoEqs(2*a+b);
-    TwoEqs(a-3*b)
+    TwoEqs(a-3*b);
 }
 
 

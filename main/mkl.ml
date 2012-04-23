@@ -31,7 +31,7 @@ let mkleval filename =
   
 
 let menu() =
-    printf "Usage: mkl <file.mkl>\n"
+    printf "Usage: modelyze <file.moz>\n"
 
 
 let main =

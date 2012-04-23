@@ -233,7 +233,7 @@ top:
       { let fi = mkinfo $1.i $2.i in
         let modname = $2.v |> Symtbl.get |> Ustring.to_latin1 
                       |> String.lowercase |> us in                             
-        TopInclude(fi,Symtbl.add (modname ^. us".mkl"))::$3 }
+        TopInclude(fi,Symtbl.add (modname ^. us".moz"))::$3 }
 
 
 

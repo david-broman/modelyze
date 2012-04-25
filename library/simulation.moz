@@ -17,13 +17,15 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include MechatronicElaboration
+include Differentiation
+include IndexReduction
 
 type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 
-let makeResidual model:Equations -> ukmap:UkMap -> 
+let makeResidual ukmap:UkMap -> model:Equations -> 
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
   let realExpr e:<> -> Real = 
     match e with
@@ -120,9 +122,11 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
              SimulationResult =
   let (model2,probes) = elaborate model in
   let probelist = Map.toList probes in
-  let ukmap = makeUkMap model2 in
-  let residual = makeResidual model2 ukmap in
-  let (yy,yp) = makeInitValues model2 ukmap in
+  let (model3,_) = elaborateDerivatives model2 (Map.empty) in
+  let (model4,_) = indexReducationPantelides model3 (Map.empty) in
+  let ukmap = makeUkMap model4 in
+  let residual = specialize (makeResidual ukmap) model4 in
+  let (yy,yp) = makeInitValues model4 ukmap in
   let id = initConditionCorrection ukmap in
   let state = DAESolver.make yy yp id residual in
   let simloop currtime:Real -> acc:[StepVal] -> [StepVal] = 

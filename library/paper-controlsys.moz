@@ -21,7 +21,7 @@ include ExportModelica
 include AnalogElectrical
 include RotationalMechanical
 include Block
-include HybridSimulation
+include Simulation
 
 
 def DCMotor(V:Voltage,flange:Rotational) : Equations = {

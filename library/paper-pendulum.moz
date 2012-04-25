@@ -17,7 +17,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include MechsysBasics
-include HybridSimulation
+include Simulation
 include ExportModelica
 
 
@@ -36,57 +36,13 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
 }
 
 
-type InitValMap = <Real> => <Real>
-
-def getInitValues(eqs:Equations, acc:InitValMap) -> InitValMap = {
-    match eqs with
-    | e1 ; e2 -> getInitValues(e2, getInitValues(e1,acc))
-    | ~init x v -> Map.add x v acc
-    | _ -> acc
-}
-
-
-def getUnknowns(exp:<?>, acc:(Set <Real>)) -> (Set <Real>) = {
-    match exp with
-    | e1 e2 -> getUnknowns(e2,getUnknowns(e1,acc))
-    | sym:Real -> Set.add exp acc
-    | _ -> acc
-}
-
-
-def TwoEqs(x:<Real>) = {
-    def y:Real;
-    x + 12 = 3 * y;
-    2 * y = 33 * x;
-}
-
-def LinearEqs = {
-    def a,b:Real;
-    TwoEqs(2*a+b);
-    TwoEqs(a-3*b);
-}
 
 
 let pi = 3.1415
 
-def paperInfo() = {
-  let inst = Pendulum(5,3,45*pi/180) in
-  let (inst2,newmap) = elaborateDerivatives(inst,Map.empty) in
-  let _ = dprint(inst2) in
-  let _ = dprint("---------") in
-  let _ = dprint(getUnknowns(inst2,Set.empty)) in
-  let _ = dprint("---------") in
-  let _ = dprint(("Init vals: ",  getInitValues(inst2,Map.empty))) in
-  let _ = dprint("---------") in
-  let _ = dprint(getUnknowns(LinearEqs,Set.empty)) in
-  let _ = dprint("---------") in
-  let _ = dprint(LinearEqs) in
-  ()
-}
 
 let main = 
   printsim (Pendulum(5,3,45*pi/180)) 0.01 10
-  //paperInfo()
    
 
 

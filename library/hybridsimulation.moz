@@ -115,8 +115,8 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
              (InitValMap,InitValMap) =
     match lst with
     | (u,(i,_))::xs ->
-         worker xs (Map.add u (val (Array.get yy i)) yymap)
-                   (Map.add u (val (Array.get yp i)) ypmap) 
+         worker xs (Map.add u (lift (Array.get yy i)) yymap)
+                   (Map.add u (lift (Array.get yp i)) ypmap) 
     | [] -> (yymap,ypmap)
   in
     worker (Map.toList ukmap) (Map.empty) (Map.empty)
@@ -127,10 +127,10 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
          ctime:Real -> Real =
   let worker e:<> -> Real = 
     match e with
-    | (val f:(Real -> Real -> Real)) e1 e2 -> 
+    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
            f (worker e1) (worker e2)
-    | (val f:(Real -> Real)) e1 -> f  (worker e1) 
-    | val v:Real -> v
+    | (lift f:(Real -> Real)) e1 -> f  (worker e1) 
+    | lift v:Real -> v
     | ~time -> ctime
     | ~der x -> (match x with 
                 | sym:Signal -> worker (ypfun x)  
@@ -153,7 +153,7 @@ let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Signal -> worker (yyfun e)
     | f e -> (worker f) (worker e)
-    | val v:? -> v
+    | lift v:? -> v
     | _ ->  error "Unsupported model construct" 
   in
     worker expr 
@@ -168,7 +168,7 @@ def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Real -> eval(yy(expr), yy, yp, ctime)
     | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
-    | val v:? -> v
+    | lift v:? -> v
     | _ ->  error "Unsupported model construct" 
 }
 
@@ -184,9 +184,9 @@ let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
 let evalFromArray expr:Expr -> ukmap:UkMap -> ctime:Real ->
                   yy:{Real} -> yp:{Real} -> Real =
   let yyfun s:Signal -> Signal = 
-     val (Array.get yy (fst(Map.find s ukmap))) in
+     lift (Array.get yy (fst(Map.find s ukmap))) in
   let ypfun s:Signal -> Signal = 
-     val (Array.get yp (fst (Map.find s ukmap))) in
+     lift (Array.get yp (fst (Map.find s ukmap))) in
   eval expr yyfun ypfun ctime 
 
 // Evaluate an expression that is assumed to have type Bool.
@@ -204,7 +204,7 @@ let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
     | !e1 -> !(evalBool(e1))
     | e1 && e2 -> evalBool(e1) && evalBool(e2)
     | e1 || e2 -> evalBool(e1) || evalBool(e2)
-    | val b:Bool -> b
+    | lift b:Bool -> b
     | _ -> error "The value is not a boolean type."
   in
     evalBool expr
@@ -237,7 +237,7 @@ let makeRootFun ukmap:UkMap -> trans:Transitions ->
     | !e1 -> travGuard e acc 
     | e1 && e2 -> travGuard e2 (travGuard e1 acc)
     | e1 || e2 -> travGuard e2 (travGuard e1 acc)
-    | val b:Bool -> acc
+    | lift b:Bool -> acc
     | _ -> error "Illegal expression in transition guard."
   in   
   let travTrans trans:Transitions -> acc:[Real] -> [Real] = 
@@ -263,7 +263,7 @@ let isTransitionFired expr:Expr -> roots:{Int} -> index:Int -> (Int,Bool) =
                    let (i2,f2) = fired e2 i1 in (i2,f1||f2)
     | e1 || e2  -> let (i1,f1) = fired e1 i in 
                    let (i2,f2) = fired e2 i1 in (i2,f1||f2)
-    | val b:Bool -> (i,false)
+    | lift b:Bool -> (i,false)
     | _ -> error "Error in term"
   in fired expr index
     

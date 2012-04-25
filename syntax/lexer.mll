@@ -47,7 +47,7 @@ let reserved_strings = [
   ("decon",         fun(i,l) -> Parser.DECON{i=i;l=l;v=()}); 
   ("with",          fun(i,l) -> Parser.WITH{i=i;l=l;v=()}); 
   ("sym",           fun(i,l) -> Parser.SYM{i=i;l=l;v=()}); 
-  ("val",           fun(i,l) -> Parser.VAL{i=i;l=l;v=()}); 
+  ("lift",          fun(i,l) -> Parser.LIFT{i=i;l=l;v=()}); 
   ("proj",          fun(i,l) -> Parser.PROJ{i=i;l=l;v=()}); 
   ("fst",           fun(i,l) -> Parser.FST{i=i;l=l;v=()});   
   ("snd",           fun(i,l) -> Parser.SND{i=i;l=l;v=()});  

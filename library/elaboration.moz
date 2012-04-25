@@ -118,7 +118,7 @@ let addProbe s:String -> u:Signal -> ps:ProbeMap =
 let elaborateProbes model:Equations -> (Equations,ProbeMap) =
   let elab e:<> -> ps:ProbeMap -> (<>,ProbeMap) = 
     match e with
-    | ~probe (val s:String) -> let u:Signal in (u,addProbe s u ps)
+    | ~probe (lift s:String) -> let u:Signal in (u,addProbe s u ps)
     | e1 e2 -> 
        let (e1b,ps1) = elab e1 ps in
         let (e2b,ps2) = elab e2 ps1 in
@@ -131,7 +131,7 @@ let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | ~init x (val v:Real) -> Map.add x (v,false) acc
+    | ~init x (lift v:Real) -> Map.add x (v,false) acc
     | _ -> acc
   in get eqs (Map.empty)
  

@@ -68,7 +68,7 @@ let pprintModelica name:String ->
     | ~log10 e -> "log10(" ++ pprintExpr(e) ++ ")"
     | ~time -> "time"
     | sym:<Real> -> mkvar uks expr
-    | val r:Real -> real2modelicaString r
+    | lift r:Real -> real2modelicaString r
   in
   let pprintEqs model:Equations -> String = 
     match model with

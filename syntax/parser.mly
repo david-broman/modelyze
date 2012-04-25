@@ -79,7 +79,7 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> DECON
 %token <unit Ast.tokendata> WITH
 %token <unit Ast.tokendata> SYM
-%token <unit Ast.tokendata> VAL
+%token <unit Ast.tokendata> LIFT
 %token <unit Ast.tokendata> PROJ
 %token <unit Ast.tokendata> FST
 %token <unit Ast.tokendata> SND
@@ -318,7 +318,7 @@ deconpat:
       { MPatModIfElse(mkinfo $1.i $2.i,$2.v) }
   | PROJ IDENT FROM IDENT
       { MPatModProj(mkinfo $1.i $4.i,$2.v,$4.v) }
-  | VAL IDENT COLON ty
+  | LIFT IDENT COLON ty
       { let fi = mkinfo $1.i (ty_info $4) in
         MPatVal(fi,$2.v,$4) }
 
@@ -541,7 +541,7 @@ pat_left:
   | SND pat_atom
       { let fi = mkinfo $1.i (pat_info $2) in
         PatModProj(fi,PatExpr(fi,TmConst(fi,$1.l,ConstInt(1))),$2) }
-  | VAL IDENT COLON tyatom
+  | LIFT IDENT COLON tyatom
       { let fi = mkinfo $1.i (ty_info $4) in
         PatModVal(fi,$2.v,$4) } 
 
@@ -748,7 +748,7 @@ app_left:
   | SND atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmProj(fi,$1.l,1,$2) }
-  | VAL atom
+  | LIFT atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmLift(fi,$1.l,$2,TyUnit(NoInfo,$1.l)) } 
   | ERROR atom

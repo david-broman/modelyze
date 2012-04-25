@@ -153,7 +153,7 @@ def ControlSys2() = {
     Feedback(s1,s4,s2);
     PID(3,0.7,0.1,10,s2,s3);
     DCMotor(s3,r1);
-    DCMotor(val 1.,r1a);
+    DCMotor(lift 1.,r1a);
     Spring(0.1,r1a,r1b);
     Breaking(10,r1b,r1c);
     Spring(0.1,r1c,r1);

@@ -202,7 +202,7 @@ def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     | ~log10 e -> "log10(" ++ printExpr(e) ++ ")"
     | ~time -> "time"
     | sym:<Real> -> (Map.find expr varNameMap)
-    | val r:Real -> real2string(r)
+    | lift r:Real -> real2string(r)
     };
     printExpr(expr)
 }
@@ -266,7 +266,7 @@ def genNLPCost(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
         | mv::mvs -> genCostFunction(mvs, cNLP + substituteVars(cost, mv)*h)
         | [] -> cNLP
     };
-    genCostFunction(meshVars, val 0.0)
+    genCostFunction(meshVars, lift 0.0)
 }
 
 // Generate the NLP constraints. The function is called by getNLP()
@@ -373,8 +373,8 @@ def getOCP(optProb:OptProblem) : OCP = {
         | _ -> (m,acc)
     };
     match optProb with 
-    | ~minimize ~integral cost ~interval (val start:Real) 
-       (val stop:Real) eqs -> {
+    | ~minimize ~integral cost ~interval (lift start:Real) 
+       (lift stop:Real) eqs -> {
          def (dae, initvals) = genInits(eqs, Map.empty);
          def vars = extractVariables(dae);
          def newDAE = cleanupEquations(removeInputEqs(dae));

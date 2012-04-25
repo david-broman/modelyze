@@ -55,9 +55,9 @@ let differentiateModel expr:Expr -> Expr =
   let eulerNumber = 2.71828182845904523536 in
   let sdiff expr:Signal -> Signal =
     match expr with
-    | ~time -> val 1.
+    | ~time -> lift 1.
     | sym:Signal -> hoDer expr 1
-    | ~hoDer x (val k:Int) -> hoDer x (k +. 1)
+    | ~hoDer x (lift k:Int) -> hoDer x (k +. 1)
     | ~der e -> sdiff(sdiff(e))
     | e1 + e2 -> sdiff(e1) + sdiff(e2)
     | e1 - e2 -> sdiff(e1) - sdiff(e2)
@@ -75,9 +75,9 @@ let differentiateModel expr:Expr -> Expr =
     | ~log e -> sdiff(e)/ e
     | ~log10 e -> sdiff(e)* log10(eulerNumber) / e 
     | ~sqrt e -> sdiff(e)/ (2.*(sqrt e))
-    | e1 ^ (val k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
+    | e1 ^ (lift k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
     | -e -> -(sdiff(e))
-    | val x:Real -> val 0.
+    | lift x:Real -> lift 0.
     | _ -> error "Cannot differentiate model"
   in 
   match expr with
@@ -95,7 +95,7 @@ let removeHOderivatives expr:Expr -> dmap:DerivMap -> Expr =
       else der x
   in
   match expr with
-  | ~hoDer x (val k:Int) -> getDeriv x k
+  | ~hoDer x (lift k:Int) -> getDeriv x k
   | e1 e2 -> (removeHOderivatives e1 dmap) (removeHOderivatives e2 dmap) 
   | _ -> expr
 

@@ -45,7 +45,7 @@ def BreakingPendulum(m:Real, l:Real, startAngle:Real) = {
             x^2 + y^2 = l^2;
             probe("T") = T;
             transition BouncingBall 
-                when (time >= 5) action nothing;  
+                when (time >= 3.2) action nothing;  
         }; 
    
         state BouncingBall {
@@ -62,6 +62,7 @@ def BreakingPendulum(m:Real, l:Real, startAngle:Real) = {
 let main = 
   let angle = 120.*3.14/180. in
   printsim (BreakingPendulum 0.13 2. angle) 0.01 8.
+//  simulate (BreakingPendulum 0.13 2. angle) 0.01 8.
 
 
 

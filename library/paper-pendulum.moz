@@ -85,8 +85,8 @@ def paperInfo() = {
 }
 
 let main = 
-  //printsim (Pendulum(5,3,45*pi/180)) 0.01 10
-  paperInfo()
+  printsim (Pendulum(5,3,45*pi/180)) 0.01 10
+  //paperInfo()
    
 
 

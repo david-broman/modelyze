@@ -142,6 +142,7 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
 */
 
 //Evaluation of a arbitary expression.
+/*
 let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
          ctime:Real -> ? =
   let worker e:<> -> ? = 
@@ -156,7 +157,20 @@ let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
     | _ ->  error "Unsupported model construct" 
   in
     worker expr 
+*/
 
+type Varvals = <Real> -> <Real>
+def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
+    match expr with
+    | ~time -> ctime
+    | ~der x -> (match x with 
+                | sym:Real -> eval(yp(x), yy, yp, ctime)  
+                | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Real -> eval(yy(expr), yy, yp, ctime)
+    | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
+    | val v:? -> v
+    | _ ->  error "Unsupported model construct" 
+}
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up using initvalue maps.

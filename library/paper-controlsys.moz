@@ -73,20 +73,20 @@ def serialize(n:Int, f1:Rotational, f2:Rotational, elem:Element) -> Equations = 
     }
 }
 
-def ControlSys() = {
-    def s1,s2,s3,s4:Signal;
-    def r1,r2,r3,r4:Rotational;
-    ConstantSource(1,s1);
-    Feedback(s1,s4,s2);
-    PID(3,0.7,0.1,10,s2,s3);
-    DCMotor(s3,r1);
-    IdealGear(4.0,r1,r2);
-    serialize(4,r2,r3,ShaftElement);
-    Inertia(0.3, r3,r4);
-    SpeedSensor(r4,s4);
+def CPS() = {
+    def s1, s2, s3, s4:Signal;
+    def r1, r2, r3, r4:Rotational;
+    ConstantSource(1, s1);
+    Feedback(s1, s4, s2);
+    PID(3, 0.7, 0.1, 10, s2, s3);
+    DCMotor(s3, r1);
+    IdealGear(4, r1, r2);
+    serialize(5, r2, r3, ShaftElement);
+    Inertia(0.3, r3, r4);
+    SpeedSensor(r4, s4);
     probe "angularVelocity" = s4;
 }
 
 let main = 
-  printsim(ControlSys(), 0.01, 40)
+  printsim(CPS(), 0.01, 40)
   //printLine(exportModelica("ControlSys",ControlSys()))

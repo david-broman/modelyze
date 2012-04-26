@@ -19,9 +19,6 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 include Modeling
 
 type Electrical 
-let ElectricalBranch : 
-    <Real -> Real -> Electrical -> Electrical -> Equations>
-let ElectricalRefBranch : <Real -> Real -> Electrical -> Equations>
 type Voltage = <Real>
 type Current = <Real>
 

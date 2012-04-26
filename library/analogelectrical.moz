@@ -22,26 +22,26 @@ include Mechanical
 let Resistor R:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
-  ElectricalBranch i v p n;
+  Branch i v p n;
   R * i = v 
 
 def Capacitor(C:Real,p:Electrical,n:Electrical) = {
     def i:Current;
     def v:Voltage;
-    ElectricalBranch(i,v,p,n);
+    Branch(i,v,p,n);
     C * der(v) = i
 }
 
 let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
-  ElectricalBranch i v p n;
+  Branch i v p n;
   L * (der i) = v
 
 def Ground(p:Electrical) = {
     def i:Current;
     def v:Voltage;
-    ElectricalRefBranch(i,v,p);
+    RefBranch(i,v,p);
     v = 0
 }
    
@@ -50,19 +50,19 @@ let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical ->
   let PI = 3.1415 in
   let i:Current in
   let v:Voltage in
-  ElectricalBranch i v p n;
+  Branch i v p n;
   v = V * sin(2.0 * PI * f * time)
 
 let ConstantVoltage V:Real -> p:Electrical -> n:Electrical ->  Equations =
   let i:Current in
   let v:Voltage in
-  ElectricalBranch i v p n;
+  Branch i v p n;
   v = V 
 
 let SignalVoltage V:Voltage -> p:Electrical -> n:Electrical ->  Equations =
   let i:Current in
   let v:Voltage in
-  ElectricalBranch i v p n;
+  Branch i v p n;
   v = V 
 
 let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational -> 
@@ -72,22 +72,22 @@ let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational ->
   let w:AngularVelocity in    
   let phi:Angle in
   let tau:Torque in
-  ElectricalBranch i v p n;
-  RotationalRefBranch (-tau) phi flange;
+  Branch i v p n;
+  RefBranch (-tau) phi flange;
   w = der(phi);
   k * w = v;
   tau =  k * i
 
 let VoltageSensor p:Electrical -> n:Electrical -> 
                   output:Signal -> Equations =
-  ElectricalBranch 0.0 output p n
+  Branch 0.0 output p n
 
-let PotentialSensor p:Electrical ->  output:Signal -> Equations =
-  ElectricalRefBranch 0.0 output p 
+let PotentialSensor p:Electrical -> output:Signal -> Equations =
+  RefBranch 0.0 output p 
 
 let CurrentSensor p:Electrical -> n:Electrical -> 
                   output:Signal -> Equations =
-  ElectricalBranch output 0.0 p n
+  Branch output 0.0 p n
 
 
   

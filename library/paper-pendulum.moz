@@ -17,7 +17,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include MechsysBasics
-include Simulation
+include HybridSimulation
 include ExportModelica
 
 

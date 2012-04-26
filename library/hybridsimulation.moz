@@ -23,18 +23,6 @@ include Elaboration
 include Differentiation
 include IndexReduction
 
-let isMechatronicBranch b:Node = 
-  match b with
-  | ~ElectricalBranch -> true
-  | ~RotationalBranch -> true
-  | _ -> false
-
-let isMechatronicRefBranch b:Node = 
-  match b with
-  | ~ElectricalRefBranch -> true
-  | ~RotationalRefBranch -> true
-  | _ -> false
-
 // Data for simulation results for one point in time. The first element
 // of the time is the time value and the second a list of data points
 // representing the different variables (defined using probes).
@@ -372,6 +360,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   let (model1,probes) = elaborateProbes model in
   let probelist = Map.toList probes in
 
+  let _ = dprint("----------1") in
 
   // **** Start of discrete-time loop. ****
   //    Iterate for each state change
@@ -385,24 +374,28 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
            extractHState model1 (currtime == 0.) prePath newPath in
    
     // Performe connection elaboration
-    let model2 = (elaborateConnections isMechatronicBranch 
-                  isMechatronicRefBranch modelNoState) in
+    let model2 = (elaborateConnections modelNoState) in
 
+    let _ = dprint("----------2") in
 
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in
 
+    let _ = dprint("----------3") in
 
     // Peforme index reduction
     let (model3,newdmap) = indexReducationPantelides model3 (Map.empty) in
 
+    let _ = dprint("----------3b") in
 
     // Extract transitions
     let transitions = extractTransitions model3 in
 
+    let _ = dprint("----------3c") in
     // Add transition initializations to the current model
     let model4 = addEquations transInits model3 in
 
+    let _ = dprint("----------4") in
    
     // Create a map of unknowns to unique integer values
     let ukmap = makeUkMap model4 in
@@ -416,6 +409,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let initvalmap = initValues model4 in
     let (yy,yp) = makeInitStateArrays initvalmap yymap ypmap currtime ukmap in
 
+    let _ = dprint("---------- late") in
 
     // Auto correct initial conditions of the DAE
     let id = initConditionCorrection ukmap in

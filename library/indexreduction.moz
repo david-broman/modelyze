@@ -91,14 +91,23 @@ def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) :
         | e1 e2 -> (addDerEqs e1 eqmap) (addDerEqs e2 eqmap)
         | e -> e
   };
+    let _ = dprint("----------A1") in
+
     // Generate the equation graph and augmented equation system
     def (graph,varmap,augmentedEqs) = makeEquationGraph(eqs);
+
+    let _ = dprint("----------A2") in
+
+    let _ = dprint(("*** ",varmap)) in
 
     // Execute Pantelides algorithm
     def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);    
 
+
     // Wrap equations to be differentiated into der expressions
     def eqs2 = addDerEqs(augmentedEqs,eqmap);
+
+    let _ = dprint("----------A4") in
 
     // Differentiate 
     elaborateDerivatives(eqs2,olddermap)

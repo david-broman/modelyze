@@ -20,21 +20,8 @@ include Mechanical
 include Electrical
 include Elaboration
 
-let isMechatronicBranch b:Node = 
-  match b with
-  | ~ElectricalBranch -> true
-  | ~RotationalBranch -> true
-  | _ -> false
-
-let isMechatronicRefBranch b:Node = 
-  match b with
-  | ~ElectricalRefBranch -> true
-  | ~RotationalRefBranch -> true
-  | _ -> false
 
 let elaborate model:Equations -> (Equations,ProbeMap) =
-  let model2 = /*elaborateDerivatives*/ model in
-  let (model3,probes) = elaborateProbes model2 in
-  (elaborateConnections isMechatronicBranch 
-   isMechatronicRefBranch model3,probes)
+  let (model2,probes) = elaborateProbes model in
+  (elaborateConnections model2,probes)
 

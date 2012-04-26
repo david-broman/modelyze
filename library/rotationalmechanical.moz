@@ -22,14 +22,14 @@ let Spring c:Real -> flangeA:Rotational -> flangeB:Rotational ->
            Equations =
   let tau:Torque in
   let relphi:Angle in
-  RotationalBranch tau relphi flangeB flangeA;
+  Branch tau relphi flangeB flangeA;
   tau = c * relphi
 
 let Damper d:Real -> flangeA:Rotational -> flangeB:Rotational -> 
            Equations =
   let tau:Torque in
   let relphi:Angle in
-  RotationalBranch tau relphi flangeB flangeA;
+  Branch tau relphi flangeB flangeA;
   tau = d * der(relphi)
 
 let Inertia J:Real -> flangeA:Rotational -> flangeB:Rotational -> 
@@ -41,8 +41,8 @@ let Inertia J:Real -> flangeA:Rotational -> flangeB:Rotational ->
   let phi:Angle in
   let w:AngularVelocity in
   let a:AngularAcceleration in
-  RotationalRefBranch tauA phiA flangeA;
-  RotationalRefBranch (-tauB) phiB flangeB;
+  RefBranch tauA phiA flangeA;
+  RefBranch (-tauB) phiB flangeB;
   phiA = phi;
   phiB = phi;
   w = der(phi);
@@ -55,57 +55,57 @@ let IdealGear ratio:Real -> flangeA:Rotational -> flangeB:Rotational ->
   let tauB:Torque in
   let phiA:Angle in
   let phiB:Angle in
-  RotationalRefBranch tauA phiA flangeA;
-  RotationalRefBranch (-tauB) phiB flangeB;
+  RefBranch tauA phiA flangeA;
+  RefBranch (-tauB) phiB flangeB;
   phiA = ratio * phiB;  
   tauB = ratio * tauA
 
 let Fixed angle:Real -> flangeB:Rotational -> Equations =
   let tau:Torque in
-  RotationalRefBranch tau angle flangeB
+  RefBranch tau angle flangeB
 
 let ConstantTorque tau:Real -> flangeB:Rotational -> Equations=
   let phi:Angle in
-  RotationalRefBranch (-tau) phi flangeB
+  RefBranch (-tau) phi flangeB
 
 let Torque tau:Signal -> flangeB:Rotational -> Equations =
   let phi:Angle in
-  RotationalRefBranch (-tau) phi flangeB
+  RefBranch (-tau) phi flangeB
 
 let TorqueSensor flangeA:Rotational -> flangeB:Rotational -> 
                  tau:Signal -> Equations =
-  RotationalBranch tau 0.0 flangeA flangeB
+  Branch tau 0.0 flangeA flangeB
 
 let AngleSensor flangeB:Rotational -> phi:Signal -> Equations =
-  RotationalRefBranch 0.0 phi flangeB
+  RefBranch 0.0 phi flangeB
 
 let SpeedSensor flangeB:Rotational -> w:Signal -> Equations =
   let phi:Angle in
-  RotationalRefBranch 0.0 phi flangeB;
+  RefBranch 0.0 phi flangeB;
   w = der(phi)
 
 let AccSensor flangeB:Rotational -> a:Signal -> Equations =
   let phi:Angle in
   let w:AngularVelocity in
-  RotationalRefBranch 0.0 phi flangeB;
+  RefBranch 0.0 phi flangeB;
   w = der(phi);
   a = der(w)
 
 let RelAngleSensor flangeA:Rotational -> flangeB:Rotational -> 
                    phiRel:Signal -> Equations =
-  RotationalBranch 0.0 phiRel flangeB flangeA
+  Branch 0.0 phiRel flangeB flangeA
 
 let RelSpeedSensor flangeA:Rotational -> flangeB:Rotational -> 
                    w:Signal -> Equations =
   let phiRel:Angle in
-  RotationalBranch 0.0 phiRel flangeB flangeA;
+  Branch 0.0 phiRel flangeB flangeA;
   w = der(phiRel)
 
 let RelAccSensor flangeA:Rotational -> flangeB:Rotational -> 
                  a:Signal -> Equations =
   let phiRel:Angle in
   let w:AngularVelocity in
-  RotationalBranch 0.0 phiRel flangeB flangeA;
+  Branch 0.0 phiRel flangeB flangeA;
   w = der(phiRel);
   a = der(w)
 

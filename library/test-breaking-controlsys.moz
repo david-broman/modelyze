@@ -105,8 +105,8 @@ def Connection(flangeA:Rotational, flangeB:Rotational) =
   let tauB:Torque in
   let phiA:Angle in
   let phiB:Angle in
-  RotationalRefBranch tauA phiA flangeA;
-  RotationalRefBranch (-tauB) phiB flangeB;
+  RefBranch tauA phiA flangeA;
+  RefBranch (-tauB) phiB flangeB;
   phiA = phiB;  
   tauB = tauA
 }

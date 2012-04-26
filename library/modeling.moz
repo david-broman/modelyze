@@ -54,3 +54,12 @@ def cleanupEquations(eq:Equations) : Equations = {
     | _ -> eq
 }
 
+let Branch : Real -> Real -> ? -> ? -> Equations
+let RefBranch : Real -> Real -> ? -> Equations
+
+
+
+
+
+
+

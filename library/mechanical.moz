@@ -20,9 +20,6 @@ include Modeling
 
 type Rotational  
 
-let RotationalBranch : 
-    <Real -> Real -> Rotational -> Rotational -> Equations>
-let RotationalRefBranch : <Real -> Real -> Rotational -> Equations>
 type AngularVelocity = Real
 type AngularAcceleration = Real
 type Angle = Real

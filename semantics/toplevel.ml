@@ -96,7 +96,11 @@ let rec pat_typesubst typemap numap pat =
   let psub = pat_typesubst typemap numap in
   let tysub = ty_typesubst typemap numap in
   match pat with
-  | PatVar(fi,id) as pp -> pp 
+    (* Introduce auto escape for global symbol definitions. *)
+  | PatVar(fi,id,auto_esc_allowed) as pp -> 
+     if auto_esc_allowed && List.mem id numap then
+        PatExpr(fi,TmVar(fi,id))
+      else pp
   | PatExpr(fi,t) -> PatExpr(fi,tm_typesubst typemap numap t)
   | PatUk(fi,ty) -> PatUk(fi,tysub ty)
   | PatModApp(fi,p1,p2) -> PatModApp(fi,psub p1,psub p2)

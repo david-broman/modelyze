@@ -141,7 +141,7 @@ and mpat =
   | MPatVal        of info * ident * ty
 
 and pat =
-  | PatVar        of  info * ident
+  | PatVar        of  info * ident * bool     
   | PatExpr       of  info * tm
   | PatUk         of  info * ty
   | PatModApp     of  info * pat * pat
@@ -403,7 +403,7 @@ let pprint_mpat p =
 
 let rec pprint_pat p =
   match p with 
-  | PatVar(_,x) -> Symtbl.get x
+  | PatVar(_,x,_) -> Symtbl.get x
   | PatExpr(_,t) -> pprint t
   | PatUk(_,ty) -> pprint_ty ty
   | PatModApp(_,p1,p2) -> pprint_pat p1 ^. us" " ^. pprint_pat p2 
@@ -913,7 +913,7 @@ let rec set_tm_info newfi tm =
 
 let pat_info p =
   match p with
-  | PatVar(fi,_) -> fi
+  | PatVar(fi,_,_) -> fi
   | PatExpr(fi,_) -> fi
   | PatUk(fi,_) -> fi
   | PatModApp(fi,_,_) -> fi
@@ -989,6 +989,21 @@ let ty_lev ty =
     | TyDAESolver(_,l) -> l
 
 
+(** Change so that pattern variables cannot automatically be escaped *)
+let rec no_auto_esc p =
+  match p with
+  | PatVar(fi,x,_) -> PatVar(fi,x,false)  (* false means that it cannot auto escaped *)
+  | PatExpr(fi,t) as tt  -> tt
+  | PatUk(_,ty) as tt -> tt
+  | PatModApp(fi,p1,p2) -> PatModApp(fi,no_auto_esc p1,no_auto_esc p2)
+  | PatModIf(fi,p1,p2,p3) -> PatModIf(fi,no_auto_esc p1,no_auto_esc p2,no_auto_esc p3)
+  | PatModEqual(fi,p1,p2) -> PatModEqual(fi,no_auto_esc p1,no_auto_esc p2)
+  | PatModProj(fi,p1,p2) -> PatModProj(fi,no_auto_esc p1,no_auto_esc p2)
+  | PatModVal(_,x,ty) as tt -> tt
+  | PatCons(fi,p1,p2) -> PatCons(fi,no_auto_esc p1,no_auto_esc p2)
+  | PatNil(_) as tt -> tt
+  | PatTuple(fi,ps) -> PatTuple(fi, List.map no_auto_esc ps)
+  | PatWildcard(_) as tt -> tt
 
 
 (** Free pattern variables in model patterns *)
@@ -1006,7 +1021,7 @@ let rec fpv_mpat p =
 (** Free pattern variables in patterns *)
 let rec fpv_pat p =
   match p with
-  | PatVar(_,x) -> VarSet.singleton(x)
+  | PatVar(_,x,_) -> VarSet.singleton(x)
   | PatExpr(_,t) -> VarSet.empty
   | PatUk(_,ty) -> VarSet.empty
   | PatModApp(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
@@ -1024,7 +1039,7 @@ let rec fpv_pat p =
 (** Free variables in patterns *)
 let rec fv_pat p =
   match p with
-  | PatVar(_,x) -> VarSet.empty
+  | PatVar(_,x,_) -> VarSet.empty
   | PatExpr(_,t) -> fv_tm t
   | PatUk(_,ty) -> VarSet.empty
   | PatModApp(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
@@ -1038,6 +1053,7 @@ let rec fv_pat p =
   | PatTuple(_,ps) -> 
       ps |> List.map fv_pat |> List.fold_left VarSet.union VarSet.empty
   | PatWildcard(_) -> VarSet.empty
+
 
 (** Free variables in a pattern case *)
 and fv_patcases cases =

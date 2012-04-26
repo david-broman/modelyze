@@ -56,17 +56,17 @@ let extractHState model:Equations -> freshState:Bool ->
     pre:StatePath -> curr:StatePath -> updated:StatePath ->
       cstate:State -> (<>,StatePath) =
     match m with
-    | ~statechart ~initstate s e -> 
+    | statechart initstate s e -> 
       (match (pre,curr) with
        | (_,[]) -> extract e true [] [] (s::updated) s
        | (p::ps,c::cs) -> if p <==> c then extract e false ps cs (p::updated) p
                           else extract e true ps cs (c::updated) c)
-    | ~state s e -> if s <==> cstate  
+    | state s e -> if s <==> cstate  
                       then extract e fresh pre curr updated s 
                       else (NoEqn,updated)
-    | ~transition nstate ~when g ~action i -> 
+    | transition nstate when g action i -> 
           (internalTrans cstate nstate g i,updated) 
-    | ~init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
+    | init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
     | e1 e2 ->  
          let (eqs1,up1) = extract e1 fresh pre curr updated cstate in
          let (eqs2,up2) = extract e2 fresh pre curr up1 cstate in
@@ -79,7 +79,7 @@ let extractHState model:Equations -> freshState:Bool ->
 let extractTransitions model:Expr -> Transitions =
   let extract e:Expr -> acc:Transitions -> Transitions =
     match e with
-    | ~internalTrans s1 s2 g i -> (s1,s2,g,i)::acc
+    | internalTrans s1 s2 g i -> (s1,s2,g,i)::acc
     | e1 e2 -> extract e2 (extract e1 acc)
     | _ -> acc
   in extract model [] 
@@ -90,7 +90,7 @@ let initValues eqs:Equations -> InitValMap =
   let get eqs:Equations -> acc:InitValMap -> InitValMap =
     match eqs with
     | e1 ; e2 -> get e2 (get e1 acc)
-    | ~init x v -> Map.add x v acc
+    | init x v -> Map.add x v acc
     | _ -> acc
   in get eqs (Map.empty)
 
@@ -119,8 +119,8 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
            f (worker e1) (worker e2)
     | (lift f:(Real -> Real)) e1 -> f  (worker e1) 
     | lift v:Real -> v
-    | ~time -> ctime
-    | ~der x -> (match x with 
+    | time -> ctime
+    | der x -> (match x with 
                 | sym:Signal -> worker (ypfun x)  
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Signal -> worker (yyfun e)
@@ -135,8 +135,8 @@ let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
          ctime:Real -> ? =
   let worker e:<> -> ? = 
     match e with
-    | ~time -> ctime
-    | ~der x -> (match x with 
+    | time -> ctime
+    | der x -> (match x with 
                 | sym:Signal -> worker (ypfun x)  
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Signal -> worker (yyfun e)
@@ -150,8 +150,8 @@ let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
 type Varvals = <Real> -> <Real>
 def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
     match expr with
-    | ~time -> ctime
-    | ~der x -> (match x with 
+    | time -> ctime
+    | der x -> (match x with 
                 | sym:Real -> eval(yp(x), yy, yp, ctime)  
                 | _ -> error "Derivatives only allowed on unknowns")
     | sym:Real -> eval(yy(expr), yy, yp, ctime)
@@ -373,8 +373,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
            extractHState model1 (currtime == 0.) prePath newPath in
    
     // Performe connection elaboration
-    //let model2 = (elaborateConnections modelNoState) in
-   let model2 = modelNoState in
+    let model2 = (elaborateConnections modelNoState) in
 
 
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.

@@ -17,7 +17,6 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-//include MechsysBasics
 include AnalogElectrical
 include RotationalMechanical
 include Block

@@ -44,13 +44,13 @@ let tm_true l = TmConst(NoInfo,l,ConstBool(true))
 
 let is_var patcase = 
   match patcase with
-    | PCase(_,PatVar(_,_)::ps,_,_,_) -> true
+    | PCase(_,PatVar(_,_,_)::ps,_,_,_) -> true
     | PCase(_,PatWildcard(_)::ps,_,_,_) -> true
     | _ -> false 
 
 let rec subst_var_pat (x:int) (y:int) (p:pat)   =
   match p with 
-  | PatVar(fi,x) as tt -> tt
+  | PatVar(fi,x,_) as tt -> tt
   | PatExpr(fi,t) -> PatExpr(fi,subst_var x y t) 
   | PatUk(fi,ty) as tt -> tt 
   | PatModApp(fi,p1,p2) -> 
@@ -158,7 +158,7 @@ let eqs_info eqs =
 
 let rec dsmatch_var l u us eqs default =
   let eqs' = filtermap (function 
-     | PCase(fi,PatVar(_,id)::ps,g,mtrans,e) ->
+     | PCase(fi,PatVar(_,id,_)::ps,g,mtrans,e) ->
 	 Some (PCase(fi,ps,map_option (subst_var id u) g,
          List.map (subst_var_mtrans id u) mtrans,subst_var id u e))
      | PCase(fi,PatWildcard(_)::ps,g,mlst,e) -> Some (PCase(fi,ps,g,mlst,e)) 
@@ -233,7 +233,7 @@ and dsmatch_pat l uvars eqs default =
   match uvars,eqs with 
     | u::us,(PCase(_,p::ps,g,mlst,e))::qs ->
         (match p with
-	  | PatVar(_,_) | PatWildcard(_) -> dsmatch_var l u us eqs default
+	  | PatVar(_,_,_) | PatWildcard(_) -> dsmatch_var l u us eqs default
           | PatCons(_,_,_) | PatNil(_) -> dsmatch_list l u us eqs default 
           | PatTuple(_,ps) -> dsmatch_tuple l u us eqs default (List.length ps)
           | PatModApp(_,_,_) | PatModIf(_,_,_,_) |
@@ -284,12 +284,12 @@ and dsmatch l uvars eqs default  =
 
 let rec trans_pat_varexpr vtrans p =
   match p with 
-  | PatVar(fi,x) as pp -> (vtrans,pp)
+  | PatVar(fi,x,_) as pp -> (vtrans,pp)
   | PatExpr(fi,t) ->       
       let x = fresh_var() in 
-        (VTransExpr(fi,x,desugar t)::vtrans,PatVar(fi,x))
+        (VTransExpr(fi,x,desugar t)::vtrans,PatVar(fi,x,false))
   | PatUk(fi,ty) ->  
-      let x = fresh_var() in (VTransModUk(fi,x,ty)::vtrans,PatVar(fi,x))
+      let x = fresh_var() in (VTransModUk(fi,x,ty)::vtrans,PatVar(fi,x,false))
   | PatModApp(fi,p1,p2) ->
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
@@ -308,7 +308,7 @@ let rec trans_pat_varexpr vtrans p =
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
       (vtrans2,PatModProj(fi,p1',p2'))
   | PatModVal(fi,y,ty) ->  
-      let x = fresh_var() in (VTransModVal(fi,x,y,ty)::vtrans,PatVar(fi,x))
+      let x = fresh_var() in (VTransModVal(fi,x,y,ty)::vtrans,PatVar(fi,x,false))
   | PatCons(fi,p1,p2) -> 
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in

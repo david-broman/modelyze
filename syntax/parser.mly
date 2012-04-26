@@ -343,7 +343,7 @@ term:
         TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
   | LET pat_atom EQ term IN term
       { let fi = mkinfo $1.i (tm_info $6) in
-        TmMatch(fi,$1.l,$4,[PCase(fi,[$2],None,[],$6)]) }
+        TmMatch(fi,$1.l,$4,[PCase(fi,[Ast.no_auto_esc $2],None,[],$6)]) }
   | LET letpat COLON ty EQ term IN term
       { let fi = mkinfo $1.i (tm_info $8) in
         TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
@@ -360,7 +360,7 @@ term:
         TmLet(fi,$1.l,$2,Some $5,List.rev plst,$7,$9,freein_tm $2 $7) }  */
   | DEF pat_atom EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $6) in
-        TmMatch(fi,$1.l,$4,[PCase(fi,[$2],None,[],$6)]) }
+        TmMatch(fi,$1.l,$4,[PCase(fi,[Ast.no_auto_esc $2],None,[],$6)]) }
   | DEF letpat COLON ty EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $8) in
         TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
@@ -547,7 +547,7 @@ pat_left:
 
 pat_atom:
   | IDENT
-      { PatVar($1.i,$1.v) }
+      { PatVar($1.i,$1.v,true) }
   | TRUE 
       { PatExpr($1.i,TmConst($1.i,$1.l,ConstBool(true))) }
   | FALSE 

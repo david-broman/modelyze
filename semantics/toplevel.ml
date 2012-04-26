@@ -52,7 +52,7 @@ let ty_normalize ty =
   in
     norm false ty
 
-let ty_typesubst typemap ty =
+let ty_typesubst typemap numap ty =
   let rec subst ty = 
     match ty with
       | TyBool(_,_) as tt -> tt
@@ -80,8 +80,8 @@ let ty_typesubst typemap ty =
   in
     ty_normalize (subst ty)
 
-let mpat_typesubst typemap pat  = 
-  let tysub = ty_typesubst typemap in
+let mpat_typesubst typemap numap pat  = 
+  let tysub = ty_typesubst typemap numap in
   match pat with
     | MPatUk(fi,ty) -> MPatUk(fi,tysub ty)        
     | MPatModApp(fi,id1,id2) as mp -> mp
@@ -92,12 +92,12 @@ let mpat_typesubst typemap pat  =
     | MPatModProj(fi,id1,id2) as mp -> mp 
     | MPatVal(fi,id,ty) -> MPatVal(fi,id,tysub ty)       
 
-let rec pat_typesubst typemap pat =
-  let psub = pat_typesubst typemap in
-  let tysub = ty_typesubst typemap in
+let rec pat_typesubst typemap numap pat =
+  let psub = pat_typesubst typemap numap in
+  let tysub = ty_typesubst typemap numap in
   match pat with
   | PatVar(fi,id) as pp -> pp 
-  | PatExpr(fi,t) -> PatExpr(fi,tm_typesubst typemap t)
+  | PatExpr(fi,t) -> PatExpr(fi,tm_typesubst typemap numap t)
   | PatUk(fi,ty) -> PatUk(fi,tysub ty)
   | PatModApp(fi,p1,p2) -> PatModApp(fi,psub p1,psub p2)
   | PatModIf(fi,p1,p2,p3) -> PatModIf(fi,psub p1,psub p2,psub p3)
@@ -109,20 +109,20 @@ let rec pat_typesubst typemap pat =
   | PatTuple(fi,pats) -> PatTuple(fi,List.map psub pats)     
   | PatWildcard(fi) -> PatWildcard(fi)
 
-and vtrans_typesubst typemap vtrans =
+and vtrans_typesubst typemap numap vtrans =
   match vtrans with
-  | VTransExpr(fi,id,t) -> VTransExpr(fi,id,tm_typesubst typemap t)    
+  | VTransExpr(fi,id,t) -> VTransExpr(fi,id,tm_typesubst typemap numap t)    
   | VTransModUk(fi,id,ty) -> 
-      VTransModUk(fi,id,ty_typesubst typemap ty)
+      VTransModUk(fi,id,ty_typesubst typemap numap ty)
   | VTransModVal(fi,id1,id2,ty) -> 
-      VTransModVal(fi,id1,id2,ty_typesubst typemap ty)
+      VTransModVal(fi,id1,id2,ty_typesubst typemap numap ty)
 
-and tm_typesubst typemap tm = 
-  let tmsub = tm_typesubst typemap in
-  let tysub = ty_typesubst typemap in
-  let mpatsub = mpat_typesubst typemap in
-  let patsub = pat_typesubst typemap in
-  let vtranssub = vtrans_typesubst typemap in
+and tm_typesubst typemap numap tm = 
+  let tmsub = tm_typesubst typemap numap in
+  let tysub = ty_typesubst typemap numap in
+  let mpatsub = mpat_typesubst typemap numap in
+  let patsub = pat_typesubst typemap numap in
+  let vtranssub = vtrans_typesubst typemap numap in
   match tm with
     | TmVar(fi,x) as tt -> tt 
     | TmLam(fi,l,y,ty,t) -> TmLam(fi,l,y,tysub ty,tmsub t)
@@ -166,24 +166,24 @@ and tm_typesubst typemap tm =
     | TmError(fi,l,t) -> TmError(fi,l,tmsub t)
 
 let desugar tlst =
-  let rec ds tlst tyno typemap =
+  let rec ds tlst tyno typemap numap =
     match tlst with  
       | TopLet(fi,id,ty,plst,t1,recu)::ts -> 
-          let ty' = map_option (ty_typesubst typemap) ty in
+          let ty' = map_option (ty_typesubst typemap numap) ty in
           let plst' = List.map 
-            (fun (id,ty) -> (id,ty_typesubst typemap ty)) plst in
-          let t1' = tm_typesubst typemap t1 in
-          let ts' = ds ts tyno typemap in
+            (fun (id,ty) -> (id,ty_typesubst typemap numap ty)) plst in
+          let t1' = tm_typesubst typemap numap t1 in
+          let ts' = ds ts tyno typemap numap  in
             TmLet(fi,0,id,ty',plst',t1',ts',recu)
       | TopNu(fi,id,ty)::ts -> 
-          let ty' = ty_typesubst typemap (TyModel(NoInfo,0,ty)) in
-          let ts' = ds ts tyno typemap in
+          let ty' = ty_typesubst typemap numap (TyModel(NoInfo,0,ty)) in
+          let ts' = ds ts tyno typemap (id::numap) in
 	    TmNu(fi,0,id,ty',ts')
       | TopNewType(fi,id)::ts -> 
-          ds ts (tyno+1) ((id,TyModel(NoInfo,0,TyUserdef(fi,0,tyno,id)))::typemap)
+          ds ts (tyno+1) ((id,TyModel(NoInfo,0,TyUserdef(fi,0,tyno,id)))::typemap) numap
       | TopNameType(fi,id,ty)::ts -> 
-          ds ts tyno ((id,ty_typesubst typemap ty)::typemap) 
+          ds ts tyno ((id,ty_typesubst typemap numap ty)::typemap) numap
       | TopInclude(fi,id)::ts -> 
           assert false (* Should be removed in the import pass *)
       | [] -> TmConst(NoInfo,0,ConstUnit)
-  in ds tlst 0 []
+  in ds tlst 0 [] []

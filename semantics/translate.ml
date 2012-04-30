@@ -30,10 +30,10 @@ let rec trans_ty ty =
   | Ast.TyUnit(_,_) -> TyUnit
   | Ast.TyList(_,_,ty) -> TyList(trans_ty ty)    
   | Ast.TyTuple(_,_,tys) -> TyTuple(List.map trans_ty tys)
-  | Ast.TyModel(_,_,ty) -> TyModel(trans_ty ty)    
-  | Ast.TyDynamic(_,_) -> TyDynamic
+  | Ast.TySym(_,_,ty) -> TySym(trans_ty ty)    
+  | Ast.TyDyn(_,_) -> TyDyn
   | Ast.TyBot(_,_) -> TyBot
-  | Ast.TyUserdef(_,_,id,_) -> TyUserdef(id)
+  | Ast.TySymData(_,_,id,_) -> TySymData(id)
   | Ast.TyIdent(_,_,_) -> assert false
   | Ast.TyArray(_,_,ty) -> TyArray(trans_ty ty)
   | Ast.TyMap(_,_,ty1,ty2) -> TyMap(trans_ty ty1,trans_ty ty2)

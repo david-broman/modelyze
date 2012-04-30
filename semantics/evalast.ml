@@ -44,10 +44,10 @@ and ty =
   | TyUnit      
   | TyList      of ty
   | TyTuple     of ty list
-  | TyModel     of ty
-  | TyDynamic  
+  | TySym     of ty
+  | TyDyn  
   | TyBot        
-  | TyUserdef   of typeid
+  | TySymData   of typeid
   | TyArray     of ty
   | TyMap       of ty * ty
   | TySet       of ty 

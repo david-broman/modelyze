@@ -37,12 +37,12 @@ let ty_normalize ty =
       | TyUnit(_,_) -> ty
       | TyList(fi,l,ty1) -> TyList(fi,l,norm isSym ty1)
       | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map (norm isSym) tys)
-      | TyModel(fi,l,(TyModel(_,_,TyDynamic(_,_)) as tty)) -> tty
-      | TyModel(fi,l,ty1) -> 
-          if isSym then norm true ty1 else TyModel(fi,l,norm true ty1)
-      | TyDynamic(_,_) -> ty 
+      | TySym(fi,l,(TySym(_,_,TyDyn(_,_)) as tty)) -> tty
+      | TySym(fi,l,ty1) -> 
+          if isSym then norm true ty1 else TySym(fi,l,norm true ty1)
+      | TyDyn(_,_) -> ty 
       | TyBot(_,_) -> ty 
-      | TyUserdef(_,_,_,_) -> ty
+      | TySymData(_,_,_,_) -> ty
       | TyIdent(fi,l,id) -> ty
       | TyArray(fi,l,ty1) -> TyArray(fi,l,norm isSym ty1)
       | TyMap(fi,l,ty1,ty2) -> 
@@ -64,10 +64,10 @@ let ty_typesubst typemap numap ty =
       | TyUnit(_,_) as tt -> tt
       | TyList(fi,l,ty) -> TyList(fi,l,subst ty)
       | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map subst tys)
-      | TyModel(fi,l,ty) -> TyModel(fi,l,subst ty)
-      | TyDynamic(_,_) as tt -> tt 
+      | TySym(fi,l,ty) -> TySym(fi,l,subst ty)
+      | TyDyn(_,_) as tt -> tt 
       | TyBot(_,_) as tt -> tt 
-      | TyUserdef(_,_,_,_) as tt -> tt 
+      | TySymData(_,_,_,_) as tt -> tt 
       | TyIdent(fi,l,id) -> 
           (try set_ty_info fi (List.assoc id typemap)
            with Not_found -> raise (Mkl_static_error(TYPE_UNKNOWN_TYPE,ERROR,
@@ -148,7 +148,7 @@ and tm_typesubst typemap numap tm =
                   PCase(fi,plst',t1op',vtrans',tmsub t2)) cases in
         TmMatch(fi,l,tmsub t,cases')
     | TmSym(fi,l,id,ty) -> TmSym(fi,l,id,tysub ty)
-    | TmNu(fi,l,id,ty,t) -> TmNu(fi,l,id,tysub (TyModel(NoInfo,0,ty)),tmsub t)
+    | TmNu(fi,l,id,ty,t) -> TmNu(fi,l,id,tysub (TySym(NoInfo,0,ty)),tmsub t)
     | TmSymApp(fi,l,t1,t2) -> TmSymApp(fi,l,tmsub t1,tmsub t2)
     | TmLift(fi,l,t,ty) -> TmLift(fi,l,tmsub t,tysub ty)
     | TmCase(fi,l,t1,p,t2,t3) -> 
@@ -180,11 +180,11 @@ let desugar tlst =
           let ts' = ds ts tyno typemap numap  in
             TmLet(fi,0,id,ty',plst',t1',ts',recu)
       | TopNu(fi,id,ty)::ts -> 
-          let ty' = ty_typesubst typemap numap (TyModel(NoInfo,0,ty)) in
+          let ty' = ty_typesubst typemap numap (TySym(NoInfo,0,ty)) in
           let ts' = ds ts tyno typemap (id::numap) in
 	    TmNu(fi,0,id,ty',ts')
       | TopNewType(fi,id)::ts -> 
-          ds ts (tyno+1) ((id,TyModel(NoInfo,0,TyUserdef(fi,0,tyno,id)))::typemap) numap
+          ds ts (tyno+1) ((id,TySym(NoInfo,0,TySymData(fi,0,tyno,id)))::typemap) numap
       | TopNameType(fi,id,ty)::ts -> 
           ds ts tyno ((id,ty_typesubst typemap numap ty)::typemap) numap
       | TopInclude(fi,id)::ts -> 

@@ -44,11 +44,11 @@ let rec mk_letenv plst l env =
 
 let ty_ismodel ty = 
   match ty with
-    | TyModel(_,_,_) -> true
+    | TySym(_,_,_) -> true
     | _ -> false
 
 let mk_tymodel ty =
-  TyModel(ty_info ty,ty_lev ty,ty)
+  TySym(ty_info ty,ty_lev ty,ty)
 
 	
 let check_istype_array fi l ty_ar =
@@ -109,8 +109,8 @@ let int2real_coercion t =
 
 let rec meet ty_a ty_b = 
   match ty_a,ty_b with
-    | ty,TyDynamic(_,_) -> ty
-    | TyDynamic(_,_),ty -> ty
+    | ty,TyDyn(_,_) -> ty
+    | TyDyn(_,_),ty -> ty
     | TyBool(fi,_),TyBool(_,_) -> TyBool(fi,0)
     | TyInt(fi,_),TyInt(_,_) -> TyInt(fi,0)
     | TyReal(fi,_),TyReal(_,_) -> TyReal(fi,0)
@@ -122,11 +122,11 @@ let rec meet ty_a ty_b =
         TyList(fi,0,meet ty1 ty2)
     | TyTuple(fi,_,tys1),TyTuple(_,_,tys2) -> 
         TyTuple(fi,0,List.map2 meet tys1 tys2)
-    | TyModel(fi,_,ty1),TyModel(_,_,ty2) -> 
-        TyModel(fi,0,meet ty1 ty2)
+    | TySym(fi,_,ty1),TySym(_,_,ty2) -> 
+        TySym(fi,0,meet ty1 ty2)
     | TyBot(fi,_),TyBot(_,_) -> TyBot(fi,0)
-    | TyUserdef(fi,_,tyid1,id),TyUserdef(_,_,tyid2,_) when tyid1 = tyid2 -> 
-        TyUserdef(fi,0,tyid1,id)
+    | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) when tyid1 = tyid2 -> 
+        TySymData(fi,0,tyid1,id)
     | TyArray(fi,_,ty1),TyArray(_,_,ty2) -> 
         TyArray(fi,0,meet ty1 ty2)
     | TyMap(fi,_,ty1,ty2), TyMap(_,_,ty3,ty4) ->
@@ -328,8 +328,8 @@ and typeof env t =
     | TmApp(fi,_,t1,t2,fs)  -> 
         let typeof_app fi ty1 t1' ty2 t2' = 
           begin match ty1 with 
-            | TyDynamic(_,l) ->
-                (TyDynamic(NoInfo,0), TmApp(fi,l,t1',t2',fs))
+            | TyDyn(_,l) ->
+                (TyDyn(NoInfo,0), TmApp(fi,l,t1',t2',fs))
 	    | TyArrow(_,l,ty11,ty12) -> 
                 (* Coercion of int to real *)
                 if (match ty11 with TyReal(_,_) -> true | _ -> false) &&
@@ -340,16 +340,16 @@ and typeof env t =
 		  then (ty12,TmApp(fi,l,t1',t2',fs))
 		  else 
 		    (match ty2 with 
-		       | TyModel(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
+		       | TySym(_,l3,ty2b) when ty_consistent ty11 ty2b -> 
                           (mk_tymodel ty12,TmSymApp
                              (fi,l,TmLift(fi,l,t1',ty1),t2'))
 		       | _ ->  raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
 		             tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"2"])))
-	    | TyModel(_,l,TyArrow(_,l3,ty11,ty12)) ->
+	    | TySym(_,l,TyArrow(_,l3,ty11,ty12)) ->
                 if ty_ismodel ty2 then
-                  let ty11b = TyModel(ty_info ty11,ty_lev ty11,ty11) in
+                  let ty11b = TySym(ty_info ty11,ty_lev ty11,ty11) in
 		  if ty_consistent ty11b ty2 
-		  then (TyModel(fi,l,ty12),TmSymApp(fi,l,t1',t2'))
+		  then (TySym(fi,l,ty12),TmSymApp(fi,l,t1',t2'))
 		  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11b; pprint_ty ty2;us"3"]))
 		else
@@ -365,11 +365,11 @@ and typeof env t =
                        TmSymApp(fi,l,t1',TmLift(ty_info ty2,ty_lev ty2,t2',ty2))) 
 		    else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11; pprint_ty ty2;us"4"]))
-	    | TyModel(fi,l,TyDynamic(_,_))  ->
+	    | TySym(fi,l,TyDyn(_,_))  ->
 		if ty_consistent ty1 ty2 then
-		  (TyModel(fi,l,TyDynamic(fi,l)),TmSymApp(fi,l,t1',t2'))
+		  (TySym(fi,l,TyDyn(fi,l)),TmSymApp(fi,l,t1',t2'))
 		else
-                  (TyModel(fi,l,TyDynamic(fi,l)),TmSymApp(fi,l,t1',
+                  (TySym(fi,l,TyDyn(fi,l)),TmSymApp(fi,l,t1',
                                     TmLift(ty_info ty2,ty_lev ty2,t2',ty2)))  
 	    | _ -> raise (Mkl_type_error(TYPE_APP_NO_FUNC_TYPE,ERROR,tm_info t1,
 					   [pprint_ty ty1]))
@@ -436,12 +436,12 @@ and typeof env t =
           if ty_consistent ty2 ty3 then 
             (ty_restriction ty2 ty3, TmIf(fi,0,t1',t2',t3'))
           else
-          if (not (ty_ismodel ty2)) && ty_consistent (TyModel(fi,l,ty2)) ty3 then 
-              (ty_restriction (TyModel(fi,l,ty2)) ty3,
+          if (not (ty_ismodel ty2)) && ty_consistent (TySym(fi,l,ty2)) ty3 then 
+              (ty_restriction (TySym(fi,l,ty2)) ty3,
                TmIf(fi,0,t1',TmLift(fi,l,t2',ty2),t3'))
           else           
-          if (not (ty_ismodel ty3)) && ty_consistent  ty2 (TyModel(fi,l,ty3)) then 
-              (ty_restriction  ty2 (TyModel(fi,l,ty3)),
+          if (not (ty_ismodel ty3)) && ty_consistent  ty2 (TySym(fi,l,ty3)) then 
+              (ty_restriction  ty2 (TySym(fi,l,ty3)),
                TmIf(fi,0,t1',t2',TmLift(fi,l,t3',ty3)))
           else   
           if  (match ty2 with TyReal(_,_) -> true | _ -> false) &&
@@ -475,16 +475,16 @@ and typeof env t =
     | TmSymApp(fi,l,t1,t2) -> failwith "Only in internal language."
     | TmLift(fi,l,t,_) -> 
 	let (ty',t') = typeof env  t in
-	  (TyModel(ty_info ty',ty_lev ty',ty'),TmLift(fi,l,t',ty'))
+	  (TySym(ty_info ty',ty_lev ty',ty'),TmLift(fi,l,t',ty'))
     | TmCase(fi,l,t1,p,t2,t3) ->
         let ((ty1',t1'),(ty3',t3')) = 
 	  (typeof env  t1,typeof env  t3) in
 	  (match ty1' with
-	     | TyModel(_,l,_)  -> (
-                 let anymod = TyModel(NoInfo,l,TyDynamic(NoInfo,l)) in
+	     | TySym(_,l,_)  -> (
+                 let anymod = TySym(NoInfo,l,TyDyn(NoInfo,l)) in
 		 let (ty2',t2') = 
 		   (match p with
-		      | MPatUk(_,TyModel(_,_,_)) -> typeof env  t2 
+		      | MPatUk(_,TySym(_,_,_)) -> typeof env  t2 
 		      | MPatUk(_,ty3) -> raise (Mkl_type_error
 			    (TYPE_DECON_PAT_UK_NOT_MODEL_TYPE,ERROR,ty_info ty3,
 			     [pprint_ty ty3]))   
@@ -524,12 +524,12 @@ and typeof env t =
         let ((ty1,t1'),(ty2,t2')) = 
 	  (typeof env  t1,typeof env  t2) in
           (* (L-EQUAL1) *)
-          if (not (ty_ismodel ty1)) && ty_consistent (TyModel(fi,l,ty1)) ty2
+          if (not (ty_ismodel ty1)) && ty_consistent (TySym(fi,l,ty1)) ty2
           then 
               (TyBool(NoInfo,l),(TmEqual(fi,l,TmLift(fi,l,t1',ty1),t2')))
           else           
           (* (L-EQUAL2) *)
-          if ty_consistent ty1 (TyModel(fi,l,ty2))  && (not (ty_ismodel ty2)) 
+          if ty_consistent ty1 (TySym(fi,l,ty2))  && (not (ty_ismodel ty2)) 
            then 
               (TyBool(NoInfo,l),(TmEqual(fi,l,t1',TmLift(fi,l,t2',ty2))))
           else 

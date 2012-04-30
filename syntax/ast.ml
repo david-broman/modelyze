@@ -49,10 +49,10 @@ type ty =
   | TyUnit      of info * level
   | TyList      of info * level * ty
   | TyTuple     of info * level * ty list
-  | TyModel     of info * level * ty
-  | TyDynamic   of info * level 
+  | TySym     of info * level * ty
+  | TyDyn   of info * level 
   | TyBot       of info * level
-  | TyUserdef   of info * level * typeid * ident
+  | TySymData   of info * level * typeid * ident
   | TyIdent     of info * level * ident
   | TyArray     of info * level * ty
   | TyMap       of info * level * ty * ty
@@ -339,10 +339,10 @@ let pprint_ty t =
         | TyList(_,l,t) -> metastr l ^. us"[" ^. (pprint_ty false t) ^. us"]"
         | TyTuple(_,l,tylst) -> metastr l ^. us"(" ^. (tylst |> 
 	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
-        | TyModel(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
-	| TyDynamic(_,l) -> metastr l ^. us"<>"  
+        | TySym(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
+	| TyDyn(_,l) -> metastr l ^. us"<>"  
 	| TyBot(_,l) -> metastr l ^. us"bot"  
-        | TyUserdef(_,l,tyid,id) -> metastr l ^. Symtbl.get id 
+        | TySymData(_,l,tyid,id) -> metastr l ^. Symtbl.get id 
         | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^. 
             Symtbl.get id ^. us")"
         | TyArray(_,l,t) -> metastr l ^. us"{" ^. (pprint_ty false t) ^. us"}"
@@ -517,10 +517,10 @@ let rec ty_equiv ty1 ty2 =
   | TyTuple(_,l1,tylst1),TyTuple(_,l2,tylst2) -> l1 = l2 &&
       List.fold_left2 (fun a ty1 ty2 -> a && ty_equiv ty1 ty2) 
       true tylst1 tylst2
-  | TyModel(_,l1,ty1),TyModel(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
-  | TyDynamic(_,l1),TyDynamic(_,l2) -> l1 = l2  
+  | TySym(_,l1,ty1),TySym(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
+  | TyDyn(_,l1),TyDyn(_,l2) -> l1 = l2  
   | TyBot(_,l1),TyBot(_,l2) -> l1 = l2  
-  | TyUserdef(_,l1,tyid1,_),TyUserdef(_,l2,tyid2,_) -> l1 = l2 && tyid1 = tyid2
+  | TySymData(_,l1,tyid1,_),TySymData(_,l2,tyid2,_) -> l1 = l2 && tyid1 = tyid2
   | TyArray(_,l1,ty1),TyArray(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
   | TyMap(_,l1,ty1a,ty1b),TyMap(_,l2,ty2a,ty2b) -> 
       l1 = l2 && ty_equiv ty1a ty2a  && ty_equiv ty1b ty2b
@@ -530,7 +530,7 @@ let rec ty_equiv ty1 ty2 =
 
 let rec ty_restriction ty1 ty2 =
   match ty1,ty2 with
-    | _,TyDynamic(fi,ty) -> TyDynamic(fi,ty)
+    | _,TyDyn(fi,ty) -> TyDyn(fi,ty)
     | TyBot(_,_),_ -> ty2 
     | TyArrow(fi,l,ty1,ty2),TyArrow(fi',l',ty1',ty2') -> 
 	TyArrow(fi,l,ty_restriction ty1 ty1',ty_restriction ty2 ty2')
@@ -538,8 +538,8 @@ let rec ty_restriction ty1 ty2 =
 	TyList(fi,l,ty_restriction ty ty')
     | TyTuple(fi,l,tys),TyTuple(fi',l',tys') -> 
          TyTuple(fi,l,map2sc ty_restriction tys tys')
-    | TyModel(fi,l,ty),TyModel(fi',l',ty') -> 
-	TyModel(fi,l,ty_restriction ty ty')
+    | TySym(fi,l,ty),TySym(fi',l',ty') -> 
+	TySym(fi,l,ty_restriction ty ty')
     | TyArray(fi,l,ty),TyArray(fi',l',ty') -> 
 	TyArray(fi,l,ty_restriction ty ty')
     | TyMap(fi,l,ty1,ty2),TyMap(fi',l',ty1',ty2') -> 
@@ -936,10 +936,10 @@ let ty_info ty =
     | TyUnit(fi,_) -> fi
     | TyList(fi,_,_) -> fi
     | TyTuple(fi,_,_) -> fi
-    | TyModel(fi,_,_) -> fi
-    | TyDynamic(fi,_) -> fi
+    | TySym(fi,_,_) -> fi
+    | TyDyn(fi,_) -> fi
     | TyBot(fi,_) -> fi
-    | TyUserdef(fi,_,_,_) -> fi
+    | TySymData(fi,_,_,_) -> fi
     | TyIdent(fi,_,_) -> fi
     | TyArray(fi,_,_) -> fi
     | TyMap(fi,_,_,_) -> fi 
@@ -957,10 +957,10 @@ let rec set_ty_info newfi ty =
     | TyUnit(_,l) -> TyUnit(newfi,l)
     | TyList(_,l,ty) -> TyList(newfi,l,set_ty_info newfi ty)
     | TyTuple(_,l,tys) -> TyTuple(newfi,l,List.map (set_ty_info newfi) tys)
-    | TyModel(_,l,ty) -> TyModel(newfi,l,set_ty_info newfi ty)
-    | TyDynamic(_,l) -> TyDynamic(newfi,l)
+    | TySym(_,l,ty) -> TySym(newfi,l,set_ty_info newfi ty)
+    | TyDyn(_,l) -> TyDyn(newfi,l)
     | TyBot(_,l) -> TyBot(newfi,l)
-    | TyUserdef(_,l,tyid,id) -> TyUserdef(newfi,l,tyid,id)
+    | TySymData(_,l,tyid,id) -> TySymData(newfi,l,tyid,id)
     | TyIdent(_,l,id) -> TyIdent(newfi,l,id)
     | TyArray(_,l,ty) -> TyArray(newfi,l,set_ty_info newfi ty)
     | TyMap(_,l,ty1,ty2) -> 
@@ -978,10 +978,10 @@ let ty_lev ty =
     | TyUnit(_,l) -> l
     | TyList(_,l,_) -> l
     | TyTuple(_,l,_) -> l
-    | TyModel(_,l,_) -> l
-    | TyDynamic(_,l) -> l
+    | TySym(_,l,_) -> l
+    | TyDyn(_,l) -> l
     | TyBot(_,l) -> l
-    | TyUserdef(_,l,_,_) -> l
+    | TySymData(_,l,_,_) -> l
     | TyIdent(_,l,_) -> l
     | TyArray(_,l,_) -> l
     | TyMap(_,l,_,_) -> l

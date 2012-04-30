@@ -91,10 +91,10 @@ let pprint_ty t =
         | TyList(t) ->  us"[" ^. (pprint_ty false t) ^. us"]"
         | TyTuple(tylst) -> us"(" ^. (tylst |> 
 	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
-        | TyModel(t) ->  us"<" ^. (pprint_ty false t) ^. us">"
-	| TyDynamic -> us"<>"  
+        | TySym(t) ->  us"<" ^. (pprint_ty false t) ^. us">"
+	| TyDyn -> us"<>"  
 	| TyBot ->  us"bot"  
-        | TyUserdef(tyid) -> ustring_of_int tyid 
+        | TySymData(tyid) -> ustring_of_int tyid 
         | TyArray(t) ->  us"{" ^. (pprint_ty false t) ^. us"}"
 	| TyMap(t1,t2) -> 
 	    us"(" ^. (pprint_ty false t1) ^. us" " ^.  

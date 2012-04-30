@@ -291,7 +291,7 @@ and eval venv norec t =
                  eval (v1::v2::venv) norec t2            
 	     | TmLift(v1,ty1),MPatVal(ty2) when ty1 = ty2 ->	
                  eval (v1::venv) norec t2      
-	     | TmLift(v1,ty1),MPatVal(TyDynamic)  ->	
+	     | TmLift(v1,ty1),MPatVal(TyDyn)  ->	
                  eval (v1::venv) norec t2                          
              | TmLift(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatModApp ->
                  let (v1,v2) = mk_primappvalues prim arg args in

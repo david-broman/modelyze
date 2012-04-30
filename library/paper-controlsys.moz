@@ -23,16 +23,13 @@ include Block
 include Simulation
 
 
-def DCMotor(V:Voltage,flange:Rotational) : Equations = {
-  let e1:Electrical in
-  let e2:Electrical in
-  let e3:Electrical in
-  let e4:Electrical in
-  SignalVoltage V e1 e4;
-  Resistor 200. e1 e2;
-  Inductor 0.1 e2 e3;
-  EMF 1. e3 e4 flange;
-  Ground e4
+def DCMotor(V:Voltage,flange:Rotational) = {
+  def e1, e2, e3, e4:Electrical;
+  SignalVoltage(V, e1, e4);
+  Resistor(200, e1, e2);
+  Inductor(0.1, e2, e3);
+  EMF(1, e3, e4, flange);
+  Ground(e4);
 }
 
 let Shaft flangeA:Rotational -> flangeB:Rotational -> Equations =

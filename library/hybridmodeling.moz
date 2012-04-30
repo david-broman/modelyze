@@ -19,22 +19,18 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 include Modeling
 
 type State 
+type Initstate  
+type Action
+type When
+def initstate:Initstate
+def action:Action
+def when:When
 
-type KeywordInitstate  
-let initstate:KeywordInitstate
+def statechart : Initstate -> State -> Equations -> Equations
+def state : State -> Equations -> Equations
+def transition : State -> When -> Bool -> Action -> Equations -> Equations
 
-type KeywordAction
-let action:KeywordAction
-
-type KeywordWhen
-let when:KeywordWhen
-
-let statechart : <KeywordInitstate -> State -> Equations -> Equations>
-let state : <State -> Equations -> Equations>
-let transition : <State -> KeywordWhen -> Bool -> 
-                  KeywordAction -> Equations -> Equations>
-
-let nothing : Equations
-let topstate:State 
+def nothing : Equations
+def topstate:State 
 
 

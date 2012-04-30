@@ -151,9 +151,10 @@ type Varvals = <Real> -> <Real>
 def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
     match expr with
     | time -> ctime
-    | der x -> (match x with 
-                | sym:Real -> eval(yp(x), yy, yp, ctime)  
-                | _ -> error "Derivatives only allowed on unknowns")
+    | der x -> 
+        (match x with 
+         | sym:Real -> eval(yp(x), yy, yp, ctime)  
+         | _ -> error "Derivatives only allowed on unknowns")
     | sym:Real -> eval(yy(expr), yy, yp, ctime)
     | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
     | lift v:? -> v

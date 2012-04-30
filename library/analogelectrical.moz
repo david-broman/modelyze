@@ -23,13 +23,13 @@ let Resistor R:Real -> p:Electrical -> n:Electrical -> Equations =
   let i:Current in
   let v:Voltage in
   Branch i v p n;
-  R * i = v 
+  R * i = v
 
-def Capacitor(C:Real,p:Electrical,n:Electrical) = {
+def Capacitor(C:Real, p:Electrical, n:Electrical) = {
     def i:Current;
     def v:Voltage;
     Branch(i,v,p,n);
-    C * der(v) = i
+    C * v' = i;
 }
 
 let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =

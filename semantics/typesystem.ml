@@ -107,6 +107,36 @@ let int2real_coercion t =
   TmApp(NoInfo,0,TmConst(NoInfo,0,ConstPrim(PrimInt2Real,[])),t,false)
 
 
+let rec meet ty_a ty_b = 
+  match ty_a,ty_b with
+    | ty,TyDynamic(_,_) -> ty
+    | TyDynamic(_,_),ty -> ty
+    | TyBool(fi,_),TyBool(_,_) -> TyBool(fi,0)
+    | TyInt(fi,_),TyInt(_,_) -> TyInt(fi,0)
+    | TyReal(fi,_),TyReal(_,_) -> TyReal(fi,0)
+    | TyString(fi,_),TyString(_,_) -> TyString(fi,0)
+    | TyArrow(fi,_,ty1,ty2), TyArrow(_,_,ty3,ty4) ->
+        TyArrow(fi,0,meet ty1 ty3, meet ty2 ty4)
+    | TyUnit(fi,_),TyUnit(_,_) -> TyUnit(fi,0)
+    | TyList(fi,_,ty1),TyList(_,_,ty2) -> 
+        TyList(fi,0,meet ty1 ty2)
+    | TyTuple(fi,_,tys1),TyTuple(_,_,tys2) -> 
+        TyTuple(fi,0,List.map2 meet tys1 tys2)
+    | TyModel(fi,_,ty1),TyModel(_,_,ty2) -> 
+        TyModel(fi,0,meet ty1 ty2)
+    | TyBot(fi,_),TyBot(_,_) -> TyBot(fi,0)
+    | TyUserdef(fi,_,tyid1,id),TyUserdef(_,_,tyid2,_) when tyid1 = tyid2 -> 
+        TyUserdef(fi,0,tyid1,id)
+    | TyArray(fi,_,ty1),TyArray(_,_,ty2) -> 
+        TyArray(fi,0,meet ty1 ty2)
+    | TyMap(fi,_,ty1,ty2), TyMap(_,_,ty3,ty4) ->
+        TyMap(fi,0,meet ty1 ty3, meet ty2 ty4)
+    | TySet(fi,_,ty1),TySet(_,_,ty2) -> 
+        TySet(fi,0,meet ty1 ty2)
+    | TyDAESolver(fi,_),TyDAESolver(_,_) -> TyDAESolver(fi,0)
+    | _ , _ ->  failwith "Meet error. Should not happen."
+
+
 let rec typeof_array_op fi l op ts env  =
   match op,ts with
   | ArrayOpLength,[ar] -> 

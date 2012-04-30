@@ -13,6 +13,9 @@ rm -f t.py
 # Test hybrid modeling and simulation
 pmodelyze test-hybrid-ball-stairs.moz 
 
+# Test control system with simulation
+pmodelyze paper-controlsys.moz 
+
 
 
 

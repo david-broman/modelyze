@@ -125,8 +125,8 @@ let rec meet ty_a ty_b =
     | TySym(fi,_,ty1),TySym(_,_,ty2) -> 
         TySym(fi,0,meet ty1 ty2)
     | TyBot(fi,_),TyBot(_,_) -> TyBot(fi,0)
-    | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) when tyid1 = tyid2 -> 
-        TySymData(fi,0,tyid1,id)
+    | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) 
+        when tyid1 = tyid2 -> TySymData(fi,0,tyid1,id)
     | TyArray(fi,_,ty1),TyArray(_,_,ty2) -> 
         TyArray(fi,0,meet ty1 ty2)
     | TyMap(fi,_,ty1,ty2), TyMap(_,_,ty3,ty4) ->
@@ -135,6 +135,53 @@ let rec meet ty_a ty_b =
         TySet(fi,0,meet ty1 ty2)
     | TyDAESolver(fi,_),TyDAESolver(_,_) -> TyDAESolver(fi,0)
     | _ , _ ->  failwith "Meet error. Should not happen."
+
+let rec consistent ty_a ty_b = 
+  match ty_a,ty_b with
+    | ty,TyDyn(_,_) -> true
+    | TyDyn(_,_),ty -> true
+    | TyBool(fi,_),TyBool(_,_) -> true
+    | TyInt(fi,_),TyInt(_,_) -> true
+    | TyReal(fi,_),TyReal(_,_) -> true
+    | TyString(fi,_),TyString(_,_) -> true
+    | TyArrow(fi,_,ty1,ty2), TyArrow(_,_,ty3,ty4) ->
+        consistent ty1 ty3 && consistent ty2 ty4
+    | TyUnit(fi,_),TyUnit(_,_) -> true
+    | TyList(fi,_,ty1),TyList(_,_,ty2) -> 
+        consistent ty1 ty2
+    | TyTuple(fi,_,tys1),TyTuple(_,_,tys2) -> 
+        List.for_all2 consistent tys1 tys2
+    | TySym(fi,_,ty1),TySym(_,_,ty2) -> 
+        consistent ty1 ty2
+    | TyBot(fi,_),TyBot(_,_) -> true
+    | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) 
+        when tyid1 = tyid2 -> true
+    | TyArray(fi,_,ty1),TyArray(_,_,ty2) -> 
+        consistent ty1 ty2
+    | TyMap(fi,_,ty1,ty2), TyMap(_,_,ty3,ty4) ->
+        consistent ty1 ty3 && consistent ty2 ty4
+    | TySet(fi,_,ty1),TySet(_,_,ty2) -> 
+        consistent ty1 ty2
+    | TyDAESolver(fi,_),TyDAESolver(_,_) -> true
+    | _ , _ ->  false
+
+(* Checks if 'ty' is a symbol type. If so, 'e' is returned, else 'e' is lifted. *)
+let lift_expr e ty = 
+  if consistent ty (TySym(NoInfo,0,TyDyn(NoInfo,0))) 
+  then e 
+  else TmLift(ty_info ty,0,e,ty)
+
+(* Checks if 'ty' is a symbol type. If so, returns 'ty', else makes 
+   it a symbol type. *)
+let lift_type ty =
+  if consistent ty (TySym(NoInfo,0,TyDyn(NoInfo,0))) 
+  then ty
+  else TySym(ty_info ty,0,ty)
+
+let lift_branch_cases e1 ty1 e2 ty2 =
+  if consistent ty1 ty2
+  then (meet ty1 ty2, e1, e2)
+  else (meet (lift_type ty1) (lift_type ty2), lift_expr e1 ty1, lift_expr e2 ty2)
 
 
 let rec typeof_array_op fi l op ts env  =

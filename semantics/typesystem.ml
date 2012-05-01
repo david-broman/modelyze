@@ -372,7 +372,37 @@ and typeof env t =
 		else (ty1,TmFix(fi,l,t'))
 	    | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
 	  end
-    | TmApp(fi,_,t1,t2,fs)  -> 
+ (*   | TmApp(fi,_,e1,e2,fs)  -> 
+        let (ty1,e1') = typeof env e1 in
+        let (ty2,e2') = typeof env e2 in
+        (match ty1,ty2 with
+             (* L-APP1 *) 
+           | TyArrow(fi2,_,ty11,ty12),ty2 
+               when consistent ty11 ty2
+               -> (ty12,TmApp(fi,0,e1',e2',fs))
+             (* L-APP2 *)
+           | TyDyn(fi2,_),ty2 
+               -> (TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
+             (* L-APP3 *)
+           | TyArrow(fi2,_,ty11,ty12),ty2 
+               when (not (consistent ty11 ty2)) && 
+                    (consistent (TySym(NoInfo,0,ty11)) (lift_type ty2))
+               -> let e1'' = lift_expr e1' (TyArrow(fi2,0,ty11,ty12)) in
+                  let e2'' = lift_expr e2' ty2 in
+                  (TySym(ty_info ty12,0,ty12), TmApp(fi,0,e1'',e2'',fs))
+             (* L-APP4 *)
+           | TySym(fi2,_,TyDyn(fi3,_)),ty2 
+               -> let e2'' = lift_expr e2' ty2 in
+                  (TySym(fi2,0,TyDyn(fi3,0)), TmApp(fi,0,e1',e2'',fs))
+             (* L-APP5 *)
+           | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
+               when consistent (TySym(NoInfo,0,ty11)) (lift_type ty2) 
+               -> let e2'' = lift_expr e2' ty2 in
+                  (TySym(ty_info ty12,0,ty12), TmApp(fi,0,e1',e2'',fs))
+           | _,_ -> failwith "Not finished..."
+        ) *)
+        
+      | TmApp(fi,_,t1,t2,fs)  -> 
         let typeof_app fi ty1 t1' ty2 t2' = 
           begin match ty1 with 
             | TyDyn(_,l) ->
@@ -425,6 +455,7 @@ and typeof env t =
                let (ty1,t1') = typeof env  t1 in
                let (ty2,t2') = typeof env  t2 in
                  typeof_app fi ty1 t1' ty2 t2'  (* )  *)
+
     | TmLet(fi,l,x,ty,plst,t1,t2,recu) ->
 	plst |> List.iter (fun (x,ty) -> if ty_mono ty then () else
 		    raise (Mkl_type_error(TYPE_LET_PARAM_LEV_MONOTONICITY,ERROR,

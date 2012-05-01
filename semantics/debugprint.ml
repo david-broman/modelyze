@@ -93,7 +93,6 @@ let pprint_ty t =
 	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
         | TySym(t) ->  us"<" ^. (pprint_ty false t) ^. us">"
 	| TyDyn -> us"<>"  
-	| TyBot ->  us"bot"  
         | TySymData(tyid) -> ustring_of_int tyid 
         | TyArray(t) ->  us"{" ^. (pprint_ty false t) ^. us"}"
 	| TyMap(t1,t2) -> 

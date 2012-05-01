@@ -32,7 +32,6 @@ let rec trans_ty ty =
   | Ast.TyTuple(_,_,tys) -> TyTuple(List.map trans_ty tys)
   | Ast.TySym(_,_,ty) -> TySym(trans_ty ty)    
   | Ast.TyDyn(_,_) -> TyDyn
-  | Ast.TyBot(_,_) -> TyBot
   | Ast.TySymData(_,_,id,_) -> TySymData(id)
   | Ast.TyIdent(_,_,_) -> assert false
   | Ast.TyArray(_,_,ty) -> TyArray(trans_ty ty)

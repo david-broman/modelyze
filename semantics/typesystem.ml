@@ -55,25 +55,25 @@ let check_istype_array fi l ty_ar =
   match ty_ar with
     | TyArray(_,l',ty) when l = l' -> ty
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_ARRAY_TYPE,ERROR,fi,
-		    [pprint_ty ty_ar; ustring_of_int l]))
+		    [pprint_ty ty_ar]))
 
 let check_istype_map fi l ty_ma =
   match ty_ma with
     | TyMap(_,l',ty1,ty2) when l = l' -> (ty1,ty2)
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_MAP_TYPE,ERROR,fi,
-		    [pprint_ty ty_ma; ustring_of_int l]))
+		    [pprint_ty ty_ma]))
 
 let check_istype_set fi l ty_set =
   match ty_set with
     | TySet(_,l',ty) when l = l' -> ty
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_SET_TYPE,ERROR,fi,
-		    [pprint_ty ty_set; ustring_of_int l]))
+		    [pprint_ty ty_set]))
 
 let check_istype_daesolver fi l ty_daesolver =
   match ty_daesolver with
     | TyDAESolver(_,l') when l = l' -> ()
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_DAESOLVER_TYPE,ERROR,fi,
-		    [pprint_ty ty_daesolver; ustring_of_int l]))
+		    [pprint_ty ty_daesolver]))
         
 let check_istype_int fi l ty_int =
   match ty_int with 
@@ -122,7 +122,6 @@ let rec meet ty_a ty_b =
         TyTuple(fi,0,List.map2 meet tys1 tys2)
     | TySym(fi,_,ty1),TySym(_,_,ty2) -> 
         TySym(fi,0,meet ty1 ty2)
-    | TyBot(fi,_),TyBot(_,_) -> TyBot(fi,0)
     | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) 
         when tyid1 = tyid2 -> TySymData(fi,0,tyid1,id)
     | TyArray(fi,_,ty1),TyArray(_,_,ty2) -> 
@@ -151,7 +150,6 @@ let rec consistent ty_a ty_b =
         List.for_all2 consistent tys1 tys2
     | TySym(fi,_,ty1),TySym(_,_,ty2) -> 
         consistent ty1 ty2
-    | TyBot(fi,_),TyBot(_,_) -> true
     | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) 
         when tyid1 = tyid2 -> true
     | TyArray(fi,_,ty1),TyArray(_,_,ty2) -> 
@@ -219,7 +217,7 @@ and typeof_map_op fi l op ts env  =
       let _ = check_istype_map (tm_info ma) l ty_ma in
       (TyInt(fi,l),[ma'])
   | MapOpEmpty,[] -> 
-      (TyMap(fi,l,TyBot(fi,l),TyBot(fi,l)),[])
+      (TyMap(fi,l,TyDyn(fi,l),TyDyn(fi,l)),[])
   | MapOpAdd,[key;value;ma] ->
       let (ty_key,key') = typeof env  key in
       let (ty_value,value') = typeof env  value in
@@ -264,7 +262,7 @@ and typeof_set_op fi l op ts env  =
       let _ = check_istype_set (tm_info set) l ty_set in
       (TyInt(fi,l),[set'])
   | SetOpEmpty,[] -> 
-      (TySet(fi,l,TyBot(fi,l)),[])
+      (TySet(fi,l,TyDyn(fi,l)),[])
   | SetOpAdd,[key;set] ->
       let (ty_key,key') = typeof env  key in
       let (ty_set,set') = typeof env  set in
@@ -371,7 +369,7 @@ and typeof env t =
 		else (ty1,TmFix(fi,l,t'))
 	    | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
 	  end
-(*      | TmApp(fi,_,e1,e2,fs)  -> 
+    | TmApp(fi,_,e1,e2,fs)  -> 
         let (ty1,e1') = typeof env e1 in
         let (ty2,e2') = typeof env e2 in
         (match ty1,ty2 with
@@ -398,9 +396,13 @@ and typeof env t =
                when consistent (TySym(NoInfo,0,ty11)) (lift_type ty2) 
                -> let e2'' = lift_expr e2' ty2 in
                   (TySym(ty_info ty12,0,ty12), TmApp(fi,0,e1',e2'',fs))
-           | _,_ -> failwith "Not finished..."
-        )  *)
-        
+           | TyArrow(fi2,_,ty11,ty12),ty2 -> 
+               raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
+                                     tm_info e2,[pprint_ty ty11; pprint_ty ty2]))
+           | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,
+                                          tm_info e2,[pprint_ty ty1; pprint_ty ty2]))
+        )  
+ (*       
       | TmApp(fi,_,t1,t2,fs)  -> 
         let typeof_app fi ty1 t1' ty2 t2' = 
           begin match ty1 with 
@@ -442,7 +444,7 @@ and typeof env t =
                let (ty1,t1') = typeof env  t1 in
                let (ty2,t2') = typeof env  t2 in
                  typeof_app fi ty1 t1' ty2 t2'  (* )  *)
-   
+ *)
     | TmLet(fi,l,x,ty,plst,t1,t2,recu) ->
 	plst |> List.iter (fun (x,ty) -> if ty_mono ty then () else
 		    raise (Mkl_type_error(TYPE_LET_PARAM_LEV_MONOTONICITY,ERROR,
@@ -696,7 +698,7 @@ and typeof env t =
 	       if not (l2 >= l) then
 	       raise (Mkl_type_error(TYPE_ERROR_TERM_LEV_MONOTONICITY,ERROR,fi,
 					   [ustring_of_int l;pprint_ty ty]))
-	       else (TyBot(fi,l),TmError(fi,l,t'))
+	       else (TyDyn(fi,l),TmError(fi,l,t'))
 	   | (ty,t') -> raise (Mkl_type_error(TYPE_ERROR_TERM_NOT_STRING,ERROR,
 					      ty_info ty,[pprint_ty ty])))
 	    

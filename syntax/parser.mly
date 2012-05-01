@@ -786,7 +786,7 @@ atom:
       { TmConst($1.i,$1.l,ConstPrim($1.v,[])) }
   | LSQUARE RSQUARE
       { let fi = mkinfo $1.i $2.i in
-	TmNil(fi,$1.l,TyBot(fi,$1.l)) }     
+	TmNil(fi,$1.l,TyDyn(fi,$1.l)) }     
   | LSQUARE revtmseq RSQUARE
       { let fi = mkinfo $1.i $3.i in
         TmList(fi,$1.l,$2) }

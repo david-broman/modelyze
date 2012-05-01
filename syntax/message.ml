@@ -68,6 +68,9 @@ type id =
   | TYPE_APP_ARG_MISMATCH 
       (* arg1 = type of function parameter 
          arg2 = type of application argument *)
+  | TYPE_APP_ABS_MISMATCH 
+      (* arg1 = type left hand side 
+         arg2 = type of application argument *)
   | TYPE_APP_NO_FUNC_TYPE
       (* arg1 = type of term 1 *)
   | TYPE_LET_REC_MISS_RET_TYPE
@@ -300,6 +303,7 @@ let id2str id =
     | TYPE_META_UP_ON_FREE_VAR -> us"TYPE_META_UP_ON_FREE_VAR"
     | TYPE_META_DOWN_ON_FREE_VAR -> us"TYPE_META_DOWN_ON_FREE_VAR"
     | TYPE_APP_ARG_MISMATCH -> us"TYPE_APP_ARG_MISMATCH"
+    | TYPE_APP_ABS_MISMATCH -> us"TYPE_APP_ABS_MISMATCH"
     | TYPE_APP_NO_FUNC_TYPE -> us"TYPE_APP_NO_FUNC_TYPE"
     | TYPE_LET_REC_MISS_RET_TYPE -> us"TYPE_LET_REC_MISS_RET_TYPE"
     | TYPE_LET_TYPE_DEF_MISMATCH -> us"TYPE_LET_TYPE_DEF_MISMATCH"

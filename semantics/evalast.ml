@@ -46,7 +46,6 @@ and ty =
   | TyTuple     of ty list
   | TySym     of ty
   | TyDyn  
-  | TyBot        
   | TySymData   of typeid
   | TyArray     of ty
   | TyMap       of ty * ty

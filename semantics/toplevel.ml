@@ -41,7 +41,6 @@ let ty_normalize ty =
       | TySym(fi,l,ty1) -> 
           if isSym then norm true ty1 else TySym(fi,l,norm true ty1)
       | TyDyn(_,_) -> ty 
-      | TyBot(_,_) -> ty 
       | TySymData(_,_,_,_) -> ty
       | TyIdent(fi,l,id) -> ty
       | TyArray(fi,l,ty1) -> TyArray(fi,l,norm isSym ty1)
@@ -66,7 +65,6 @@ let ty_typesubst typemap numap ty =
       | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map subst tys)
       | TySym(fi,l,ty) -> TySym(fi,l,subst ty)
       | TyDyn(_,_) as tt -> tt 
-      | TyBot(_,_) as tt -> tt 
       | TySymData(_,_,_,_) as tt -> tt 
       | TyIdent(fi,l,id) -> 
           (try set_ty_info fi (List.assoc id typemap)

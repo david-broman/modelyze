@@ -51,7 +51,6 @@ type ty =
   | TyTuple     of info * level * ty list
   | TySym       of info * level * ty
   | TyDyn       of info * level 
-  | TyBot       of info * level
   | TySymData   of info * level * typeid * ident
   | TyIdent     of info * level * ident
   | TyArray     of info * level * ty
@@ -341,7 +340,6 @@ let pprint_ty t =
 	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
         | TySym(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
 	| TyDyn(_,l) -> metastr l ^. us"<>"  
-	| TyBot(_,l) -> metastr l ^. us"bot"  
         | TySymData(_,l,tyid,id) -> metastr l ^. Symtbl.get id 
         | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^. 
             Symtbl.get id ^. us")"
@@ -440,6 +438,7 @@ and pprint_cases cases =
   cases |> List.map pprint_case |> Ustring.concat (us" ")
 
 and pprint tm = 
+        let _ = print_endline "There**** first" in
   match tm with
   | TmVar(_,id) -> Symtbl.get id        
   | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
@@ -462,12 +461,16 @@ and pprint tm =
       (ts |> List.map pprint |> Ustring.concat (us",")) ^. us"]"
   | TmMatch(_,l,t,cases) ->
       metastr l ^. us"match " ^. pprint t ^. us" with " ^. pprint_cases cases
-  | TmSym(_,l,idx,ty) -> metastr l ^. ustring_of_int idx ^. 
+  | TmSym(_,l,idx,ty) -> 
+      let _ = print_endline "There**** 1" in
+      metastr l ^. ustring_of_int idx ^. 
       us"':" ^. pprint_ty ty
   | TmNu(_,l,x,ty,t) -> 
       us"(" ^. metastr l ^. us"nu " ^. Symtbl.get x ^. us":" ^. 
-      pprint_ty ty ^. us". "^. pprint t ^. us")"  
-  | TmSymApp(_,l,t1,t2) -> us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
+      pprint_ty ty ^. us". "^. pprint t ^. us")"         
+  | TmSymApp(_,l,t1,t2) -> 
+        let _ = print_endline "There**** 2" in
+      us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
       pprint t2  ^. us")"
   | TmLift(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
         us":" ^. pprint_ty ty ^. us")"
@@ -519,7 +522,6 @@ let rec ty_equiv ty1 ty2 =
       true tylst1 tylst2
   | TySym(_,l1,ty1),TySym(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
   | TyDyn(_,l1),TyDyn(_,l2) -> l1 = l2  
-  | TyBot(_,l1),TyBot(_,l2) -> l1 = l2  
   | TySymData(_,l1,tyid1,_),TySymData(_,l2,tyid2,_) -> l1 = l2 && tyid1 = tyid2
   | TyArray(_,l1,ty1),TyArray(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
   | TyMap(_,l1,ty1a,ty1b),TyMap(_,l2,ty2a,ty2b) -> 
@@ -531,7 +533,6 @@ let rec ty_equiv ty1 ty2 =
 let rec ty_restriction ty1 ty2 =
   match ty1,ty2 with
     | _,TyDyn(fi,ty) -> TyDyn(fi,ty)
-    | TyBot(_,_),_ -> ty2 
     | TyArrow(fi,l,ty1,ty2),TyArrow(fi',l',ty1',ty2') -> 
 	TyArrow(fi,l,ty_restriction ty1 ty1',ty_restriction ty2 ty2')
     | TyList(fi,l,ty),TyList(fi',l',ty') -> 
@@ -938,7 +939,6 @@ let ty_info ty =
     | TyTuple(fi,_,_) -> fi
     | TySym(fi,_,_) -> fi
     | TyDyn(fi,_) -> fi
-    | TyBot(fi,_) -> fi
     | TySymData(fi,_,_,_) -> fi
     | TyIdent(fi,_,_) -> fi
     | TyArray(fi,_,_) -> fi
@@ -959,7 +959,6 @@ let rec set_ty_info newfi ty =
     | TyTuple(_,l,tys) -> TyTuple(newfi,l,List.map (set_ty_info newfi) tys)
     | TySym(_,l,ty) -> TySym(newfi,l,set_ty_info newfi ty)
     | TyDyn(_,l) -> TyDyn(newfi,l)
-    | TyBot(_,l) -> TyBot(newfi,l)
     | TySymData(_,l,tyid,id) -> TySymData(newfi,l,tyid,id)
     | TyIdent(_,l,id) -> TyIdent(newfi,l,id)
     | TyArray(_,l,ty) -> TyArray(newfi,l,set_ty_info newfi ty)
@@ -980,7 +979,6 @@ let ty_lev ty =
     | TyTuple(_,l,_) -> l
     | TySym(_,l,_) -> l
     | TyDyn(_,l) -> l
-    | TyBot(_,l) -> l
     | TySymData(_,l,_,_) -> l
     | TyIdent(_,l,_) -> l
     | TyArray(_,l,_) -> l

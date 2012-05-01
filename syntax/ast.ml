@@ -49,8 +49,8 @@ type ty =
   | TyUnit      of info * level
   | TyList      of info * level * ty
   | TyTuple     of info * level * ty list
-  | TySym     of info * level * ty
-  | TyDyn   of info * level 
+  | TySym       of info * level * ty
+  | TyDyn       of info * level 
   | TyBot       of info * level
   | TySymData   of info * level * typeid * ident
   | TyIdent     of info * level * ident

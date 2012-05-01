@@ -43,7 +43,7 @@ def VanDerPol() =
 }
 
 def main = {
-    def code = codeGenOptProblem(VanDerPol(),50);
+    def code = codeGenOptProblem(VanDerPol(),50d);
     print(code)
 }
 

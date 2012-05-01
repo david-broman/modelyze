@@ -11,20 +11,20 @@ type DerivList = [(Signal,Signal)]
 let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
                        (Equations,DerivMap) =
   let makeHOder x:Signal -> k:Int -> dmap:DerivMap -> DerivMap =
-    if k >. 1 then 
-      if Map.mem x dmap then makeHOder (Map.find x dmap) (k -. 1) dmap
+    if k >. 1d then 
+      if Map.mem x dmap then makeHOder (Map.find x dmap) (k -. 1d) dmap
       else 
         if Map.mem x olddmap then  
           let dx = Map.find x olddmap in
-          makeHOder dx (k -. 1) (Map.add x dx dmap)
+          makeHOder dx (k -. 1d) (Map.add x dx dmap)
         else
           let u:Signal in
-          makeHOder u (k -. 1) (Map.add x u dmap)
+          makeHOder u (k -. 1d) (Map.add x u dmap)
     else dmap
   in
   let extractHOder expr:Expr -> k:Int -> dmap:DerivMap -> DerivMap =
     match expr with
-    | ~der e -> extractHOder e (k +. 1) dmap
+    | ~der e -> extractHOder e (k +. 1d) dmap
     | ~time -> dmap
     | sym:Signal -> makeHOder expr k dmap
     | e1 e2 -> extractHOder e2 k (extractHOder e1 k dmap)
@@ -39,15 +39,15 @@ let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
        | (~NoEqn,_)     -> (e2b,dmap2)
        | (_,~NoEqn)     -> (e1b,dmap2)
        | (_,_)         -> (e1b;e2b,dmap2))
-  | ~der ~time = _ -> (eqs,extractHOder eqs 0 dmap)
-  | ~der _ = ~time -> (eqs,extractHOder eqs 0 dmap)
-  | _ = ~der ~time -> (eqs,extractHOder eqs 0 dmap)
-  | ~time = ~der _ -> (eqs,extractHOder eqs 0 dmap)
+  | ~der ~time = _ -> (eqs,extractHOder eqs 0d dmap)
+  | ~der _ = ~time -> (eqs,extractHOder eqs 0d dmap)
+  | _ = ~der ~time -> (eqs,extractHOder eqs 0d dmap)
+  | ~time = ~der _ -> (eqs,extractHOder eqs 0d dmap)
   | ~der sym:Signal = sym:Signal ->
       (match eqs with | ~der x = dx -> (NoEqn,Map.add x dx dmap))
   | sym:Signal = ~der sym:Signal ->
       (match eqs with | dx = ~der x -> (NoEqn,Map.add x dx dmap))
-  | _ -> (eqs,extractHOder eqs 0 dmap)
+  | _ -> (eqs,extractHOder eqs 0d dmap)
 
 //Symbolically differentiate a model (higher-order).
 //Currently cannot user derfined functions be automatically differentiated
@@ -56,8 +56,8 @@ let differentiateModel expr:Expr -> Expr =
   let sdiff expr:Signal -> Signal =
     match expr with
     | ~time -> lift 1.
-    | sym:Signal -> hoDer expr 1
-    | ~hoDer x (lift k:Int) -> hoDer x (k +. 1)
+    | sym:Signal -> hoDer expr 1d
+    | ~hoDer x (lift k:Int) -> hoDer x (k +. 1d)
     | ~der e -> sdiff(sdiff(e))
     | e1 + e2 -> sdiff(e1) + sdiff(e2)
     | e1 - e2 -> sdiff(e1) - sdiff(e2)
@@ -89,7 +89,7 @@ let differentiateModel expr:Expr -> Expr =
 //representing chains of derivatives.
 let removeHOderivatives expr:Expr -> dmap:DerivMap -> Expr =
   let getDeriv x:Signal -> k:Int -> Expr =
-    if k >. 1 then getDeriv (Map.find x dmap) (k -. 1)
+    if k >. 1d then getDeriv (Map.find x dmap) (k -. 1d)
     else 
       if Map.mem x dmap then Map.find x dmap
       else der x

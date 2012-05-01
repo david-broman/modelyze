@@ -148,8 +148,8 @@ let noUnknowns eqs:Equations -> Int =
 let noEquations eqs:Equations -> Int =
   match eqs with
   | e1 ; e2 -> (noEquations e1) +. (noEquations e2)
-  | e1 = e2 -> 1
-  | _ -> 0
+  | e1 = e2 -> 1d
+  | _ -> 0d
 
 //Function realUnknowns extracts all unknowns from
 //an equations system. The resulting tuple is the number
@@ -166,13 +166,13 @@ let realUnknowns eqs:Equations -> (Int,UkMap) =
              let (k,ukmap) = acc in 
              if Map.mem x ukmap 
              then (k,Map.add x (fst (Map.find x ukmap),true) ukmap)
-             else ((k+.1,Map.add x (k,true) ukmap))
+             else ((k+.1d,Map.add x (k,true) ukmap))
          | _ -> error "Illegal diffrentiation of expression") 
      | e1 e2 -> get e2 (get e1 acc)
      | sym:<Real> -> if Map.mem e (snd acc) then acc
-                    else ((fst acc)+.1,Map.add e (fst acc,false) (snd acc))
+                    else ((fst acc)+.1d,Map.add e (fst acc,false) (snd acc))
      | e1 -> acc 
-  in get eqs (0,(Map.empty))
+  in get eqs (0d,(Map.empty))
 
 //Returns the mapping between unknowns and unique integer numbers
 //in an equation system. See definirion of UkMap.

@@ -103,8 +103,6 @@ let check_arg_type_consistency fi ty' ty_elem =
 	       [pprint_ty ty'; pprint_ty ty_elem]))
 
 
-let int2real_coercion t = 
-  TmApp(NoInfo,0,TmConst(NoInfo,0,ConstPrim(PrimInt2Real,[])),t,false)
 
 
 let rec meet ty_a ty_b = 
@@ -182,6 +180,7 @@ let lift_branch_cases e1 ty1 e2 ty2 =
   if consistent ty1 ty2
   then (meet ty1 ty2, e1, e2)
   else (meet (lift_type ty1) (lift_type ty2), lift_expr e1 ty1, lift_expr e2 ty2)
+
 
 
 let rec typeof_array_op fi l op ts env  =
@@ -372,7 +371,7 @@ and typeof env t =
 		else (ty1,TmFix(fi,l,t'))
 	    | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
 	  end
- (*   | TmApp(fi,_,e1,e2,fs)  -> 
+(*      | TmApp(fi,_,e1,e2,fs)  -> 
         let (ty1,e1') = typeof env e1 in
         let (ty2,e2') = typeof env e2 in
         (match ty1,ty2 with
@@ -400,7 +399,7 @@ and typeof env t =
                -> let e2'' = lift_expr e2' ty2 in
                   (TySym(ty_info ty12,0,ty12), TmApp(fi,0,e1',e2'',fs))
            | _,_ -> failwith "Not finished..."
-        ) *)
+        )  *)
         
       | TmApp(fi,_,t1,t2,fs)  -> 
         let typeof_app fi ty1 t1' ty2 t2' = 
@@ -408,11 +407,6 @@ and typeof env t =
             | TyDyn(_,l) ->
                 (TyDyn(NoInfo,0), TmApp(fi,l,t1',t2',fs))
 	    | TyArrow(_,l,ty11,ty12) -> 
-                (* Coercion of int to real *)
-                if (match ty11 with TyReal(_,_) -> true | _ -> false) &&
-                   (match ty2 with TyInt(_,_) -> true | _ -> false) 
-                then  (ty12,TmApp(fi,l,t1',int2real_coercion t2',fs)) 
-                else 
   		  if ty_consistent ty11 ty2 
 		  then (ty12,TmApp(fi,l,t1',t2',fs))
 		  else 
@@ -430,13 +424,6 @@ and typeof env t =
 		  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,
                               tm_info t2,[pprint_ty ty11b; pprint_ty ty2;us"3"]))
 		else
-                  (* Coercion of int to real *)
-                  if  (match ty11 with TyReal(_,_) -> true | _ -> false) &&
-                      (match ty2 with TyInt(_,_) -> true | _ -> false) 
-                  then (mk_tymodel ty12,
-                       TmSymApp(fi,l,t1',TmLift(ty_info ty2,ty_lev ty2,
-                                        int2real_coercion t2',TyReal(NoInfo,0))))
-                  else
 		    if ty_consistent ty11 ty2 then 
                       (mk_tymodel ty12,
                        TmSymApp(fi,l,t1',TmLift(ty_info ty2,ty_lev ty2,t2',ty2))) 
@@ -455,7 +442,7 @@ and typeof env t =
                let (ty1,t1') = typeof env  t1 in
                let (ty2,t2') = typeof env  t2 in
                  typeof_app fi ty1 t1' ty2 t2'  (* )  *)
-
+   
     | TmLet(fi,l,x,ty,plst,t1,t2,recu) ->
 	plst |> List.iter (fun (x,ty) -> if ty_mono ty then () else
 		    raise (Mkl_type_error(TYPE_LET_PARAM_LEV_MONOTONICITY,ERROR,
@@ -482,11 +469,7 @@ and typeof env t =
 		  if recu then 
                     typeof ((x,tyvar)::t1_env)  t1
 		  else typeof t1_env  t1 in
-                  (* Coercion of int to real *)
-                  if  (match ty1def with TyReal(_,_) -> true | _ -> false) &&
-                      (match ty1 with TyInt(_,_) -> true | _ -> false) 
-                  then (ty1def, int2real_coercion t1')
-		  else if not (ty_consistent ty1 ty1def) then
+                  if not (ty_consistent ty1 ty1def) then
 		    raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH,
 			ERROR,fi,[pprint_ty ty1; pprint_ty ty1def]))
 		  else (ty1,t1')
@@ -522,13 +505,7 @@ and typeof env t =
               (ty_restriction  ty2 (TySym(fi,l,ty3)),
                TmIf(fi,0,t1',t2',TmLift(fi,l,t3',ty3)))
           else   
-          if  (match ty2 with TyReal(_,_) -> true | _ -> false) &&
-            (match ty3 with TyInt(_,_) -> true | _ -> false) 
-          then  (ty2,TmIf(fi,l,t1',t2',int2real_coercion t3'))
-          else if  (match ty3 with TyReal(_,_) -> true | _ -> false) &&
-            (match ty2 with TyInt(_,_) -> true | _ -> false) 
-          then  (ty3,TmIf(fi,l,t1',int2real_coercion t2',t3'))
-          else raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
+            raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,
 		                   [pprint_ty ty2; pprint_ty ty3]))
             
 

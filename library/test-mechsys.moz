@@ -26,7 +26,7 @@ let MechSys =
   let r3:Rotational in
   DCMotor r1;
   Inertia 0.2 r1 r2;
-  FlexibleShaft 120 r2 r3;
+  FlexibleShaft 120d r2 r3;
   AngleSensor r3 (probe "phi") 
 
 let main = 

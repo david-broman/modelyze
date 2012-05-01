@@ -277,7 +277,7 @@ let white = whitespace | newline | tab
 let digit = ['0'-'9']
 let s_escape = "\\'" | "\\\"" | "\\?"  | "\\\\" |
                "\\a"  | "\\b" | "\\f"  | "\\n" | "\\r" | "\\t" | "\\v"
-let unsigned_integer = digit+
+let unsigned_integer = digit+ 
 let unsigned_number = unsigned_integer ('.' (unsigned_integer)?)? 
                       (('e'|'E') ("+"|"-")? unsigned_integer)?
 let nondigit = ('_' | us_letter)
@@ -328,8 +328,8 @@ rule main = parse
   | "@@" ident as s
       { [let fi = mkinfo_fast s in
 	 Parser.PRIMITIVE{i=fi; l=0; v=str2primitive fi s}] }
-  | unsigned_integer as str
-      { [Parser.UINT{i=mkinfo_fast str; l=0; v=int_of_string str}] }
+  | (unsigned_integer as str) "d"
+      { [Parser.UINT{i=mkinfo_fast str; l=0; v=int_of_string str}] } 
   | unsigned_number as str
       { [Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str}] }
   | '"'  

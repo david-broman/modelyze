@@ -323,7 +323,6 @@ and eval venv norec t =
       | TmDAESolverOp(op,tms) -> 
           eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
       | TmDPrint(t) -> let t' = eval venv norec t  in 
-        let _ = print_endline "Here****" in
 	  pprint t' |> uprint_endline; t'
       | TmDPrintType(t) -> pprint t |> uprint_endline; eval venv norec t
       | TmError(fi,t) ->  

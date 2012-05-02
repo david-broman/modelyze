@@ -438,7 +438,6 @@ and pprint_cases cases =
   cases |> List.map pprint_case |> Ustring.concat (us" ")
 
 and pprint tm = 
-        let _ = print_endline "There**** first" in
   match tm with
   | TmVar(_,id) -> Symtbl.get id        
   | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
@@ -462,14 +461,12 @@ and pprint tm =
   | TmMatch(_,l,t,cases) ->
       metastr l ^. us"match " ^. pprint t ^. us" with " ^. pprint_cases cases
   | TmSym(_,l,idx,ty) -> 
-      let _ = print_endline "There**** 1" in
       metastr l ^. ustring_of_int idx ^. 
       us"':" ^. pprint_ty ty
   | TmNu(_,l,x,ty,t) -> 
       us"(" ^. metastr l ^. us"nu " ^. Symtbl.get x ^. us":" ^. 
       pprint_ty ty ^. us". "^. pprint t ^. us")"         
   | TmSymApp(_,l,t1,t2) -> 
-        let _ = print_endline "There**** 2" in
       us"(" ^. pprint t1  ^. metastr l ^. us" " ^. 
       pprint t2  ^. us")"
   | TmLift(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.

@@ -441,8 +441,6 @@ and typeof env t =
 	    (ty2,TmNu(fi,l,u,ty1,t2'))
     | TmSymApp(fi,l,t1,t2) -> failwith "Only in internal language."
     | TmLift(fi,l,t,_) -> failwith "Only in internal language."
-	(*let (ty',t') = typeof env  t in
-	  (TySym(ty_info ty',ty_lev ty',ty'),TmLift(fi,l,t',ty')) *)
     | TmCase(fi,l,e1,p,e2,e3) ->
         let (ty1,e1') = typeof env e1 in
         let (ty3,e3') = typeof env e3 in

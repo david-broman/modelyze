@@ -52,9 +52,9 @@ let rec subst_var_pat (x:int) (y:int) (p:pat)   =
   match p with 
   | PatVar(fi,x,_) as tt -> tt
   | PatExpr(fi,t) -> PatExpr(fi,subst_var x y t) 
-  | PatUk(fi,ty) as tt -> tt 
-  | PatModApp(fi,p1,p2) -> 
-      PatModApp(fi,subst_var_pat x y p1,subst_var_pat x y p2)
+  | PatSym(fi,ty) as tt -> tt 
+  | PatSymApp(fi,p1,p2) -> 
+      PatSymApp(fi,subst_var_pat x y p1,subst_var_pat x y p2)
   | PatModIf(fi,p1,p2,p3) -> 
       PatModIf(fi,subst_var_pat x y p1,subst_var_pat x y p2,
 	       subst_var_pat x y p3)
@@ -62,7 +62,7 @@ let rec subst_var_pat (x:int) (y:int) (p:pat)   =
       PatModEqual(fi,subst_var_pat x y p1,subst_var_pat x y p2)
   | PatModProj(fi,p1,p2) -> 
       PatModProj(fi,subst_var_pat x y p1,subst_var_pat x y p2)
-  | PatModVal(fi,x,ty) -> PatModVal(fi,x,ty)
+  | PatLift(fi,x,ty) -> PatLift(fi,x,ty)
   | PatCons(fi,p1,p2) -> 
       PatCons(fi,subst_var_pat x y p1,subst_var_pat x y p2)
   | PatNil(fi) as tt -> tt
@@ -203,7 +203,7 @@ and dsmatch_tuple l u us eqs default len =
 and partion_patmodel eqs =
   let rec sep eqs (pmapp,pmif,pmeql,pmproj) =
     match eqs with
-      | PCase(fi,PatModApp(fi2,p1,p2)::ps,g,vtrans,e)::qs -> 
+      | PCase(fi,PatSymApp(fi2,p1,p2)::ps,g,vtrans,e)::qs -> 
 	  sep qs (PCase(fi,p1::p2::ps,g,vtrans,e)::pmapp,pmif,pmeql,pmproj) 
       | PCase(fi,PatModIf(fi2,p1,p2,p3)::ps,g,vtrans,e)::qs -> 
           failwith "Patten matching of <if> is not yet implemented"
@@ -225,7 +225,7 @@ and dsmatch_model l u us eqs default =
         let tm1 = dsmatch l (x1::x2::us) eqs def in
           TmCase(fi,l,TmVar(fi,u),mpatcon fi x1 x2,tm1,def) 
     in
-      mk_mod qsapp (fun fi x1 x2 -> MPatModApp(fi,x1,x2)) 
+      mk_mod qsapp (fun fi x1 x2 -> MPatSymApp(fi,x1,x2)) 
         (mk_mod qseql (fun fi x1 x2 -> MPatModEqual(fi,x1,x2))
           (mk_mod qsproj (fun fi x1 x2 -> MPatModProj(fi,x1,x2)) default))
 
@@ -236,10 +236,10 @@ and dsmatch_pat l uvars eqs default =
 	  | PatVar(_,_,_) | PatWildcard(_) -> dsmatch_var l u us eqs default
           | PatCons(_,_,_) | PatNil(_) -> dsmatch_list l u us eqs default 
           | PatTuple(_,ps) -> dsmatch_tuple l u us eqs default (List.length ps)
-          | PatModApp(_,_,_) | PatModIf(_,_,_,_) |
+          | PatSymApp(_,_,_) | PatModIf(_,_,_,_) |
             PatModEqual(_,_,_) | PatModProj(_,_,_) -> 
               dsmatch_model l u us eqs default 
-          | PatModVal(_,_,_) | PatUk(_,_) | PatExpr(_,_) -> 
+          | PatLift(_,_,_) | PatSym(_,_) | PatExpr(_,_) -> 
               assert false (* Already removed at an earlier desugar phase *) )          
     | _,_ -> assert false
         
@@ -268,9 +268,9 @@ and generate_conditional fi l vtranss t1op e default =
     (fun vt e -> match vt with
        | VTransExpr(_,_,_) -> assert false
        | VTransModUk(fi,u,ty) -> 
-            TmCase(fi,l,TmVar(fi,u),MPatUk(fi,ty),e,defval)
+            TmCase(fi,l,TmVar(fi,u),MPatSym(fi,ty),e,defval)
        | VTransModVal(fi,u,x,ty) ->
-            TmCase(fi,l,TmVar(fi,u),MPatVal(fi,x,ty),e,defval)) vst e' in
+            TmCase(fi,l,TmVar(fi,u),MPatLift(fi,x,ty),e,defval)) vst e' in
   deffun e''
 
 and dsmatch l uvars eqs default  = 
@@ -288,12 +288,12 @@ let rec trans_pat_varexpr vtrans p =
   | PatExpr(fi,t) ->       
       let x = fresh_var() in 
         (VTransExpr(fi,x,desugar t)::vtrans,PatVar(fi,x,false))
-  | PatUk(fi,ty) ->  
+  | PatSym(fi,ty) ->  
       let x = fresh_var() in (VTransModUk(fi,x,ty)::vtrans,PatVar(fi,x,false))
-  | PatModApp(fi,p1,p2) ->
+  | PatSymApp(fi,p1,p2) ->
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
-      (vtrans2,PatModApp(fi,p1',p2'))
+      (vtrans2,PatSymApp(fi,p1',p2'))
   | PatModIf(fi,p1,p2,p3) -> 
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
@@ -307,7 +307,7 @@ let rec trans_pat_varexpr vtrans p =
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
       (vtrans2,PatModProj(fi,p1',p2'))
-  | PatModVal(fi,y,ty) ->  
+  | PatLift(fi,y,ty) ->  
       let x = fresh_var() in (VTransModVal(fi,x,y,ty)::vtrans,PatVar(fi,x,false))
   | PatCons(fi,p1,p2) -> 
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in

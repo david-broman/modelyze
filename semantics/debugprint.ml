@@ -67,14 +67,14 @@ let getDebugSymId t =
 
 let no_pat_vars p = 
   match p with
-  | MPatUk(_) -> 0
-  | MPatModApp -> 2
+  | MPatSym(_) -> 0
+  | MPatSymApp -> 2
   | MPatModIfGuard -> 1
   | MPatModIfThen -> 1
   | MPatModIfElse -> 1
   | MPatModEqual -> 2
   | MPatModProj -> 2
-  | MPatVal(_) -> 1
+  | MPatLift(_) -> 1
 
 let pprint_ty t =
   let rec pprint_ty left t =
@@ -104,14 +104,14 @@ let pprint_ty t =
 
 let pprint_pat p = 
   match p with
-  | MPatUk(ty) -> us"uk:" ^. pprint_ty ty 
-  | MPatModApp ->   us"app " 
+  | MPatSym(ty) -> us"uk:" ^. pprint_ty ty 
+  | MPatSymApp ->   us"app " 
   | MPatModIfGuard ->   us"ifguard " 
   | MPatModIfThen ->   us"ifthen " 
   | MPatModIfElse ->   us"ifelse " 
   | MPatModEqual ->   us"== " 
   | MPatModProj ->   us"proj " 
-  | MPatVal(ty) -> us"val:" ^.  pprint_ty ty
+  | MPatLift(ty) -> us"val:" ^.  pprint_ty ty
 
 type primStyle =
   | InfixSpace

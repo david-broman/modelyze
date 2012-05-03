@@ -24,16 +24,6 @@ open Info
 open Printf
 exception Mkl_type_error of Message.message
 
-let i2s = ustring_of_int
-type strip = 
-  | StripMetaup   of info * level
-  | StripMetadown of info * level
-  | StripNo
-
-type tyenv = (ident * (level * ty * strip))
-
-
-
 
 let rec meet ty_a ty_b = 
   match ty_a,ty_b with
@@ -448,21 +438,21 @@ and typeof env t =
           if consistent ty_symdyn ty1 then 
             (match p with
                  (* L-CSYM *)
-               | MPatUk(_,ty4) -> 
+               | MPatSym(_,ty4) -> 
                    let (ty2,e2') = typeof env e2 in               
                      if consistent (lift_type ty2) (lift_type ty3) then 
                        let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
                          (ty5, TmCase(fi,0,e1',p,e2'',e3''))
                      else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3])) 
                        (* L-CAPP *)
-               | MPatModApp(_,x1,x2) ->
+               | MPatSymApp(_,x1,x2) ->
                    let (ty2,e2') = typeof ((x1,ty_symdyn)::(x2,ty_symdyn)::env) e2 in               
                      if consistent (lift_type ty2) (lift_type ty3) then
                        let (ty4,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in 
                          (ty4, TmCase(fi,0,e1',p,e2'',e3''))
                      else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
                        (* L-CLIFT *)
-               | MPatVal(_,x,ty4) ->
+               | MPatLift(_,x,ty4) ->
                    let (ty2,e2') = typeof ((x,ty4)::env) e2 in               
                      if consistent (lift_type ty2) (lift_type ty3) then
                        let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in

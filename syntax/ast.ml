@@ -130,24 +130,24 @@ type const =
 
 (** Model calculus patterns *)
 and mpat = 
-  | MPatUk         of info * ty  
-  | MPatModApp     of info * ident * ident 
+  | MPatSym        of info * ty  
+  | MPatSymApp     of info * ident * ident 
   | MPatModIfGuard of info * ident  
   | MPatModIfThen  of info * ident  
   | MPatModIfElse  of info * ident  
   | MPatModEqual   of info * ident * ident 
   | MPatModProj    of info * ident * ident 
-  | MPatVal        of info * ident * ty
+  | MPatLift       of info * ident * ty
 
 and pat =
   | PatVar        of  info * ident * bool     
   | PatExpr       of  info * tm
-  | PatUk         of  info * ty
-  | PatModApp     of  info * pat * pat
+  | PatSym        of  info * ty
+  | PatSymApp     of  info * pat * pat
   | PatModIf      of  info * pat * pat * pat 
   | PatModEqual   of  info * pat * pat
   | PatModProj    of  info * pat * pat
-  | PatModVal     of  info * ident * ty
+  | PatLift       of  info * ident * ty
   | PatCons       of  info * pat * pat
   | PatNil        of  info
   | PatTuple      of  info * pat list
@@ -388,29 +388,29 @@ let pprint_daesolver_op op =
 
 let pprint_mpat p = 
   match p with
-  | MPatUk(_,ty) -> us"sym:" ^. pprint_ty ty 
-  | MPatModApp(_,x,y) -> us"(symapp " ^. Symtbl.get x ^. us" " ^. Symtbl.get y ^. us")"
+  | MPatSym(_,ty) -> us"sym:" ^. pprint_ty ty 
+  | MPatSymApp(_,x,y) -> us"(symapp " ^. Symtbl.get x ^. us" " ^. Symtbl.get y ^. us")"
   | MPatModIfGuard(_,x) -> us"ifguard " ^. Symtbl.get x 
   | MPatModIfThen(_,x) -> us"ifthen " ^. Symtbl.get x
   | MPatModIfElse(_,x) -> us"ifelse " ^. Symtbl.get x
   | MPatModEqual(_,x,y) -> Symtbl.get x ^. us"== " ^. Symtbl.get y
   | MPatModProj(_,x,y) ->   
       us"proj " ^. Symtbl.get x ^. us" from " ^. Symtbl.get y
-  | MPatVal(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
+  | MPatLift(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
 
 
 let rec pprint_pat p =
   match p with 
   | PatVar(_,x,_) -> Symtbl.get x
   | PatExpr(_,t) -> pprint t
-  | PatUk(_,ty) -> pprint_ty ty
-  | PatModApp(_,p1,p2) -> pprint_pat p1 ^. us" " ^. pprint_pat p2 
+  | PatSym(_,ty) -> pprint_ty ty
+  | PatSymApp(_,p1,p2) -> pprint_pat p1 ^. us" " ^. pprint_pat p2 
   | PatModIf(_,p1,p2,p3) -> us"if " ^. pprint_pat p1 ^. us" then " ^.
       pprint_pat p2 ^. us" else " ^. pprint_pat p3
   | PatModEqual(_,p1,p2) -> pprint_pat p1 ^. us"==" ^. pprint_pat p2 
   | PatModProj(_,p1,p2) -> us"proj " ^. pprint_pat p1 ^. us" from " ^. 
       pprint_pat p2 
-  | PatModVal(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
+  | PatLift(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
   | PatCons(_,p1,p2) ->  pprint_pat p1 ^. us"::" ^. pprint_pat p2 
   | PatNil(_) -> us"[]"
   | PatTuple(_,ps) -> us"(" ^. 
@@ -913,12 +913,12 @@ let pat_info p =
   match p with
   | PatVar(fi,_,_) -> fi
   | PatExpr(fi,_) -> fi
-  | PatUk(fi,_) -> fi
-  | PatModApp(fi,_,_) -> fi
+  | PatSym(fi,_) -> fi
+  | PatSymApp(fi,_,_) -> fi
   | PatModIf(fi,_,_,_) -> fi
   | PatModEqual(fi,_,_) -> fi
   | PatModProj(fi,_,_) -> fi
-  | PatModVal(fi,_,_) -> fi
+  | PatLift(fi,_,_) -> fi
   | PatCons(fi,_,_) -> fi
   | PatNil(fi) -> fi       
   | PatTuple(fi,_) -> fi
@@ -989,12 +989,12 @@ let rec no_auto_esc p =
   match p with
   | PatVar(fi,x,_) -> PatVar(fi,x,false)  (* false means that it cannot auto escaped *)
   | PatExpr(fi,t) as tt  -> tt
-  | PatUk(_,ty) as tt -> tt
-  | PatModApp(fi,p1,p2) -> PatModApp(fi,no_auto_esc p1,no_auto_esc p2)
+  | PatSym(_,ty) as tt -> tt
+  | PatSymApp(fi,p1,p2) -> PatSymApp(fi,no_auto_esc p1,no_auto_esc p2)
   | PatModIf(fi,p1,p2,p3) -> PatModIf(fi,no_auto_esc p1,no_auto_esc p2,no_auto_esc p3)
   | PatModEqual(fi,p1,p2) -> PatModEqual(fi,no_auto_esc p1,no_auto_esc p2)
   | PatModProj(fi,p1,p2) -> PatModProj(fi,no_auto_esc p1,no_auto_esc p2)
-  | PatModVal(_,x,ty) as tt -> tt
+  | PatLift(_,x,ty) as tt -> tt
   | PatCons(fi,p1,p2) -> PatCons(fi,no_auto_esc p1,no_auto_esc p2)
   | PatNil(_) as tt -> tt
   | PatTuple(fi,ps) -> PatTuple(fi, List.map no_auto_esc ps)
@@ -1004,27 +1004,27 @@ let rec no_auto_esc p =
 (** Free pattern variables in model patterns *)
 let rec fpv_mpat p = 
   match p with
-  | MPatUk(_,_) -> VarSet.empty
-  | MPatModApp(_,x,y) -> VarSet.singleton x |> VarSet.add y
+  | MPatSym(_,_) -> VarSet.empty
+  | MPatSymApp(_,x,y) -> VarSet.singleton x |> VarSet.add y
   | MPatModIfGuard(_,x) -> VarSet.singleton x
   | MPatModIfThen(_,x) -> VarSet.singleton x
   | MPatModIfElse(_,x) -> VarSet.singleton x
   | MPatModEqual(_,x,y) -> VarSet.singleton x |> VarSet.add y
   | MPatModProj(_,x,y) -> VarSet.singleton x |> VarSet.add y
-  | MPatVal(_,x,_) -> VarSet.singleton x
+  | MPatLift(_,x,_) -> VarSet.singleton x
 
 (** Free pattern variables in patterns *)
 let rec fpv_pat p =
   match p with
   | PatVar(_,x,_) -> VarSet.singleton(x)
   | PatExpr(_,t) -> VarSet.empty
-  | PatUk(_,ty) -> VarSet.empty
-  | PatModApp(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
+  | PatSym(_,ty) -> VarSet.empty
+  | PatSymApp(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
   | PatModIf(_,p1,p2,p3) -> 
       VarSet.union (fpv_pat p1) (VarSet.union (fpv_pat p2) (fpv_pat p3))
   | PatModEqual(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
   | PatModProj(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
-  | PatModVal(_,x,ty) -> VarSet.singleton(x)
+  | PatLift(_,x,ty) -> VarSet.singleton(x)
   | PatCons(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
   | PatNil(_) -> VarSet.empty
   | PatTuple(_,ps) -> 
@@ -1036,13 +1036,13 @@ let rec fv_pat p =
   match p with
   | PatVar(_,x,_) -> VarSet.empty
   | PatExpr(_,t) -> fv_tm t
-  | PatUk(_,ty) -> VarSet.empty
-  | PatModApp(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
+  | PatSym(_,ty) -> VarSet.empty
+  | PatSymApp(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
   | PatModIf(_,p1,p2,p3) -> 
       VarSet.union (fv_pat p1) (VarSet.union (fv_pat p2) (fv_pat p3))
   | PatModEqual(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
   | PatModProj(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
-  | PatModVal(_,x,ty) -> VarSet.empty
+  | PatLift(_,x,ty) -> VarSet.empty
   | PatCons(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
   | PatNil(_) -> VarSet.empty
   | PatTuple(_,ps) -> 

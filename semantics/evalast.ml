@@ -90,12 +90,12 @@ and tm =
 
 
 and mpat = 
-  | MPatUk         of ty
-  | MPatModApp     
+  | MPatSym         of ty
+  | MPatSymApp     
   | MPatModIfGuard
   | MPatModIfThen
   | MPatModIfElse
   | MPatModEqual     
   | MPatModProj     
-  | MPatVal        of ty
+  | MPatLift        of ty
 

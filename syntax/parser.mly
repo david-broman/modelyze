@@ -36,10 +36,10 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
     TmApp(fi,l,(TmVar(fi,Symtbl.add (us op))),t1,false)
 
   let mk_binpat_op fi l op t1 t2 = 
-    PatModApp(fi,PatModApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1),t2)
+    PatSymApp(fi,PatSymApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1),t2)
 
   let mk_unpat_op fi l op t1 = 
-    PatModApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1)
+    PatSymApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1)
 
   let wildcard = Symtbl.add (us"@@wildcard")  	  
 
@@ -305,9 +305,9 @@ revtypetupleseq:
 deconpat:
   | SYM COLON ty
       { let fi = mkinfo $1.i (ty_info $3) in
-        MPatUk(fi,TySym($1.i, 0, $3)) }
+        MPatSym(fi,TySym($1.i, 0, $3)) }
   | IDENT IDENT
-      { MPatModApp(mkinfo $1.i $2.i,$1.v,$2.v) }
+      { MPatSymApp(mkinfo $1.i $2.i,$1.v,$2.v) }
   | IDENT POLYEQUAL IDENT
       { MPatModEqual(mkinfo $1.i $3.i,$1.v,$3.v) }
   | IFGUARD IDENT 
@@ -320,7 +320,7 @@ deconpat:
       { MPatModProj(mkinfo $1.i $4.i,$2.v,$4.v) }
   | LIFT IDENT COLON ty
       { let fi = mkinfo $1.i (ty_info $4) in
-        MPatVal(fi,$2.v,$4) }
+        MPatLift(fi,$2.v,$4) }
 
 letpat:
   | IDENT
@@ -534,7 +534,7 @@ pat_left:
       { $1 }
   | pat_left pat_atom
       { let fi = mkinfo (pat_info $1) (pat_info $2) in
-	PatModApp(fi,$1,$2) }
+	PatSymApp(fi,$1,$2) }
   | FST pat_atom
       { let fi = mkinfo $1.i (pat_info $2) in
         PatModProj(fi,PatExpr(fi,TmConst(fi,$1.l,ConstInt(0))),$2) }
@@ -543,7 +543,7 @@ pat_left:
         PatModProj(fi,PatExpr(fi,TmConst(fi,$1.l,ConstInt(1))),$2) }
   | LIFT IDENT COLON tyatom
       { let fi = mkinfo $1.i (ty_info $4) in
-        PatModVal(fi,$2.v,$4) } 
+        PatLift(fi,$2.v,$4) } 
 
 pat_atom:
   | IDENT
@@ -570,7 +570,7 @@ pat_atom:
         List.fold_right (fun p a -> PatCons(fi,p,a)) 
           (List.rev $2) (PatNil(fi)) } 
   | SYM COLON tyatom 
-      { PatUk(mkinfo $1.i (ty_info $3),TySym(ty_info $3, 0, $3)) } 
+      { PatSym(mkinfo $1.i (ty_info $3),TySym(ty_info $3, 0, $3)) } 
   | LPAREN revpatseq RPAREN
       { let fi = mkinfo $1.i $3.i in
         match $2 with

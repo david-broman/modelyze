@@ -81,14 +81,14 @@ let ty_typesubst typemap numap ty =
 let mpat_typesubst typemap numap pat  = 
   let tysub = ty_typesubst typemap numap in
   match pat with
-    | MPatUk(fi,ty) -> MPatUk(fi,tysub ty)        
-    | MPatModApp(fi,id1,id2) as mp -> mp
+    | MPatSym(fi,ty) -> MPatSym(fi,tysub ty)        
+    | MPatSymApp(fi,id1,id2) as mp -> mp
     | MPatModIfGuard(fi,id) as mp -> mp 
     | MPatModIfThen(fi,id) as mp -> mp
     | MPatModIfElse(fi,id) as mp -> mp
     | MPatModEqual(fi,id1,id2) as mp -> mp  
     | MPatModProj(fi,id1,id2) as mp -> mp 
-    | MPatVal(fi,id,ty) -> MPatVal(fi,id,tysub ty)       
+    | MPatLift(fi,id,ty) -> MPatLift(fi,id,tysub ty)       
 
 let rec pat_typesubst typemap numap pat =
   let psub = pat_typesubst typemap numap in
@@ -100,12 +100,12 @@ let rec pat_typesubst typemap numap pat =
         PatExpr(fi,TmVar(fi,id))
       else pp
   | PatExpr(fi,t) -> PatExpr(fi,tm_typesubst typemap numap t)
-  | PatUk(fi,ty) -> PatUk(fi,tysub ty)
-  | PatModApp(fi,p1,p2) -> PatModApp(fi,psub p1,psub p2)
+  | PatSym(fi,ty) -> PatSym(fi,tysub ty)
+  | PatSymApp(fi,p1,p2) -> PatSymApp(fi,psub p1,psub p2)
   | PatModIf(fi,p1,p2,p3) -> PatModIf(fi,psub p1,psub p2,psub p3)
   | PatModEqual(fi,p1,p2) -> PatModEqual(fi,psub p1,psub p2)
   | PatModProj(fi,p1,p2) -> PatModProj(fi,psub p1,psub p2)  
-  | PatModVal(fi,id,ty) -> PatModVal(fi,id,tysub ty) 
+  | PatLift(fi,id,ty) -> PatLift(fi,id,tysub ty) 
   | PatCons(fi,p1,p2) -> PatCons(fi,psub p1,psub p2)
   | PatNil(fi) -> PatNil(fi)
   | PatTuple(fi,pats) -> PatTuple(fi,List.map psub pats)     

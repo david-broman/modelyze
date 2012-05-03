@@ -284,16 +284,16 @@ and eval venv norec t =
       | TmLift(t,ty) -> TmLift(eval venv norec t,ty)
       | TmCase(t1,p,t2,t3) -> 
           (match eval venv norec t1,p with
-	     | TmSym(id,ty1),MPatUk(ty2) 
+	     | TmSym(id,ty1),MPatSym(ty2) 
 		 when ty1 = ty2  ->
                  eval venv norec  t2                  
-	     | TmSymApp(v1,v2),MPatModApp -> 
+	     | TmSymApp(v1,v2),MPatSymApp -> 
                  eval (v1::v2::venv) norec t2            
-	     | TmLift(v1,ty1),MPatVal(ty2) when ty1 = ty2 ->	
+	     | TmLift(v1,ty1),MPatLift(ty2) when ty1 = ty2 ->	
                  eval (v1::venv) norec t2      
-	     | TmLift(v1,ty1),MPatVal(TyDyn)  ->	
+	     | TmLift(v1,ty1),MPatLift(TyDyn)  ->	
                  eval (v1::venv) norec t2                          
-             | TmLift(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatModApp ->
+             | TmLift(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatSymApp ->
                  let (v1,v2) = mk_primappvalues prim arg args in
                    eval (v1::v2::venv) norec t2 
              | _ -> eval venv norec t3)

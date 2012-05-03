@@ -139,9 +139,6 @@ and pat =
   | PatExpr       of  info * tm
   | PatSym        of  info * ty
   | PatSymApp     of  info * pat * pat
-  | PatModIf      of  info * pat * pat * pat 
-  | PatModEqual   of  info * pat * pat
-  | PatModProj    of  info * pat * pat
   | PatLift       of  info * ident * ty
   | PatCons       of  info * pat * pat
   | PatNil        of  info
@@ -394,11 +391,6 @@ let rec pprint_pat p =
   | PatExpr(_,t) -> pprint t
   | PatSym(_,ty) -> pprint_ty ty
   | PatSymApp(_,p1,p2) -> pprint_pat p1 ^. us" " ^. pprint_pat p2 
-  | PatModIf(_,p1,p2,p3) -> us"if " ^. pprint_pat p1 ^. us" then " ^.
-      pprint_pat p2 ^. us" else " ^. pprint_pat p3
-  | PatModEqual(_,p1,p2) -> pprint_pat p1 ^. us"==" ^. pprint_pat p2 
-  | PatModProj(_,p1,p2) -> us"proj " ^. pprint_pat p1 ^. us" from " ^. 
-      pprint_pat p2 
   | PatLift(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
   | PatCons(_,p1,p2) ->  pprint_pat p1 ^. us"::" ^. pprint_pat p2 
   | PatNil(_) -> us"[]"
@@ -904,9 +896,6 @@ let pat_info p =
   | PatExpr(fi,_) -> fi
   | PatSym(fi,_) -> fi
   | PatSymApp(fi,_,_) -> fi
-  | PatModIf(fi,_,_,_) -> fi
-  | PatModEqual(fi,_,_) -> fi
-  | PatModProj(fi,_,_) -> fi
   | PatLift(fi,_,_) -> fi
   | PatCons(fi,_,_) -> fi
   | PatNil(fi) -> fi       
@@ -980,9 +969,6 @@ let rec no_auto_esc p =
   | PatExpr(fi,t) as tt  -> tt
   | PatSym(_,ty) as tt -> tt
   | PatSymApp(fi,p1,p2) -> PatSymApp(fi,no_auto_esc p1,no_auto_esc p2)
-  | PatModIf(fi,p1,p2,p3) -> PatModIf(fi,no_auto_esc p1,no_auto_esc p2,no_auto_esc p3)
-  | PatModEqual(fi,p1,p2) -> PatModEqual(fi,no_auto_esc p1,no_auto_esc p2)
-  | PatModProj(fi,p1,p2) -> PatModProj(fi,no_auto_esc p1,no_auto_esc p2)
   | PatLift(_,x,ty) as tt -> tt
   | PatCons(fi,p1,p2) -> PatCons(fi,no_auto_esc p1,no_auto_esc p2)
   | PatNil(_) as tt -> tt
@@ -1004,10 +990,6 @@ let rec fpv_pat p =
   | PatExpr(_,t) -> VarSet.empty
   | PatSym(_,ty) -> VarSet.empty
   | PatSymApp(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
-  | PatModIf(_,p1,p2,p3) -> 
-      VarSet.union (fpv_pat p1) (VarSet.union (fpv_pat p2) (fpv_pat p3))
-  | PatModEqual(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
-  | PatModProj(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
   | PatLift(_,x,ty) -> VarSet.singleton(x)
   | PatCons(_,p1,p2) -> VarSet.union (fpv_pat p1) (fpv_pat p2)
   | PatNil(_) -> VarSet.empty
@@ -1022,10 +1004,6 @@ let rec fv_pat p =
   | PatExpr(_,t) -> fv_tm t
   | PatSym(_,ty) -> VarSet.empty
   | PatSymApp(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
-  | PatModIf(_,p1,p2,p3) -> 
-      VarSet.union (fv_pat p1) (VarSet.union (fv_pat p2) (fv_pat p3))
-  | PatModEqual(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
-  | PatModProj(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
   | PatLift(_,x,ty) -> VarSet.empty
   | PatCons(_,p1,p2) -> VarSet.union (fv_pat p1) (fv_pat p2)
   | PatNil(_) -> VarSet.empty

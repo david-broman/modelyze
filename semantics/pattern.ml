@@ -55,13 +55,6 @@ let rec subst_var_pat (x:int) (y:int) (p:pat)   =
   | PatSym(fi,ty) as tt -> tt 
   | PatSymApp(fi,p1,p2) -> 
       PatSymApp(fi,subst_var_pat x y p1,subst_var_pat x y p2)
-  | PatModIf(fi,p1,p2,p3) -> 
-      PatModIf(fi,subst_var_pat x y p1,subst_var_pat x y p2,
-	       subst_var_pat x y p3)
-  | PatModEqual(fi,p1,p2) -> 
-      PatModEqual(fi,subst_var_pat x y p1,subst_var_pat x y p2)
-  | PatModProj(fi,p1,p2) -> 
-      PatModProj(fi,subst_var_pat x y p1,subst_var_pat x y p2)
   | PatLift(fi,x,ty) -> PatLift(fi,x,ty)
   | PatCons(fi,p1,p2) -> 
       PatCons(fi,subst_var_pat x y p1,subst_var_pat x y p2)
@@ -205,12 +198,6 @@ and partion_patmodel eqs =
     match eqs with
       | PCase(fi,PatSymApp(fi2,p1,p2)::ps,g,vtrans,e)::qs -> 
 	  sep qs (PCase(fi,p1::p2::ps,g,vtrans,e)::pmapp,pmif,pmeql,pmproj) 
-      | PCase(fi,PatModIf(fi2,p1,p2,p3)::ps,g,vtrans,e)::qs -> 
-          failwith "Patten matching of <if> is not yet implemented"
-      | PCase(fi,PatModEqual(fi2,p1,p2)::ps,g,vtrans,e)::qs -> 
-	  sep qs (pmapp,pmif,PCase(fi,p1::p2::ps,g,vtrans,e)::pmeql,pmproj)
-      | PCase(fi,PatModProj(fi2,p1,p2)::ps,g,vtrans,e)::qs -> 
-	  sep qs (pmapp,pmif,pmeql,PCase(fi,p1::p2::ps,g,vtrans,e)::pmproj)
       | PCase(fi,_,_,_,_)::qs -> 
           raise (Mkl_static_error(PATMATCH_MIXING_PATTERN_TYPES,ERROR,fi,[]))   
       | [] -> (List.rev pmapp,List.rev pmif,List.rev pmeql,List.rev pmproj)
@@ -234,8 +221,7 @@ and dsmatch_pat l uvars eqs default =
 	  | PatVar(_,_,_) | PatWildcard(_) -> dsmatch_var l u us eqs default
           | PatCons(_,_,_) | PatNil(_) -> dsmatch_list l u us eqs default 
           | PatTuple(_,ps) -> dsmatch_tuple l u us eqs default (List.length ps)
-          | PatSymApp(_,_,_) | PatModIf(_,_,_,_) |
-            PatModEqual(_,_,_) | PatModProj(_,_,_) -> 
+          | PatSymApp(_,_,_)  -> 
               dsmatch_model l u us eqs default 
           | PatLift(_,_,_) | PatSym(_,_) | PatExpr(_,_) -> 
               assert false (* Already removed at an earlier desugar phase *) )          
@@ -292,19 +278,6 @@ let rec trans_pat_varexpr vtrans p =
       let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
       let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
       (vtrans2,PatSymApp(fi,p1',p2'))
-  | PatModIf(fi,p1,p2,p3) -> 
-      let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
-      let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
-      let (vtrans3,p3') = trans_pat_varexpr vtrans2 p3 in
-      (vtrans3,PatModIf(fi,p1',p2',p3'))
-  | PatModEqual(fi,p1,p2) -> 
-      let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
-      let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
-      (vtrans2,PatModEqual(fi,p1',p2'))
-  | PatModProj(fi,p1,p2) -> 
-      let (vtrans1,p1') = trans_pat_varexpr vtrans p1 in
-      let (vtrans2,p2') = trans_pat_varexpr vtrans1 p2 in
-      (vtrans2,PatModProj(fi,p1',p2'))
   | PatLift(fi,y,ty) ->  
       let x = fresh_var() in (VTransModVal(fi,x,y,ty)::vtrans,PatVar(fi,x,false))
   | PatCons(fi,p1,p2) -> 

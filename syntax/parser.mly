@@ -426,12 +426,6 @@ op_guard:
 pattern:
   | pat_cons
       { $1 }
-  | PROJ pattern FROM pattern
-      { let fi = mkinfo $1.i (pat_info $4) in
-        PatModProj(fi,$2,$4) }
-  | IF pattern THEN pattern ELSE pattern
-      { let fi = mkinfo $1.i (pat_info $6) in
-        PatModIf(fi,$2,$4,$6) }
 
 pat_cons:
   | pat_op
@@ -514,10 +508,6 @@ pat_op:
   | DOTSUB pat_op %prec UNARYMINUS
       { mk_unpat_op (mkinfo $1.i (pat_info $2)) $1.l "(--.)" $2 }
 
-  | pat_op POLYEQUAL pat_op
-      { let fi = mkinfo (pat_info $1) (pat_info $3) in
-	PatModEqual(fi,$1,$3) }
-
 
 pat_left:
   | pat_atom
@@ -525,12 +515,6 @@ pat_left:
   | pat_left pat_atom
       { let fi = mkinfo (pat_info $1) (pat_info $2) in
 	PatSymApp(fi,$1,$2) }
-  | FST pat_atom
-      { let fi = mkinfo $1.i (pat_info $2) in
-        PatModProj(fi,PatExpr(fi,TmConst(fi,$1.l,ConstInt(0))),$2) }
-  | SND pat_atom
-      { let fi = mkinfo $1.i (pat_info $2) in
-        PatModProj(fi,PatExpr(fi,TmConst(fi,$1.l,ConstInt(1))),$2) }
   | LIFT IDENT COLON tyatom
       { let fi = mkinfo $1.i (ty_info $4) in
         PatLift(fi,$2.v,$4) } 

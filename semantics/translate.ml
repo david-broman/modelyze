@@ -43,11 +43,6 @@ let trans_pat l p denv =
   match p with
   | Ast.MPatSym(_,ty) -> (MPatSym(trans_ty ty),denv)
   | Ast.MPatSymApp(_,id1,id2) -> (MPatSymApp,(id1,l)::(id2,l)::denv)
-  | Ast.MPatModIfGuard(_,id1) -> (MPatModIfGuard,(id1,l)::denv)
-  | Ast.MPatModIfThen(_,id1) -> (MPatModIfThen,(id1,l)::denv)
-  | Ast.MPatModIfElse(_,id1) -> (MPatModIfElse,(id1,l)::denv)
-  | Ast.MPatModEqual(_,id1,id2) -> (MPatModEqual,(id1,l)::(id2,l)::denv)
-  | Ast.MPatModProj(_,id1,id2) -> (MPatModProj,(id1,l)::(id2,l)::denv)
   | Ast.MPatLift(_,id,ty) -> (MPatLift(trans_ty ty),(id,l)::denv)
 
 let translate t =

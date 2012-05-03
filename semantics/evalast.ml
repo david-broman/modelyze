@@ -92,10 +92,5 @@ and tm =
 and mpat = 
   | MPatSym         of ty
   | MPatSymApp     
-  | MPatModIfGuard
-  | MPatModIfThen
-  | MPatModIfElse
-  | MPatModEqual     
-  | MPatModProj     
   | MPatLift        of ty
 

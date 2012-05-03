@@ -308,16 +308,6 @@ deconpat:
         MPatSym(fi,TySym($1.i, 0, $3)) }
   | IDENT IDENT
       { MPatSymApp(mkinfo $1.i $2.i,$1.v,$2.v) }
-  | IDENT POLYEQUAL IDENT
-      { MPatModEqual(mkinfo $1.i $3.i,$1.v,$3.v) }
-  | IFGUARD IDENT 
-      { MPatModIfGuard(mkinfo $1.i $2.i,$2.v) }
-  | IFTHEN IDENT 
-      { MPatModIfThen(mkinfo $1.i $2.i,$2.v) }
-  | IFELSE IDENT 
-      { MPatModIfElse(mkinfo $1.i $2.i,$2.v) }
-  | PROJ IDENT FROM IDENT
-      { MPatModProj(mkinfo $1.i $4.i,$2.v,$4.v) }
   | LIFT IDENT COLON ty
       { let fi = mkinfo $1.i (ty_info $4) in
         MPatLift(fi,$2.v,$4) }

@@ -83,11 +83,6 @@ let mpat_typesubst typemap numap pat  =
   match pat with
     | MPatSym(fi,ty) -> MPatSym(fi,tysub ty)        
     | MPatSymApp(fi,id1,id2) as mp -> mp
-    | MPatModIfGuard(fi,id) as mp -> mp 
-    | MPatModIfThen(fi,id) as mp -> mp
-    | MPatModIfElse(fi,id) as mp -> mp
-    | MPatModEqual(fi,id1,id2) as mp -> mp  
-    | MPatModProj(fi,id1,id2) as mp -> mp 
     | MPatLift(fi,id,ty) -> MPatLift(fi,id,tysub ty)       
 
 let rec pat_typesubst typemap numap pat =

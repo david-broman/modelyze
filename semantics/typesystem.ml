@@ -458,11 +458,6 @@ and typeof env t =
                        let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
                          (ty5, TmCase(fi,0,e1',p,e2'',e3''))
                      else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
-	       | MPatModIfGuard(_,x) -> failwith "unsupported"
-	       | MPatModIfThen(_,x) -> failwith "unsupported"
-	       | MPatModIfElse(_,x) -> failwith "unsupported"
-	       | MPatModEqual(_,x1,x2) -> failwith "unsupported"
-	       | MPatModProj(_,x1,x2) -> failwith "unsupported"
             )            
           else
             raise (Mkl_type_error(TYPE_DECON_TYPE_NOT_MODEL,ERROR,fi,[pprint_ty ty1]))      

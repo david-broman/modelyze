@@ -225,9 +225,7 @@ and dsmatch_model l u us eqs default =
         let tm1 = dsmatch l (x1::x2::us) eqs def in
           TmCase(fi,l,TmVar(fi,u),mpatcon fi x1 x2,tm1,def) 
     in
-      mk_mod qsapp (fun fi x1 x2 -> MPatSymApp(fi,x1,x2)) 
-        (mk_mod qseql (fun fi x1 x2 -> MPatModEqual(fi,x1,x2))
-          (mk_mod qsproj (fun fi x1 x2 -> MPatModProj(fi,x1,x2)) default))
+      mk_mod qsapp (fun fi x1 x2 -> MPatSymApp(fi,x1,x2)) default
 
 and dsmatch_pat l uvars eqs default = 
   match uvars,eqs with 

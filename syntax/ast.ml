@@ -132,11 +132,6 @@ type const =
 and mpat = 
   | MPatSym        of info * ty  
   | MPatSymApp     of info * ident * ident 
-  | MPatModIfGuard of info * ident  
-  | MPatModIfThen  of info * ident  
-  | MPatModIfElse  of info * ident  
-  | MPatModEqual   of info * ident * ident 
-  | MPatModProj    of info * ident * ident 
   | MPatLift       of info * ident * ty
 
 and pat =
@@ -390,12 +385,6 @@ let pprint_mpat p =
   match p with
   | MPatSym(_,ty) -> us"sym:" ^. pprint_ty ty 
   | MPatSymApp(_,x,y) -> us"(symapp " ^. Symtbl.get x ^. us" " ^. Symtbl.get y ^. us")"
-  | MPatModIfGuard(_,x) -> us"ifguard " ^. Symtbl.get x 
-  | MPatModIfThen(_,x) -> us"ifthen " ^. Symtbl.get x
-  | MPatModIfElse(_,x) -> us"ifelse " ^. Symtbl.get x
-  | MPatModEqual(_,x,y) -> Symtbl.get x ^. us"== " ^. Symtbl.get y
-  | MPatModProj(_,x,y) ->   
-      us"proj " ^. Symtbl.get x ^. us" from " ^. Symtbl.get y
   | MPatLift(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
 
 
@@ -1006,11 +995,6 @@ let rec fpv_mpat p =
   match p with
   | MPatSym(_,_) -> VarSet.empty
   | MPatSymApp(_,x,y) -> VarSet.singleton x |> VarSet.add y
-  | MPatModIfGuard(_,x) -> VarSet.singleton x
-  | MPatModIfThen(_,x) -> VarSet.singleton x
-  | MPatModIfElse(_,x) -> VarSet.singleton x
-  | MPatModEqual(_,x,y) -> VarSet.singleton x |> VarSet.add y
-  | MPatModProj(_,x,y) -> VarSet.singleton x |> VarSet.add y
   | MPatLift(_,x,_) -> VarSet.singleton x
 
 (** Free pattern variables in patterns *)

@@ -69,11 +69,6 @@ let no_pat_vars p =
   match p with
   | MPatSym(_) -> 0
   | MPatSymApp -> 2
-  | MPatModIfGuard -> 1
-  | MPatModIfThen -> 1
-  | MPatModIfElse -> 1
-  | MPatModEqual -> 2
-  | MPatModProj -> 2
   | MPatLift(_) -> 1
 
 let pprint_ty t =
@@ -106,11 +101,6 @@ let pprint_pat p =
   match p with
   | MPatSym(ty) -> us"uk:" ^. pprint_ty ty 
   | MPatSymApp ->   us"app " 
-  | MPatModIfGuard ->   us"ifguard " 
-  | MPatModIfThen ->   us"ifthen " 
-  | MPatModIfElse ->   us"ifelse " 
-  | MPatModEqual ->   us"== " 
-  | MPatModProj ->   us"proj " 
   | MPatLift(ty) -> us"val:" ^.  pprint_ty ty
 
 type primStyle =

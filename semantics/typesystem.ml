@@ -24,7 +24,6 @@ open Info
 open Printf
 exception Mkl_type_error of Message.message
 
-
 let rec meet ty_a ty_b = 
   match ty_a,ty_b with
     | ty,TyDyn(_,_) -> ty

@@ -261,12 +261,12 @@ def genNLPCost(cost:Expr, h:Real, meshVars:[MeshVars]) : Expr = {
           }
         | e -> e 
     };
-    def genCostFunction(meshVarList:[MeshVars], cNLP:Expr) : Expr = {
+    def genCostFunction(meshVarList:[MeshVars], cNLP:Expr) -> Expr = {
         match meshVarList with
         | mv::mvs -> genCostFunction(mvs, cNLP + substituteVars(cost, mv)*h)
         | [] -> cNLP
     };
-    genCostFunction(meshVars, lift 0.0)
+    genCostFunction(meshVars, 0)
 }
 
 // Generate the NLP constraints. The function is called by getNLP()
@@ -282,7 +282,7 @@ def genNLPConstraint(model:Equations, x0:VarMap, h:Real, meshVars:[MeshVars]) :
         | e1 e2 -> {
             def e1b = substituteVars(e1, prevX, meshVars);
             def e2b = substituteVars(e2, prevX, meshVars);
-            e1b e2b
+            e1b e2b;
           }
         | e -> e 
     };

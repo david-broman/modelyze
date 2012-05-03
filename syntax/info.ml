@@ -50,4 +50,14 @@ let get_filename fi =
         name |> Ustring.to_latin1 |> String.lowercase |> us
     | NoInfo -> us""
 
+let info2str fi = 
+    match fi with
+      | Info(name,r1,c1,r2,c2) ->
+          us"\"" ^. name ^. us"\" " ^.
+	  (ustring_of_int r1) ^. us":" ^.
+	  (ustring_of_int c1) ^. us"-" ^.
+	  (ustring_of_int r2) ^. us":" ^.
+	  (ustring_of_int c2)
+      | NoInfo -> us"NoInfo"
+
 

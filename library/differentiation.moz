@@ -55,7 +55,7 @@ let differentiateModel expr:Expr -> Expr =
   let eulerNumber = 2.71828182845904523536 in
   let sdiff expr:Signal -> Signal =
     match expr with
-    | ~time -> lift 1.
+    | ~time -> 1
     | sym:Signal -> hoDer expr 1d
     | ~hoDer x (lift k:Int) -> hoDer x (k +. 1d)
     | ~der e -> sdiff(sdiff(e))
@@ -77,7 +77,7 @@ let differentiateModel expr:Expr -> Expr =
     | ~sqrt e -> sdiff(e)/ (2.*(sqrt e))
     | e1 ^ (lift k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
     | -e -> -(sdiff(e))
-    | lift x:Real -> lift 0.
+    | lift x:Real -> 0
     | _ -> error "Cannot differentiate model"
   in 
   match expr with

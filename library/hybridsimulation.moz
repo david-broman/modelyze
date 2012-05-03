@@ -103,8 +103,8 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
              (InitValMap,InitValMap) =
     match lst with
     | (u,(i,_))::xs ->
-         worker xs (Map.add u (lift (Array.get yy i)) yymap)
-                   (Map.add u (lift (Array.get yp i)) ypmap) 
+         worker xs (Map.add u ((Array.get yy i)) yymap)
+                   (Map.add u ((Array.get yp i)) ypmap) 
     | [] -> (yymap,ypmap)
   in
     worker (Map.toList ukmap) (Map.empty) (Map.empty)
@@ -173,9 +173,9 @@ let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
 let evalFromArray expr:Expr -> ukmap:UkMap -> ctime:Real ->
                   yy:{Real} -> yp:{Real} -> Real =
   let yyfun s:Signal -> Signal = 
-     lift (Array.get yy (fst(Map.find s ukmap))) in
+      (Array.get yy (fst(Map.find s ukmap))) in
   let ypfun s:Signal -> Signal = 
-     lift (Array.get yp (fst (Map.find s ukmap))) in
+      (Array.get yp (fst (Map.find s ukmap))) in
   eval expr yyfun ypfun ctime 
 
 // Evaluate an expression that is assumed to have type Bool.

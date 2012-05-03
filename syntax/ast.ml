@@ -331,7 +331,7 @@ let pprint_ty t =
         | TyTuple(_,l,tylst) -> metastr l ^. us"(" ^. (tylst |> 
 	    List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
         | TySym(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
-	| TyDyn(_,l) -> metastr l ^. us"<>"  
+	| TyDyn(_,l) -> metastr l ^. us"?"  
         | TySymData(_,l,tyid,id) -> metastr l ^. Symtbl.get id 
         | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^. 
             Symtbl.get id ^. us")"

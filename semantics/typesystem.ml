@@ -158,11 +158,17 @@ let check_istype_resroot fi l ty_residual =
    if not (consistent tyexp ty_residual) then
         raise (Mkl_type_error(TYPE_EXPECTED_RESROOT_TYPE,ERROR,fi,[pprint_ty tyexp; pprint_ty ty_residual]))
 
-     
+(*     
 let check_arg_type_consistency fi ty' ty_elem =
   if consistent ty' ty_elem then meet ty' ty_elem
   else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,[pprint_ty ty'; pprint_ty ty_elem]))
+*)
 
+let check_and_lift_arg_type_consistency fi e1 elem_ty container_ty =
+  if consistent elem_ty container_ty then (meet elem_ty container_ty, e1)
+  else if consistent (TySym(NoInfo,0,elem_ty)) container_ty 
+  then (meet (TySym(NoInfo,0,elem_ty)) container_ty, TmLift(NoInfo,0,e1,elem_ty))
+  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,[pprint_ty elem_ty; pprint_ty container_ty]))
 
 
 
@@ -189,8 +195,8 @@ let rec typeof_array_op fi l op ts env  =
         let (ty_elem,elem') = typeof env  elem in
         let ty' = check_istype_array (tm_info ar) l ty_ar in
           check_istype_int (tm_info pos) l ty_pos;
-          let _ = check_arg_type_consistency (tm_info elem) ty' ty_elem in
-            (TyUnit(fi,l),[ar';pos';elem'])
+          let (ty_elem',elem'') = check_and_lift_arg_type_consistency (tm_info elem) elem' ty' ty_elem in
+            (TyUnit(fi,l),[ar';pos';elem''])
     | _ -> raise (Mkl_type_error
 	            (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                      [ustring_of_int (List.length ts)]))
@@ -208,28 +214,27 @@ and typeof_map_op fi l op ts env  =
         let (ty_value,value') = typeof env  value in
         let (ty_ma,ma') = typeof env  ma in
         let (ty_ma1,ty_ma2) = check_istype_map (tm_info ma) l ty_ma in
-        let ty_key' = check_arg_type_consistency (tm_info key) ty_key ty_ma1 in
-        let ty_value' = 
-          check_arg_type_consistency (tm_info value) ty_value ty_ma2 in
-          (TyMap(fi,l,ty_key',ty_value'),[key';value';ma'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info key) key' ty_key ty_ma1 in
+        let (ty_value', value'') = check_and_lift_arg_type_consistency (tm_info value) value' ty_value ty_ma2 in
+          (TyMap(fi,l,ty_key',ty_value'),[key'';value'';ma'])
     | MapOpFind,[key;ma] ->
         let (ty_key,key') = typeof env  key in
-        let (ty_ma,ma') = typeof env  ma in
+        let (ty_ma,ma') = typeof env ma in
         let (ty_ma1,ty_ma2) = check_istype_map (tm_info ma) l ty_ma in
-        let _ = check_arg_type_consistency (tm_info key) ty_key ty_ma1 in
-          (ty_ma2,[key';ma'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info key) key' ty_key ty_ma1 in
+          (ty_ma2,[key'';ma'])
     | MapOpMem,[key;ma] ->
         let (ty_key,key') = typeof env  key in
         let (ty_ma,ma') = typeof env  ma in
         let (ty_ma1,ty_ma2) = check_istype_map (tm_info ma) l ty_ma in
-        let _ = check_arg_type_consistency (tm_info key) ty_key ty_ma1 in
-          (TyBool(fi,l),[key';ma'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info key) key' ty_key ty_ma1 in
+          (TyBool(fi,l),[key'';ma'])
     | MapOpRemove,[key;ma] ->
         let (ty_key,key') = typeof env  key in
         let (ty_ma,ma') = typeof env  ma in
         let (ty_ma1,ty_ma2) = check_istype_map (tm_info ma) l ty_ma in
-        let ty_key' = check_arg_type_consistency (tm_info key) ty_key ty_ma1 in
-          (TyMap(fi,l,ty_key',ty_ma2),[key';ma'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info key) key' ty_key ty_ma1 in
+          (TyMap(fi,l,ty_key',ty_ma2),[key'';ma'])
     | MapOpToList,[ma] ->
         let (ty_ma,ma') = typeof env  ma in
         let (ty_ma1,ty_ma2) = check_istype_map (tm_info ma) l ty_ma in
@@ -252,20 +257,20 @@ and typeof_set_op fi l op ts env  =
         let (ty_key,key') = typeof env  key in
         let (ty_set,set') = typeof env  set in
         let ty_setkey = check_istype_set (tm_info set) l ty_set in
-        let ty_key' = check_arg_type_consistency (tm_info set) ty_key ty_setkey in
-          (TySet(fi,l,ty_key'),[key';set'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info set) key' ty_key ty_setkey in
+          (TySet(fi,l,ty_key'),[key'';set'])
     | SetOpMem,[key;set] ->
         let (ty_key,key') = typeof env  key in
         let (ty_set,set') = typeof env  set in
         let ty_setkey = check_istype_set (tm_info set) l ty_set in
-        let _ = check_arg_type_consistency (tm_info key) ty_key ty_setkey in
-          (TyBool(fi,l),[key';set'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info key) key' ty_key ty_setkey in
+          (TyBool(fi,l),[key'';set'])
     | SetOpRemove,[key;set] ->
         let (ty_key,key') = typeof env  key in
         let (ty_set,set') = typeof env  set in
         let ty_setkey = check_istype_set (tm_info set) l ty_set in
-        let ty_key' = check_arg_type_consistency (tm_info set) ty_key ty_setkey in
-          (TySet(fi,l,ty_key'),[key';set'])
+        let (ty_key',key'') = check_and_lift_arg_type_consistency (tm_info set) key' ty_key ty_setkey in
+          (TySet(fi,l,ty_key'),[key'';set'])
     | SetOpToList,[set] ->
         let (ty_set,set') = typeof env  set in
         let ty_setkey = check_istype_set (tm_info set) l ty_set in
@@ -363,17 +368,20 @@ and typeof env t =
                    -> (ty12,TmApp(fi,0,e1',e2',fs))
                  (* L-APP2 *)
              | TyDyn(fi2,_),ty2 
-                 -> (TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
-                 (* L-APP3 *)
+                  -> (TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
+                 (* L-APP3 *) 
              | TyArrow(fi2,_,ty11,ty12),ty2 
-                 when (not (consistent ty11 ty2)) && 
-                   (consistent (TySym(NoInfo,0,ty11)) ty2)
-                   -> (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e1',ty1),e2')) 
+                 when consistent ty11 (TySym(NoInfo,0,ty2))
+                   -> (ty12,TmApp(fi,0,e1',TmLift(NoInfo,0,e2',ty2),fs))
                  (* L-APP4 *)
+             | TyArrow(fi2,_,ty11,ty12),ty2 
+                  when (consistent (TySym(NoInfo,0,ty11)) ty2)
+                   -> (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e1',ty1),e2'))  
+                 (* L-APP5 *)
              | TySym(fi2,_,TyDyn(fi3,_)),ty2 
                  -> let e2'' = lift_expr e2' ty2 in
                    (TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e1',e2''))
-                     (* L-APP5 *)
+                 (* L-APP6 *)
              | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
                  when consistent (TySym(NoInfo,0,ty11)) (lift_type ty2) 
                    -> let e2'' = lift_expr e2' ty2 in
@@ -390,11 +398,14 @@ and typeof env t =
 	     | (None,true) -> raise (Mkl_type_error(TYPE_LET_REC_MISS_RET_TYPE,ERROR,fi,[]))
 	     | (Some ty1def,recu) -> 
 		 let tyvar = Ast.mk_lettype plst 0 ty1def in
-		 let (ty1,t1') = 
-                   if recu then typeof ((x,tyvar)::t1_env) e1 else typeof t1_env e1 in                    
-                   if not (consistent ty1 ty1def) then
+		 let (ty1,t1') = if recu then typeof ((x,tyvar)::t1_env) e1 else typeof t1_env e1 
+                 in                    
+                   if consistent ty1 ty1def then
+		     (ty1def,t1')
+                   else if consistent ty1def (TySym(NoInfo,0,ty1)) then
+                     (ty1def, TmLift(NoInfo,0,t1',ty1))
+                   else
 		     raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH, ERROR,fi,[pprint_ty ty1; pprint_ty ty1def]))
-		   else (ty1def,t1')
 	     | (None,false) -> typeof t1_env  e1)
         in
 	let tyvar = Ast.mk_lettype plst 0 ty1 in
@@ -429,9 +440,9 @@ and typeof env t =
           let (ty2,t2') = typeof ((u,ty1)::env)  t2 in
 	    (ty2,TmNu(fi,l,u,ty1,t2'))
     | TmSymApp(fi,l,t1,t2) -> failwith "Only in internal language."
-    | TmLift(fi,l,t,_) -> 
-	let (ty',t') = typeof env  t in
-	  (TySym(ty_info ty',ty_lev ty',ty'),TmLift(fi,l,t',ty'))
+    | TmLift(fi,l,t,_) -> failwith "Only in internal language."
+	(*let (ty',t') = typeof env  t in
+	  (TySym(ty_info ty',ty_lev ty',ty'),TmLift(fi,l,t',ty')) *)
     | TmCase(fi,l,e1,p,e2,e3) ->
         let (ty1,e1') = typeof env e1 in
         let (ty3,e3') = typeof env e3 in

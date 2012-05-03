@@ -75,11 +75,11 @@ along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> DPRINT
 %token <unit Ast.tokendata> DPRINTTYPE
 %token <unit Ast.tokendata> LCASE
+%token <unit Ast.tokendata> LIFT
 %token <unit Ast.tokendata> OF
 %token <unit Ast.tokendata> DECON
 %token <unit Ast.tokendata> WITH
 %token <unit Ast.tokendata> SYM
-%token <unit Ast.tokendata> LIFT
 %token <unit Ast.tokendata> PROJ
 %token <unit Ast.tokendata> FST
 %token <unit Ast.tokendata> SND
@@ -722,9 +722,6 @@ app_left:
   | SND atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmProj(fi,$1.l,1,$2) }
-  | LIFT atom
-      { let fi = mkinfo $1.i (tm_info $2) in
-        TmLift(fi,$1.l,$2,TyUnit(NoInfo,$1.l)) } 
   | ERROR atom
       { let fi = mkinfo $1.i (tm_info $2) in
         TmError(fi,$1.l,$2) }   

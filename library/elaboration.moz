@@ -113,13 +113,16 @@ let addProbe s:String -> u:Signal -> ps:ProbeMap =
     if Map.mem s ps then Map.add s (u::(Map.find s ps)) ps
     else Map.add s [u] ps
 
-let elaborateProbes model:Equations -> (Equations,ProbeMap) =
+
+
+//let elaborateProbes model:Equations -> (<Equations>,ProbeMap) =
+let elaborateProbes model:Equations -> (<>,ProbeMap) =
   let elab e:<> -> ps:ProbeMap -> (<>,ProbeMap) = 
     match e with
     | ~probe (lift s:String) -> let u:Signal in (u,addProbe s u ps)
     | e1 e2 -> 
        let (e1b,ps1) = elab e1 ps in
-        let (e2b,ps2) = elab e2 ps1 in
+       let (e2b,ps2) = elab e2 ps1 in
        (e1b e2b,ps2)
     | _ -> (e,ps)
   in elab model (Map.empty)

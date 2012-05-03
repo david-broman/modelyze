@@ -455,7 +455,7 @@ and typeof env t =
                    if recu then typeof ((x,tyvar)::t1_env) e1 else typeof t1_env e1 in                    
                    if not (consistent ty1 ty1def) then
 		     raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH, ERROR,fi,[pprint_ty ty1; pprint_ty ty1def]))
-		   else (ty1,t1')
+		   else (ty1def,t1')
 	     | (None,false) -> typeof t1_env  e1)
         in
 	let tyvar = Ast.mk_lettype plst 0 ty1 in

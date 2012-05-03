@@ -388,15 +388,15 @@ let pprint_daesolver_op op =
 
 let pprint_mpat p = 
   match p with
-  | MPatUk(_,ty) -> us"uk:" ^. pprint_ty ty 
-  | MPatModApp(_,x,y) -> us"app " ^. Symtbl.get x ^. us" " ^. Symtbl.get y
+  | MPatUk(_,ty) -> us"sym:" ^. pprint_ty ty 
+  | MPatModApp(_,x,y) -> us"(symapp " ^. Symtbl.get x ^. us" " ^. Symtbl.get y ^. us")"
   | MPatModIfGuard(_,x) -> us"ifguard " ^. Symtbl.get x 
   | MPatModIfThen(_,x) -> us"ifthen " ^. Symtbl.get x
   | MPatModIfElse(_,x) -> us"ifelse " ^. Symtbl.get x
   | MPatModEqual(_,x,y) -> Symtbl.get x ^. us"== " ^. Symtbl.get y
   | MPatModProj(_,x,y) ->   
       us"proj " ^. Symtbl.get x ^. us" from " ^. Symtbl.get y
-  | MPatVal(_,x,ty) -> us"val: " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
+  | MPatVal(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
 
 
 let rec pprint_pat p =
@@ -410,7 +410,7 @@ let rec pprint_pat p =
   | PatModEqual(_,p1,p2) -> pprint_pat p1 ^. us"==" ^. pprint_pat p2 
   | PatModProj(_,p1,p2) -> us"proj " ^. pprint_pat p1 ^. us" from " ^. 
       pprint_pat p2 
-  | PatModVal(_,x,ty) -> us"val " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
+  | PatModVal(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
   | PatCons(_,p1,p2) ->  pprint_pat p1 ^. us"::" ^. pprint_pat p2 
   | PatNil(_) -> us"[]"
   | PatTuple(_,ps) -> us"(" ^. 
@@ -451,8 +451,8 @@ and pprint tm =
       let params = us" " ^. (arglst 
         |> List.map (fun (x,ty) -> Symtbl.get x ^. us":" ^. pprint_ty ty) 
         |> Ustring.concat (us" -> ")) in
-      metastr l ^. us"let " ^.  Symtbl.get id ^. params ^. us" = " ^. 
-      pprint t1 ^. us" in " ^. pprint t2
+      metastr l ^. us"(let " ^.  Symtbl.get id ^. params ^. us" = " ^. 
+      pprint t1 ^. us" in " ^. pprint t2 ^. us")"
   | TmIf(_,l,t1,t2,t3) -> metastr l ^. us"(if " ^. 
 	pprint t1 ^. us" then " ^.pprint t2 ^. us" else " ^. pprint t3 ^. us")"
   | TmConst(_,l,c) -> pprint_const c l  
@@ -471,7 +471,7 @@ and pprint tm =
       pprint t2  ^. us")"
   | TmLift(_,l,t,ty) -> metastr l ^. us"val(" ^. pprint t ^.
         us":" ^. pprint_ty ty ^. us")"
-  | TmCase(_,l,t1,pat,t2,t3) -> metastr l ^. us"(decon " ^.
+  | TmCase(_,l,t1,pat,t2,t3) -> metastr l ^. us"(case " ^.
       pprint t1 ^. us" with " ^. pprint_mpat pat ^. us" then " ^. 
         pprint t2 ^. us" else " ^. pprint t3 ^. us")"
   | TmEqual(_,l,t1,t2) -> pprint t1 ^. us" " ^. 

@@ -32,11 +32,12 @@ def Capacitor(C:Real, p:Electrical, n:Electrical) = {
     C * v' = i;
 }
 
-let Inductor L:Real -> p:Electrical -> n:Electrical -> Equations =
-  let i:Current in
-  let v:Voltage in
+def Inductor(L:Real, p:Electrical, n:Electrical) = {
+  def i:Current;
+  def v:Voltage;
   Branch i v p n;
-  L * (der i) = v
+  L * i' = v;
+}
 
 def Ground(p:Electrical) = {
     def i:Current;

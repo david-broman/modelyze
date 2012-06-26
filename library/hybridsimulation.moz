@@ -36,44 +36,44 @@ type SimulationResult = ([String],[StepVal])
 type InitValMap = (<Real> => <Real>)
 
 // List definition of transistions
-type Transitions = [(State,State,Expr,Expr)]
+type Transitions = [(Mode,Mode,Expr,Expr)]
 
-// State path of states through the hierarchy of statecharts
-type StatePath = [State]
+// Mode path of states through the hierarchy of hybridcharts
+type ModePath = [Mode]
 
-// Internal transition for storing both source and target state info
-let internalTrans : <State -> State -> Bool -> Equations -> Equations>
+// Internal transition for storing both source and target mode info
+let internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
 
 
-// Extract the current hierarical state of equations as well as 
-// the resulting state path. Transation information is preserved
+// Extract the current hierarical mode of equations as well as 
+// the resulting mode path. Transation information is preserved
 // in the equation system in form "internalTrans" so that actions
 // also are affected by the differentiation procedure (handling of
 // higher-order derivatives).
-let extractHState model:Equations -> freshState:Bool ->
-    prePath:StatePath -> currPath:StatePath -> (Equations,StatePath) =
+let extractHMode model:Equations -> freshMode:Bool ->
+    prePath:ModePath -> currPath:ModePath -> (Equations,ModePath) =
   let extract m:Equations -> fresh:Bool ->
-    pre:StatePath -> curr:StatePath -> updated:StatePath ->
-      cstate:State -> (<>,StatePath) =
+    pre:ModePath -> curr:ModePath -> updated:ModePath ->
+      cmode:Mode -> (<>,ModePath) =
     match m with
-    | statechart initstate s e -> 
+    | hybridchart initmode s e -> 
       (match (pre,curr) with
        | (_,[]) -> extract e true [] [] (s::updated) s
        | (p::ps,c::cs) -> if p <==> c then extract e false ps cs (p::updated) p
                           else extract e true ps cs (c::updated) c)
-    | state s e -> if s <==> cstate  
+    | mode s e -> if s <==> cmode  
                       then extract e fresh pre curr updated s 
                       else (NoEqn,updated)
-    | transition nstate when g action i -> 
-          (internalTrans cstate nstate g i,updated) 
+    | transition nmode when g action i -> 
+          (internalTrans cmode nmode g i,updated) 
     | init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
     | e1 e2 ->  
-         let (eqs1,up1) = extract e1 fresh pre curr updated cstate in
-         let (eqs2,up2) = extract e2 fresh pre curr up1 cstate in
+         let (eqs1,up1) = extract e1 fresh pre curr updated cmode in
+         let (eqs2,up2) = extract e2 fresh pre curr up1 cmode in
          (eqs1 eqs2,up2)
     | e -> (e,updated)
   in  
-    extract model freshState prePath currPath [] topstate
+    extract model freshMode prePath currPath [] topmode
 
 // Extract a list of transitions from an equation syste.
 let extractTransitions model:Expr -> Transitions =
@@ -96,7 +96,7 @@ let initValues eqs:Equations -> InitValMap =
 
 // Extract value maps from arrays of real values for unknowns.
 // The function is used to when performing structural discrete changes
-// and transferring the state during the event.
+// and transferring the mode during the event.
 let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap -> 
                   (InitValMap,InitValMap) =
   let worker lst:UkList -> yymap:InitValMap -> ypmap:InitValMap -> 
@@ -259,24 +259,24 @@ let isTransitionFired expr:Expr -> roots:{Int} -> index:Int -> (Int,Bool) =
 
 // Create a list of expressions containing initiatiations that should
 // be executed when a an event (transistion occurs). The function takes
-// as input the current state path and the state path that should exists
+// as input the current mode path and the mode path that should exists
 // after transition.
-let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:StatePath ->
-      ukmap:UkMap -> ctime:Real -> yy:{Real} -> yp:{Real} -> ([Expr],StatePath) =
+let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:ModePath ->
+      ukmap:UkMap -> ctime:Real -> yy:{Real} -> yp:{Real} -> ([Expr],ModePath) =
   let roots = DAESolver.roots daesolv in
-  let changeState sp:StatePath -> prevS:State -> nextS:State -> StatePath =
+  let changeMode sp:ModePath -> prevS:Mode -> nextS:Mode -> ModePath =
     match sp with
     | s::ss -> if s <==> prevS then [nextS] 
-               else s::(changeState ss prevS nextS)
+               else s::(changeMode ss prevS nextS)
     | [] -> []
   in 
-  let travTrans trans:Transitions -> acc:[Expr] -> sp:StatePath -> 
-                idx:Int -> ([Expr],StatePath) = 
+  let travTrans trans:Transitions -> acc:[Expr] -> sp:ModePath -> 
+                idx:Int -> ([Expr],ModePath) = 
     match trans with
      | (s1,s2,g,i)::ts -> 
           let (i2,fired) = isTransitionFired g roots idx in 
           if fired && evalBoolFromArray(g,yy,yp,ukmap,ctime)
-            then travTrans ts (i::acc) (changeState sp s1 s2) i2
+            then travTrans ts (i::acc) (changeMode sp s1 s2) i2
             else travTrans ts acc sp i2
      | [] -> (acc,sp)
   in 
@@ -291,8 +291,8 @@ let addEquations inits:[Equations] -> eqs:Equations -> Equations =
   | [] -> eqs
 
 // Generate arrays of initial values from init value map and old
-// state information
-let makeInitStateArrays initvals:InitValMap -> 
+// mode information
+let makeInitModeArrays initvals:InitValMap -> 
                         yymap:InitValMap -> ypmap:InitValMap -> 
                         ctime:Real -> ukmap:UkMap -> ({Real},{Real}) =
   let size = Map.size ukmap in
@@ -353,7 +353,7 @@ let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
   | [] -> acc 
 
 // The main simulation function. Performs hybrid simulation using
-// hierarical state machines and differential-algebraic equations
+// hierarical mode machines and differential-algebraic equations
 let simulate model:Equations -> steptime:Real -> endtime:Real -> 
              SimulationResult =
   // Extract probes
@@ -363,18 +363,18 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
 
 
   // **** Start of discrete-time loop. ****
-  //    Iterate for each state change
+  //    Iterate for each mode change
   let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
              yymap:InitValMap -> ypmap:InitValMap ->
              olddmap:DerivMap -> transInits:[Expr] ->
-             prePath:StatePath -> newPath:StatePath ->
+             prePath:ModePath -> newPath:ModePath ->
              [StepVal] = 
-    // Extract all equations and correct inits for a partiuclar state path. 
-    let (modelNoState,updatedPath) = 
-           extractHState model1 (currtime == 0.) prePath newPath in
+    // Extract all equations and correct inits for a partiuclar mode path. 
+    let (modelNoMode,updatedPath) = 
+           extractHMode model1 (currtime == 0.) prePath newPath in
    
     // Performe connection elaboration
-    let model2 = (elaborateConnections modelNoState) in
+    let model2 = (elaborateConnections modelNoMode) in
 
 
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
@@ -402,7 +402,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
 
     // Create a map with all initial values for the current state
     let initvalmap = initValues model4 in
-    let (yy,yp) = makeInitStateArrays initvalmap yymap ypmap currtime ukmap in
+    let (yy,yp) = makeInitModeArrays initvalmap yymap ypmap currtime ukmap in
 
 
     // Auto correct initial conditions of the DAE
@@ -413,7 +413,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     let rootfun = makeRootFun ukmap transitions in  
 
     // Create the simulation instance for continuous-time simulation using IDA
-    let state = DAESolver.makehybrid currtime yy yp id residual rootfun in
+    let mode = DAESolver.makehybrid currtime yy yp id residual rootfun in
     
     // Return the init values after an event or start of simulation (time 0)
     let firststepval = makeStepVal currtime yy probelist ukmap in
@@ -421,17 +421,17 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
   
     // **** Start of continuous-time loop *****
     let ctloop currtime:Real -> acc:[StepVal] -> 
-               ([StepVal],Real,[Expr],StatePath) = 
+               ([StepVal],Real,[Expr],ModePath) = 
       if currtime > endtime 
         then (acc,currtime,[],updatedPath)
         else
           // Compute the next step using numerical integration
-          let newtime = DAESolver.step steptime state in 
+          let newtime = DAESolver.step steptime mode in 
           // Save the step value
           let stepval = makeStepVal newtime yy probelist ukmap in
           // Check if there are event actions
           let (transInits,newEventPath) = 
-              makeEventActions state transitions updatedPath 
+              makeEventActions mode transitions updatedPath 
                                ukmap newtime yy yp in
           // End continuous-time loop?
           if newtime == 0. || !(transInits <==> []) 
@@ -443,7 +443,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
              ctloop currtime (firststepval::acc) in
 
       // Close the continuous-time DAE solver instance.
-      let _ = DAESolver.close state in
+      let _ = DAESolver.close mode in
 
       // Perform another round of CT simulation?
       if newtime > endtime then acc2  

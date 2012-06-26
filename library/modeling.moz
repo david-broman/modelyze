@@ -20,7 +20,7 @@ include Base
 
 type Signal = <Real>
 
-def der : <Real -> Real>
+def der : Real -> Real
 def (')  = der
 
 def hoDer : <Real -> Int -> Real>

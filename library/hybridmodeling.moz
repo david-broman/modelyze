@@ -18,19 +18,19 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Modeling
 
-type State 
-type Initstate  
+type Mode 
+type Initmode  
 type Action
 type When
-def initstate:Initstate
+def initmode:Initmode
 def action:Action
 def when:When
 
-def statechart : Initstate -> State -> Equations -> Equations
-def state : State -> Equations -> Equations
-def transition : State -> When -> Bool -> Action -> Equations -> Equations
+def hybridchart : Initmode -> Mode -> Equations -> Equations
+def mode : Mode -> Equations -> Equations
+def transition : Mode -> When -> Bool -> Action -> Equations -> Equations
 
 def nothing : Equations
-def topstate:State 
+def topmode:Mode 
 
 

@@ -40,20 +40,20 @@ def PendulumExt(m:Real, l:Real, T:<Real>, x:Pos, y:Pos) = {
 
 def BreakingPendulum(m:Real, l:Real, angle:Real) = {
     def x,y:Position;
-    def Pendulum, BouncingBall:State;
+    def Pendulum, BouncingBall:Mode;
     init x (l*sin(angle));
     init y (-l*cos(angle));     
     probe("y") = y;
 
-    statechart initstate Pendulum {   
-        state Pendulum {
+    hybridchart initmode Pendulum {   
+        mode Pendulum {
             def T:Force;
             probe("T") = T;
             PendulumExt(m, l, T, x, y);              
             transition BouncingBall 
                 when (time >= 3.2) action nothing;  
         }; 
-        state BouncingBall {
+        mode BouncingBall {
             x'' = 0;
             -m*g = m*y'';
             transition BouncingBall 

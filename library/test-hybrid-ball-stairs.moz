@@ -38,14 +38,14 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
   def y:Position;  //Serious error. If y is before x, we get wrong result.
   def ground:Position;
 
-  def Pendulum:State;
-  def BouncingBall:State;
+  def Pendulum:Mode;
+  def BouncingBall:Mode;
 
   init ground (-3);
   ground' = 0;
 
-  statechart initstate Pendulum {
-    state Pendulum {
+  hybridchart initmode Pendulum {
+    mode Pendulum {
       def T:Force;
 
       init x (l*sin(startAngle));
@@ -59,7 +59,7 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
         action nothing;
     };
 
-    state BouncingBall {    
+    mode BouncingBall {    
       def timer:Signal;
 
       timer' = 1;

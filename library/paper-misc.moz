@@ -69,6 +69,14 @@ def LinearEqs = {
 
 let pi = 3.1415
 
+def der : Real -> Real
+
+def expr(e:<Real>) -> <Real> = {
+    match e with
+    | der x -> x
+    | sym:Real -> e
+}
+
 def paperInfo = {
   let inst = Pendulum(5,3,45*pi/180) in
   let (inst2,newmap) = elaborateDerivatives(inst,Map.empty) in
@@ -81,6 +89,8 @@ def paperInfo = {
   let _ = dprint(getUnknowns(LinearEqs,Set.empty)) in
   let _ = dprint("---------") in
   let _ = dprint(LinearEqs) in
+  let _ = dprint("---------") in
+  let _ = dprint(expr(der 3)) in
   ()
 }
 

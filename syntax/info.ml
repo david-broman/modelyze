@@ -34,6 +34,15 @@ let mkinfo fi1 fi2 =
     | (NoInfo, Info(fn,r1,c1,r2,c2)) -> Info(fn,r1,c1,r2,c2)
     | (_,_) -> NoInfo
 
+let mk_right_info fi = 
+    match fi with
+      | Info(f,_,_,r,c) -> Info(f,r,c,r,c)
+      | NoInfo -> NoInfo
+
+let mk_left_info fi = 
+    match fi with
+      | Info(f,r,c,_,_) -> Info(f,r,c,r,c)
+      | NoInfo -> NoInfo
 
 let mkinfo_lst fi_ls = 
   let rec first_fi ls =

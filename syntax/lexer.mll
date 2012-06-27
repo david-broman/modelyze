@@ -333,11 +333,11 @@ rule main = parse
   | unsigned_number as str
       { [Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str}] }
   | '"'  
-      { Buffer.reset string_buf ;  mklstring lexbuf; add_colno 1;
+      { Buffer.reset string_buf ;  mklstring lexbuf; 
 	 let s = Ustring.from_utf8 (Buffer.contents string_buf) in
          let esc_s = Ustring.convert_escaped_chars s in
-	 let rval = Parser.STRING{i=mkinfo_ustring s; l=0; v=esc_s} in
-	 add_colno 1; [rval]}
+	 let rval = Parser.STRING{i=mkinfo_ustring (s ^. us"  "); l=0; v=esc_s} in
+	 add_colno 2; [rval]}
   | eof
       { [Parser.EOF] }
   | utf8 as c

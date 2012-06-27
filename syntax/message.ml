@@ -65,6 +65,7 @@ type id =
          arg2 = level that the variable was bound
          arg3 = level at the variable was stripped 
          arg4 = line number of the meta-down operation *)
+  | TYPE_SYMAPP_MISSING_ARG
   | TYPE_APP_ARG_MISMATCH 
       (* arg1 = type of function parameter 
          arg2 = type of application argument *)
@@ -285,25 +286,30 @@ exception Mkl_static_error of message
 
 (** [id2str id] returns the identifier string for [id], e.g., 
     "LEX_UNKNOWN_CHAR" *)
-let id2str id =
+let id2str id args =
   match id  with
-    | LEX_UNKNOWN_CHAR -> us"LEX_UNKNOWN_CHAR"
-    | LEX_STRING_NOT_TERMINATED -> us"LEX_STRING_NOT_TERMINATED"
+    | LEX_UNKNOWN_CHAR -> us"Illegal character '" ^. (List.nth args 0) ^. us"'."
+    | LEX_STRING_NOT_TERMINATED -> us"String is not terminated."
     | LEX_INVALID_ESCAPE -> us"LEX_INVALID_ESCAPE"
     | LEX_COMMENT_NOT_TERMINATED -> us"LEX_COMMENT_NOT_TERMINATED"
     | LEX_UNKOWN_PRIMITIVE -> us"LEX_UNKOWN_PRIMITIVE"
     | LEX_UNKNOWN_FUNCTION -> us"LEX_UNKNOWN_FUNCTION"
-    | PARSE_ERROR -> us"PARSE_ERROR"
+    | PARSE_ERROR -> us"Syntax error"
     | TYPE_MISMATCH_IF_GUARD -> us"TYPE_MISMATCH_IF_GUARD" 
     | TYPE_IF_EXP_DIFF_TYPE -> us"TYPE_IF_EXP_DIFF_TYPE"
     | TYPE_IF_EXP_LEV_MONOTONICITY -> us"TYPE_IF_EXP_LEV_MONOTONICITY"
     | TYPE_LAM_VAR_LEV_MONOTONICITY -> us"TYPE_LAM_VAR_LEV_MONOTONICITY"
     | TYPE_LAM_EXP_LEV_MONOTONICITY -> us"TYPE_LAM_EXP_LEV_MONOTONICITY"
-    | TYPE_VAR_NOT_DEFINED -> us"TYPE_VAR_NOT_DEFINED"
+    | TYPE_VAR_NOT_DEFINED -> us"Variable '" ^. (List.nth args 0) ^. us"' is not defined."
     | TYPE_META_UP_ON_FREE_VAR -> us"TYPE_META_UP_ON_FREE_VAR"
     | TYPE_META_DOWN_ON_FREE_VAR -> us"TYPE_META_DOWN_ON_FREE_VAR"
-    | TYPE_APP_ARG_MISMATCH -> us"TYPE_APP_ARG_MISMATCH"
-    | TYPE_APP_ABS_MISMATCH -> us"TYPE_APP_ABS_MISMATCH"
+    | TYPE_SYMAPP_MISSING_ARG -> us"Missing argument of type '" ^. (List.nth args 0) ^. us"'."
+    | TYPE_APP_ARG_MISMATCH -> (List.nth args 1) ^.
+                               us"Illegal argument type. Expected an argument of type '" ^.
+                               (List.nth args 0) ^. us"'."
+    | TYPE_APP_ABS_MISMATCH -> (List.nth args 1) ^.
+                               us"The expression of type '" ^. (List.nth args 0) ^. 
+                               us"' is not a function and shall not have any arguments."
     | TYPE_APP_NO_FUNC_TYPE -> us"TYPE_APP_NO_FUNC_TYPE"
     | TYPE_LET_REC_MISS_RET_TYPE -> us"TYPE_LET_REC_MISS_RET_TYPE"
     | TYPE_LET_TYPE_DEF_MISMATCH -> us"TYPE_LET_TYPE_DEF_MISMATCH"
@@ -383,12 +389,14 @@ let id2str id =
     | RUNTIME_TYPE_ERROR -> us"RUNTIME_TYPE_ERROR"
 
 
+
+
 (** [severity2str s] returns the severity strings ["ERROR"] or 
     ["WARNING"]. *)
 let severity2str s =
   match s with
-    | ERROR -> us"ERROR"
-    | WARNING -> us"WARNING"
+    | ERROR -> us"error"
+    | WARNING -> us"warning"
 
 
 let info2str_startline fi =
@@ -400,19 +408,16 @@ let info2str_startline fi =
 (** [message2str m] returns a string representation of message [m].
     Is message is not intended to be read by humans. *)
 let message2str (id,sev,info,args)  = 
-  let sargs = us"[" ^. (List.fold_left 
-       (fun a b -> a ^. (if a =. us"" then us"" else us",") ^. b)
-       (us"") args) ^. us"]" in
   match info with 
     | Info(filename,l1,c1,l2,c2) -> 
-	us"FILE \"" ^. filename ^. us"\" " ^.
+	  filename ^. us" " ^.
 	  (ustring_of_int l1) ^. us":" ^.
 	  (ustring_of_int c1) ^. us"-" ^.
 	  (ustring_of_int l2) ^. us":" ^.
 	  (ustring_of_int c2) ^. us" " ^.
-	  (severity2str sev) ^. us":\n  " ^. 
-	  (id2str id) ^. us" " ^. sargs 
-    |  NoInfo -> us"NO INFO: " ^. (id2str id) ^. us" " ^. sargs
+	  (severity2str sev) ^. us": " ^. 
+	  (id2str id args) 
+    |  NoInfo -> us"NO INFO: " ^. (id2str id args)
      
 
 

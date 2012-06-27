@@ -42,16 +42,16 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
     def x,y:Position;
     def Pendulum, BouncingBall:Mode;
     init x (l*sin(angle));
-    init y (-l*cos(angle));     
+    init y (-l*cos(angle));
     probe("y") = y;
 
     hybridchart initmode Pendulum {   
         mode Pendulum {
             def T:Force;
             probe("T") = T;
-            PendulumExt(m, l, T, x, y);              
+            PendulumExt(m, l, T, x, y);
             transition BouncingBall 
-                when (time >= 3.2) action nothing;  
+                when (time >= 3.2) action nothing;
         }; 
         mode BouncingBall {
             x'' = 0;

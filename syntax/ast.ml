@@ -857,6 +857,8 @@ let rec tm_info t =
     | TmDPrintType(t) -> tm_info t
     | TmError(fi,_,_) -> fi
 
+
+
 let rec set_tm_info newfi tm = 
   match tm with
     | TmVar(_,x) -> TmVar(newfi,x)

@@ -171,6 +171,18 @@ let check_and_lift_arg_type_consistency fi e1 elem_ty container_ty =
 
 
 
+
+
+let missing_infix_message env ty = 
+  try 
+    (match List.assoc (Symtbl.add (us"(;)")) env with
+      | TySym(_,_,TyArrow(_,_,ty1,ty2)) when consistent ty (TySym(NoInfo,0,ty1)) -> 
+          us"Forgot to add a ';'? "
+      | _ -> us"")
+  with Not_found -> us""
+         
+      
+
 let rec typeof_array_op fi l op ts env  =
   match op,ts with
     | ArrayOpLength,[ar] -> 
@@ -339,207 +351,212 @@ and typeof_daesolver_op fi l op ts env  =
 	            (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                      [ustring_of_int (List.length ts)]))
 
-and typeof env t =
-  match t with
-    | TmVar(fi,x) -> ( 
-        try let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
-	with Not_found -> (
-          raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))))
-    | TmLam(fi,l,x,ty1,t2) ->
-        let (ty2,t2') = typeof ((x,ty1)::env)  t2 in
-	  (TyArrow(NoInfo,l,ty1,ty2),TmLam(fi,l,x,ty1,t2'))
-    | TmFix(fi,l,t) ->
-	let (ty,t') = typeof env  t in
-	  begin match ty with
-	    | TyArrow(fi,l1,ty1,ty2) -> 
-		if not (consistent ty1 ty2) then 
-		  raise (Mkl_type_error(TYPE_FIX_MISMATCH,ERROR,tm_info t, [pprint_ty ty1; pprint_ty ty2]))
-		else (ty1,TmFix(fi,l,t'))
-	    | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
-	  end
-    | TmApp(fi,_,e1,e2,fs)  -> 
-        let (ty1,e1') = typeof env e1 in
-        let (ty2,e2') = typeof env e2 in
-          (match ty1,ty2 with
-               (* L-APP1 *) 
-             | TyArrow(fi2,_,ty11,ty12),ty2 
-                 when consistent ty11 ty2
-                   -> (ty12,TmApp(fi,0,e1',e2',fs))
-                 (* L-APP2 *)
-             | TyDyn(fi2,_),ty2 
-                  -> (TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
-                 (* L-APP3 *) 
-             | TyArrow(fi2,_,ty11,ty12),ty2 
-                 when consistent ty11 (TySym(NoInfo,0,ty2))
-                   -> (ty12,TmApp(fi,0,e1',TmLift(NoInfo,0,e2',ty2),fs))
-                 (* L-APP4 *)
-             | TyArrow(fi2,_,ty11,ty12),ty2 
-                  when (consistent (TySym(NoInfo,0,ty11)) ty2)
-                   -> (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e1',ty1),e2'))  
-                 (* L-APP5 *)
-             | TySym(fi2,_,TyDyn(fi3,_)),ty2 
-                 -> let e2'' = lift_expr e2' ty2 in
-                   (TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e1',e2''))
-                 (* L-APP6 *)
-             | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
-                 when consistent (TySym(NoInfo,0,ty11)) (lift_type ty2) 
+
+ and typeof env t =
+    match t with
+      | TmVar(fi,x) -> ( 
+          try let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
+	  with Not_found -> (
+            raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))))
+      | TmLam(fi,l,x,ty1,t2) ->
+          let (ty2,t2') = typeof ((x,ty1)::env)  t2 in
+	    (TyArrow(NoInfo,l,ty1,ty2),TmLam(fi,l,x,ty1,t2'))
+      | TmFix(fi,l,t) ->
+	  let (ty,t') = typeof env  t in
+	    begin match ty with
+	      | TyArrow(fi,l1,ty1,ty2) -> 
+		  if not (consistent ty1 ty2) then 
+		    raise (Mkl_type_error(TYPE_FIX_MISMATCH,ERROR,tm_info t, [pprint_ty ty1; pprint_ty ty2]))
+		  else (ty1,TmFix(fi,l,t'))
+	      | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
+	    end
+      | TmApp(fi,_,e1,e2,fs)  -> 
+          let (ty1,e1') = typeof env e1 in
+          let (ty2,e2') = typeof env e2 in
+            (match ty1,ty2 with
+                 (* L-APP1 *) 
+               | TyArrow(fi2,_,ty11,ty12),ty2 
+                   when consistent ty11 ty2
+                     -> (ty12,TmApp(fi,0,e1',e2',fs))
+                   (* L-APP2 *)
+               | TyDyn(fi2,_),ty2 
+                   -> (TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
+                   (* L-APP3 *) 
+               | TyArrow(fi2,_,ty11,ty12),ty2 
+                   when consistent ty11 (TySym(NoInfo,0,ty2))
+                     -> (ty12,TmApp(fi,0,e1',TmLift(NoInfo,0,e2',ty2),fs))
+                   (* L-APP4 *)
+               | TyArrow(fi2,_,ty11,ty12),ty2 
+                   when (consistent (TySym(NoInfo,0,ty11)) ty2)
+                     -> (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e1',ty1),e2'))  
+                   (* L-APP5 *)
+               | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
+                   when (consistent (TySym(NoInfo,0,ty11)) (lift_type ty2)) 
+                     -> let e2'' = lift_expr e2' ty2 in
+                       (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,e1',e2''))
+                         (* L-APP6 *)
+               | TySym(fi2,_,TyDyn(fi3,_)),ty2 
                    -> let e2'' = lift_expr e2' ty2 in
-                     (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,e1',e2''))
-             | TyArrow(fi2,_,ty11,ty12),ty2 -> 
-                 raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,tm_info e2,[pprint_ty ty11; pprint_ty ty2]))
-             | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,
-                                                tm_info e2,[pprint_ty ty1; pprint_ty ty2]))
-          )              
-    | TmLet(fi,_,x,ty,plst,e1,e2,recu) ->
-	let t1_env = mk_letenv plst 0 env in
-        let (ty1,e1') = 
-          (match (ty,recu) with
-	     | (None,true) -> raise (Mkl_type_error(TYPE_LET_REC_MISS_RET_TYPE,ERROR,fi,[]))
-	     | (Some ty1def,recu) -> 
-		 let tyvar = Ast.mk_lettype plst 0 ty1def in
-		 let (ty1,t1') = if recu then typeof ((x,tyvar)::t1_env) e1 else typeof t1_env e1 
-                 in                    
-                   if consistent ty1 ty1def then
-		     (ty1def,t1')
-                   else if consistent ty1def (TySym(NoInfo,0,ty1)) then
-                     (ty1def, TmLift(NoInfo,0,t1',ty1))
-                   else
-		     raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH, ERROR,fi,[pprint_ty ty1; pprint_ty ty1def]))
-	     | (None,false) -> typeof t1_env  e1)
-        in
-	let tyvar = Ast.mk_lettype plst 0 ty1 in
-	let (ty2,e2') = typeof ((x,tyvar)::env) e2 in
-	  (ty2,TmLet(fi,0,x,Some ty1,plst,e1',e2',recu))                    
-    | TmIf(fi,l,e1,e2,e3) ->
-        let (ty1,e1') = typeof env e1 in
-        let (ty2,e2') = typeof env e2 in
-        let (ty3,e3') = typeof env e3 in
-          if not (consistent ty1 (TyBool(NoInfo,0))) then
-            raise (Mkl_type_error(TYPE_MISMATCH_IF_GUARD,ERROR,tm_info e1, [pprint_ty (TyBool(NoInfo,l)); pprint_ty ty1]))
-          else if not (consistent (lift_type ty2) (lift_type ty3)) then
-            raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
-          else
-            let (ty4,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
-              (ty4, TmIf(fi,0,e1',e2'',e3''))
-    | TmConst(fi,l,c) as tt -> (deltatype fi c l,tt)
-    | TmList(fi,l,ts) ->
-	(match ts with
-	   | [] -> assert false
-	   | t::_ -> let (ty',t') = typeof env  t in 
-               typeof env  (List.fold_left 
-			      (fun a t -> TmCons(tm_info t,l,t,a)) 
-		              (TmNil(fi,l,ty')) ts))
-    | TmMatch(fi,l,t,cases) -> assert false
-    | TmSym(fi,l,u,ty) -> failwith "Only in the internal language."
-    | TmNu(fi,l,u,ty1,t2) ->
-	if not (ty_ismodel ty1) then
-	  raise (Mkl_type_error(TYPE_NU_LET_NOT_MODELTYPE,ERROR,
-				ty_info ty1,[pprint_ty ty1]))
-        else
-          let (ty2,t2') = typeof ((u,ty1)::env)  t2 in
-	    (ty2,TmNu(fi,l,u,ty1,t2'))
-    | TmSymApp(fi,l,t1,t2) -> failwith "Only in internal language."
-    | TmLift(fi,l,t,_) -> failwith "Only in internal language."
-    | TmCase(fi,l,e1,p,e2,e3) ->
-        let (ty1,e1') = typeof env e1 in
-        let (ty3,e3') = typeof env e3 in
-          if consistent ty_symdyn ty1 then 
-            (match p with
-                 (* L-CSYM *)
-               | MPatSym(_,ty4) -> 
-                   let (ty2,e2') = typeof env e2 in               
-                     if consistent (lift_type ty2) (lift_type ty3) then 
-                       let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
-                         (ty5, TmCase(fi,0,e1',p,e2'',e3''))
-                     else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3])) 
-                       (* L-CAPP *)
-               | MPatSymApp(_,x1,x2) ->
-                   let (ty2,e2') = typeof ((x1,ty_symdyn)::(x2,ty_symdyn)::env) e2 in               
-                     if consistent (lift_type ty2) (lift_type ty3) then
-                       let (ty4,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in 
-                         (ty4, TmCase(fi,0,e1',p,e2'',e3''))
-                     else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
-                       (* L-CLIFT *)
-               | MPatLift(_,x,ty4) ->
-                   let (ty2,e2') = typeof ((x,ty4)::env) e2 in               
-                     if consistent (lift_type ty2) (lift_type ty3) then
-                       let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
-                         (ty5, TmCase(fi,0,e1',p,e2'',e3''))
-                     else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
-            )            
-          else
-            raise (Mkl_type_error(TYPE_DECON_TYPE_NOT_MODEL,ERROR,fi,[pprint_ty ty1]))      
-    | TmEqual(fi,_,e1,e2) ->
-        let (ty1,e1') = typeof env e1 in
-        let (ty2,e2') = typeof env e2 in
-          if not (consistent (lift_type ty1) (lift_type ty2)) then
-            raise (Mkl_type_error(TYPE_EQUAL_EXP_DIFF_TYPE,ERROR,fi,[pprint_ty ty1; pprint_ty ty2]))
-          else
-            let (ty3,e1'',e2'') = lift_branch_cases e1' ty1 e2' ty2 in
-              (TyBool(NoInfo,0), TmEqual(fi,0,e1'',e2''))
-    | TmLcase(fi,_,e1,x,xs,e2,e3)  ->
-        let (ty1,e1') = typeof env e1 in
-          if not (consistent ty1 (TyList(NoInfo,0,TyDyn(NoInfo,0)))) then
-	    raise (Mkl_type_error(TYPE_LCASE_MATCHING_TM_NOT_LIST_TYPE,ERROR,tm_info e1,[pprint_ty ty1]))
-          else
-            let ty4 = match ty1 with TyList(_,_,ty) -> ty | ty -> ty in
-            let (ty2,e2') = typeof ((xs,ty1)::(x,ty4)::env) e2 in
-            let (ty3,e3') = typeof env e3 in
-              if not (consistent (lift_type ty2) (lift_type ty3)) then
-	        raise (Mkl_type_error(TYPE_LCASE_DIFFERENT_CASE_TYPES,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
-              else
-                let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
-                  (ty5, TmLcase(fi,0,e1',x,xs,e2'',e3''))
-    | TmCons(fi,l,e1,e2) -> 
-        let (ty1,e1') = typeof env e1 in
-        let (ty2,e2') = typeof env e2 in
-          if not (consistent ty2 (TyList(NoInfo,0,TyDyn(NoInfo,0)))) then
-	    raise (Mkl_type_error(TYPE_CONS_TYPE_MISMATCH,ERROR,fi,[pprint_ty ty2]))
-          else
-            let ty3 = match ty2 with TyList(_,_,ty) -> ty | ty -> ty in
-            if not (consistent ty1 ty3) then 
-	      raise (Mkl_type_error(TYPE_CONS_TYPE_MISMATCH,ERROR,fi,[pprint_ty ty1;pprint_ty ty3]))
+                     (TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e1',e2''))
+                       (* Error handling: Incomplete symbol application. Missing argument *)
+               | TySym(_,_,(TyArrow(fi1,_,ty11,ty12))),TySym(_,_,(TyArrow(fi2,_,ty21,ty22))) ->
+                   raise (Mkl_type_error(TYPE_SYMAPP_MISSING_ARG,ERROR,mk_right_info(tm_info e2),[pprint_ty ty21]))                  
+                       (* Error handling: Incorrect argument to a symbolic function*)
+               | TyArrow(fi2,_,ty11,ty12),ty2 | TySym(_,_,TyArrow(fi2,_,ty11,ty12)),ty2  -> 
+                   raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,tm_info e2,[pprint_ty ty11; missing_infix_message env ty2]))
+                       (* Error handling: Not a function *)
+               | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,tm_info e1,[pprint_ty ty1;missing_infix_message env ty1]))
+            )              
+      | TmLet(fi,_,x,ty,plst,e1,e2,recu) ->
+	  let t1_env = mk_letenv plst 0 env in
+          let (ty1,e1') = 
+            (match (ty,recu) with
+	       | (None,true) -> raise (Mkl_type_error(TYPE_LET_REC_MISS_RET_TYPE,ERROR,fi,[]))
+	       | (Some ty1def,recu) -> 
+		   let tyvar = Ast.mk_lettype plst 0 ty1def in
+		   let (ty1,t1') = if recu then typeof ((x,tyvar)::t1_env) e1 else typeof t1_env e1 
+                   in                    
+                     if consistent ty1 ty1def then
+		       (ty1def,t1')
+                     else if consistent ty1def (TySym(NoInfo,0,ty1)) then
+                       (ty1def, TmLift(NoInfo,0,t1',ty1))
+                     else
+		       raise (Mkl_type_error(TYPE_LET_TYPE_DEF_MISMATCH, ERROR,fi,[pprint_ty ty1; pprint_ty ty1def]))
+	       | (None,false) -> typeof t1_env  e1)
+          in
+	  let tyvar = Ast.mk_lettype plst 0 ty1 in
+	  let (ty2,e2') = typeof ((x,tyvar)::env) e2 in
+	    (ty2,TmLet(fi,0,x,Some ty1,plst,e1',e2',recu))                    
+      | TmIf(fi,l,e1,e2,e3) ->
+          let (ty1,e1') = typeof env e1 in
+          let (ty2,e2') = typeof env e2 in
+          let (ty3,e3') = typeof env e3 in
+            if not (consistent ty1 (TyBool(NoInfo,0))) then
+              raise (Mkl_type_error(TYPE_MISMATCH_IF_GUARD,ERROR,tm_info e1, [pprint_ty (TyBool(NoInfo,l)); pprint_ty ty1]))
+            else if not (consistent (lift_type ty2) (lift_type ty3)) then
+              raise (Mkl_type_error(TYPE_IF_EXP_DIFF_TYPE,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
             else
-              (meet (TyList(NoInfo,0,ty1)) ty2, TmCons(fi,0,e1',e2'))
-    | TmNil(fi,l,ty)  ->  (TyList(fi,l,ty), TmNil(fi,l,ty))
-    | TmTuple(fi,l,ts) -> 
-	let (ty',ts') = ts |> List.map (typeof env) |> List.split in
-	  (TyTuple(fi,l,ty'),TmTuple(fi,l,ts'))
-    | TmProj(fi,_,i,e1) -> 
-        let (ty1,e1') = typeof env e1 in
-        (match ty1 with
-           | TyTuple(_,_,tys) -> 
-               if i < List.length tys 
-               then (List.nth tys i, TmProj(fi,0,i,e1'))
-               else raise (Mkl_type_error(TYPE_PROJ_TUPLE_SIZE,ERROR,fi,[ustring_of_int i; ustring_of_int (List.length tys)]))
-           | TyDyn(_,_) | _ -> (TyDyn(NoInfo,0), TmProj(fi,0,i,e1')))
-    | TmArray(fi,l,es) ->
-	let (tys',es') = es |> Array.to_list |> List.map (typeof env) |> List.split in
-        let checkelem aty ty =  
-          if consistent aty ty then meet aty ty
-          else raise (Mkl_type_error(TYPE_ARRAY_ELEM_NOT_CONSISTENT,ERROR, ty_info ty,[pprint_ty aty; pprint_ty ty]))
-        in
-        let tys' = List.fold_left checkelem (TyDyn(NoInfo,0)) tys' in
-	  (TyArray(fi,l,tys'),TmArray(fi,l,Array.of_list es'))
-    | TmArrayOp(fi,l,op,ts) ->
-        let (ty',ts') = typeof_array_op fi l op ts env  in
-          (ty',TmArrayOp(fi,l,op,ts'))
-    | TmMapOp(fi,l,op,ts) -> 
-        let (ty',ts') = typeof_map_op fi l op ts env  in
-          (ty',TmMapOp(fi,l,op,ts'))
-    | TmSetOp(fi,l,op,ts) -> 
-        let (ty',ts') = typeof_set_op fi l op ts env  in
-          (ty',TmSetOp(fi,l,op,ts'))
-    | TmDAESolverOp(fi,l,op,ts) -> 
-        let (ty',ts') = typeof_daesolver_op fi l op ts env  in
-          (ty',TmDAESolverOp(fi,l,op,ts'))
-    | TmDPrint(t) -> let (ty,t') = typeof env  t in (ty,TmDPrint(t'))
-    | TmDPrintType(t) -> let (ty,t') = typeof env  t in (ty,TmDPrintType(t'))
-    | TmError(fi,l,e1) ->
-        let (ty1,e1') = typeof env e1 in
-	(match ty1 with
-	   | TyString(_,_)  -> (TyDyn(fi,0),TmError(fi,0,e1'))
-	   | _ -> raise (Mkl_type_error(TYPE_ERROR_TERM_NOT_STRING,ERROR,ty_info ty1,[pprint_ty ty1])))
+              let (ty4,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
+                (ty4, TmIf(fi,0,e1',e2'',e3''))
+      | TmConst(fi,l,c) as tt -> (deltatype fi c l,tt)
+      | TmList(fi,l,ts) ->
+	  (match ts with
+	     | [] -> assert false
+	     | t::_ -> let (ty',t') = typeof env  t in 
+                 typeof env  (List.fold_left 
+			        (fun a t -> TmCons(tm_info t,l,t,a)) 
+		                (TmNil(fi,l,ty')) ts))
+      | TmMatch(fi,l,t,cases) -> assert false
+      | TmSym(fi,l,u,ty) -> failwith "Only in the internal language."
+      | TmNu(fi,l,u,ty1,t2) ->
+	  if not (ty_ismodel ty1) then
+	    raise (Mkl_type_error(TYPE_NU_LET_NOT_MODELTYPE,ERROR,
+				  ty_info ty1,[pprint_ty ty1]))
+          else
+            let (ty2,t2') = typeof ((u,ty1)::env)  t2 in
+	      (ty2,TmNu(fi,l,u,ty1,t2'))
+      | TmSymApp(fi,l,t1,t2) -> failwith "Only in internal language."
+      | TmLift(fi,l,t,_) -> failwith "Only in internal language."
+      | TmCase(fi,l,e1,p,e2,e3) ->
+          let (ty1,e1') = typeof env e1 in
+          let (ty3,e3') = typeof env e3 in
+            if consistent ty_symdyn ty1 then 
+              (match p with
+                   (* L-CSYM *)
+                 | MPatSym(_,ty4) -> 
+                     let (ty2,e2') = typeof env e2 in               
+                       if consistent (lift_type ty2) (lift_type ty3) then 
+                         let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
+                           (ty5, TmCase(fi,0,e1',p,e2'',e3''))
+                       else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3])) 
+                         (* L-CAPP *)
+                 | MPatSymApp(_,x1,x2) ->
+                     let (ty2,e2') = typeof ((x1,ty_symdyn)::(x2,ty_symdyn)::env) e2 in               
+                       if consistent (lift_type ty2) (lift_type ty3) then
+                         let (ty4,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in 
+                           (ty4, TmCase(fi,0,e1',p,e2'',e3''))
+                       else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
+                         (* L-CLIFT *)
+                 | MPatLift(_,x,ty4) ->
+                     let (ty2,e2') = typeof ((x,ty4)::env) e2 in               
+                       if consistent (lift_type ty2) (lift_type ty3) then
+                         let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
+                           (ty5, TmCase(fi,0,e1',p,e2'',e3''))
+                       else raise (Mkl_type_error(TYPE_DECON_MISMATCH,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
+              )            
+            else
+              raise (Mkl_type_error(TYPE_DECON_TYPE_NOT_MODEL,ERROR,fi,[pprint_ty ty1]))      
+      | TmEqual(fi,_,e1,e2) ->
+          let (ty1,e1') = typeof env e1 in
+          let (ty2,e2') = typeof env e2 in
+            if not (consistent (lift_type ty1) (lift_type ty2)) then
+              raise (Mkl_type_error(TYPE_EQUAL_EXP_DIFF_TYPE,ERROR,fi,[pprint_ty ty1; pprint_ty ty2]))
+            else
+              let (ty3,e1'',e2'') = lift_branch_cases e1' ty1 e2' ty2 in
+                (TyBool(NoInfo,0), TmEqual(fi,0,e1'',e2''))
+      | TmLcase(fi,_,e1,x,xs,e2,e3)  ->
+          let (ty1,e1') = typeof env e1 in
+            if not (consistent ty1 (TyList(NoInfo,0,TyDyn(NoInfo,0)))) then
+	      raise (Mkl_type_error(TYPE_LCASE_MATCHING_TM_NOT_LIST_TYPE,ERROR,tm_info e1,[pprint_ty ty1]))
+            else
+              let ty4 = match ty1 with TyList(_,_,ty) -> ty | ty -> ty in
+              let (ty2,e2') = typeof ((xs,ty1)::(x,ty4)::env) e2 in
+              let (ty3,e3') = typeof env e3 in
+                if not (consistent (lift_type ty2) (lift_type ty3)) then
+	          raise (Mkl_type_error(TYPE_LCASE_DIFFERENT_CASE_TYPES,ERROR,fi,[pprint_ty ty2; pprint_ty ty3]))
+                else
+                  let (ty5,e2'',e3'') = lift_branch_cases e2' ty2 e3' ty3 in
+                    (ty5, TmLcase(fi,0,e1',x,xs,e2'',e3''))
+      | TmCons(fi,l,e1,e2) -> 
+          let (ty1,e1') = typeof env e1 in
+          let (ty2,e2') = typeof env e2 in
+            if not (consistent ty2 (TyList(NoInfo,0,TyDyn(NoInfo,0)))) then
+	      raise (Mkl_type_error(TYPE_CONS_TYPE_MISMATCH,ERROR,fi,[pprint_ty ty2]))
+            else
+              let ty3 = match ty2 with TyList(_,_,ty) -> ty | ty -> ty in
+                if not (consistent ty1 ty3) then 
+	          raise (Mkl_type_error(TYPE_CONS_TYPE_MISMATCH,ERROR,fi,[pprint_ty ty1;pprint_ty ty3]))
+                else
+                  (meet (TyList(NoInfo,0,ty1)) ty2, TmCons(fi,0,e1',e2'))
+      | TmNil(fi,l,ty)  ->  (TyList(fi,l,ty), TmNil(fi,l,ty))
+      | TmTuple(fi,l,ts) -> 
+	  let (ty',ts') = ts |> List.map (typeof env) |> List.split in
+	    (TyTuple(fi,l,ty'),TmTuple(fi,l,ts'))
+      | TmProj(fi,_,i,e1) -> 
+          let (ty1,e1') = typeof env e1 in
+            (match ty1 with
+               | TyTuple(_,_,tys) -> 
+                   if i < List.length tys 
+                   then (List.nth tys i, TmProj(fi,0,i,e1'))
+                   else raise (Mkl_type_error(TYPE_PROJ_TUPLE_SIZE,ERROR,fi,[ustring_of_int i; ustring_of_int (List.length tys)]))
+               | TyDyn(_,_) | _ -> (TyDyn(NoInfo,0), TmProj(fi,0,i,e1')))
+      | TmArray(fi,l,es) ->
+	  let (tys',es') = es |> Array.to_list |> List.map (typeof env) |> List.split in
+          let checkelem aty ty =  
+            if consistent aty ty then meet aty ty
+            else raise (Mkl_type_error(TYPE_ARRAY_ELEM_NOT_CONSISTENT,ERROR, ty_info ty,[pprint_ty aty; pprint_ty ty]))
+          in
+          let tys' = List.fold_left checkelem (TyDyn(NoInfo,0)) tys' in
+	    (TyArray(fi,l,tys'),TmArray(fi,l,Array.of_list es'))
+      | TmArrayOp(fi,l,op,ts) ->
+          let (ty',ts') = typeof_array_op fi l op ts env  in
+            (ty',TmArrayOp(fi,l,op,ts'))
+      | TmMapOp(fi,l,op,ts) -> 
+          let (ty',ts') = typeof_map_op fi l op ts env  in
+            (ty',TmMapOp(fi,l,op,ts'))
+      | TmSetOp(fi,l,op,ts) -> 
+          let (ty',ts') = typeof_set_op fi l op ts env  in
+            (ty',TmSetOp(fi,l,op,ts'))
+      | TmDAESolverOp(fi,l,op,ts) -> 
+          let (ty',ts') = typeof_daesolver_op fi l op ts env  in
+            (ty',TmDAESolverOp(fi,l,op,ts'))
+      | TmDPrint(t) -> let (ty,t') = typeof env  t in (ty,TmDPrint(t'))
+      | TmDPrintType(t) -> let (ty,t') = typeof env  t in (ty,TmDPrintType(t'))
+      | TmError(fi,l,e1) ->
+          let (ty1,e1') = typeof env e1 in
+	    (match ty1 with
+	       | TyString(_,_)  -> (TyDyn(fi,0),TmError(fi,0,e1'))
+	       | _ -> raise (Mkl_type_error(TYPE_ERROR_TERM_NOT_STRING,ERROR,ty_info ty1,[pprint_ty ty1])))
 	  
           
 let typeofterm t = fst (typeof [] t)

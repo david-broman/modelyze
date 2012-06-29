@@ -1,0 +1,643 @@
+
+
+let (mod) : Int -> Int -> Int = @@int_mod
+let (+.) : Int -> Int -> Int = @@int_add
+let (-.) : Int -> Int -> Int = @@int_sub
+let (*.) : Int -> Int -> Int = @@int_mul
+let (/.) : Int -> Int -> Int = @@int_div
+let (<.) : Int -> Int -> Bool = @@int_less
+let (<=.) : Int -> Int -> Bool = @@int_less_equal
+let (>.) : Int -> Int -> Bool = @@int_great
+let (>=.) : Int -> Int -> Bool = @@int_great_equal
+let (==.) : Int -> Int -> Bool = @@int_equal
+let (!=.) : Int -> Int -> Bool = @@int_not_equal
+let (+) : Real -> Real -> Real = @@real_add
+let (-) : Real -> Real -> Real = @@real_sub
+let (*) : Real -> Real -> Real = @@real_mul
+let (/) : Real -> Real -> Real = @@real_div
+let (<) : Real -> Real -> Bool = @@real_less
+let (<=) : Real -> Real -> Bool = @@real_less_equal
+let (>) : Real -> Real -> Bool = @@real_great
+let (>=) : Real -> Real -> Bool = @@real_great_equal
+let (==) : Real -> Real -> Bool = @@real_equal
+let (!=) : Real -> Real -> Bool = @@real_not_equal
+let (!) : Bool -> Bool = @@bool_not
+let (&&) : Bool -> Bool -> Bool = @@bool_and
+let (||) : Bool -> Bool -> Bool = @@bool_or
+let (--.) : Int -> Int = @@int_neg
+let (--) : Real -> Real = @@real_neg
+let print : String -> () = @@print
+let bool2string : Bool -> String = @@bool2string
+let int2string : Int -> String = @@int2string 
+let real2string : Real -> String = @@real2string
+let int2real : Int -> Real = @@int2real
+let real2int : Real -> Int = @@real2int
+let string2bool : String -> Bool = @@string2bool
+let string2int : String -> Int = @@string2int
+let string2real : String -> Real = @@string2real
+let isBoolString : String -> Bool = @@isboolstring
+let isRealString : String -> Bool = @@isrealstring
+let isIntString : String -> Bool = @@isintstring
+let sin : Real -> Real = @@sin
+let cos : Real -> Real = @@cos
+let tan : Real -> Real = @@tan
+let asin : Real -> Real = @@asin
+let acos : Real -> Real = @@acos
+let atan : Real -> Real = @@atan
+let sinh : Real -> Real = @@sinh
+let cosh : Real -> Real = @@cosh
+let tanh : Real -> Real = @@tanh
+let ceil : Real -> Real = @@ceil
+let floor : Real -> Real = @@floor
+let log : Real -> Real = @@log
+let log10 : Real -> Real = @@log10
+let sqrt : Real -> Real = @@sqrt
+let exp : Real -> Real = @@exp
+let (^) : Real -> Real -> Real = @@exponentiation
+let substr : String -> Int -> Int -> String = @@string_substr
+let strlen : String -> Int = @@string_strlen
+let (++) : String -> String -> String = @@string_concat
+
+let INFINITE = 1./0.
+
+
+let abs x:Real -> Real = 
+  if x < 0. then x * -1.0 else x
+
+let max x:Real -> y:Real -> Real = 
+  if x >= y then x else y
+
+
+let printLine s:String -> () = 
+    let _ = print s in print "\n"
+
+let printIntLine i:Int -> () =
+    printLine  (int2string i)
+
+let printRealLine i:Real -> () =
+    printLine  (real2string i)
+
+/* Reverse function */
+def rev(lst:[?]) = {
+  def work(lst:[?],acc:[?]) : [?] = {
+      match lst with
+      | l::ls -> work(ls,l::acc) 
+      | [] -> acc
+  };
+  work(lst,[])
+}
+
+type Signal = <Real>
+
+def der : Real -> Real
+def (')  = der
+
+def hoDer : <Real -> Int -> Real>
+
+
+
+type Equations
+def (=) : Real -> Real -> Equations
+def (;) : Equations -> Equations -> Equations
+def NoEqn : Equations
+
+def init : Real -> Real -> Equations 
+//def init : Real -> Real 
+let (<-)  = init
+
+def time : <Real>
+def probe : <String -> Real> 
+
+type Expr = <>
+
+type UkMap = (Signal => (Int,Bool))
+type UkList = [(Signal,(Int,Bool))]
+type ProbeMap =  (String => [Signal])
+type InitValMap = (<Real> => (Real,Bool))
+type UkSet = (Set <Real>)
+
+let initValues eqs:Equations -> InitValMap =
+  let get eqs:Equations -> acc:InitValMap -> InitValMap =
+    match eqs with
+    | e1 ; e2 -> get e2 (get e1 acc)
+    | ~init x (lift v:Real) -> Map.add x (v,false) acc
+    | _ -> acc
+  in get eqs (Map.empty)
+
+let addProbe s:String -> u:Signal -> ps:ProbeMap =
+    if Map.mem s ps then Map.add s (u::(Map.find s ps)) ps
+    else Map.add s [u] ps
+
+let realUnknowns eqs:Equations -> (Int,UkMap) =
+  let get e:<> -> acc:(Int,UkMap) -> (Int,UkMap) = 
+     match e with
+     | ~time -> acc
+     | ~der x -> 
+        (match x with 
+         | sym:<Real> -> 
+             let (k,ukmap) = acc in 
+             if Map.mem x ukmap 
+             then (k,Map.add x (fst (Map.find x ukmap),true) ukmap)
+             else ((k+.1d,Map.add x (k,true) ukmap))
+         | _ -> error "Illegal diffrentiation of expression") 
+     | e1 e2 -> get e2 (get e1 acc)
+     | sym:<Real> -> if Map.mem e (snd acc) then acc
+                    else ((fst acc)+.1d,Map.add e (fst acc,false) (snd acc))
+     | e1 -> acc 
+  in get eqs (0d,(Map.empty))
+
+//Returns the mapping between unknowns and unique integer numbers
+//in an equation system. See definirion of UkMap.
+let makeUkMap eqs:Equations -> UkMap =
+    snd (realUnknowns eqs)
+
+
+def cleanupEquations(eq:Equations) : Equations = {
+    match eq with
+    | e1; e2 -> 
+       {
+          match (cleanupEquations e1, cleanupEquations e2) with
+          | (~NoEqn,~NoEqn) -> NoEqn
+          | (~NoEqn,e) -> e
+          | (e,~NoEqn) -> e
+          | (e1b,e2b) -> e1b; e2b
+       }
+    | _ -> eq
+}
+
+def Branch : Real -> Real -> ? -> ? -> Equations
+def RefBranch : Real -> Real -> ? -> Equations
+
+type ENode = <>
+type VNode = <>
+
+type EqsGraph = (ENode => [VNode])
+type EqsGraphList = [(ENode,[VNode])]
+type ColorESet = Set ENode
+type ColorVSet = Set VNode
+type ColorEList = [ENode]
+type ColorVList = [VNode]
+type AssignMap = (VNode => ENode)
+type PathFound = Bool
+
+type EqMap = (ENode => ENode)
+type EqList = [(ENode,ENode)]
+type VarMap = (VNode => VNode)
+type VarList = [VNode]
+
+def augmentPath(graph:EqsGraph, i:ENode, colE:ColorESet, colV:ColorVSet, 
+    assign:AssignMap) : (PathFound,ColorESet,ColorVSet,AssignMap) = {
+
+  def assignPath(jlist:VarList) : (PathFound,AssignMap) = {
+    match jlist with  //Step (2)
+    | j::js -> 
+      if Map.mem j assign then assignPath js 
+      else (true,Map.add j i assign)
+    | [] -> (false,assign)
+  };
+
+  def everyJ(vlist:VarList, colE:ColorESet, colV:ColorVSet, assign:AssignMap) :
+            (PathFound,ColorESet,ColorVSet,AssignMap) = {
+    match vlist with //(Step (3)
+    | j::js if Set.mem j colV -> everyJ(js, colE, colV, assign)
+    | j::js -> {
+         def colV2 = (Set.add j colV);
+         def k = (Map.find j assign);
+         def (found,colE3,colV3,assign3) = 
+           augmentPath(graph, k, colE, colV2, assign);
+
+         if found then
+           (true,colE3,colV3,Map.add j i assign3)
+         else
+           everyJ(js, colE3, colV3, assign3)
+      }
+    | [] -> (false,colE,colV,assign)
+  };
+
+  def colE2 = (Set.add i colE);  //Step (1) 
+  def jList = (Map.find i graph);
+  def (found,assign2) = assignPath(jList);
+  if found then 
+     (true,colE2,colV,assign2)
+  else 
+     everyJ(jList, colE2, colV, assign2)
+}
+
+def pantelides(equationGraph:EqsGraph, variableMap:VarMap,  
+                makeVNode:(()->VNode), makeENode:(()->ENode)) 
+                : (VarMap,EqMap) = {
+  def deleteVNodes(list:EqsGraphList, A:VarMap, accEq:EqsGraph, 
+                   accV:[VNode]) :  EqsGraph = {
+    match list with
+    | (e,v::vs)::es -> 
+        deleteVNodes((e,vs)::es, A, accEq, 
+                     if Map.mem v A then accV else v::accV)
+    | (e,[])::es -> deleteVNodes es A (Map.add e accV accEq) [] 
+    | [] -> accEq
+  };
+
+  def diffVars(lst:ColorVList, A:VarMap) : VarMap = {
+    match lst with
+    | j::js -> def M = makeVNode();
+               diffVars js (Map.add j M A)
+    | [] -> A
+  };
+
+  def diffEqs(lst:ColorEList, A:VarMap, B:EqMap, graph:EqsGraph) 
+              : (EqMap,EqsGraph) = {
+    def mkEdges(lst:[VNode]) : [VNode] = {
+       match lst with
+       | j::js -> j::(if Map.mem j A then (Map.find j A)::mkEdges(js)
+                      else mkEdges(js))
+       | [] -> []
+    };
+
+    match lst with
+      | l::ls ->
+          def N = makeENode();
+          def edges = mkEdges (Map.find l graph);
+          def graph2 = (Map.add N edges graph);
+          def B2 = (Map.add l N B); 
+          diffEqs ls A B2 graph2 
+      | [] -> (B,graph)
+  };
+
+  //Update matching edges (assignment) (3b-5 (iii))
+  def updateAssign(lst:ColorVList, A:VarMap, B:EqMap,
+                   assign:AssignMap) : AssignMap = {
+    match lst with
+    | j::js -> let e = Map.find (Map.find j assign) B in
+               let v = Map.find j A in
+               updateAssign js A B (Map.add v e assign)
+    | [] -> assign
+  };
+
+  // The repeat loop (3b)
+  def repeat(i:ENode, graph:EqsGraph, assign:AssignMap,
+             A:VarMap, B:EqMap) : (EqsGraph,AssignMap,VarMap,EqMap) = {
+    // Call (3b-1)
+    def graph2 = deleteVNodes(Map.toList graph, A, Map.empty, []);
+    // Call (3b-4)
+    
+    def (pathFound,colorE,colorV,assign2) = 
+          augmentPath(graph2, i, Set.empty, Set.empty, assign);
+
+    if pathFound then 
+        (graph,assign2,A,B)      
+    else {
+      // Differentiate and repeat
+      def colorVList = (Set.toList colorV);
+      def colorEList = (Set.toList colorE);
+      def A2 = diffVars(colorVList,A);
+      def (B2,graph3) = diffEqs(colorEList, A2, B, graph);  
+      def assign3 = updateAssign(colorVList, A2, B2, assign2);
+      def i2 = (Map.find i B2);
+      repeat i2 graph3 assign3 A2 B2 
+    }
+  };
+
+  def foreachEq(eqlist:EqsGraphList, graph:EqsGraph, assign:AssignMap,
+                A:VarMap, B:EqMap) : (VarMap,EqMap) = {
+    match eqlist with
+    | [] -> (A,B)
+    | (k,_)::eqs -> {
+        //Do repreat loop for each equation. k is the equation identifier.
+        def (graph2,assign2,A2,B2) = repeat(k,graph,assign,A,B);
+        foreachEq(eqs,graph2,assign2,A2,B2)
+      }
+  };
+
+  def assign = (Map.empty);
+  def B = (Map.empty);
+
+  foreachEq(rev(Map.toList equationGraph), equationGraph, assign, variableMap, B)
+  
+}
+    
+type DerivMap = (Signal => Signal)
+type DerivList = [(Signal,Signal)]
+
+let extractDerivatives eqs:Equations -> dmap:DerivMap -> olddmap:DerivMap ->
+                       (Equations,DerivMap) =
+  let makeHOder x:Signal -> k:Int -> dmap:DerivMap -> DerivMap =
+    if k >. 1d then 
+      if Map.mem x dmap then makeHOder (Map.find x dmap) (k -. 1d) dmap
+      else 
+        if Map.mem x olddmap then  
+          let dx = Map.find x olddmap in
+          makeHOder dx (k -. 1d) (Map.add x dx dmap)
+        else
+          let u:Signal in
+          makeHOder u (k -. 1d) (Map.add x u dmap)
+    else dmap
+  in
+  let extractHOder expr:Expr -> k:Int -> dmap:DerivMap -> DerivMap =
+    match expr with
+    | ~der e -> extractHOder e (k +. 1d) dmap
+    | ~time -> dmap
+    | sym:Signal -> makeHOder expr k dmap
+    | e1 e2 -> extractHOder e2 k (extractHOder e1 k dmap)
+    | _ -> dmap
+  in
+  match eqs with
+  | e1 ; e2 ->     
+      let (e1b,dmap1) = extractDerivatives e1 dmap olddmap in
+      let (e2b,dmap2) = extractDerivatives e2 dmap1 olddmap in
+      (match (e1b,e2b) with
+       | (~NoEqn,~NoEqn) -> (NoEqn,dmap2)
+       | (~NoEqn,_)     -> (e2b,dmap2)
+       | (_,~NoEqn)     -> (e1b,dmap2)
+       | (_,_)         -> (e1b;e2b,dmap2))
+  | ~der ~time = _ -> (eqs,extractHOder eqs 0d dmap)
+  | ~der _ = ~time -> (eqs,extractHOder eqs 0d dmap)
+  | _ = ~der ~time -> (eqs,extractHOder eqs 0d dmap)
+  | ~time = ~der _ -> (eqs,extractHOder eqs 0d dmap)
+  | ~der sym:Signal = sym:Signal ->
+      (match eqs with | ~der x = dx -> (NoEqn,Map.add x dx dmap))
+  | sym:Signal = ~der sym:Signal ->
+      (match eqs with | dx = ~der x -> (NoEqn,Map.add x dx dmap))
+  | _ -> (eqs,extractHOder eqs 0d dmap)
+
+//Symbolically differentiate a model (higher-order).
+//Currently cannot user derfined functions be automatically differentiated
+let differentiateModel expr:Expr -> Expr =
+  let eulerNumber = 2.71828182845904523536 in
+  let sdiff expr:Signal -> Signal =
+    match expr with
+    | ~time -> 1
+    | sym:Signal -> hoDer expr 1d
+    | ~hoDer x (lift k:Int) -> hoDer x (k +. 1d)
+    | ~der e -> sdiff(sdiff(e))
+    | e1 + e2 -> sdiff(e1) + sdiff(e2)
+    | e1 - e2 -> sdiff(e1) - sdiff(e2)
+    | e1 * e2 -> sdiff(e1) * e2 + e1 * sdiff(e2)
+    | e1 / e2 -> (sdiff(e1) * e2 - e1 * sdiff(e2)) / (e2 * e2)
+    | ~sin e -> sdiff(e) * cos(e)
+    | ~cos e -> sdiff(e) * -(sin(e))
+    | ~tan e -> sdiff(e) * 1./(cos(e))^2.
+    | ~asin e -> sdiff(e) * (1. / (sqrt(1. - e^2.)))
+    | ~acos e -> sdiff(e) * -(1. / (sqrt(1. - e^2.)))
+    | ~atan e -> sdiff(e) * (1. / (1. + e^2.))
+    | ~sinh e -> sdiff(e) * cosh(e)
+    | ~cosh e -> sdiff(e) * sinh(e)
+    | ~tanh e -> sdiff(e) * (1. / (cosh e)^2.)
+    | ~log e -> sdiff(e)/ e
+    | ~log10 e -> sdiff(e)* log10(eulerNumber) / e 
+    | ~sqrt e -> sdiff(e)/ (2.*(sqrt e))
+    | e1 ^ (lift k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
+    | -e -> -(sdiff(e))
+    | lift x:Real -> 0
+    | _ -> error "Cannot differentiate model"
+  in 
+  match expr with
+  | ~der e -> sdiff e
+  | e1 e2 -> (differentiateModel e1)  (differentiateModel e2) 
+  | _ -> expr
+
+let removeHOderivatives expr:Expr -> dmap:DerivMap -> Expr =
+  let getDeriv x:Signal -> k:Int -> Expr =
+    if k >. 1d then getDeriv (Map.find x dmap) (k -. 1d)
+    else 
+      if Map.mem x dmap then Map.find x dmap
+      else der x
+  in
+  match expr with
+  | ~hoDer x (lift k:Int) -> getDeriv x k
+  | e1 e2 -> (removeHOderivatives e1 dmap) (removeHOderivatives e2 dmap) 
+  | _ -> expr
+
+let generateEquations eqs:Equations -> dlist:DerivList -> Equations =
+  match dlist with
+  | (x,dx)::xs -> der(x) = dx; generateEquations(eqs,xs)
+  | _::xs -> generateEquations(eqs,xs) 
+  | [] -> eqs
+
+let elaborateDerivatives model:Equations -> olddmap:DerivMap ->
+    (Equations,DerivMap) =
+  let (eqs,dmap) = extractDerivatives model (Map.empty) olddmap in
+  let eqs2 = differentiateModel eqs in
+  let eqs3 = removeHOderivatives eqs2 dmap in
+  (generateEquations eqs3 (Map.toList dmap),dmap)
+
+
+type EqNode
+def  eqContainer: EqNode -> Equations -> Equations
+
+type VarSet = Set Expr
+
+//Functions for generating fresh equation and variable nodes
+let makeVNode x:() -> VNode = let nv:Signal in nv 
+let makeENode x:() -> ENode = let ne:EqNode in ne
+
+let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
+  let travExpr exp:Expr -> accvar:VarSet -> accvarmap:VarMap -> 
+               (VarSet,VarMap) =
+    match exp with
+    | ~der (sym:Signal) -> 
+        let x = match exp with | ~der u -> u in
+        (Set.add exp accvar,Map.add x exp accvarmap) 
+    | sym:Signal -> (Set.add exp accvar,accvarmap) 
+    | e1 e2 -> let (accvar1,accvarmap1) = travExpr e1 accvar accvarmap in
+               travExpr e2 accvar1 accvarmap1 
+    | _ -> (accvar,accvarmap) 
+  in
+  let travEq eq:Equations -> accgraph:EqsGraph -> accvarmap:VarMap -> 
+             (EqsGraph,VarMap,<>) =
+    match eq with
+    | e1 = e2 -> 
+        let eqnode:EqNode in
+        let (varset,accvarmap2) = travExpr (e1 - e2) (Set.empty) accvarmap in
+        let accgraph2 = Map.add eqnode (Set.toList varset) accgraph in
+        let neweq = eqContainer eqnode eq in
+        (accgraph2,accvarmap2,neweq)
+    | e1 e2 -> 
+        let (accgraph1,accvarmap1,e1b) = travEq e1 accgraph accvarmap in
+        let (accgraph2,accvarmap2,e2b) = travEq e2 accgraph1 accvarmap1 in
+        (accgraph2,accvarmap2,e1b e2b)
+    | e -> (accgraph,accvarmap,e)
+  in
+    travEq eqs (Map.empty) (Map.empty)
+
+def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) : 
+          (Equations,DerivMap) = {
+  
+  def addDerEqs(eqs:Expr,eqmap:EqMap) : Expr = {
+      def wrapder(n:EqNode,exp:Expr) : Expr = {
+          if Map.mem n eqmap 
+             then der (wrapder (Map.find n eqmap) exp)
+             else exp
+      };
+      match eqs with
+        | ~eqContainer n (e1 = e2) -> 
+          (wrapder n e1) = (wrapder n e2)
+        | e1 e2 -> (addDerEqs e1 eqmap) (addDerEqs e2 eqmap)
+        | e -> e
+  };
+
+    // Generate the equation graph and augmented equation system
+    def (graph,varmap,augmentedEqs) = makeEquationGraph(eqs);
+
+
+    // Execute Pantelides algorithm
+    def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);    
+
+
+    // Wrap equations to be differentiated into der expressions
+    def eqs2 = addDerEqs(augmentedEqs,eqmap);
+
+    // Differentiate 
+    elaborateDerivatives(eqs2,olddermap)
+
+}
+
+
+type StepVal = (Real,[Real])
+type SimulationResult = ([String],[StepVal])
+
+type Residual = Real -> {Real} -> {Real} -> [Real]
+
+let makeResidual ukmap:UkMap -> model:Equations -> 
+                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
+  let realExpr e:<> -> Real = 
+    match e with
+    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
+           f (realExpr e1) (realExpr e2)
+    | (lift f:(Real -> Real)) e1 -> f  (realExpr e1) 
+    | lift v:Real -> v
+    | time -> ctime
+    | der x -> (match x with 
+                | sym:Signal -> Array.get yp (fst (Map.find x ukmap))
+                | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Signal -> Array.get yy (fst(Map.find e ukmap))
+    | _ -> error "Unsupported model construct" 
+  in
+  let traverseEq m:Equations -> acc:[Real] -> [Real] =
+    match m with
+    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
+    | _ -> acc
+  in traverseEq model [] 
+
+
+let makeNewResidual model:Equations -> ukmap:UkMap -> 
+                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
+  let realExpr e:<> -> Real = 
+    match e with
+    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
+           f (realExpr e1) (realExpr e2)
+    | (lift f:(Real -> Real)) e1 -> f  (realExpr e1) 
+    | lift v:Real -> v
+    | time -> ctime
+    | der x -> (match x with 
+                | sym:Signal -> Array.get yp (fst (Map.find x ukmap))
+                | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Signal -> Array.get yy (fst(Map.find e ukmap))
+    | _ -> error "Unsupported model construct" 
+  in
+  let traverseEq m:Equations -> acc:[Real] -> [Real] =
+    match m with
+    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
+    | _ -> acc
+  in traverseEq model [] 
+
+
+//Generate arrays of initial values
+let makeInitValues model:Equations -> ukmap:UkMap -> ({Real},{Real}) =
+  let initvalmap = initValues model in
+  let size = Map.size ukmap in
+  let yy = Array.make size 0. in
+  let yp = Array.make size 0. in
+  let setvals initvals:[(Signal,(Real,Bool))] -> {Real} =
+    match initvals with
+    | (u,(v,_))::xs -> 
+        let _ = Array.set yy (fst (Map.find u ukmap)) v in setvals xs 
+    | [] -> yy
+  in (setvals  (Map.toList initvalmap), yp)
+
+
+
+let makeStepVal currtime:Real -> yy:{Real} ->
+                probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
+  let mkvals probes:[(String,[Signal])] -> [Real] =        
+    match probes with
+    | (s,u::us)::ss -> (Array.get yy (fst(Map.find u ukmap)))::
+                        (mkvals ((s,us)::ss))
+    | (s,[])::ss -> mkvals ss 
+    | [] -> []
+  in (currtime,mkvals probes)
+  
+let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
+  match probes with
+  | (s,u::us)::ss -> 
+    let s2 = s ++ (if n >. 1d then "_" ++ int2string(n) else "") in
+    s2::(makeProbeNames ((s,us)::ss) (n +. 1d))
+  | (s,[])::ss -> makeProbeNames ss 1d
+  | [] -> []
+
+let initConditionCorrection ukmap:UkMap -> {Real} =
+  let id = Array.make (Map.size ukmap) 0 in
+  let worker uklist:[(Signal,(Int,Bool))] -> {Real} =
+    match uklist with
+    | (u,(i,true))::us -> let _ = Array.set id i 1.0 in worker us
+    | _::us -> worker us
+    | [] -> id
+  in worker (Map.toList ukmap)
+
+let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
+  match lst with
+  | x::xs -> revResult xs (x::acc)
+  | [] -> acc 
+
+let elaborateProbes model:Equations -> (<Equations>,ProbeMap) =
+  let elab e:<> -> ps:ProbeMap -> (<>,ProbeMap) = 
+    match e with
+    | ~probe (lift s:String) -> let u:Signal in (u,addProbe s u ps)
+    | e1 e2 -> 
+       let (e1b,ps1) = elab e1 ps in
+       let (e2b,ps2) = elab e2 ps1 in
+       (e1b e2b,ps2)
+    | _ -> (e,ps)
+  in elab model (Map.empty)
+
+
+let simulate model:Equations -> steptime:Real -> endtime:Real -> 
+             SimulationResult =
+  let (model2,probes) = elaborateProbes model in
+  let probelist = Map.toList probes in
+  let (model3,_) = elaborateDerivatives model2 (Map.empty) in
+  let (model4,_) = indexReducationPantelides model3 (Map.empty) in
+  let ukmap = makeUkMap model4 in
+  let residual = specialize (makeResidual ukmap) model4 in
+  let (yy,yp) = makeInitValues model4 ukmap in
+  let id = initConditionCorrection ukmap in
+  let state = DAESolver.make yy yp id residual in
+  let simloop currtime:Real -> acc:[StepVal] -> [StepVal] = 
+    if currtime >= endtime then acc
+    else
+      let newtime = DAESolver.step steptime state in 
+      let stepval = makeStepVal newtime yy probelist ukmap in
+      if newtime == 0. then acc
+      else simloop newtime (stepval::acc)
+  in
+    (makeProbeNames probelist 1d,revResult (simloop 0 []) []) 
+
+let pprintSimulation res:SimulationResult -> String =
+  let (names,stepvals) = res in  
+  let psteps step:[StepVal] -> first:Bool -> String =
+    match step with
+    | (t,x::xs)::xxs if first ->        
+        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
+    | (t,x::xs)::xxs -> 
+        real2string(x) ++ "\t" ++ psteps((t,xs)::xxs,false)
+    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
+    | [] -> ""
+  in psteps(stepvals,true)
+ 
+let printsim model:Equations -> steptime:Real -> endtime:Real -> () =
+      print (pprintSimulation (simulate model steptime endtime))
+
+
+
+
+

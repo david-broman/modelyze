@@ -80,6 +80,13 @@ let rec consistent ty_a ty_b =
     | TyDAESolver(fi,_),TyDAESolver(_,_) -> true
     | _ , _ ->  false
 
+(* Remove the symbol type, if it is symbol type *)
+let remove_sym_type ty =
+  match ty with 
+    | TySym(_,_,tt) -> tt
+    | _ -> ty
+    
+
 (* Checks if 'ty' is a symbol type. If so, 'e' is returned, else 'e' is lifted. *)
 let lift_expr e ty = 
   if consistent ty (TySym(NoInfo,0,TyDyn(NoInfo,0))) 
@@ -403,7 +410,7 @@ and typeof_daesolver_op fi l op ts env  =
                    raise (Mkl_type_error(TYPE_SYMAPP_MISSING_ARG,ERROR,mk_right_info(tm_info e2),[pprint_ty ty21]))                  
                        (* Error handling: Incorrect argument to a symbolic function*)
                | TyArrow(fi2,_,ty11,ty12),ty2 | TySym(_,_,TyArrow(fi2,_,ty11,ty12)),ty2  -> 
-                   raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,tm_info e2,[pprint_ty ty11; missing_infix_message env ty2]))
+                   raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,tm_info e2,[pprint_ty (remove_sym_type ty11); missing_infix_message env ty2]))
                        (* Error handling: Not a function *)
                | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,tm_info e1,[pprint_ty ty1;missing_infix_message env ty1]))
             )              

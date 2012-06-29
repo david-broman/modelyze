@@ -33,8 +33,8 @@ type Pos = <Real>
 type Force = <Real>
 
 def PendulumExt(m:Real, l:Real, T:Force, x:Pos, y:Pos) = {
-    -T*x/l = m*x''
-    -T*der/l - m*g = m*y'';     
+    -T*x/l = m*x'';
+    -T*y/l - m*g = m*y''; 
     x^2 + y^2 = l^2;
 }
 

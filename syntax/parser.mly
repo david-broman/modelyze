@@ -145,6 +145,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> COMMA         /* ","  */
 %token <unit Ast.tokendata> DOT           /* "."  */
 %token <unit Ast.tokendata> BAR           /* "|"  */
+%token <unit Ast.tokendata> LONGARROW     /* "-->" */
 %token <unit Ast.tokendata> ARROW         /* "->" */
 %token <unit Ast.tokendata> DARROW        /* "=>" */
 %token <unit Ast.tokendata> POLYEQUAL     /* "<==>" */
@@ -167,7 +168,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %left OR  /*prec 2*/
 %left AND  /*prec 3*/
 %left EQ APXEQ LEFTARROW PLUSPLUS /*prec 5*/
-%left LESS LESSEQUAL GREAT GREATEQUAL EQUAL POLYEQUAL EQUAL NOTEQUAL /*prec 6*/
+%left LESS LESSEQUAL GREAT GREATEQUAL EQUAL POLYEQUAL EQUAL NOTEQUAL LONGARROW /*prec 6*/
 %left DOTLESS DOTLESSEQUAL DOTGREAT DOTGREATEQUAL DOTEQUAL DOTNOTEQUAL /*prec 7*/
 %nonassoc NOT /*prec8 */
 %left ADD SUB DOTADD DOTSUB /*prec 8*/
@@ -500,6 +501,8 @@ pat_op:
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(^)" $1 $3 }
   | pat_op DOTEXP pat_op
       { mk_binpat_op (mkpatinfo $1 $3) $2.l "(^.)" $1 $3 }
+  | pat_op LONGARROW pat_op
+      { mk_binpat_op (mkpatinfo $1 $3) $2.l "(-->)" $1 $3 } 
 
   | pat_op SQUOTE
       { mk_unpat_op (mkinfo (pat_info $1) $2.i) $2.l "(')" $1 }
@@ -672,6 +675,8 @@ op:
       { mk_binop (mktminfo $1 $3) $2.l "(^)" $1 $3 }
   | op DOTEXP op
       { mk_binop (mktminfo $1 $3) $2.l "(^.)" $1 $3 }
+  | op LONGARROW op
+      { mk_binop (mktminfo $1 $3) $2.l "(-->)" $1 $3 }
 
   | op SQUOTE 
       { mk_unop (mkinfo (tm_info $1) $2.i) $2.l "(')" $1 }

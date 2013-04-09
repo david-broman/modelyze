@@ -1,0 +1,38 @@
+
+
+include Base
+
+type Tree 
+let node : Tree -> Tree -> Tree
+let leaf : Int -> Tree
+
+let t1 = node (leaf 5) (node (leaf 3) (leaf 4))
+
+def _ = dprint(t1)
+
+def traverse(t:Tree) -> () ={
+  match t with
+  | node t1 t2 -> {
+      def _ = printLine("Node");
+      def _ = traverse(t1);
+      traverse(t2);
+    }
+  | leaf (lift i:Int) -> printLine("Leaf " ++ int2string(i))
+}
+
+
+let traverse2 t:Tree -> () ={
+  match t with
+  | node t1 t2 -> (
+      let _ = printLine("Node") in
+      let _ = traverse2 t1 in
+      traverse2 t2 
+    )
+  | leaf (lift i:Int) -> printLine("Leaf " ++ int2string(i))
+}
+
+let _ = printLine(int2string(5 + 3))
+
+let _ = traverse(t1)
+
+

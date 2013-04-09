@@ -1,0 +1,17 @@
+
+
+include Base
+
+def pre : Int -> Int
+let (-->) : Int -> Int -> Int 
+
+type Expr = ?
+
+
+type Eq
+
+def (=) : Int -> Int -> Eq
+
+def (;) : Eq -> Eq -> Eq
+
+

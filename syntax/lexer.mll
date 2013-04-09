@@ -114,6 +114,7 @@ let reserved_strings = [
   (",",             fun(i,l) -> Parser.COMMA{i=i;l=l;v=()});
   (".",             fun(i,l) -> Parser.DOT{i=i;l=l;v=()});
   ("|",             fun(i,l) -> Parser.BAR{i=i;l=l;v=()});
+  ("-->",           fun(i,l) -> Parser.LONGARROW{i=i;l=l;v=()}); 
   ("->",            fun(i,l) -> Parser.ARROW{i=i;l=l;v=()}); 
   ("=>",            fun(i,l) -> Parser.DARROW{i=i;l=l;v=()}); 
   ("<==>",          fun(i,l) -> Parser.POLYEQUAL{i=i;l=l;v=()});
@@ -289,10 +290,10 @@ let operator = "="  | "~="  | "<-"  | "mod" |
                "+." | "-."  | "*."  | "/."  | 
                "<." | "<=." | ">."  | ">=." | "==." | "!=." | 
                "!"  | "&&"  | "||"  | ";"   | "++"  |
-	      "--"  | "--." | "^"   | "^."  | "'" 
+	      "--"  | "--." | "^"   | "^."  | "'" | "-->" 
 
 let symtok  =  "(" | ")" | "["  | "]" | "{"  | "}" | "::" | ":" |
-                "," | "." | "|" | "->" | "=>" | "~" | "<==>" | "_" | 
+                "," | "." | "|" | "->" |  "=>" | "~" | "<==>" | "_" | 
                  "~" | ")(" | ";;" | "?"
 
 
@@ -328,10 +329,10 @@ rule main = parse
   | "@@" ident as s
       { [let fi = mkinfo_fast s in
 	 Parser.PRIMITIVE{i=fi; l=0; v=str2primitive fi s}] }
-  | (unsigned_integer as str) "d"
+  | (unsigned_integer as str) 
       { [Parser.UINT{i=mkinfo_fast str; l=0; v=int_of_string str}] } 
   | unsigned_number as str
-      { [Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str}] }
+      { [Parser.UFLOAT{i=mkinfo_fast str; l=0; v=float_of_string str}] } 
   | '"'  
       { Buffer.reset string_buf ;  mklstring lexbuf; 
 	 let s = Ustring.from_utf8 (Buffer.contents string_buf) in

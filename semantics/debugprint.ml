@@ -145,6 +145,7 @@ let opMap str =
     | "(++)"  -> (InfixNewline,us"++",5)
     | "(^)"   -> (InfixNoSpace,us"^",11)
     | "(^.)"  -> (InfixNoSpace,us"^.",11)
+    | "(-->)"  -> (InfixNoSpace,us"-->",6)
     | "(')"   -> (Postfix,us"'",13)
     | "(--)"  -> (Prefix,us"-",12)
     | "(--.)" -> (Prefix,us"-.",12)
@@ -173,8 +174,10 @@ and pprint_app prec t =
   match t with
     | TmSymApp(TmSymApp(TmLift(TmConst(_) as c,_),t1),t2) -> 
         pprint_op prec (pp 0 c) [t1;t2]
-    | TmSymApp(TmLift(TmConst(_) as c,_),t1) -> 
-        pprint_op prec (pp 0 c) [t1]
+    | TmSymApp(TmLift(TmConst(Ast.ConstPrim(prim,[t1c])) as c,_),t2) -> 
+        pprint_op prec (pp 0 c) [TmConst(t1c);t2]
+    | TmSymApp(TmLift(TmConst(_) as c,_),t2) -> 
+        pprint_op prec (pp 0 c) [t2]
     | _ -> 
        (let rec collect t acc = 
            match t with
@@ -183,7 +186,7 @@ and pprint_app prec t =
         in          
          let (f,ts) = collect t [] in  
            pprint_op 0 (pp 0 f) ts)
-
+ 
 
 and pp prec t  =
   match t with
@@ -193,7 +196,8 @@ and pp prec t  =
              Symtbl.get (Hashtbl.find primToId primop) 
            with Not_found -> 
              Ast.pprint_const c 0)
-    | TmConst(c) -> Ast.pprint_const c 0
+    | TmConst(c) -> 
+      Ast.pprint_const c 0
     | TmSym(idx,ty) -> 
         getDebugSymId t
     | TmSymApp(t1,t2) -> pprint_app prec t 

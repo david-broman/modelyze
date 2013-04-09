@@ -1,6 +1,6 @@
 /*
-    Modeling Kernel Language (MKL) evaluator
-    Copyright (C) 2010-2011 David Broman
+    Modeling Kernel Language (Modelyze) evaluator
+    Copyright (C) 2010-2012 David Broman
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

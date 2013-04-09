@@ -1,19 +1,19 @@
 /*
-Modeling Kernel Language (MKL) library 
-Copyright (C) 2010-2011 David Broman 
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman 
 
-MKL library is free software: you can redistribute it and/or modify
+Modelyze library is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-MKL library is distributed in the hope that it will be useful,
+Modelyze library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /******************************************************************** 
@@ -21,7 +21,7 @@ along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
   Author(s):    Johan Åkesson and David Broman
   Year(s):      2011-2012
   Description:  Module for generating NLP code (Phyton/Casadi) from a
-                dynamic optimization problem (MKL).        
+                dynamic optimization problem (Modelyze).        
 *********************************************************************/
 
 include Modeling
@@ -175,7 +175,7 @@ def pprintPythonCasadiDecls(varNameMap:VarNameMap) : String = {
     iterVars(varNameList,"z = []\n")
 }
 
-// Generate a Python expression from MKL expressions.
+// Generate a Python expression from Modelyze expressions.
 def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     def printExpr(expr:Expr) : String = {
     match expr with 

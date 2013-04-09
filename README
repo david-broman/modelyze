@@ -1,24 +1,32 @@
-Modeling Kernel Language (MKL) toolchain
-Copyright (C) 2010-2011 David Broman
+Modelyze toolchain
+Copyright (C) 2010-2012 David Broman
 
-MKL toolchain is free software: you can redistribute it and/or modify
+Modelyze toolchain is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-MKL toolchain is distributed in the hope that it will be useful,
+Modelyze toolchain is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with MKL toolchain.  If not, see <http://www.gnu.org/licenses/>.
+along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
-MKL toolchain, version 1.0.1
+Modelyze toolchain, version 1.1
 -----------------------------------------------------
 This project contains a simple interpreter for the 
-modeling kernel language (MKL). For a detailed overview of the
-MKL language, please see David Broman's PhD Thesis:
+Modelyze language. For a detailed overview of the
+Modelyze language, please see the technical report:
+
+David Broman and Jeremy G. Siek. "Modelyze: a Gradually Typed Host Language 
+for Embedding Equation-Based Modeling Languages", Technical Report No. 
+UCB/EECS-2012-173, University of California, Berkeley, June 30, 2012.
+Available at: http://www.eecs.berkeley.edu/Pubs/TechRpts/2012/EECS-2012-173.html
+
+A comprehensive description of Modelyze's predecessor, called MKL, is available
+in David Broman's PhD Thesis:
 http://www.bromans.com/david/publ/thesis-2010-david-broman.pdf
 
 If you have any comments or questions, please send an email to
@@ -26,7 +34,7 @@ david@bromans.com
 
 INSTALLATION (Mac OS)
 --------------------
-To run the MKL interpreter on an UNIX-based system, 
+To run the Modelyze interpreter on an UNIX-based system, 
 do the following steps:
 
 1. Install the SUNDIALS solver suite version 2.4.0 or later. 
@@ -35,14 +43,14 @@ do the following steps:
    http://www.macports.org/
 3. Install Objective Caml compiler, ocamlfind, and gnuplot via Macports
    >> sudo port install ocaml caml-findlib gnuplot
-4. Unzip the MKL source code and compile the project using command
+4. Unzip the Modelyze source code and compile the project using command
    >> build byte
 
 INSTALLATION (Ubuntu 10.11)
 ---------------------------
 1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal
    >>sudo apt-get install ocaml ocaml-findlib gnuplot libsundials-serial
-2. Unzip the MKL source code and compile the project using command
+2. Unzip the Modelyze source code and compile the project using command
    >> build byte
  
  
@@ -50,18 +58,18 @@ INSTALLATION (Ubuntu 10.11)
 
 EXAMPLES
 --------
-Under folder "library", a simple standard library for MKL is provided.
+Under folder "library", a simple standard library for Modelyze is provided.
 Two test files are also provided:
-1. test-mechsys.mkl
-   This test program generates Modelica flat code from a Mechatronic MKL
-   model. Usage: mkl test-mechsys.mkl
-2. test-lotkavolterra.mkl
+1. test-mechsys.moz
+   This test program generates Modelica flat code from a Mechatronic Modelyze
+   model. Usage: modelyze test-mechsys.mkl
+2. test-lotkavolterra.moz
    This test program shows a simple mathematical modeling that is simulated
-   and plotted. Usage: mklplot test-lotkavolterra.mkl 
+   and plotted. Usage: pmodelyze test-lotkavolterra.moz
 
 LICENSE
 -------
-All files in the MKL toolchain project, excepts for files in the folders 
+All files in the Modelyze toolchain project, excepts for files in the folders 
 "library/" and "other/" are under the GNU General Public Licence according 
 to file COPYING. Files under folder "other/" have specific licenses given 
 in each sub-folder. Files under folder "library/" are under the GNU Lesser
@@ -72,20 +80,24 @@ General Public License according to file "library/COPYING.LESSER".
 REVISIONS
 ---------
 
-Version 1.0.1
-  - Simplified the way of creating pseudo types. Now these are always
+Version 1.1 December 17, 2012.
+  - Changed the name of the project from "MKL" to "Modelyze". The rationale
+    for the change is to emphasize that Modelyze is a host language for
+    embedding DSLs.
+  - Full gradual typing is now implemented according to the technical report
+    http://www.eecs.berkeley.edu/Pubs/TechRpts/2012/EECS-2012-173.html. The
+    type system and the symbol lifting analysis correspond to the description.
+    Cast insertion has not been implemented.  
+  - Pattern matching on symbols do not need to have the ~ anymore. Instead, the
+    compiler recognized if the pattern variable equal to a globally defined 
+    symbol and in such a case it is treated as a symbol matching instead of
+    a pattern variable 
+  - Simplified the way of creating symbolic data types. Now these are always
     symbolic types. Defintions of equations and nodes are now simpler.
   - Add def-syntax, which is closer to Java or C. { } are used as
     grouping of expressions, not as defining arrays.
-  - Added coercion semantics for int to reals, meaning that 1you can
-    write 1.0 or 1 and that the type checker will insert conversions
-    if necessary. Hence, we do not need to write 1. or 0. when using
-    real constants.
-  - Changed syntax for patterns 'var to ~var. 
   - Added new syntax for derivatives, e.g., der(x) can be written x' and
     der(der(y)) can be written y''
-  - Fixed problem with init conditions. The function InitValues in
-    elaboration.mkl must match pattern ~Init and not just Init.
   - Changed the syntax for polymorphic equality from == to <==>. Added 
     operators == and ==. meaning real and integer equality test respectively.
     The rationale is that == can now be used as part of a model.

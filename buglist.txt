@@ -1,6 +1,6 @@
 
 
-Known issues and todos in the MKL OCaml implementation
+Known issues and todos in the Modelyze OCaml implementation
 --------------------------------------------
 
 2011-06-20: Declaring symbols and other let expressions does not seems
@@ -12,7 +12,7 @@ symbol using syntax "let x:floor" because floor exists in Base.mkl.
 2011-10-29: There is a problem when calling curred built-in functions,
 e.g., (+) 1 u, where u is a symbol. How do we pattern match on this?
 
-Known issues and todos in the MKL libraries
+Known issues and todos in the Modelyze libraries
 ---------------------------------
 2011-08-05: There is an error in the hybrid ball stairs example. The
 last stair case does not create a bounce.

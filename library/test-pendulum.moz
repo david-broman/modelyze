@@ -1,19 +1,19 @@
 /*
-Modeling Kernel Language (MKL) library 
-Copyright (C) 2010-2011 David Broman
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
 
-MKL library is free software: you can redistribute it and/or modify
+Modelyze library is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-MKL library is distributed in the hope that it will be useful,
+Modelyze library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with MKL library.  If not, see <http://www.gnu.org/licenses/>.
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include MechsysBasics
@@ -202,6 +202,48 @@ def MiniPendulum() = {
 
 
 
+// This is Johan's pendulum example where index reduction is applied 
+// manually
+def ManualPendulum() = {
+  def x, y, vx, lambda, der_2_y, der_2_x, der_y : Real;
+  def L = 1;
+  def g = 9.81;
+
+  der(x) = vx;
+  der(vx) = lambda * x;
+  der_2_y = lambda * y - g;
+  x ^ 2 + y ^ 2 = L;
+  2*x * der(x)  + 2*y * der_y  = 0;
+  2*x * der_2_x +  2*der(x) * der(x) + 2*y * der_2_y + 2*der_y*der_y = 0;
+  der_2_x = der(vx);
+
+  probe "y" = y;
+}        
+
+
+//parameter Real L = 1 \"Pendulum length\" /* 1 */;
+//parameter Real g = 9.81 \"Acceleration due to gravity\" /* 9.81 */;
+//Real x \"Cartesian x coordinate\";
+//Real y \"Cartesian x coordinate\";
+//Real vx \"Velocity in x coordinate\";
+//Real lambda \"Lagrange multiplier\";
+//Real der_y;
+//Real der_2_x;
+//Real der_2_y;
+//initial equation 
+//x = 0.0;
+//vx = 0.0;
+//equation
+//der(x) = vx;
+//der(vx) = ( lambda ) * ( x );
+//der_2_y = ( lambda ) * ( y ) - ( g );
+//x ^ 2 + y ^ 2 = L;
+//( ( 2 ) * ( x ) ) * ( der(x) ) + ( ( 2 ) * ( y ) ) * ( der_y ) = 0.0;
+//( ( 2 ) * ( x ) ) * ( der_2_x ) + ( ( 2 ) * ( der(x) ) ) * ( der(x) ) + (
+//( 2 ) * ( y ) ) * ( der_2_y ) + ( ( 2 ) * ( der_y ) ) * ( der_y ) = 0.0;
+//der_2_x = der(vx);
+//*/
+
 
 
 let _ = 
@@ -209,7 +251,9 @@ let _ =
   //simulate (Pendulum2 5.0 2.0 angle) 0.01 10.
   //printsim (PendulumD3 5.0 2.0 angle) 0.01 10
   //printLine (exportModelica "Pendulum" (Pendulum5 5.0 2.0 angle))
-  printsim(MiniPendulum(), 0.01, 10)
+//  printsim((Pendulum 5.0 2.0 angle), 0.01, 10)
+//  printsim(MiniPendulum(), 0.01, 10)
+  printsim(ManualPendulum(), 0.01, 10)
 
 
 

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+NAME=modelyze-1.1
+
+cd ~/Downloads
+rm -rf $NAME
+cp -R ~/proj/code-modelyze $NAME
+cd $NAME
+
+build clean
+
+rm -rf .git
+rm -f buglist.txt
+
+cd library
+rm -f casadi*
+rm -f regression
+rm -f optimization.moz
+rm -f todo.txt
+rm -f synchronous*
+rm -f test-synch*

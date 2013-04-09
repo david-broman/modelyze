@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     another encoding is used, an exception will be raised. In all functions
     below, a ustring [s] is indexed from [0] to [(Ustring.length s)-1].
 
-    Copyright (C) 2010-2011 David Broman. All rights reserved. This file
+    Copyright (C) 2010-2012 David Broman. All rights reserved. This file
     is distributed under the "New BSD License". 
 *) 
 

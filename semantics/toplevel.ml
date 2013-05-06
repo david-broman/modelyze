@@ -157,6 +157,7 @@ and tm_typesubst typemap numap tm =
     | TmDAESolverOp(fi,l,op,tms) -> TmDAESolverOp(fi,l,op,List.map tmsub tms)
     | TmDPrint(t) -> TmDPrint(tmsub t)
     | TmDPrintType(t) -> TmDPrintType(tmsub t)
+    | TmSymStr(fi,t) -> TmSymStr(fi,tmsub t)
     | TmError(fi,l,t) -> TmError(fi,l,tmsub t)
 
 let desugar tlst =

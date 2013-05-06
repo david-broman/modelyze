@@ -74,6 +74,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> TYSTRING
 %token <unit Ast.tokendata> DPRINT
 %token <unit Ast.tokendata> DPRINTTYPE
+%token <unit Ast.tokendata> SYMSTR
 %token <unit Ast.tokendata> LCASE
 %token <unit Ast.tokendata> LIFT
 %token <unit Ast.tokendata> OF
@@ -782,6 +783,8 @@ atom:
       { TmDPrint($3) }
   | DPRINTTYPE LPAREN term RPAREN
       { TmDPrintType($3) }
+  | SYMSTR LPAREN term RPAREN
+      { TmSymStr(tm_info $3,$3) }
 
 
 

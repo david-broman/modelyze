@@ -231,10 +231,11 @@ and tm =
     (* Set *)
   | TmSetOp       of info * level * setop * tm list
     (* Simulation *)
-  | TmDAESolverOp      of  info * level * daesolverop * tm list
+  | TmDAESolverOp of  info * level * daesolverop * tm list
     (* Debugging and errors *)
-  | TmDPrint         of tm
-  | TmDPrintType         of tm
+  | TmDPrint      of tm
+  | TmDPrintType  of tm
+  | TmSymStr      of info * tm
   | TmError       of info * level * tm
 
 
@@ -480,6 +481,7 @@ and pprint tm =
       (tms |> List.map pprint |> Ustring.fast_concat (us" ")) 
   | TmDPrint(t) -> pprint t
   | TmDPrintType(t) -> pprint t
+  | TmSymStr(fi,t) -> pprint t
   | TmError(fi,l,t) -> metastr l ^. us"error " ^. pprint t
 
 
@@ -855,6 +857,7 @@ let rec tm_info t =
     | TmDAESolverOp(fi,_,_,_) -> fi
     | TmDPrint(t) -> tm_info t
     | TmDPrintType(t) -> tm_info t
+    | TmSymStr(fi,t) -> fi
     | TmError(fi,_,_) -> fi
 
 
@@ -889,6 +892,7 @@ let rec set_tm_info newfi tm =
     | TmDAESolverOp(_,l,op,tms) -> TmDAESolverOp(newfi,l,op,tms)
     | TmDPrint(t) -> TmDPrint(set_tm_info newfi t)
     | TmDPrintType(t) -> TmDPrintType(set_tm_info newfi t)
+    | TmSymStr(fi,t) -> TmSymStr(fi,set_tm_info newfi t)
     | TmError(_,l,t) -> TmError(newfi,l,t)
 
 
@@ -1075,6 +1079,7 @@ and fv_tm t =
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmDPrint(t) -> fv_tm t
     | TmDPrintType(t) -> fv_tm t
+    | TmSymStr(fi,t) -> fv_tm t
     | TmError(fi,l,t) -> fv_tm t
 
 (** Function [free x t] returns true if [x] is free in term [x], else false *)

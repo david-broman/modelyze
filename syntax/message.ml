@@ -260,6 +260,8 @@ type id =
   | TYPE_EXPECTED_RESROOT_TYPE 
       (* arg1 = The expected type
          arg2 = The current type *)
+  | TYPE_ERROR_TERM_NOT_SYM
+      (* arg1 = Current type *)
   | STATIC_CIRCULAR_DEP_INCLUDE
       (* arg1 = name of the include *)
   | STATIC_ERROR_OPEN_FILE
@@ -267,7 +269,6 @@ type id =
   | RUNTIME_TYPE_ERROR
      (*  arg1 = operation
          arg2 = argument *)
-
 type severity =
   | ERROR
   | WARNING
@@ -291,7 +292,7 @@ let id2str id args =
     | LEX_UNKNOWN_CHAR -> us"Illegal character '" ^. (List.nth args 0) ^. us"'."
     | LEX_STRING_NOT_TERMINATED -> us"String is not terminated."
     | LEX_INVALID_ESCAPE -> us"LEX_INVALID_ESCAPE"
-    | LEX_COMMENT_NOT_TERMINATED -> us"LEX_COMMENT_NOT_TERMINATED"
+    | LEX_COMMENT_NOT_TERMINATED -> us"Comment is not terminated. Missing */"
     | LEX_UNKOWN_PRIMITIVE -> us"LEX_UNKOWN_PRIMITIVE"
     | LEX_UNKNOWN_FUNCTION -> us"LEX_UNKNOWN_FUNCTION"
 
@@ -385,6 +386,8 @@ let id2str id args =
     | TYPE_EXPECTED_CONSTANT_LEV -> us"TYPE_EXPECTED_CONSTANT_LEV"
     | TYPE_UNEXPECTED_NO_ARGS -> us"TYPE_UNEXPECTED_NO_ARGS"
     | TYPE_EXPECTED_RESROOT_TYPE -> us"TYPE_EXPECTED_RESROOT_TYPE"
+    | TYPE_ERROR_TERM_NOT_SYM -> us"The supplied term is not a symbol type but of type " ^.
+                                 (List.nth args 0) ^. us"'."
     | STATIC_CIRCULAR_DEP_INCLUDE -> us"STATIC_CIRCULAR_DEP_INCLUDE"
     | STATIC_ERROR_OPEN_FILE -> us"STATIC_ERROR_OPEN_FILE"
     | RUNTIME_TYPE_ERROR -> us"RUNTIME_TYPE_ERROR"

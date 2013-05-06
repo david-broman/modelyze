@@ -217,6 +217,7 @@ let rec readback syms d tm =
       | TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (readback syms d) tms)
       | TmDPrint(t) -> TmDPrint(readback syms d t)
       | TmDPrintType(t) -> TmDPrintType(readback syms d t)
+      | TmSymStr(t) -> TmSymStr(readback syms d t)
       | TmError(fi,t) ->  TmError(fi,readback syms d t)
       | TmDebugId(id,t) -> TmDebugId(id,readback syms d t)
 
@@ -325,6 +326,8 @@ and eval venv norec t =
       | TmDPrint(t) -> let t' = eval venv norec t  in 
 	  pprint t' |> uprint_endline; t'
       | TmDPrintType(t) -> pprint t |> uprint_endline; eval venv norec t
+      | TmSymStr(t) -> let t' = eval venv norec t  in 
+            TmConst(Ast.ConstString(Debugprint.getDebugSymId t'))
       | TmError(fi,t) ->  
 	  (match eval venv norec t with
 	     | TmConst(Ast.ConstString(s)) ->

@@ -22,3 +22,7 @@ open Ustring.Op
 val debugTagTm : int -> Evalast.tm -> Evalast.tm
 
 val pprint : Evalast.tm -> ustring
+
+val getDebugSymId : Evalast.tm -> ustring
+
+

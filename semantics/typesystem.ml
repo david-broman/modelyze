@@ -559,6 +559,11 @@ and typeof_daesolver_op fi l op ts env  =
             (ty',TmDAESolverOp(fi,l,op,ts'))
       | TmDPrint(t) -> let (ty,t') = typeof env  t in (ty,TmDPrint(t'))
       | TmDPrintType(t) -> let (ty,t') = typeof env  t in (ty,TmDPrintType(t'))
+      | TmSymStr(fi,t) -> let (ty,t') = typeof env  t in 
+                       if consistent ty (TySym(NoInfo,0,TyDyn(NoInfo,0))) then
+                         (TyString(fi,0),TmSymStr(fi,t'))
+                       else
+                         raise (Mkl_type_error(TYPE_ERROR_TERM_NOT_SYM,ERROR,ty_info ty,[pprint_ty ty]))
       | TmError(fi,l,e1) ->
           let (ty1,e1') = typeof env e1 in
 	    (match ty1 with

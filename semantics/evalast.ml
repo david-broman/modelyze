@@ -84,6 +84,7 @@ and tm =
   | TmDAESolverOp of Ast.daesolverop * tm list
   | TmDPrint      of tm
   | TmDPrintType  of tm
+  | TmSymStr      of tm
   | TmError       of info * tm
   | TmDebugId     of Ast.ident * tm
 

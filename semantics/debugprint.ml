@@ -52,17 +52,18 @@ let debugTagTm id t =
     | t -> t
 
 
-let getDebugSymId t = 
-  let (id,count) = Hashtbl.find symToId t in
-  let s = Symtbl.get id in
-  if isSymInfix s then s
-  else
-    let totalCount = Hashtbl.find symIdCount id in
-    if totalCount = 1 
-      then s ^. us"#"
-      else s ^. us"#" ^. ustring_of_int count
-
-
+let getDebugSymId t =
+  try 
+    let (id,count) = Hashtbl.find symToId t in
+    let s = Symtbl.get id in
+    if isSymInfix s then s
+    else
+    (*let totalCount = Hashtbl.find symIdCount id in
+      if totalCount = 1 
+      then s ^. us"#" 
+      else *)
+      s ^. us"_" ^. ustring_of_int count
+  with Not_found -> us"NOT_A_SYMBOL"
 
 
 let no_pat_vars p = 
@@ -245,6 +246,7 @@ and pp prec t  =
         pp 0 t1 ^. us"," ^. pp 0 t2 ^. us"," ^. pp 0 t3 ^. us")"
     | TmGenSym(ty) -> us"TmGenSym()"
     | TmSetOp(op,tms) -> us"TmSetOp()"
+    | TmSymStr(t) -> us"TmSetOp(" ^. pp 0 t ^. us")"
     | TmDAESolverOp(op,tms) -> us"TmDAESolverOp()"
     | TmByteCode(code,extid,ident,args) -> Symtbl.get ident
 

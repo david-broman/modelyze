@@ -109,6 +109,7 @@ let translate t =
           nl l d (TmDAESolverOp(op,List.map (fun t -> trans t l denv ) tms))
       | Ast.TmDPrint(t) -> TmDPrint(trans t d denv )
       | Ast.TmDPrintType(t) -> TmDPrintType(trans t d denv )
+      | Ast.TmSymStr(_,t) -> TmSymStr(trans t d denv)
       | Ast.TmError(fi,l,t) -> nl l d (TmError(fi,trans t l denv ))
   in 
     trans t 0 []

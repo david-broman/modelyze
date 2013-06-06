@@ -1,0 +1,154 @@
+include Synchronous
+
+def resetGen(period : Int, reset : SigInt) -> Eq = {
+    def resetCount : SigInt;
+    resetCount = (period) --> If {Pre(resetCount) == 0} Then (period - 1) Else {Pre(resetCount) - 1};
+    reset = If {resetCount == 0} Then 1 Else 0
+}
+
+def counter(val_init : Int, val_incr : Int, reset: SigInt, count : SigInt) -> Eq = {
+    count = val_init --> If {reset == 1} Then val_init Else {Pre(count) + val_incr}
+}
+
+def exCounter = {
+    def reset : Int;
+    def count : Int;
+
+    resetGen(5, reset);
+    counter(0, 2, reset, count)
+}
+
+def watchdog(set : SigInt, reset : SigInt, deadline: SigInt, alarm : SigInt) -> Eq = {
+    def isSet : Int;
+    alarm = If {deadline == 1 && isSet == 1} Then 1 Else 0;
+    isSet = set --> If {set == 1} Then 1 Else {If {reset == 1} Then 0 Else {Pre(isSet)}}
+}
+
+def singleEvent(time : Int, out : SigInt) -> Eq = {
+    def innerCount : Int;
+    innerCount = time --> If {Pre(innerCount) >= 0} Then {Pre(innerCount) - 1 } Else {-1};
+    out = If {innerCount == 0} Then 1 Else 0 
+}
+
+def exWatchdog = {
+    def set : Int;
+    def reset : Int;
+    def deadline : Int;
+    def alarm : Int;
+
+    singleEvent(8, set);
+    singleEvent(12, reset);
+    singleEvent(11, deadline);
+    watchdog(set, reset, deadline, alarm);
+}
+
+def powerGen(failureTime : Int, failureType : Int, out : SigInt) -> Eq = {
+    def innerCount : Int;
+    innerCount = failureTime --> If {Pre(innerCount) > 0} Then {Pre(innerCount) - 1 } Else {0};
+    out = If {innerCount == 0} Then failureType Else 1
+}
+
+def contactor1(powerIn : SigInt, out : SigInt) -> Eq = {
+    def connected = If {powerIn == 1} Then 1 Else 0;
+    out = If {connected == 1} Then powerIn Else 0
+}
+
+def contactor2(powerIn : SigInt, refIn1 : SigInt, refIn2 : SigInt, subRefIn : SigInt, out : SigInt) -> Eq = {
+    def connected = 0 --> If {powerIn == 1 && (refIn1 == 0 || refIn2 == 0) && subRefIn == 0} Then 1 Else 0;
+    out = If {connected == 1} Then powerIn Else 0
+}
+
+def contactor3(powerIn1 : SigInt, powerIn2 : SigInt, refIn : SigInt, out : SigInt) -> Eq = {
+    def connected = If {refIn == 0} Then {If {(powerIn1 + powerIn2) == 1} Then 1 Else 0 } Else 0;
+    out = If {connected == 1} Then {powerIn1 + powerIn2} Else 0
+}
+
+def load(powerIn1 : SigInt, powerIn2 : SigInt, out : SigInt) -> Eq = {
+    out = powerIn1 + powerIn2
+}
+
+def monitor(loadIn1 : SigInt, loadIn2 : SigInt, alarm : SigInt) -> Eq = {
+    def powerDown : Int;
+    def overshoot = If {loadIn1 > 1 || loadIn2 > 1} Then 1 Else 0;
+    powerDown = If {loadIn1 == 0 || loadIn2 == 0} Then 1 Else 0;
+    alarm = 0 --> If {overshoot == 1 || (powerDown == 1 && Pre(powerDown) == 1)} Then 1 Else 0
+}
+
+def exAircraftEPS(lhvFailTime : Int, lhvFailType : Int,
+    	            rhvFailTime : Int, rhvFailType : Int,
+		    apuFailTime : Int, apuFailType : Int,
+		    extFailTime : Int, extFailType : Int) = {
+    def lhv : Int;
+    def rhv : Int;
+    def apu : Int;
+    def ext : Int;
+
+    def b1 : Int;
+    def b2 : Int;
+    def b3 : Int;
+    def b4 : Int;
+    def b5 : Int;
+    def b6 : Int;
+
+    def ac1 : Int;
+    def ac2 : Int;
+
+    def fail : Int;
+    
+    powerGen(lhvFailTime, lhvFailType, lhv);
+    powerGen(rhvFailTime, rhvFailType, rhv);
+    powerGen(apuFailTime, apuFailType, apu);
+    powerGen(extFailTime, extFailType, ext);
+
+    contactor1(lhv, b1);
+    contactor1(rhv, b2);
+    contactor2(apu, b1, b2, 0, b3);
+    contactor2(ext, b1, b2, b3, b4);
+    contactor3(b3, b4, b1, b5);
+    contactor3(b3, b4, b2, b6);
+
+    load(b1, b5, ac1);
+    load(b2, b6, ac2);
+
+    monitor(ac1, ac2, fail);
+}
+
+
+def main = {
+    def codeGen = false;
+    def simulationSteps = 20;
+
+    //def example = exCounter;
+    def example = exWatchdog;
+    // lhv, rhv, apu, ext
+    //def example = exAircraftEPS(5, 2, 10, 2, 15, 0, 21, 0);
+    //def example = exAircraftEPS(18, 0, 5, 2, 15, 0, 10, 2);
+
+    def sortedSignals = AnalyzeEq(example);
+    if !codeGen then
+       //def _ = viewEqIdx(sortedSignals, 0);
+       //def _ = printLine("-----Sorted signals -----");
+       //def _ = dprint(sortedSignals);
+       //def _ = printLine("-----Simulation -----");
+       def _ = simulate(sortedSignals, simulationSteps); ()
+    else 
+
+    //def _ = viewEqIdx(sortedSignals, 0);
+
+    def addToSet(a : Int, acc : Set Int) -> Set Int = {
+    	Set.add a acc
+    };
+
+    //def code = generateCode(sortedSignals, 20, true, Set.empty);
+
+    def codeGenSteps = 20;
+    def loopDelay = 250000000; // 250000000 = 1s, 125000000 = 0.5s
+    def showList = [14,15,17]; //[1,3,5,7,14,15,17];
+    def showSet = listToSet(showList, Set.empty);
+    //def target = 0; // general processor
+    def target = 1; // PRET
+    def code = generateCode(sortedSignals, codeGenSteps, loopDelay, false, showSet, target);
+    def _ = printLine(code);
+   ()
+}
+

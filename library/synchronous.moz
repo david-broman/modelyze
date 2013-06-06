@@ -1,17 +1,337 @@
-
-
 include Base
 
-def pre : Int -> Int
-let (-->) : Int -> Int -> Int 
-
+type SigInt = <Int>
 type Expr = ?
-
-
 type Eq
 
+def Pre : Int -> Int
+def (-->) : Int -> Int -> Int 
 def (=) : Int -> Int -> Eq
-
 def (;) : Eq -> Eq -> Eq
+
+type Then
+type Else
+let Then : Then
+let Else : Else
+def If : Bool -> Then -> Int -> Else -> Int -> Int
+
+// Extend an equation system with a list of new equations
+def AnalyzeEq(e : Eq) -> [(Eq, Eq)] = {
+    def getSignals (e : Eq, signals : (Eq => Eq) ) -> (Eq => Eq) = {
+        match e with
+            | e1 ; e2 -> getSignals e1 (getSignals e2 signals)
+            | If guard Then trueBranch Else falseBranch ->
+	        signals
+            | e1 = e2 -> Map.add e1 e2 signals
+            | _ -> signals
+    };
+
+    def signals = getSignals e (Map.empty);
+
+    def getDep(expr : <?>, dep : Set Eq) -> Set Eq = {
+	match expr with
+	    | e1 --> e2 -> getDep(e2, getDep(e1, dep))
+	    | If guard Then first Else second -> getDep(second, getDep(first, getDep(guard, dep)))
+	    | Pre e ->
+	      	dep
+	    | sym:Int ->
+	      	Set.add expr dep
+	    | f e -> 
+	      	getDep(f, getDep(e, dep))
+	    | e -> dep
+    };
+
+    def createGraph(signalList : [(Eq, Eq)], graph : [(Eq, Set Eq)]) -> [(Eq, Set Eq)] = {
+    	match signalList with
+	    | (k, expr)::es -> createGraph es {(k,getDep(expr, Set.empty))::graph}
+	    | [] -> graph
+    };
+    def graph = createGraph(Map.toList signals, []);
+
+    def listToMap(e : [(Eq, Set Eq)], done : (Eq => [Eq])) -> (Eq => [Eq]) = {
+    	match e with
+	    | (k, expr)::es -> listToMap(es, Map.add k (Set.toList expr) done)
+	    | [] -> done
+    };
+    def toSimpleGraph(e : [(Eq, Set Eq)]) -> [(Eq, [Eq])] = {
+    	match e with
+	    | (k, expr)::es -> (k, Set.toList expr)::toSimpleGraph(es)
+	    | [] -> []
+    };
+
+    def visit(n : Eq, mapGraph : (Eq => [Eq]), tempMark : Set Eq, perMark : Set Eq, sortedList : [Eq]) -> (Set Eq, Set Eq, [Eq]) = {
+	if Set.mem n tempMark then let _ = printLine("not a DAG") in (tempMark, perMark, sortedList) else
+	    let tmpTemp = Set.add n tempMark in
+	    if Set.mem n perMark then (tempMark, perMark, sortedList) else
+	    let adj = Map.find n mapGraph in
+	    	match adj with
+	            | e::es ->
+		        let (newTemp, newPer, newList) = visit(e, mapGraph, tmpTemp, perMark, sortedList) in
+		        (Set.remove n newTemp, Set.add n newPer, n::newList)
+		    | [] -> (Set.remove n tempMark, Set.add n perMark, n::sortedList) 
+    };
+
+    def sortMain(graph : [(Eq, [Eq])], mapGraph : (Eq => [Eq]), tempMark : Set Eq, perMark : Set Eq, sortedList : [Eq]) -> (Set Eq, Set Eq, [Eq]) = {
+    	match graph with
+	    | (k, expr)::es -> if Set.mem k perMark then sortMain(es, mapGraph, tempMark, perMark, sortedList) else
+	        let (newTemp, newPer, newList) = visit(k, mapGraph, tempMark, perMark, sortedList) in
+		    sortMain(es, mapGraph, newTemp, newPer, newList)
+            | [] -> (tempMark, perMark, sortedList)
+    };
+
+    def topologicalSort(numEq : Int, graph : [(Eq, [Eq])], mapGraph : (Eq => [Eq]), tempMark : Set Eq, perMark : Set Eq, sortedList : [Eq]) -> [Eq] = {
+    	if (numEq == {Set.size perMark}) then sortedList else
+	   let (newTemp, newPer, newList) = sortMain(graph, mapGraph, tempMark, perMark, sortedList) in 
+	        topologicalSort(numEq, graph, mapGraph, newTemp, newPer, newList)
+    };
+
+    def reverseList(e1 : [Eq], acc : [Eq]) -> [Eq] = {
+    	match e1 with
+	    | e::es -> reverseList(es, e::acc)
+	    | [] -> acc
+    };
+    def getSortedSignals(sortedList : [Eq], signals : (Eq => Eq) ) -> [(Eq, Eq)] = {
+    	match sortedList with
+	    | e::es -> (e, Map.find e signals)::getSortedSignals(es, signals)
+	    | [] -> []
+    };
+    getSortedSignals(reverseList(topologicalSort(Map.size signals, toSimpleGraph(graph), listToMap(graph, Map.empty), Set.empty, Set.empty, []), []), signals)
+}
+
+def simulate(sortedSignals : [(Eq, Eq)], max_count : Int) = {
+    def evalInit (expr : <?>, x : (Eq => <Int>) ) -> ? = {
+    	match expr with
+	    | e1 --> e2 -> evalInit(e1, x)
+	    | If guard Then first Else second -> if evalInit(guard, x) then evalInit(first, x) else evalInit(second, x)
+	    | Pre e -> let _ = printLine("Invalid init value.") in e
+	    | sym:Int -> evalInit(Map.find expr x, x)
+	    | f e -> (evalInit(f, x)) (evalInit(e, x))
+	    | lift v:? -> v
+	    | e -> e
+    };
+
+    def findInitValue(signalList : [(Eq, Eq)], next : (Eq => <Int>)) -> (Eq => <Int>) = {
+    	match signalList with
+	      | (k, expr)::es -> findInitValue es {Map.add k {evalInit expr next} next}
+	      | [] -> next
+    };
+
+    def current = findInitValue(sortedSignals, Map.empty);
+
+    def eval (expr : <?>, x : (Eq => <Int>), preX : (Eq => <Int>) ) -> ? = {
+    	match expr with
+	    | e1 --> e2 -> eval(e2, x, preX)
+	    | If guard Then first Else second -> if eval(guard, x, preX) then eval(first, x, preX) else eval(second, x, preX)
+	    | Pre e -> eval(e, preX, Map.empty)
+	    | sym:Int -> eval(Map.find expr x, x, preX)
+	    | f e -> (eval(f, x, preX)) (eval(e, x, preX))
+	    | lift v:? -> v
+	    | e -> e
+    };
+
+    def findNextValue(signalList : [(Eq, Eq)], pre : (Eq => <Int>), next : (Eq => <Int>)) -> (Eq => <Int>) = {
+	match signalList with
+	    | (k, expr)::es -> 
+	        findNextValue es pre {Map.add k {eval expr next pre} next}
+	    | [] ->
+	        next
+    };
+
+    def next = findNextValue(sortedSignals, current, Map.empty);
+    def runSimulation(cycleCount : Int, signalList : [(Eq, Eq)], pre : (Eq => <Int>)) -> () = {
+    	let _ = dprint(max_count - cycleCount) in
+	let _ = dprint(pre) in
+	if (cycleCount > 0) then runSimulation(cycleCount - 1, signalList, findNextValue(signalList, pre, Map.empty)) else ()
+    };
+    def _ = runSimulation(max_count, sortedSignals, current);
+    ()
+}
+
+def generateCode(signalList : [(Eq, Eq)], maxCount : Int, loopDelay : Int, showAllSignals: Bool, showSignalList : Set Int, target : Int) -> String = {
+    def genVarDef(signalList : [(Eq, Eq)]) -> String = {
+	match signalList with
+	    | (k, expr)::es -> 
+	        "int " ++ symstr(k) ++ ";\n" 
+	        ++ "int pre_" ++ symstr(k) ++ ";\n" 
+		++ genVarDef(es)
+	    | [] -> ""
+    };
+
+    def evalInit (expr : <?>, x : (Eq => Int) ) -> ? = {
+    	match expr with
+	    | e1 --> e2 -> evalInit(e1, x)
+	    | If guard Then first Else second -> if evalInit(guard, x) then evalInit(first, x) else evalInit(second, x)
+	    | Pre e -> let _ = printLine("Invalid init value.") in e
+	    | sym:Int -> evalInit(Map.find expr x, x)
+	    | f e -> (evalInit(f, x)) (evalInit(e, x))
+	    | lift v:? -> v
+	    | e -> e
+    };
+
+    def findInitValue(signalList : [(Eq, Eq)], next : (Eq => Int)) -> (Eq => Int) = {
+    	match signalList with
+	      | (k, expr)::es -> findInitValue es {Map.add k {evalInit expr next} next}
+	      | [] -> next
+    };
+
+    def genInitCode (initVal : [(Eq, Int)]) -> String = {
+    	match initVal with
+	    | (k, v)::es -> "pre_" ++ symstr(k) ++ " = " ++ int2string(v) ++ ";\n" ++ genInitCode(es)
+	    | [] -> ""
+    };
+
+    def result = findInitValue(signalList, Map.empty);
+
+    def genExprCode(expr : Eq) -> String = {
+    	match expr with
+	    | e1 --> e2 ->  genExprCode(e2)
+	    | If guard Then first Else second ->
+	        "(" ++ genExprCode(guard) ++ " ? " ++ genExprCode(first) ++ " : " ++ genExprCode(second) ++ ")"
+	    | Pre e ->  "pre_" ++ genExprCode(e)
+	    | sym:Int -> symstr(expr)
+	    | e1 == e2 -> "(" ++ genExprCode(e1) ++ " == " ++ genExprCode(e2) ++ ")"
+	    | e1 != e2 -> "(" ++ genExprCode(e1) ++ " != " ++ genExprCode(e2) ++ ")"
+	    | e1 > e2 -> "(" ++ genExprCode(e1) ++ " > " ++ genExprCode(e2) ++ ")"
+	    | e1 < e2 -> "(" ++ genExprCode(e1) ++ " < " ++ genExprCode(e2) ++ ")"
+	    | e1 >= e2 -> "(" ++ genExprCode(e1) ++ " >= " ++ genExprCode(e2) ++ ")"
+	    | e1 <= e2 -> "(" ++ genExprCode(e1) ++ " <= " ++ genExprCode(e2) ++ ")"
+	    | e1 && e2 -> "(" ++ genExprCode(e1) ++ " && " ++ genExprCode(e2) ++ ")"
+	    | e1 || e2 -> "(" ++ genExprCode(e1) ++ " || " ++ genExprCode(e2) ++ ")"
+	    | e1 - e2 -> "(" ++ genExprCode(e1) ++ " - " ++ genExprCode(e2) ++ ")"
+	    | e1 + e2 -> "(" ++ genExprCode(e1) ++ " + " ++ genExprCode(e2) ++ ")"
+	    | f e -> "(" ++ genExprCode(f) ++ genExprCode(e)
+	    | lift v:? -> int2string(v)
+	    | e -> symstr(e)
+    };
+
+    def genInsideForLoop(signalList : [(Eq, Eq)]) -> String = {
+    	match signalList with
+	    | (k, expr)::es -> "    " ++ symstr(k) ++ " = " ++ genExprCode(expr) ++ ";\n" ++ genInsideForLoop(es)
+	    | [] -> ""
+    };
+    def genPreUpdate(signalList : [(Eq, Eq)]) -> String = {
+        match signalList with
+	    | (k, expr)::es -> "    pre_" ++ symstr(k) ++ " = " ++ symstr(k) ++ ";\n" ++ genPreUpdate(es)
+	    | [] -> ""
+    };
+
+    def genPrintFuncForInit(signalList : [(Eq, Eq)], idx : Int) -> String = {
+        match signalList with
+	    | (k, expr)::es -> 
+	      if showAllSignals || {Set.mem idx showSignalList}
+	      then "printf(\"" ++ symstr(k) ++ ": %d\\t\", " ++ "pre_" ++ symstr(k) ++ ");\n" ++ genPrintFuncForInit(es, idx + 1)
+	      else genPrintFuncForInit(es, idx + 1)
+	    | [] -> ""
+    };
+    def genPrintFunc(signalList : [(Eq, Eq)], idx : Int) -> String = {
+        match signalList with
+	    | (k, expr)::es ->
+	      	if showAllSignals || {Set.mem idx showSignalList}
+	        then "    printf(\"" ++ symstr(k) ++ ": %d\\t\", " ++ symstr(k) ++ ");\n" ++ genPrintFunc(es, idx + 1)
+  		else genPrintFunc(es, idx + 1)
+	    | [] -> ""
+    };
+    def genForLoop(signalList : [(Eq, Eq)], maxCount : Int) -> String = {
+    	"int i;\nfor(i = 0; i < " ++ int2string(maxCount) ++ "; i++) { \n"
+	++ genInsideForLoop(signalList) ++ "\n" ++ genPreUpdate(signalList)
+	++ "\n    printf(\"\\ncycle: %d\\t\", i + 1);\n" ++ genPrintFunc(signalList, 0)
+	++ "}\n"
+    };
+
+    def genPrintFuncForInitPRET(signalList : [(Eq, Eq)], idx : Int) -> String = {
+        match signalList with
+	    | (k, expr)::es -> 
+	      if showAllSignals || {Set.mem idx showSignalList}
+	      then "\nuart_outputstr(\"" ++ symstr(k) ++  ": \");\n"
+	          ++ "uart_outputstr(itoa(" ++ "pre_" ++ symstr(k) ++ "));\n"
+		  ++ "uart_outputstr(\"\\t\");\n"
+		  ++ genPrintFuncForInitPRET(es, idx + 1)
+	      else genPrintFuncForInitPRET(es, idx + 1)
+	    | [] -> ""
+    };
+    def genPrintFuncPRET(signalList : [(Eq, Eq)], idx : Int) -> String = {
+        match signalList with
+	    | (k, expr)::es ->
+	      	if showAllSignals || {Set.mem idx showSignalList}
+	        then  "\n    uart_outputstr(\"" ++ symstr(k) ++  ": \");\n"
+	            ++ "    uart_outputstr(itoa(" ++ symstr(k) ++ "));\n"
+		    ++ "    uart_outputstr(\"\\t\");\n"
+		    ++ genPrintFuncPRET(es, idx + 1)
+  		else genPrintFuncPRET(es, idx + 1)
+	    | [] -> ""
+    };
+
+    def genBeginForLoopPRET() = {
+	"    __asm__(\"sw x3, -16(sp)\"); // store previously stored value in the registers\n"
+	++ "    __asm__(\"sw x2, -12(sp)\");\n\n"
+
+	++ "    __asm__(\".word 0x1000005B\"); // GT_L\n"
+        ++ "    __asm__(\".word 0x180000DB\"); // GT_H\n"
+        ++ "    __asm__(\"li x4, " ++ int2string(loopDelay) ++ "\"); // 250000000 = 1s\n"
+        ++ "    __asm__(\"add x2, x2, x4\");\n"
+        ++ "    __asm__(\"bgeu x2, x4, no_overflow123\");\n"
+        ++ "    __asm__(\"addi x3, x3, 1\");\n"
+        ++ "    __asm__(\"no_overflow123:\");\n"
+        ++ "\n    __asm__(\"sw	x3, -8(sp)\"); // store current time + delay value\n"
+        ++ "    __asm__(\"sw	x2, -4(sp)\");\n\n"
+
+        ++ "    __asm__(\"lw x3, -16(sp)\"); // recover previously stored value in the registers\n"
+        ++ "    __asm__(\"lw x2, -12(sp)\");\n\n"
+    };
+
+    def genEndForLoopPRET() = {
+	"\n    __asm__(\"sw x3, -16(sp)\"); // store previously stored value in the registers\n"
+	++ "    __asm__(\"sw x2, -12(sp)\");\n\n"
+
+        ++ "    __asm__(\"lw	x3, -8(sp)\"); // load time + dealy\n"
+        ++ "    __asm__(\"lw	x2, -4(sp)\");\n"
+        ++ "    __asm__(\".word 0x00C4015B\"); // DU\n\n"
+
+        ++ "    __asm__(\"lw x3, -16(sp)\"); // recover previously stored value in the registers\n"
+        ++ "    __asm__(\"lw x2, -12(sp)\");\n\n"
+	++ "}\n"
+    };
+
+    def genForLoopPRET(signalList : [(Eq, Eq)], maxCount : Int) -> String = {
+    	"int i;\nfor(i = 0; i < " ++ int2string(maxCount) ++ "; i++) { \n"
+	++ genBeginForLoopPRET()
+	++ genInsideForLoop(signalList) ++ "\n" ++ genPreUpdate(signalList)
+	++ "\n    uart_outputstr(\"\\n\");\n"
+	++ "    uart_outputstr(\"cycle: \");\n"
+	++ "    uart_outputstr(itoa(i + 1));\n"
+	++ "    uart_outputstr(\"\\t\");\n"
+	++ genPrintFuncPRET(signalList, 0)
+	++ genEndForLoopPRET()
+    };
+
+    if target == 0 then
+        "#include <stdio.h>\n\nint main() { \n"
+    	++ genVarDef(signalList) ++ "\n" ++ genInitCode(Map.toList result)
+    	++ "\nprintf(\"cycle: %d\\t\", 0);\n" ++ genPrintFuncForInit(signalList, 0) 
+    	++ "\n" ++ genForLoop(signalList, maxCount)
+    	++ "\nprintf(\"\\n\"}"
+
+    else if target == 1 then
+        "#include <ptio.h>\n\nint main() { \n"
+    	++ genVarDef(signalList) ++ "\n" ++ genInitCode(Map.toList result)
+    	++ "uart_outputstr(\"cycle: \");\n" ++ "uart_outputstr(itoa(0));\n" ++ "uart_outputstr(\"\\t\");\n"
+	++ genPrintFuncForInitPRET(signalList, 0) 
+    	++ "\n" ++ genForLoopPRET(signalList, maxCount)
+    	++ "\nuart_outputstr(\"\\n\");\n}"
+
+    else "Invalid target"
+}
+
+def viewEqIdx(sortedSignals :  [(Eq, Eq)], idx : Int) -> () = {
+    match sortedSignals with
+        | (k, expr)::es -> let _ = printLine(symstr(k) ++ ": " ++ int2string(idx)) in viewEqIdx(es, idx + 1)
+	| [] -> ()
+}
+def listToSet(e1 : [Int], done : Set Int) -> Set Int = {
+    match e1 with
+	| e::es -> listToSet(es, Set.add e done)
+	| [] -> done
+}
+
 
 

@@ -1,4 +1,4 @@
-include Base
+include IBase
 
 type SigInt = <Int>
 type Expr = ?

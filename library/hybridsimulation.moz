@@ -241,12 +241,12 @@ let makeRootFun ukmap:UkMap -> trans:Transitions ->
 let isTransitionFired expr:Expr -> roots:{Int} -> index:Int -> (Int,Bool) =
   let fired e:Expr -> i:Int -> (Int,Bool) = 
     match e with
-    | e1 == e2 -> (i-.1d,(Array.get roots i) !=. 0d)
-    | e1 != e2 -> (i-.1d,(Array.get roots i) !=. 0d)
-    | e1 >= e2 -> (i-.1d,(Array.get roots i) !=. 0d)
-    | e1 > e2  -> (i-.1d,(Array.get roots i) !=. 0d)
-    | e1 <= e2 -> (i-.1d,(Array.get roots i) !=. 0d)
-    | e1 < e2 ->  (i-.1d,(Array.get roots i) !=. 0d)
+    | e1 == e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 != e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 >= e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 > e2  -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 <= e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 < e2 ->  (i -. 1,(Array.get roots i) !=. 0)
     | !e1 -> fired e1 i
     | e1 && e2  -> let (i1,f1) = fired e1 i in 
                    let (i2,f2) = fired e2 i1 in (i2,f1||f2)
@@ -280,8 +280,8 @@ let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:ModePath ->
             else travTrans ts acc sp i2
      | [] -> (acc,sp)
   in 
-    if (Array.length roots) !=. 0d 
-        then travTrans trans [] sp ((Array.length roots) -. 1d) 
+    if (Array.length roots) !=. 0 
+        then travTrans trans [] sp ((Array.length roots) -. 1) 
         else ([],sp)
 
 // Extend an equation system with a list of new equations
@@ -329,9 +329,9 @@ let makeStepVal currtime:Real -> yy:{Real} ->
 let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
   match probes with
   | (s,u::us)::ss -> 
-    let s2 = s ++ (if n >. 1d then "_" ++ int2string(n) else "") in
-    s2::(makeProbeNames ((s,us)::ss) (n +. 1d))
-  | (s,[])::ss -> makeProbeNames ss 1d
+    let s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "") in
+    s2::(makeProbeNames ((s,us)::ss) (n +. 1))
+  | (s,[])::ss -> makeProbeNames ss 1
   | [] -> []
 
 // Generate the identity array specifying if a variable
@@ -455,7 +455,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
     // Initiate the hybrid simulation loop (CT + DT)
     let result = revResult (dtloop 0. [] model1 
                  (Map.empty) (Map.empty) (Map.empty) [] [] []) [] in
-    (makeProbeNames probelist 1d,result) 
+    (makeProbeNames probelist 1,result) 
 
 // Pretty-print simulation result
 let pprintSimulation res:SimulationResult -> String =

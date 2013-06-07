@@ -43,7 +43,7 @@ def Ground(p:Electrical) = {
     def i:Current;
     def v:Voltage;
     RefBranch(i,v,p);
-    v = 0
+    v = 0.
 }
    
 let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical -> 

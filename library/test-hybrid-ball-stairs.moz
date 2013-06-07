@@ -41,8 +41,8 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
   def Pendulum:Mode;
   def BouncingBall:Mode;
 
-  init ground (-3);
-  ground' = 0;
+  init ground (-3.0);
+  ground' = 0.;
 
   hybridchart initmode Pendulum {
     mode Pendulum {
@@ -53,25 +53,25 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
 
       -T*x/l = m*x'';
       -T*y/l - m*g = m*y'';     
-      (x^2 + y^2)'' = (l^2)'';
+      (x^2. + y^2.)'' = (l^2.)'';
 
-      transition BouncingBall when (time > 2)
+      transition BouncingBall when (time > 2.0)
         action nothing;
     };
 
     mode BouncingBall {    
       def timer:Signal;
 
-      timer' = 1;
+      timer' = 1.0;
 
-      x'' = 0;
+      x'' = 0.;
       -m*g = m*y'';
   
       transition BouncingBall when (y <= ground)
         action (init (y') (y' * -0.7));
 
-      transition BouncingBall when (timer > 0.3 && ground > -5)
-        action ((init timer 0) ; (init ground  (ground - 0.2)));
+      transition BouncingBall when (timer > 0.3 && ground > -5.0)
+        action ((init timer 0.) ; (init ground  (ground - 0.2)));
     };
 
   };
@@ -82,6 +82,6 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
 
 
 def main = 
-  def angle = 45.*3.14/180;
-  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6
+  def angle = 45.*3.14/180.0;
+  printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.0
 //  simulate (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.

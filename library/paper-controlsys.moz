@@ -26,9 +26,9 @@ include Simulation
 def DCMotor(V:Voltage,flange:Rotational) = {
   def e1, e2, e3, e4:Electrical;
   SignalVoltage(V, e1, e4);
-  Resistor(200, e1, e2);
+  Resistor(200.0, e1, e2);
   Inductor(0.1, e2, e3);
-  EMF(1, e3, e4, flange);
+  EMF(1.0, e3, e4, flange);
   Ground(e4);
 }
 
@@ -42,7 +42,7 @@ let Shaft flangeA:Rotational -> flangeB:Rotational -> Equations =
 
 def ShaftElement(flangeA:Rotational, flangeB:Rotational) = {
   def r1:Rotational;
-  Spring(1, flangeA, r1);
+  Spring(1.0, flangeA, r1);
   Damper(0.02, flangeA, r1);
   Inertia(0.01, r1, flangeB);
 }
@@ -50,23 +50,23 @@ def ShaftElement(flangeA:Rotational, flangeB:Rotational) = {
 
 let FlexibleShaft n:Int -> flangeA:Rotational -> flangeB:Rotational -> 
                   Equations =
-  if n ==. 1d then 
+  if n ==. 1 then 
     ShaftElement flangeA flangeB 
   else 
     let r1:Rotational in
     ShaftElement flangeA r1;
-    FlexibleShaft (n -. 1d) r1 flangeB
+    FlexibleShaft (n -. 1) r1 flangeB
 
 type Element = <?> -> <?> -> Equations
 
 def serialize(n:Real, f1:Rotational, f2:Rotational, elem:Element) -> Equations = {
     def recursive(n:Int, f1:Rotational, f2:Rotational) -> Equations = {
-       if n ==. 1d then
+       if n ==. 1 then
             elem(f1,f2)
        else{
             def node:?;
             elem(f1,node);
-            recursive(n -. 1d, node, f2);
+            recursive(n -. 1, node, f2);
        }
     };
     recursive(real2int(n), f1, f2);
@@ -76,17 +76,17 @@ def serialize(n:Real, f1:Rotational, f2:Rotational, elem:Element) -> Equations =
 def CPS() = {
     def s1, s2, s3, s4:Signal;
     def r1, r2, r3, r4:Rotational;
-    ConstantSource(1, s1);
+    ConstantSource(1.0, s1);
     Feedback(s1, s4, s2);
-    PID(3, 0.7, 0.1, 10, s2, s3);
+    PID(3.0, 0.7, 0.1, 10.0, s2, s3);
     DCMotor(s3, r1);
-    IdealGear(4, r1, r2);
-    serialize(5, r2, r3, ShaftElement);
+    IdealGear(4.0, r1, r2);
+    serialize(5.0, r2, r3, ShaftElement);
     Inertia(0.3, r3, r4);
     SpeedSensor(r4, s4);
     probe "angularVelocity" = s4;
 }
 
 let main = 
-  printsim(CPS(), 0.01, 40)
+  printsim(CPS(), 0.01, 40.0)
   //printLine(exportModelica("ControlSys",ControlSys()))

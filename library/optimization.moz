@@ -67,26 +67,26 @@ def genMeshVarNameMap(meshVars:[MeshVars]) : VarNameMap = {
             | v::vs -> {
                 def (_,vv) = v;
                 def n = genName(vPrefix, mNbr, vNbr);
-                genNames(vs, vPrefix, vNbr+.1d, (Map.add vv n nameMap))
+                genNames(vs, vPrefix, vNbr +. 1, (Map.add vv n nameMap))
                 }
             | [] -> nameMap        
         };
 	def (xMap, yMap, uMap) = meshPointVars;
         def xList = (Map.toList xMap);
-        def nameMap_tmp1 = genNames(xList,"x",1d,nameMap);
+        def nameMap_tmp1 = genNames(xList,"x",1,nameMap);
         def yList = (Map.toList yMap);
-        def nameMap_tmp2 = genNames(yList,"y",1d,nameMap_tmp1);
+        def nameMap_tmp2 = genNames(yList,"y",1,nameMap_tmp1);
         def uList = (Map.toList uMap);
-        genNames(uList,"u",1d,nameMap_tmp2)
+        genNames(uList,"u",1,nameMap_tmp2)
     };
     def iterMeshPoints(meshPointList:[MeshVars], mNbr:Int, 
                        nameMap:VarNameMap) : VarNameMap = {
         match meshPointList with
         | mv::mvs -> 
-             iterMeshPoints(mvs, mNbr+.1d, iterMeshVars(mv, mNbr, nameMap)) 
+             iterMeshPoints(mvs, mNbr+.1, iterMeshVars(mv, mNbr, nameMap)) 
         | [] -> nameMap        
     };
-    iterMeshPoints(meshVars, 1d, Map.empty)
+    iterMeshPoints(meshVars, 1, Map.empty)
 }
 
 // The input argument here is actually not needed, not sure how to
@@ -240,8 +240,8 @@ def generateMeshVars(daeVars:ModelVars,n_e:Int) : [MeshVars] = {
     def gen(vars:VarSet) : VarMap = genvar(Set.toList vars,Map.empty);
     def (x,y,u) = daeVars;
     def genmesh(n:Int) : [MeshVars] = {
-        if n ==. 0d then [] 
-        else (gen(x),gen(y),gen(u))::genmesh(n-.1d) 
+        if n ==. 0 then [] 
+        else (gen(x),gen(y),gen(u))::genmesh(n-.1) 
     };            
     genmesh(n_e)
 }
@@ -326,7 +326,7 @@ def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
     def setSize(varLst:[Signal], n:Int) : Int = {
         match varLst with
         | v::vs -> {
-            setSize(vs, n+.1d)
+            setSize(vs, n +. 1)
             }
         | [] -> n        
     };	
@@ -334,9 +334,9 @@ def getModelSizes(modelVars:ModelVars) : (Int, Int, Int) = {
     def xList = (Set.toList x);
     def yList = (Set.toList y);
     def uList = (Set.toList u);
-    def nx = setSize(xList,0d);
-    def ny = setSize(yList,0d);
-    def nu = setSize(uList,0d);
+    def nx = setSize(xList,0);
+    def ny = setSize(yList,0);
+    def nu = setSize(uList,0);
     (nx,ny,nu)
 }
 

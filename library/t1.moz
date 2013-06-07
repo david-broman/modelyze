@@ -1,6 +1,6 @@
 
 
-include Base
+include IBase
 
 type Tree 
 let node : Tree -> Tree -> Tree

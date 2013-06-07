@@ -27,23 +27,23 @@ def VanDerPol() =
     def x1,x2,u:Signal;
 
     // Dynamic optimization problem
-    minimize integral (x1*x1 + x2*x2 + u*u) interval 0 5 
+    minimize integral (x1*x1 + x2*x2 + u*u) interval 0. 5.0 
     {    
         // State that u is an input
         input u;
 
         // Initial values for x1 and x2
-        init x1 0;
-        init x2 1; 
+        init x1 0.;
+        init x2 1.0; 
 
         // Differential equations
-        x1' = (1 - x2*x2)*x1 - x2 + u;
+        x1' = (1.0 - x2*x2)*x1 - x2 + u;
         x2' = x1
     }
 }
 
 def main = {
-    def code = codeGenOptProblem(VanDerPol(),50d);
+    def code = codeGenOptProblem(VanDerPol(), 50);
     print(code)
 }
 

@@ -34,8 +34,8 @@ let LotkaVolterra =
   let efficiencyGrowthFoxes = 0.1 in
   let rabbits:Population in
   let foxes:Population in
-  init rabbits 700;
-  init foxes 10;
+  init rabbits 700.;
+  init foxes 10.;
   der(rabbits) = growthRateRabbits*rabbits - 
                  deathRateRabbits*rabbits*foxes;
   der(foxes)   = efficiencyGrowthFoxes*deathRateRabbits*

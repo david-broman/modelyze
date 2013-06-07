@@ -35,7 +35,7 @@ type Force = <Real>
 def PendulumExt(m:Real, l:Real, T:Force, x:Pos, y:Pos) = {
     -T*x/l = m*x'';
     -T*y/l - m*g = m*y''; 
-    x^2 + y^2 = l^2;
+    x^2. + y^2. = l^2.;
 }
 
 
@@ -55,10 +55,10 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
                 when (time >= 3.2) action nothing;
         }; 
         mode BouncingBall {
-            x'' = 0;
+            x'' = 0.;
             -m*g = m*y'';
             transition BouncingBall 
-                when (y <= -4) action (y' <-  y' * -0.7);
+                when (y <= -4.0) action (y' <-  y' * -0.7);
         };
     };
 }

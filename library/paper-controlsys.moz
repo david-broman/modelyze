@@ -16,12 +16,11 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include ExportModelica
+include ModelyzeEOO
+
 include AnalogElectrical
 include RotationalMechanical
 include Block
-include Simulation
-
 
 def DCMotor(V:Voltage,flange:Rotational) = {
     def e1, e2, e3, e4:Electrical;
@@ -72,7 +71,6 @@ def serialize(n:Real, f1:Rotational, f2:Rotational, elem:Element) -> Equations =
     recursive(real2int(n), f1, f2);
 }  
 
-
 def CPS() = {
     def s1, s2, s3, s4:Signal;
     def r1, r2, r3, r4:Rotational;
@@ -89,4 +87,3 @@ def CPS() = {
 
 let main = 
     printsim(CPS(), 0.01, 40.0)
-  //printLine(exportModelica("ControlSys",ControlSys()))

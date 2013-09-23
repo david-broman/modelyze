@@ -16,12 +16,10 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include MechatronicElaboration
 include Differentiation
 include IndexReduction
-
-type StepVal = (Real,[Real])
-type SimulationResult = ([String],[StepVal])
+include Elaboration
+include SimOutput
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 type Varvals = <Real> -> <Real>
@@ -78,27 +76,6 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
 }
 
 
-def makeStepVal(currtime:Real, yy:{Real}, probes:[(String,[Signal])], ukmap:UkMap) -> StepVal = {
-  def mkvals(probes:[(String,[Signal])]) -> [Real] = {        
-    match probes with
-    | (s,u::us)::ss -> (Array.get yy (fst(Map.find u ukmap)))::
-                        (mkvals ((s,us)::ss))
-    | (s,[])::ss -> mkvals(ss) 
-    | [] -> []
-  };
-  (currtime,mkvals(probes))
-}
-  
-def makeProbeNames(probes:[(String,[Signal])], n:Int) -> [String] = {
-  match probes with
-  | (s,u::us)::ss -> {
-      def s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "");
-      s2::(makeProbeNames((s,us)::ss, n +. 1));
-    }
-  | (s,[])::ss -> makeProbeNames(ss,1)
-  | [] -> []
-}
-
 def initConditionCorrection(ukmap:UkMap) -> {Real} = {
   def id = {Array.make (Map.size ukmap) 0.};
   def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
@@ -114,7 +91,8 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
 }
 
 def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
-  def (model2,probes) = elaborate model;
+  def (model1,probes) = elaborateProbes(model);
+  def model2 = elaborateConnections(model1);
   def probelist = (Map.toList probes);
   def (model3,_) = elaborateDerivatives(model2,Map.empty);
   def (model4,_) = indexReducationPantelides(model3, Map.empty);
@@ -135,19 +113,6 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
     (makeProbeNames probelist 1,reverse(simloop(0.,[]))) 
 }
 
-def pprintSimulation(res:SimulationResult) -> String = {
-  def (names,stepvals) = res;
-  def psteps(step:[StepVal], first:Bool) -> String = {
-    match step with
-    | (t,x::xs)::xxs if first ->        
-        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
-    | (t,x::xs)::xxs -> 
-        real2string(x) ++ "\t" ++ psteps((t,xs)::xxs,false)
-    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
-    | [] -> ""
-  };
-  psteps(stepvals,true)
-}
 
 def printsim(model:Equations, steptime:Real, endtime:Real) =
     print(pprintSimulation(simulate(model,steptime,endtime)))

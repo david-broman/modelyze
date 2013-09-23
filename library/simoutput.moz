@@ -1,0 +1,41 @@
+
+
+type StepVal = (Real,[Real])
+type SimulationResult = ([String],[StepVal])
+
+
+def pprintSimulation(res:SimulationResult) -> String = {
+  def (names,stepvals) = res;
+  def psteps(step:[StepVal], first:Bool) -> String = {
+    match step with
+    | (t,x::xs)::xxs if first ->        
+        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
+    | (t,x::xs)::xxs -> 
+        real2string(x) ++ "\t" ++ psteps((t,xs)::xxs,false)
+    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
+    | [] -> ""
+  };
+  psteps(stepvals,true)
+}
+
+
+def makeStepVal(currtime:Real, yy:{Real}, probes:[(String,[Signal])], ukmap:UkMap) -> StepVal = {
+  def mkvals(probes:[(String,[Signal])]) -> [Real] = {        
+    match probes with
+    | (s,u::us)::ss -> (Array.get yy (fst(Map.find u ukmap)))::
+                        (mkvals ((s,us)::ss))
+    | (s,[])::ss -> mkvals(ss) 
+    | [] -> []
+  };
+  (currtime,mkvals(probes))
+}
+  
+def makeProbeNames(probes:[(String,[Signal])], n:Int) -> [String] = {
+  match probes with
+  | (s,u::us)::ss -> {
+      def s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "");
+      s2::(makeProbeNames((s,us)::ss, n +. 1));
+    }
+  | (s,[])::ss -> makeProbeNames(ss,1)
+  | [] -> []
+}

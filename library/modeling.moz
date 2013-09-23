@@ -39,6 +39,17 @@ let (<-)  = init
 def time : <Real>
 def probe : <String -> Real> 
 
+// Ukmap maps an unknown (signal type) to an integer value
+// representing a unique integer number for the unknown in
+// the equation system. The boolean is true if the unknown
+// appears differentiated in the equation system.
+type UkMap = (Signal => (Int,Bool))
+type UkList = [(Signal,(Int,Bool))]
+
+
+type InitValMap = (<Real> => (Real,Bool))
+type UkSet = (Set <Real>)
+
 type Expr = <>
 
 def cleanupEquations(eq:Equations) : Equations = {
@@ -53,6 +64,61 @@ def cleanupEquations(eq:Equations) : Equations = {
        }
     | _ -> eq
 }
+
+let initValues eqs:Equations -> InitValMap =
+  let get eqs:Equations -> acc:InitValMap -> InitValMap =
+    match eqs with
+    | e1 ; e2 -> get e2 (get e1 acc)
+    | ~init x (lift v:Real) -> Map.add x (v,false) acc
+    | _ -> acc
+  in get eqs (Map.empty)
+ 
+let unknowns eqs:Equations -> UkSet =
+  let get e:<> -> acc:UkSet -> UkSet = 
+     match e with
+     | e1 e2 -> get e2 (get e1 acc)
+     | ~time -> acc
+     | sym:<Real> -> Set.add e acc
+     | _ -> acc 
+  in get eqs (Set.empty)
+
+let noUnknowns eqs:Equations -> Int =
+  Set.size (unknowns eqs)
+
+let noEquations eqs:Equations -> Int =
+  match eqs with
+  | e1 ; e2 -> (noEquations e1) +. (noEquations e2)
+  | e1 = e2 -> 1
+  | _ -> 0
+
+//Function realUnknowns extracts all unknowns from
+//an equations system. The resulting tuple is the number
+//of unique unknowns and a UkMap mapping unknowns to unique
+//integer values. This function is usually used via function
+//makeUkMap. 
+let realUnknowns eqs:Equations -> (Int,UkMap) =
+  let get e:<> -> acc:(Int,UkMap) -> (Int,UkMap) = 
+     match e with
+     | ~time -> acc
+     | ~der x -> 
+        (match x with 
+         | sym:<Real> -> 
+             let (k,ukmap) = acc in 
+             if Map.mem x ukmap 
+             then (k,Map.add x (fst (Map.find x ukmap),true) ukmap)
+             else ((k +. 1,Map.add x (k,true) ukmap))
+         | _ -> error "Illegal diffrentiation of expression") 
+     | e1 e2 -> get e2 (get e1 acc)
+     | sym:<Real> -> if Map.mem e (snd acc) then acc
+                    else ((fst acc) +. 1,Map.add e (fst acc,false) (snd acc))
+     | e1 -> acc 
+  in get eqs (0,(Map.empty))
+
+//Returns the mapping between unknowns and unique integer numbers
+//in an equation system. See definirion of UkMap.
+let makeUkMap eqs:Equations -> UkMap =
+    snd (realUnknowns eqs)
+
 
 def Branch : Real -> Real -> ? -> ? -> Equations
 def RefBranch : Real -> Real -> ? -> Equations

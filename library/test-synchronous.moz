@@ -1,27 +1,40 @@
 include Synchronous
 
-def resetGen(period : Int, reset : SigInt) -> Eq = {
+def ResetGen(period : Int, reset : SigInt) -> Eq = {
     def resetCount : SigInt;
     resetCount = (period) --> If {Pre(resetCount) == 0} Then (period - 1) Else {Pre(resetCount) - 1};
     reset = If {resetCount == 0} Then 1 Else 0
 }
 
-def counter(val_init : Int, val_incr : Int, reset: SigInt, count : SigInt) -> Eq = {
-    count = val_init --> If {reset == 1} Then val_init Else {Pre(count) + val_incr}
-}
-
-def exCounter = {
-    def reset : Int;
+def Counter(initVal:Int, incrVal:Int, reset:SigInt) = {
     def count : Int;
-
-    resetGen(5, reset);
-    counter(0, 2, reset, count)
+    count = initVal --> If (reset == 1) Then initVal
+                        Else {Pre(count) + incrVal};
 }
 
-def watchdog(set : SigInt, reset : SigInt, deadline: SigInt, alarm : SigInt) -> Eq = {
+
+def ExampleCounter = {
+    def reset : Int;
+    ResetGen(5, reset);
+    Counter(0, 2, reset)
+}
+
+
+
+
+
+
+def watchdog(set : SigInt, reset : SigInt, deadline: SigInt, alarm : SigInt)  = {
     def isSet : Int;
-    alarm = If {deadline == 1 && isSet == 1} Then 1 Else 0;
-    isSet = set --> If {set == 1} Then 1 Else {If {reset == 1} Then 0 Else {Pre(isSet)}}
+    isSet = set --> If (set == 1) Then 1 
+                    Else {
+                      If (reset == 1) Then 0 
+                      Else {
+                        Pre(isSet)
+                      }
+                    };
+    alarm = If {deadline == 1 && isSet == 1} Then 1 
+            Else 0;
 }
 
 def singleEvent(time : Int, out : SigInt) -> Eq = {
@@ -118,8 +131,8 @@ def main = {
     def codeGen = false;
     def simulationSteps = 20;
 
-    //def example = exCounter;
-    def example = exWatchdog;
+    def example = ExampleCounter;
+    //def example = exWatchdog;
     // lhv, rhv, apu, ext
     //def example = exAircraftEPS(5, 2, 10, 2, 15, 0, 21, 0);
     //def example = exAircraftEPS(18, 0, 5, 2, 15, 0, 10, 2);

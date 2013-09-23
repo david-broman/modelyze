@@ -1,6 +1,7 @@
 include IBase
 
 type SigInt = <Int>
+type SigBool = <Bool>
 type Expr = ?
 type Eq
 

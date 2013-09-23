@@ -23,17 +23,17 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-include HybridSimulation
+include Simulation
 
 type Population = <Real>
 
-let LotkaVolterra =
-  let growthRateRabbits = 0.04 in
-  let deathRateRabbits = 0.0005 in
-  let deathRateFoxes = 0.09 in
-  let efficiencyGrowthFoxes = 0.1 in
-  let rabbits:Population in
-  let foxes:Population in
+def LotkaVolterra = {
+  def growthRateRabbits = 0.04;
+  def deathRateRabbits = 0.0005;
+  def deathRateFoxes = 0.09;
+  def efficiencyGrowthFoxes = 0.1;
+  def rabbits:Population;
+  def foxes:Population;
   init rabbits 700.;
   init foxes 10.;
   der(rabbits) = growthRateRabbits*rabbits - 
@@ -42,7 +42,7 @@ let LotkaVolterra =
                  rabbits*foxes - deathRateFoxes*foxes;
   probe("foxes") = foxes;
   probe("rabbits") = rabbits
+}
 
-
-let main = 
-  printsim LotkaVolterra 1. 1000.
+def main = 
+  printsim(LotkaVolterra, 1., 1000.)

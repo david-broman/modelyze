@@ -24,127 +24,120 @@ type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
+type Varvals = <Real> -> <Real>
 
-
-
-
-let makeResidual ukmap:UkMap -> model:Equations -> 
-                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
-  let realExpr e:<> -> Real = 
-    match e with
-    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
-           f (realExpr e1) (realExpr e2)
-    | (lift f:(Real -> Real)) e1 -> f  (realExpr e1) 
-    | lift v:Real -> v
+// General expression evaluation
+def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
+    match expr with
     | time -> ctime
-    | der x -> (match x with 
-                | sym:Signal -> Array.get yp (fst (Map.find x ukmap))
-                | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Signal -> Array.get yy (fst(Map.find e ukmap))
-    | _ -> error "Unsupported model construct" 
-  in
-  let traverseEq m:Equations -> acc:[Real] -> [Real] =
+    | der x -> 
+        (match x with 
+         | sym:Real -> eval(yp(x), yy, yp, ctime)  
+         | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Real -> eval(yy(expr), yy, yp, ctime)
+    | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
+    | lift v:? -> v
+    | _ ->  error "Unsupported model construct" 
+}
+
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up in yy and yp arrays.
+def evalFromArray(expr:Expr, ukmap:UkMap, ctime:Real, yy:{Real}, yp:{Real}) -> Real = {
+  def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
+  def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
+  eval(expr,yyfun,ypfun,ctime);
+}
+
+// Create the residual function of the DAE. Used by IDA/Sundials.
+def makeResidual(ukmap:UkMap, model:Equations, ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = {
+  def realExpr(expr:Expr) = evalFromArray(expr,ukmap,ctime,yy,yp);
+  def traverseEq(m:Equations,acc:[Real]) -> [Real] = {
     match m with
-    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
+    | e1 ; e2 -> traverseEq(e2,traverseEq(e1,acc))
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2))::acc
     | _ -> acc
-  in traverseEq model [] 
-
-
-let makeNewResidual model:Equations -> ukmap:UkMap -> 
-                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
-  let realExpr e:<> -> Real = 
-    match e with
-    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
-           f (realExpr e1) (realExpr e2)
-    | (lift f:(Real -> Real)) e1 -> f  (realExpr e1) 
-    | lift v:Real -> v
-    | time -> ctime
-    | der x -> (match x with 
-                | sym:Signal -> Array.get yp (fst (Map.find x ukmap))
-                | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Signal -> Array.get yy (fst(Map.find e ukmap))
-    | _ -> error "Unsupported model construct" 
-  in
-  let traverseEq m:Equations -> acc:[Real] -> [Real] =
-    match m with
-    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
-    | _ -> acc
-  in traverseEq model [] 
-
+  };
+  traverseEq(model,[]);
+}
 
 //Generate arrays of initial values
-let makeInitValues model:Equations -> ukmap:UkMap -> ({Real},{Real}) =
-  let initvalmap = initValues model in
-  let size = Map.size ukmap in
-  let yy = Array.make size 0. in
-  let yp = Array.make size 0. in
-  let setvals initvals:[(Signal,(Real,Bool))] -> {Real} =
+def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
+  def initvalmap = initValues(model);
+  def size = (Map.size ukmap);
+  def yy = (Array.make size 0.);
+  def yp = (Array.make size 0.);
+  def setvals(initvals:[(Signal,(Real,Bool))]) -> {Real} = {
     match initvals with
-    | (u,(v,_))::xs -> 
-        let _ = Array.set yy (fst (Map.find u ukmap)) v in setvals xs 
+    | (u,(v,_))::xs -> {
+        def _ = (Array.set yy (fst (Map.find u ukmap)) v);      
+        setvals xs;
+      }
     | [] -> yy
-  in (setvals  (Map.toList initvalmap), yp)
+  };
+  (setvals(Map.toList initvalmap), yp)
+}
 
 
-
-let makeStepVal currtime:Real -> yy:{Real} ->
-                probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
-  let mkvals probes:[(String,[Signal])] -> [Real] =        
+def makeStepVal(currtime:Real, yy:{Real}, probes:[(String,[Signal])], ukmap:UkMap) -> StepVal = {
+  def mkvals(probes:[(String,[Signal])]) -> [Real] = {        
     match probes with
     | (s,u::us)::ss -> (Array.get yy (fst(Map.find u ukmap)))::
                         (mkvals ((s,us)::ss))
-    | (s,[])::ss -> mkvals ss 
+    | (s,[])::ss -> mkvals(ss) 
     | [] -> []
-  in (currtime,mkvals probes)
+  };
+  (currtime,mkvals(probes))
+}
   
-let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
+def makeProbeNames(probes:[(String,[Signal])], n:Int) -> [String] = {
   match probes with
-  | (s,u::us)::ss -> 
-    let s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "") in
-    s2::(makeProbeNames ((s,us)::ss) (n +. 1))
-  | (s,[])::ss -> makeProbeNames ss 1
+  | (s,u::us)::ss -> {
+      def s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "");
+      s2::(makeProbeNames((s,us)::ss, n +. 1));
+    }
+  | (s,[])::ss -> makeProbeNames(ss,1)
   | [] -> []
+}
 
-let initConditionCorrection ukmap:UkMap -> {Real} =
-  let id = Array.make (Map.size ukmap) 0. in
-  let worker uklist:[(Signal,(Int,Bool))] -> {Real} =
+def initConditionCorrection(ukmap:UkMap) -> {Real} = {
+  def id = {Array.make (Map.size ukmap) 0.};
+  def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
     match uklist with
-    | (u,(i,true))::us -> let _ = Array.set id i 1.0 in worker us
+    | (u,(i,true))::us -> {
+         def _ = (Array.set id i 1.0); 
+         worker us;
+      }
     | _::us -> worker us
     | [] -> id
-  in worker (Map.toList ukmap)
+  };
+  worker (Map.toList ukmap);
+}
 
-let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
-  match lst with
-  | x::xs -> revResult xs (x::acc)
-  | [] -> acc 
-
-let simulate model:Equations -> steptime:Real -> endtime:Real -> 
-             SimulationResult =
-  let (model2,probes) = elaborate model in
-  let probelist = Map.toList probes in
-  let (model3,_) = elaborateDerivatives model2 (Map.empty) in
-  let (model4,_) = indexReducationPantelides model3 (Map.empty) in
-  let ukmap = makeUkMap model4 in
-  let residual = specialize (makeResidual ukmap) model4 in
-  let (yy,yp) = makeInitValues model4 ukmap in
-  let id = initConditionCorrection ukmap in
-  let state = DAESolver.make yy yp id residual in
-  let simloop currtime:Real -> acc:[StepVal] -> [StepVal] = 
+def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
+  def (model2,probes) = elaborate model;
+  def probelist = (Map.toList probes);
+  def (model3,_) = elaborateDerivatives(model2,Map.empty);
+  def (model4,_) = indexReducationPantelides(model3, Map.empty);
+  def ukmap = makeUkMap(model4);
+  def residual = (specialize (makeResidual(ukmap)) model4);
+  def (yy,yp) = makeInitValues(model4, ukmap);
+  def id = initConditionCorrection(ukmap);
+  def state = (DAESolver.make yy yp id residual);
+  def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
     if currtime >= endtime then acc
-    else
-      let newtime = DAESolver.step steptime state in 
-      let stepval = makeStepVal newtime yy probelist ukmap in
+    else {
+      def newtime = (DAESolver.step steptime state);
+      def stepval = makeStepVal(newtime, yy, probelist, ukmap);
       if newtime == 0. then acc
-      else simloop newtime (stepval::acc)
-  in
-    (makeProbeNames probelist 1,revResult (simloop 0. []) []) 
+      else simloop(newtime,stepval::acc);
+    }
+  };  
+    (makeProbeNames probelist 1,reverse(simloop(0.,[]))) 
+}
 
-let pprintSimulation res:SimulationResult -> String =
-  let (names,stepvals) = res in  
-  let psteps step:[StepVal] -> first:Bool -> String =
+def pprintSimulation(res:SimulationResult) -> String = {
+  def (names,stepvals) = res;
+  def psteps(step:[StepVal], first:Bool) -> String = {
     match step with
     | (t,x::xs)::xxs if first ->        
         real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
@@ -152,10 +145,12 @@ let pprintSimulation res:SimulationResult -> String =
         real2string(x) ++ "\t" ++ psteps((t,xs)::xxs,false)
     | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
     | [] -> ""
-  in psteps(stepvals,true)
- 
-let printsim model:Equations -> steptime:Real -> endtime:Real -> () =
-      print (pprintSimulation (simulate model steptime endtime))
+  };
+  psteps(stepvals,true)
+}
+
+def printsim(model:Equations, steptime:Real, endtime:Real) =
+    print(pprintSimulation(simulate(model,steptime,endtime)))
 
 
 

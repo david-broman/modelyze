@@ -200,7 +200,7 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
   def B = (Map.empty);
 
   // Execute the for loop over all equations
-  foreachEq(rev(Map.toList equationGraph), equationGraph, assign, variableMap, B)
+  foreachEq(reverse(Map.toList equationGraph), equationGraph, assign, variableMap, B)
   
 }
     

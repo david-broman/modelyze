@@ -10,18 +10,23 @@ type SimulationResult = ([String],[StepVal])
 
 def pprintSimulation(res:SimulationResult) -> String = {
   def (names,stepvals) = res;
+  def pnames(varnames:[String]) -> String = {
+    match varnames with
+    | n::ns -> n ++ "\t" ++ pnames(ns)
+    | [] -> "\n"
+  };
   def psteps(step:[StepVal], first:Bool) -> String = {
     match step with
     | (t,x::xs)::xxs if first ->        
         real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
     | (t,x::xs)::xxs -> 
-        real2string(x) ++ "\t" ++ psteps((t,xs)::xxs,false)
+        (if x == INFINITE then "?" else real2string x) ++
+        "\t" ++ psteps((t,xs)::xxs,false)
     | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
     | [] -> ""
   };
-  psteps(stepvals,true)
+  "time\t" ++ pnames(names) ++ psteps(stepvals,true) 
 }
-
 
 def makeStepVal(currtime:Real, yy:{Real}, probes:[(String,[Signal])], ukmap:UkMap) -> StepVal = {
   def mkvals(probes:[(String,[Signal])]) -> [Real] = {        

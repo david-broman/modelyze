@@ -24,7 +24,6 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 include MechsysBasics
 include HybridSimulation
-include ExportModelica
 include HybridModeling
 
 def g = 9.81
@@ -41,12 +40,9 @@ def PendulumExt(m:Real, l:Real, T:Force, x:Pos, y:Pos) = {
 
 def BreakingPendulum(m:Real, l:Real, angle:Real) = {
     def x,y:Position;
-    def timer:Real;    
     def Pendulum, BouncingBall:Mode;
     init x (l*sin(angle));
     init y (-l*cos(angle));
-    init timer 0.;
-    timer' = 1.0;
     probe("y") = y;
 
     hybridchart initmode Pendulum {   
@@ -55,7 +51,7 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
             probe("T") = T;
             PendulumExt(m, l, T, x, y);
             transition BouncingBall 
-                when (time >= 3.2) action nothing;
+                when (time >= 3.5 && T >= 4.0) action nothing;
         }; 
         mode BouncingBall {
             x'' = 0.;

@@ -31,13 +31,14 @@ def DCMotor(V:Voltage,flange:Rotational) = {
     Ground(e4);
 }
 
-let Shaft flangeA:Rotational -> flangeB:Rotational -> Equations =
-    let r1:Rotational in
-    let r2:Rotational in
-    Inertia 0.1 flangeA r1;
-    Spring 3.0 r1 r2; 
-    Damper 0.02 r1 r2;
-    Inertia 0.1 r2 flangeB
+def Shaft(flangeA:Rotational, flangeB:Rotational) -> Equations = {
+    def r1:Rotational;
+    def r2:Rotational;
+    Inertia(0.1,flangeA,r1);
+    Spring(3.0,r1,r2); 
+    Damper(0.02,r1,r2);
+    Inertia(0.1,r2,flangeB);
+}
 
 def ShaftElement(flangeA:Rotational, flangeB:Rotational) = {
     def r1:Rotational;
@@ -47,18 +48,19 @@ def ShaftElement(flangeA:Rotational, flangeB:Rotational) = {
 }
 
 
-let FlexibleShaft n:Int -> flangeA:Rotational -> flangeB:Rotational -> 
-                  Equations =
+def FlexibleShaft(n:Int, flangeA:Rotational, flangeB:Rotational) -> Equations = {
     if n ==. 1 then 
-      ShaftElement flangeA flangeB 
-    else 
-      let r1:Rotational in
-      ShaftElement flangeA r1;
-      FlexibleShaft (n -. 1) r1 flangeB
+      ShaftElement(flangeA,flangeB)
+    else {
+      def r1:Rotational;
+      ShaftElement(flangeA,r1);
+      FlexibleShaft(n -. 1, r1, flangeB);
+    };
+}
 
 type Element = <?> -> <?> -> Equations
 
-def serialize(n:Real, f1:Rotational, f2:Rotational, elem:Element) -> Equations = {
+def serialize(n:Int, f1:Rotational, f2:Rotational, elem:Element) -> Equations = {
     def recursive(n:Int, f1:Rotational, f2:Rotational) -> Equations = {
        if n ==. 1 then
             elem(f1,f2)
@@ -68,7 +70,7 @@ def serialize(n:Real, f1:Rotational, f2:Rotational, elem:Element) -> Equations =
             recursive(n -. 1, node, f2);
        }
     };
-    recursive(real2int(n), f1, f2);
+    recursive(n, f1, f2);
 }  
 
 def CPS() = {
@@ -79,11 +81,11 @@ def CPS() = {
     PID(3.0, 0.7, 0.1, 10.0, s2, s3);
     DCMotor(s3, r1);
     IdealGear(4.0, r1, r2);
-    serialize(5.0, r2, r3, ShaftElement);
+    serialize(5, r2, r3, ShaftElement);
     Inertia(0.3, r3, r4);
     SpeedSensor(r4, s4);
     probe "angularVelocity" = s4;
 }
 
-let main = 
+def main = 
     printsim(CPS(), 0.01, 40.0)

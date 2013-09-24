@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+modelyze electrical.moz
+modelyze mechanical.moz
+modelyze modelyzeeoo.moz
+
 # Test EOO elaboration
 modelyze test-mechsys.moz > t.mo
 diff t.mo test-mechsys-output.mo 

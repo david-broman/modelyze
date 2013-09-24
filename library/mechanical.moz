@@ -16,18 +16,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include Equation
-
-type Rotational  
-
-type AngularVelocity = Real
-type AngularAcceleration = Real
-type Angle = Real
-type Torque = Real
-type Force = Real
-type Position = Real
-type Velocity = Real
-type Acceleration = Real
+include Physical
 
 
 let Spring c:Real -> flangeA:Rotational -> flangeB:Rotational -> 

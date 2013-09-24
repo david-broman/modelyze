@@ -24,10 +24,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
          - Tests the use of several probe variables.
 */
 
-include MechsysBasics
-include HybridSimulation
-include ExportModelica
-include HybridModeling
+
+include ModelyzeHC
 
 
 

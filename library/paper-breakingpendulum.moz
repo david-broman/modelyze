@@ -22,9 +22,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
          - Tests the use of higher-order derivatives.
 */
 
-include MechsysBasics
-include HybridSimulation
-include HybridModeling
+include ModelyzeHC
 
 def g = 9.81
 

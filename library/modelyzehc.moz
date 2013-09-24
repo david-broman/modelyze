@@ -1,8 +1,495 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include HybridModeling
+include Mechanical
+include Electrical
+include Elaboration
+include Differentiation
+include IndexReduction
+include SimOutput
+
+// Data for simulation results for one point in time. The first element
+// of the time is the time value and the second a list of data points
+// representing the different variables (defined using probes).
+type StepVal = (Real,[Real])
+
+// Type definition for simulation result. Contains a list names
+// of the variables used as well as the data points.
+type SimulationResult = ([String],[StepVal])
+
+// Mapping of initial values. From unknown to expression.
+type InitValMap = (<Real> => <Real>)
+
+// List definition of transistions
+type Transitions = [(Mode,Mode,Expr,Expr)]
+
+// Mode path of states through the hierarchy of hybridcharts
+type ModePath = [Mode]
+
+// Internal transition for storing both source and target mode info
+let internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
 
 
-include HybridSimulation
+// Extract the current hierarical mode of equations as well as 
+// the resulting mode path. Transation information is preserved
+// in the equation system in form "internalTrans" so that actions
+// also are affected by the differentiation procedure (handling of
+// higher-order derivatives).
+let extractHMode model:Equations -> freshMode:Bool ->
+    prePath:ModePath -> currPath:ModePath -> (Equations,ModePath) =
+  let extract m:Equations -> fresh:Bool ->
+    pre:ModePath -> curr:ModePath -> updated:ModePath ->
+      cmode:Mode -> (<>,ModePath) =
+    match m with
+    | hybridchart initmode s e -> 
+      (match (pre,curr) with
+       | (_,[]) -> extract e true [] [] (s::updated) s
+       | (p::ps,c::cs) -> if p <==> c then extract e false ps cs (p::updated) p
+                          else extract e true ps cs (c::updated) c)
+    | mode s e -> if s <==> cmode  
+                      then extract e fresh pre curr updated s 
+                      else (NoEqn,updated)
+    | transition nmode when g action i -> 
+          (internalTrans cmode nmode g i,updated) 
+    | init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
+    | e1 e2 ->  
+         let (eqs1,up1) = extract e1 fresh pre curr updated cmode in
+         let (eqs2,up2) = extract e2 fresh pre curr up1 cmode in
+         (eqs1 eqs2,up2)
+    | e -> (e,updated)
+  in  
+    extract model freshMode prePath currPath [] topmode
+
+// Extract a list of transitions from an equation syste.
+let extractTransitions model:Expr -> Transitions =
+  let extract e:Expr -> acc:Transitions -> Transitions =
+    match e with
+    | internalTrans s1 s2 g i -> (s1,s2,g,i)::acc
+    | e1 e2 -> extract e2 (extract e1 acc)
+    | _ -> acc
+  in extract model [] 
 
 
+// Extract initial values from an equation system. 
+let initValues eqs:Equations -> InitValMap =
+  let get eqs:Equations -> acc:InitValMap -> InitValMap =
+    match eqs with
+    | e1 ; e2 -> get e2 (get e1 acc)
+    | init x v -> Map.add x v acc
+    | _ -> acc
+  in get eqs (Map.empty)
+
+// Extract value maps from arrays of real values for unknowns.
+// The function is used to when performing structural discrete changes
+// and transferring the mode during the event.
+let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap -> 
+                  (InitValMap,InitValMap) =
+  let worker lst:UkList -> yymap:InitValMap -> ypmap:InitValMap -> 
+             (InitValMap,InitValMap) =
+    match lst with
+    | (u,(i,_))::xs ->
+         worker xs (Map.add u ((Array.get yy i)) yymap)
+                   (Map.add u ((Array.get yp i)) ypmap) 
+    | [] -> (yymap,ypmap)
+  in
+    worker (Map.toList ukmap) (Map.empty) (Map.empty)
+
+// Evaluate an expression of real type. Uses general higher-order functons
+// to lookup unknowns.
+/*let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
+         ctime:Real -> Real =
+  let worker e:<> -> Real = 
+    match e with
+    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
+           f (worker e1) (worker e2)
+    | (lift f:(Real -> Real)) e1 -> f  (worker e1) 
+    | lift v:Real -> v
+    | time -> ctime
+    | der x -> (match x with 
+                | sym:Signal -> worker (ypfun x)  
+                | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Signal -> worker (yyfun e)
+    | _ ->  error "Unsupported model construct" 
+  in
+    worker expr 
+*/
+
+//Evaluation of a arbitary expression.
+/*
+let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
+         ctime:Real -> ? =
+  let worker e:<> -> ? = 
+    match e with
+    | time -> ctime
+    | der x -> (match x with 
+                | sym:Signal -> worker (ypfun x)  
+                | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Signal -> worker (yyfun e)
+    | f e -> (worker f) (worker e)
+    | lift v:? -> v
+    | _ ->  error "Unsupported model construct" 
+  in
+    worker expr 
+*/
+
+type Varvals = <Real> -> <Real>
+def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
+    match expr with
+    | time -> ctime
+    | der x -> 
+        (match x with 
+         | sym:Real -> eval(yp(x), yy, yp, ctime)  
+         | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Real -> eval(yy(expr), yy, yp, ctime)
+    | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
+    | lift v:? -> v
+    | _ ->  error "Unsupported model construct" 
+}
+
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up using initvalue maps.
+let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
+  let yyfun s:Signal -> Signal = Map.find s valmap in
+  let ypfun s:Signal -> Signal = Map.find (der s) valmap in  
+  eval expr yyfun ypfun ctime 
+
+def epsilon = 1e-10 
+
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up in yy and yp arrays.
+let evalFromArray use_epsilon:Bool -> expr:Expr -> ukmap:UkMap -> ctime:Real ->
+                  yy:{Real} -> yp:{Real} -> Real =    
+  let yyfun s:Signal -> Signal = 
+      (Array.get yy (fst(Map.find s ukmap))) in
+  let yyfun_epsilon s:Signal -> Signal = 
+      if (Array.get yp (fst (Map.find s ukmap))) > 0. then
+        (Array.get yy (fst(Map.find s ukmap))) + epsilon
+      else
+        (Array.get yy (fst(Map.find s ukmap))) - epsilon
+  in
+  let ypfun s:Signal -> Signal = 
+      (Array.get yp (fst (Map.find s ukmap))) in
+  eval expr (if use_epsilon then yyfun_epsilon else yyfun) ypfun ctime 
+
+def epsilon = 1e-10 
+
+// Evaluate an expression that is assumed to have type Bool.
+let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} -> 
+      ukmap:UkMap -> ctime:Real -> Bool =
+  let evalReal expr:Expr -> Real = evalFromArray true expr ukmap ctime yy yp in
+  let evalBool expr:Expr -> Bool = 
+    match expr with
+    | e1 == e2 -> error "Not allowed to compare for equality in transitions."
+    | e1 != e2 -> error "Not allowed to compare for equality in transitions."
+    | e1 >= e2 -> evalReal(e1) >  evalReal(e2)
+    | e1 >  e2 -> evalReal(e1) >  evalReal(e2)
+    | e1 <= e2 -> evalReal(e1) <  evalReal(e2) 
+    | e1 <  e2 -> evalReal(e1) <  evalReal(e2) 
+    | !e1 -> !(evalBool(e1))
+    | e1 && e2 -> evalBool(e1) && evalBool(e2)
+    | e1 || e2 -> evalBool(e1) || evalBool(e2)
+    | lift b:Bool -> b
+    | _ -> error "The value is not a boolean type."
+  in
+    evalBool expr
+
+// Create the residual function of the DAE. Used by IDA/Sundials.
+let makeResidual ukmap:UkMap -> model:Equations ->  
+                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
+  let realExpr expr:Expr -> Real = evalFromArray false expr ukmap ctime yy yp  in
+  let traverseEq m:Equations -> acc:[Real] -> [Real] =
+    match m with
+    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
+    | _ -> acc
+  in traverseEq model [] 
+   
+// Create the function that is used by IDA/Sundials for root finding 
+// (detecting zero-crossings). The root function is created by
+// evaluating the transitions that are extracted from the original
+// equation system.
+let makeRootFun ukmap:UkMap -> trans:Transitions -> 
+                ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
+  let travGuard e:Expr -> acc:[Real] -> [Real] =
+    match e with
+    | e1 == e2 -> error "Operator == is not allowed in a transition guard."
+    | e1 != e2 -> error "Operator != is not allowed in a transition guard."
+    | e1 >= e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 > e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 <= e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 < e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | !e1 -> travGuard e acc 
+    | e1 && e2 -> travGuard e2 (travGuard e1 acc)
+    | e1 || e2 -> travGuard e2 (travGuard e1 acc)
+    | lift b:Bool -> acc
+    | _ -> error "Illegal expression in transition guard."
+  in   
+  let travTrans trans:Transitions -> acc:[Real] -> [Real] = 
+    match trans with
+     | (_,_,g,_)::ts -> travTrans ts (travGuard g acc)
+     | [] -> acc
+  in 
+    travTrans trans []
+
+// Returns a tuple with the index of the searched root and a boolean stating
+// true if the transition is fired. 
+let isTransitionFired expr:Expr -> roots:{Int} -> index:Int -> (Int,Bool) =
+  let fired e:Expr -> i:Int -> (Int,Bool) = 
+    match e with
+    | e1 == e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 != e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 >= e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 > e2  -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 <= e2 -> (i -. 1,(Array.get roots i) !=. 0)
+    | e1 < e2 ->  (i -. 1,(Array.get roots i) !=. 0)
+    | !e1 -> fired e1 i
+    | e1 && e2  -> let (i1,f1) = fired e1 i in 
+                   let (i2,f2) = fired e2 i1 in (i2,f1||f2)
+    | e1 || e2  -> let (i1,f1) = fired e1 i in 
+                   let (i2,f2) = fired e2 i1 in (i2,f1||f2)
+    | lift b:Bool -> (i,false)
+    | _ -> error "Error in term"
+  in fired expr index
+    
+
+// Create a list of expressions containing initiatiations that should
+// be executed when a an event (transistion occurs). The function takes
+// as input the current mode path and the mode path that should exists
+// after transition.
+let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:ModePath ->
+      ukmap:UkMap -> ctime:Real -> yy:{Real} -> yp:{Real} -> ([Expr],ModePath) =
+  let roots = DAESolver.roots daesolv in
+  let changeMode sp:ModePath -> prevS:Mode -> nextS:Mode -> ModePath =
+    match sp with
+    | s::ss -> if s <==> prevS then [nextS] 
+               else s::(changeMode ss prevS nextS)
+    | [] -> []
+  in 
+  let travTrans trans:Transitions -> acc:[Expr] -> sp:ModePath -> 
+                idx:Int -> ([Expr],ModePath) = 
+    match trans with
+     | (s1,s2,g,i)::ts -> 
+          let (i2,fired) = isTransitionFired g roots idx in 
+          if fired && evalBoolFromArray(g,yy,yp,ukmap,ctime)
+            then travTrans ts (i::acc) (changeMode sp s1 s2) i2
+            else travTrans ts acc sp i2
+     | [] -> (acc,sp)
+  in 
+    if (Array.length roots) !=. 0 
+        then travTrans trans [] sp ((Array.length roots) -. 1) 
+        else ([],sp)
+
+// Extend an equation system with a list of new equations
+let addEquations inits:[Equations] -> eqs:Equations -> Equations =
+  match inits with
+  | e::es -> addEquations es (e;eqs)
+  | [] -> eqs
+
+// Generate arrays of initial values from init value map and old
+// mode information
+let makeInitModeArrays initvals:InitValMap -> 
+                        yymap:InitValMap -> ypmap:InitValMap -> 
+                        ctime:Real -> ukmap:UkMap -> ({Real},{Real}) =
+  let size = Map.size ukmap in
+  let yy = Array.make size 0. in
+  let yp = Array.make size 0. in
+  let setvals initvals:[(Signal,Signal)] -> arr:{Real} -> () =
+    match initvals with
+    | (u,e)::xs -> 
+        let v = evalFromMap e yymap ctime in
+        let _ = if Map.mem u ukmap 
+                  then Array.set arr (fst (Map.find u ukmap)) v  
+                  else ()
+        in setvals xs arr
+    | [] -> ()
+  in 
+    let _ = setvals (Map.toList yymap) yy in
+    let _ = setvals (Map.toList initvals) yy in
+    let _ = setvals (Map.toList ypmap) yp in
+    (yy, yp)
+
+// Save data for probe value in one  time point
+let makeStepVal currtime:Real -> yy:{Real} ->
+                probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
+  let mkvals probes:[(String,[Signal])] -> [Real] =        
+    match probes with
+    | (s,u::us)::ss ->  
+      let v = if Map.mem u ukmap then (Array.get yy (fst(Map.find u ukmap))) else INFINITE in
+      v::(mkvals ((s,us)::ss))
+    | (s,[])::ss -> mkvals ss 
+    | [] -> []
+  in (currtime,mkvals probes)
+
+// Create a list of probe names from a probe map  
+let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
+  match probes with
+  | (s,u::us)::ss -> 
+    let s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "") in
+    s2::(makeProbeNames ((s,us)::ss) (n +. 1))
+  | (s,[])::ss -> makeProbeNames ss 1
+  | [] -> []
+
+// Generate the identity array specifying if a variable
+// appears differentiated or not. The array is used by
+// IDA/Sundials for initial condition correction
+let initConditionCorrection ukmap:UkMap -> {Real} =
+  let id = Array.make (Map.size ukmap) 0. in
+  let worker uklist:[(Signal,(Int,Bool))] -> {Real} =
+    match uklist with
+    | (u,(i,true))::us -> let _ = Array.set id i 1.0 in worker us
+    | _::us -> worker us
+    | [] -> id
+  in worker (Map.toList ukmap)
+
+// Reverse the simulation plot result
+let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
+  match lst with
+  | x::xs -> revResult xs (x::acc)
+  | [] -> acc 
+
+// The main simulation function. Performs hybrid simulation using
+// hierarical mode machines and differential-algebraic equations
+let simulate model:Equations -> steptime:Real -> endtime:Real -> 
+             SimulationResult =
+  // Extract probes
+
+  let (model1,probes) = elaborateProbes model in
+  let probelist = Map.toList probes in
+
+
+  // **** Start of discrete-time loop. ****
+  //    Iterate for each mode change
+  let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
+             yymap:InitValMap -> ypmap:InitValMap ->
+             olddmap:DerivMap -> transInits:[Expr] ->
+             prePath:ModePath -> newPath:ModePath ->
+             [StepVal] = 
+    // Extract all equations and correct inits for a partiuclar mode path. 
+    let (modelNoMode,updatedPath) = 
+           extractHMode model1 (currtime == 0.) prePath newPath in
+   
+    // Performe connection elaboration
+    let model2 = (elaborateConnections modelNoMode) in
+
+
+    // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
+    let (model3,newdmap) = elaborateDerivatives model2 olddmap in
+
+
+    // Peforme index reduction
+    let (model3,newdmap) = indexReducationPantelides model3 (Map.empty) in
+
+
+    // Extract transitions
+    let transitions = extractTransitions model3 in
+
+    // Add transition initializations to the current model
+    let model4 = addEquations transInits model3 in
+
+   
+    // Create a map of unknowns to unique integer values
+    let ukmap = makeUkMap model4 in
+
+   
+    // Create the DAE residual 
+    let residual = specialize (makeResidual ukmap) model4 in
+    //let residual = makeResidual ukmap model4 in
+
+    // Create a map with all initial values for the current state
+    let initvalmap = initValues model4 in
+    let (yy,yp) = makeInitModeArrays initvalmap yymap ypmap currtime ukmap in
+
+
+    // Auto correct initial conditions of the DAE
+    let id = initConditionCorrection ukmap in
+
+    // Create the root function for detecting zero crossings
+    //let rootfun = specialize (makeRootFun ukmap) transitions in  
+    let rootfun = makeRootFun ukmap transitions in  
+
+    // Create the simulation instance for continuous-time simulation using IDA
+    let mode = DAESolver.makehybrid currtime yy yp id residual rootfun in
+    
+    // Return the init values after an event or start of simulation (time 0)
+    let firststepval = makeStepVal currtime yy probelist ukmap in
+
+  
+    // **** Start of continuous-time loop *****
+    let ctloop currtime:Real -> acc:[StepVal] -> 
+               ([StepVal],Real,[Expr],ModePath) = 
+      if currtime > endtime 
+        then (acc,currtime,[],updatedPath)
+        else
+          // Compute the next step using numerical integration
+          let newtime = DAESolver.step steptime mode in 
+          // Save the step value
+          let stepval = makeStepVal newtime yy probelist ukmap in
+          // Check if there are event actions
+          let (transInits,newEventPath) = 
+              makeEventActions mode transitions updatedPath 
+                               ukmap newtime yy yp in
+          // End continuous-time loop?
+          if newtime == 0. || !(transInits <==> []) 
+            then (stepval::acc,newtime,transInits,newEventPath)
+            else ctloop (newtime + steptime) (stepval::acc)
+    in
+      // Post processing after continuous-time simulation 
+      let (acc2,newtime,transInits,newEventPath) = 
+             ctloop currtime (firststepval::acc) in
+
+      // Close the continuous-time DAE solver instance.
+      let _ = DAESolver.close mode in
+
+      // Perform another round of CT simulation?
+      if newtime > endtime then acc2  
+      else 
+        let (yymap,ypmap) = makePreValMap yy yp ukmap in
+          dtloop newtime acc2 model1 yymap ypmap newdmap transInits 
+                 updatedPath newEventPath
+  in
+    // Initiate the hybrid simulation loop (CT + DT)
+    let result = revResult (dtloop 0. [] model1 
+                 (Map.empty) (Map.empty) (Map.empty) [] [] []) [] in
+    (makeProbeNames probelist 1,result) 
+
+// Pretty-print simulation result
+let pprintSimulation res:SimulationResult -> String =
+  let (names,stepvals) = res in
+  let pnames varnames:[String] -> String =
+    match varnames with
+    | n::ns -> n ++ "\t" ++ pnames(ns)
+    | [] -> "\n"
+  in
+  let psteps step:[StepVal] -> first:Bool -> String =
+    match step with
+    | (t,x::xs)::xxs if first ->        
+        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
+    | (t,x::xs)::xxs -> 
+        (if x == INFINITE then "?" else real2string x) ++
+        "\t" ++ psteps((t,xs)::xxs,false)
+    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
+    | [] -> ""
+  in "time\t" ++ pnames(names) ++ psteps(stepvals,true) 
+ 
+// Utility function to both simulate and pretty-print the result
+let printsim model:Equations -> steptime:Real -> endtime:Real -> () =
+      print (pprintSimulation (simulate model steptime endtime))
 
 
 

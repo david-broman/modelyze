@@ -33,9 +33,7 @@ include HybridModeling
 
 def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
   def g = 9.81;
-  //def x,y:Position in
-  def x:Position;
-  def y:Position;  //Serious error. If y is before x, we get wrong result.
+  def x,y:Position;
   def ground:Position;
 
   def Pendulum:Mode;
@@ -68,10 +66,10 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
       -m*g = m*y'';
   
       transition BouncingBall when (y <= ground)
-        action (init (y') (y' * -0.7));
+        action (y' <- y' * -0.7);
 
       transition BouncingBall when (timer > 0.3 && ground > -5.0)
-        action ((init timer 0.) ; (init ground  (ground - 0.2)));
+        action (timer <- 0. ; ground <- ground - 0.2);
     };
 
   };
@@ -84,4 +82,3 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
 def main = 
   def angle = 45.*3.14/180.0;
   printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.0
-//  simulate (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.

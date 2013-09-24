@@ -169,28 +169,38 @@ let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
   let ypfun s:Signal -> Signal = Map.find (der s) valmap in  
   eval expr yyfun ypfun ctime 
 
+def epsilon = 1e-10 
+
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
-let evalFromArray expr:Expr -> ukmap:UkMap -> ctime:Real ->
-                  yy:{Real} -> yp:{Real} -> Real =
+let evalFromArray use_epsilon:Bool -> expr:Expr -> ukmap:UkMap -> ctime:Real ->
+                  yy:{Real} -> yp:{Real} -> Real =    
   let yyfun s:Signal -> Signal = 
       (Array.get yy (fst(Map.find s ukmap))) in
+  let yyfun_epsilon s:Signal -> Signal = 
+      if (Array.get yp (fst (Map.find s ukmap))) > 0. then
+        (Array.get yy (fst(Map.find s ukmap))) + epsilon
+      else
+        (Array.get yy (fst(Map.find s ukmap))) - epsilon
+  in
   let ypfun s:Signal -> Signal = 
       (Array.get yp (fst (Map.find s ukmap))) in
-  eval expr yyfun ypfun ctime 
+  eval expr (if use_epsilon then yyfun_epsilon else yyfun) ypfun ctime 
+
+def epsilon = 1e-10 
 
 // Evaluate an expression that is assumed to have type Bool.
 let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} -> 
       ukmap:UkMap -> ctime:Real -> Bool =
-  let evalReal expr:Expr -> Real = evalFromArray expr ukmap ctime yy yp in
+  let evalReal expr:Expr -> Real = evalFromArray true expr ukmap ctime yy yp in
   let evalBool expr:Expr -> Bool = 
     match expr with
-    | e1 == e2 -> evalReal(e1) == evalReal(e2)
-    | e1 != e2 -> evalReal(e1) != evalReal(e2)
-    | e1 >= e2 -> evalReal(e1) >= evalReal(e2)
+    | e1 == e2 -> error "Not allowed to compare for equality in transitions."
+    | e1 != e2 -> error "Not allowed to compare for equality in transitions."
+    | e1 >= e2 -> evalReal(e1) >  evalReal(e2)
     | e1 >  e2 -> evalReal(e1) >  evalReal(e2)
-    | e1 <= e2 -> evalReal(e1) <= evalReal(e2)
-    | e1 <  e2 -> evalReal(e1) <  evalReal(e2)
+    | e1 <= e2 -> evalReal(e1) <  evalReal(e2) 
+    | e1 <  e2 -> evalReal(e1) <  evalReal(e2) 
     | !e1 -> !(evalBool(e1))
     | e1 && e2 -> evalBool(e1) && evalBool(e2)
     | e1 || e2 -> evalBool(e1) || evalBool(e2)
@@ -202,7 +212,7 @@ let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
 // Create the residual function of the DAE. Used by IDA/Sundials.
 let makeResidual ukmap:UkMap -> model:Equations ->  
                  ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
-  let realExpr expr:Expr -> Real = evalFromArray expr ukmap ctime yy yp  in
+  let realExpr expr:Expr -> Real = evalFromArray false expr ukmap ctime yy yp  in
   let traverseEq m:Equations -> acc:[Real] -> [Real] =
     match m with
     | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
@@ -220,10 +230,10 @@ let makeRootFun ukmap:UkMap -> trans:Transitions ->
     match e with
     | e1 == e2 -> error "Operator == is not allowed in a transition guard."
     | e1 != e2 -> error "Operator != is not allowed in a transition guard."
-    | e1 >= e2 -> (evalFromArray (e1 - e2) ukmap ctime yy yp)::acc
-    | e1 > e2 -> (evalFromArray (e1 - e2) ukmap ctime yy yp)::acc
-    | e1 <= e2 -> (evalFromArray (e1 - e2) ukmap ctime yy yp)::acc
-    | e1 < e2 -> (evalFromArray (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 >= e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 > e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 <= e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
+    | e1 < e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
     | !e1 -> travGuard e acc 
     | e1 && e2 -> travGuard e2 (travGuard e1 acc)
     | e1 || e2 -> travGuard e2 (travGuard e1 acc)

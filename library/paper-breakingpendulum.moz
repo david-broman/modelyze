@@ -41,9 +41,12 @@ def PendulumExt(m:Real, l:Real, T:Force, x:Pos, y:Pos) = {
 
 def BreakingPendulum(m:Real, l:Real, angle:Real) = {
     def x,y:Position;
+    def timer:Real;    
     def Pendulum, BouncingBall:Mode;
     init x (l*sin(angle));
     init y (-l*cos(angle));
+    init timer 0.;
+    timer' = 1.0;
     probe("y") = y;
 
     hybridchart initmode Pendulum {   
@@ -66,8 +69,7 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
 
 let main = 
   let angle = 120.*3.14/180. in
-  printsim (BreakingPendulum 0.13 2. angle) 0.01 8.
-//  simulate (BreakingPendulum 0.13 2. angle) 0.01 8.
+  printsim (BreakingPendulum 0.13 2. angle) 0.02 8.
 
 
 

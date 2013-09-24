@@ -169,7 +169,7 @@ let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
   let ypfun s:Signal -> Signal = Map.find (der s) valmap in  
   eval expr yyfun ypfun ctime 
 
-def epsilon = 1e-10 
+def epsilon = 1e-9 
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
@@ -457,7 +457,7 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
       let _ = DAESolver.close mode in
 
       // Perform another round of CT simulation?
-      if newtime > endtime then acc2  
+      if newtime > endtime || newtime - currtime < 1e-3 then acc2  
       else 
         let (yymap,ypmap) = makePreValMap yy yp ukmap in
           dtloop newtime acc2 model1 yymap ypmap newdmap transInits 

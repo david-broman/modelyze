@@ -3,4 +3,7 @@
 include ModelyzeDAE
 
 
-include MechatronicElaboration
+def printsim(model:Equations, steptime:Real, endtime:Real) = {
+    def model1 = elaborateConnections(model); 
+    print(pprintSimulation(ctSim(model1,steptime,endtime)))
+}

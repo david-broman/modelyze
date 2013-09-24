@@ -89,15 +89,14 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
   worker (Map.toList ukmap);
 }
 
-def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
+def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
   def (model1,probes) = elaborateProbes(model);
-  def model2 = elaborateConnections(model1);
   def probelist = (Map.toList probes);
-  def (model3,_) = elaborateDerivatives(model2,Map.empty);
-  def (model4,_) = indexReducationPantelides(model3, Map.empty);
-  def ukmap = makeUkMap(model4);
-  def residual = (specialize (makeResidual(ukmap)) model4);
-  def (yy,yp) = makeInitValues(model4, ukmap);
+  def (model2,_) = elaborateDerivatives(model1,Map.empty);
+  def (model3,_) = indexReducationPantelides(model2, Map.empty);
+  def ukmap = makeUkMap(model3);
+  def residual = (specialize (makeResidual(ukmap)) model3);
+  def (yy,yp) = makeInitValues(model3, ukmap);
   def id = initConditionCorrection(ukmap);
   def state = (DAESolver.make yy yp id residual);
   def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
@@ -114,7 +113,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
 
 
 def printsim(model:Equations, steptime:Real, endtime:Real) =
-    print(pprintSimulation(simulate(model,steptime,endtime)))
+    print(pprintSimulation(ctSim(model,steptime,endtime)))
 
 
 

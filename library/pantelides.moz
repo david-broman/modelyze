@@ -24,6 +24,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 // Statistical Computing, vol 9, No 2., 1988
 
 
+include Base
+
 type ENode = <>
 type VNode = <>
 

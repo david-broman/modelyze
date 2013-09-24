@@ -20,7 +20,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 //
 //
 
-include Modeling
+//include Equation
 include Pantelides
 include Differentiation
 

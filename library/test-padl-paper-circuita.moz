@@ -8,7 +8,7 @@
 //With specialization evaluation  2m58s (config 0.1,10)
 
 
-include AnalogElectrical
+include Electrical
 include HybridSimulation
 include ExportModelica
 

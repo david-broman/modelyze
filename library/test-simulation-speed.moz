@@ -9,7 +9,7 @@
 //Overhead adding functions for env  5.5s (config 0.1,10)
 
 
-include AnalogElectrical
+include Electrical
 include HybridSimulation
 include ExportModelica
 

@@ -1,6 +1,6 @@
 
 
-include AnalogElectrical
+include Electrical
 include HybridSimulation
 include ExportModelica
 

@@ -21,7 +21,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 // - Needed to update the simulation loop to include the discrete changes.
 
 
-include Modeling
+include Equation
 type Node = <>
 type Unknown = <>
 type Branches = <>

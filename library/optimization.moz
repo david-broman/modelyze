@@ -24,7 +24,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
                 dynamic optimization problem (Modelyze).        
 *********************************************************************/
 
-include Modeling
+include Equation
 
 // New syntax for the optimiation module
 type KeywordInterval

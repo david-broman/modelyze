@@ -16,7 +16,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include Modeling
+include Equation
 
 type Rotational  
 
@@ -28,3 +28,95 @@ type Force = Real
 type Position = Real
 type Velocity = Real
 type Acceleration = Real
+
+
+let Spring c:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+           Equations =
+  let tau:Torque in
+  let relphi:Angle in
+  Branch tau relphi flangeB flangeA;
+  tau = c * relphi
+
+let Damper d:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+           Equations =
+  let tau:Torque in
+  let relphi:Angle in
+  Branch tau relphi flangeB flangeA;
+  tau = d * der(relphi)
+
+let Inertia J:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+    Equations =
+  let tauA:Torque in
+  let tauB:Torque in
+  let phiA:Angle in
+  let phiB:Angle in
+  let phi:Angle in
+  let w:AngularVelocity in
+  let a:AngularAcceleration in
+  RefBranch tauA phiA flangeA;
+  RefBranch (-tauB) phiB flangeB;
+  phiA = phi;
+  phiB = phi;
+  w = der(phi);
+  a = der(w); 
+  J * a = tauA - tauB
+
+let IdealGear ratio:Real -> flangeA:Rotational -> flangeB:Rotational -> 
+    Equations =
+  let tauA:Torque in
+  let tauB:Torque in
+  let phiA:Angle in
+  let phiB:Angle in
+  RefBranch tauA phiA flangeA;
+  RefBranch (-tauB) phiB flangeB;
+  phiA = ratio * phiB;  
+  tauB = ratio * tauA
+
+let Fixed angle:Real -> flangeB:Rotational -> Equations =
+  let tau:Torque in
+  RefBranch tau angle flangeB
+
+let ConstantTorque tau:Real -> flangeB:Rotational -> Equations=
+  let phi:Angle in
+  RefBranch (-tau) phi flangeB
+
+let Torque tau:Signal -> flangeB:Rotational -> Equations =
+  let phi:Angle in
+  RefBranch (-tau) phi flangeB
+
+let TorqueSensor flangeA:Rotational -> flangeB:Rotational -> 
+                 tau:Signal -> Equations =
+  Branch tau 0.0 flangeA flangeB
+
+let AngleSensor flangeB:Rotational -> phi:Signal -> Equations =
+  RefBranch 0.0 phi flangeB
+
+let SpeedSensor flangeB:Rotational -> w:Signal -> Equations =
+  let phi:Angle in
+  RefBranch 0.0 phi flangeB;
+  w = der(phi)
+
+let AccSensor flangeB:Rotational -> a:Signal -> Equations =
+  let phi:Angle in
+  let w:AngularVelocity in
+  RefBranch 0.0 phi flangeB;
+  w = der(phi);
+  a = der(w)
+
+let RelAngleSensor flangeA:Rotational -> flangeB:Rotational -> 
+                   phiRel:Signal -> Equations =
+  Branch 0.0 phiRel flangeB flangeA
+
+let RelSpeedSensor flangeA:Rotational -> flangeB:Rotational -> 
+                   w:Signal -> Equations =
+  let phiRel:Angle in
+  Branch 0.0 phiRel flangeB flangeA;
+  w = der(phiRel)
+
+let RelAccSensor flangeA:Rotational -> flangeB:Rotational -> 
+                 a:Signal -> Equations =
+  let phiRel:Angle in
+  let w:AngularVelocity in
+  Branch 0.0 phiRel flangeB flangeA;
+  w = der(phiRel);
+  a = der(w)

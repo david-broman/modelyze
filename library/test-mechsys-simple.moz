@@ -17,8 +17,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-include RotationalMechanical
-include AnalogElectrical
+include Mechanical
+include Electrical
 include HybridSimulation
 
 let DCMotor flange:Rotational -> Equations =

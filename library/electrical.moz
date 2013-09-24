@@ -16,11 +16,85 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include Modeling
+include Equation
+include Mechanical
 
 type Electrical 
 type Voltage = <Real>
 type Current = <Real>
+
+
+let Resistor R:Real -> p:Electrical -> n:Electrical -> Equations =
+  let i:Current in
+  let v:Voltage in
+  Branch i v p n;
+  R * i = v
+
+def Capacitor(C:Real, p:Electrical, n:Electrical) = {
+    def i:Current;
+    def v:Voltage;
+    Branch(i,v,p,n);
+    C * v' = i;
+}
+
+def Inductor(L:Real, p:Electrical, n:Electrical) = {
+  def i:Current;
+  def v:Voltage;
+  Branch i v p n;
+  L * i' = v;
+}
+
+def Ground(p:Electrical) = {
+    def i:Current;
+    def v:Voltage;
+    RefBranch(i,v,p);
+    v = 0.
+}
+   
+let SineVoltage V:Real -> f:Real -> p:Electrical -> n:Electrical -> 
+                Equations =
+  let PI = 3.1415 in
+  let i:Current in
+  let v:Voltage in
+  Branch i v p n;
+  v = V * sin(2.0 * PI * f * time)
+
+let ConstantVoltage V:Real -> p:Electrical -> n:Electrical ->  Equations =
+  let i:Current in
+  let v:Voltage in
+  Branch i v p n;
+  v = V 
+
+let SignalVoltage V:Voltage -> p:Electrical -> n:Electrical ->  Equations =
+  let i:Current in
+  let v:Voltage in
+  Branch i v p n;
+  v = V 
+
+let EMF k:Real -> p:Electrical -> n:Electrical -> flange:Rotational -> 
+                  Equations =
+  let i:Current in
+  let v:Voltage in
+  let w:AngularVelocity in    
+  let phi:Angle in
+  let tau:Torque in
+  Branch i v p n;
+  RefBranch (-tau) phi flange;
+  w = der(phi);
+  k * w = v;
+  tau =  k * i
+
+let VoltageSensor p:Electrical -> n:Electrical -> 
+                  output:Signal -> Equations =
+  Branch 0.0 output p n
+
+let PotentialSensor p:Electrical -> output:Signal -> Equations =
+  RefBranch 0.0 output p 
+
+let CurrentSensor p:Electrical -> n:Electrical -> 
+                  output:Signal -> Equations =
+  Branch output 0.0 p n
+
 
 
 

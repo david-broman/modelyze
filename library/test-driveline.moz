@@ -17,8 +17,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include ExportModelica
-include AnalogElectrical
-include RotationalMechanical
+include Electrical
+include Mechanical
 include Simulation
 
 let Driveline =

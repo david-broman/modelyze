@@ -20,7 +20,7 @@ include ExportModelica
 include MechsysBasics
 include HybridSimulation
 
-let MechSys =
+def MechSys =
   let r1:Rotational in
   let r2:Rotational in
   let r3:Rotational in

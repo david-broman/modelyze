@@ -2,10 +2,12 @@
 
 include Equation
 
+def Branch : Real -> Real -> ? -> ? -> Equations
+def RefBranch : Real -> Real -> ? -> Equations
+
 type Electrical 
 type Voltage = <Real>
 type Current = <Real>
-
 
 type Rotational  
 type AngularVelocity = Real

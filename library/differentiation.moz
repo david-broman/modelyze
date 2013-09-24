@@ -2,6 +2,7 @@
 include Equation
 type DerivMap = (Signal => Signal)
 type DerivList = [(Signal,Signal)]
+def hoDer : <Real -> Int -> Real>
 
 //Extract equations of form  der x = dx, as well as recording such
 //equations where higher-order derivatives will be generated after

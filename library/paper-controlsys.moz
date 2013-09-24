@@ -81,7 +81,7 @@ def CPS() = {
     PID(3.0, 0.7, 0.1, 10.0, s2, s3);
     DCMotor(s3, r1);
     IdealGear(4.0, r1, r2);
-    serialize(5, r2, r3, ShaftElement);
+    serialize(3, r2, r3, ShaftElement);
     Inertia(0.3, r3, r4);
     SpeedSensor(r4, s4);
     probe "angularVelocity" = s4;

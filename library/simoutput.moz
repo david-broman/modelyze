@@ -1,4 +1,8 @@
 
+include Equation
+
+def probe : <String -> Real> 
+type ProbeMap =  (String => [Signal])
 
 type StepVal = (Real,[Real])
 type SimulationResult = ([String],[StepVal])
@@ -39,3 +43,26 @@ def makeProbeNames(probes:[(String,[Signal])], n:Int) -> [String] = {
   | (s,[])::ss -> makeProbeNames(ss,1)
   | [] -> []
 }
+
+def addProbe(s:String, u:Signal, ps:ProbeMap) = {
+    if Map.mem s ps then Map.add s (u::(Map.find s ps)) ps
+    else Map.add s [u] ps
+}
+
+def elaborateProbes(model:Equations) -> (<Equations>,ProbeMap) = {
+  def elab(e:<>, ps:ProbeMap) -> (<>,ProbeMap) = {
+    match e with
+    | probe (lift s:String) -> {
+        def u:Signal; 
+        (u,addProbe s u ps);
+      }
+    | e1 e2 -> {
+       def (e1b,ps1) = elab(e1,ps);
+       def (e2b,ps2) = elab(e2,ps1);
+       (e1b e2b,ps2);
+      }
+    | _ -> (e,ps)
+  };
+  elab(model,Map.empty);
+}
+ 

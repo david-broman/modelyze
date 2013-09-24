@@ -22,6 +22,7 @@ include Electrical
 include Elaboration
 include Differentiation
 include IndexReduction
+include SimOutput
 
 // Data for simulation results for one point in time. The first element
 // of the time is the time value and the second a list of data points

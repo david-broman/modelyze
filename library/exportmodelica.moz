@@ -16,7 +16,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include MechatronicElaboration
+include Elaboration
+include SimOutput
 
 let mkvar uks:(Int,UkMap) -> e:<> -> String =
   match uks with
@@ -90,7 +91,8 @@ let pprintModelica name:String ->
     "equation\n" ++ pprintEqs(model) ++ "end " ++ name ++ ";"
   
 let exportModelica name:String -> model:Equations -> String =
-  let (model2,probes) = elaborate model in
+  let (model1,probes) = elaborateProbes model in  
+  let model2 = elaborateConnections(model1) in
   pprintModelica name (Map.toList probes) model2
 
   

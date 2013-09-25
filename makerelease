@@ -12,5 +12,5 @@ build clean
 rm -rf old
 rm -rf .git
 rm -f buglist.txt
-rm -rf makerelease
+rm -f makerelease
 

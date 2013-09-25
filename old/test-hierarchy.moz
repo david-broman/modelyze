@@ -1,0 +1,41 @@
+
+
+
+
+include ModelyzeHC
+
+
+def Hierarcy = {
+  
+  def localTime, globalTime : Real;
+  def A, B : Mode;
+  probe("localTime") = localTime;
+  globalTime' = 1.0;
+
+       
+  hybridchart initmode A {
+    mode A {
+       def C:Mode;
+       localTime' = 1.0;
+
+       hybridchart initmode C {
+          def timer : Real;  
+          init timer 0.0;
+          timer' = 1.0;
+       };
+
+       transition B when (localTime > 5.0) action nothing;
+    };
+    mode B {
+       localTime' = 0.;
+       transition A when (globalTime > 7.0) action nothing;
+    };
+
+  };
+
+}
+
+
+
+
+def main = printsim(Hierarcy, 0.1, 10.0)

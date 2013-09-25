@@ -53,7 +53,7 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
         }; 
         mode BouncingBall {
             x'' = 0.;
-            -m*g = m*y'';
+            -g = y'';
             transition BouncingBall 
                 when (y <= -4.0) action (y' <-  y' * -0.7);
         };
@@ -63,7 +63,7 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
 
 let main = 
   let angle = 120.*3.14/180. in
-  printsim (BreakingPendulum 0.13 2. angle) 0.02 9.
+  printsim (BreakingPendulum 0.13 2. angle) 0.02 20.
 
 
 

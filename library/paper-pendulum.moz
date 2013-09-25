@@ -16,7 +16,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include mdaestripped
+include ModelyzeDAE
 
 
 let g = 9.81
@@ -35,10 +35,7 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
 
 
 
-
-
 let pi = 3.1415
-
 
 let main = 
   printsim (Pendulum(5.0, 3.0, 45.0*pi/180.0)) 0.01 10.0

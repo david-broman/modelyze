@@ -6,8 +6,8 @@ modelyze mechanical.moz
 modelyze modelyzeeoo.moz
 
 # Test EOO elaboration
-modelyze test-mechsys.moz > t.mo
-diff t.mo test-mechsys-output.mo 
+modelyze modelica-mechsys.moz > t.mo
+diff t.mo modelica-mechsys-output.mo 
 rm -f t.mo
 
 # Test optimization module

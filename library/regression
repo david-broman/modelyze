@@ -10,17 +10,11 @@ modelyze modelica-mechsys.moz > t.mo
 diff t.mo modelica-mechsys-output.mo 
 rm -f t.mo
 
-# Test optimization module
-# modelyze test-opt-problem1.moz > t.py
-# diff t.py casadi_opt_fixture.py 
-# rm -f t.py
 
-# Test hybrid modeling and simulation
+pmodelyze test-breakingpendulum.moz 
+pmodelyze test-controlsys.moz 
 pmodelyze test-hybrid-ball-stairs.moz 
-
-# Test control system with simulation
-pmodelyze paper-controlsys.moz 
-
-
-pmodelyze paper-breakingpendulum.moz 
+pmodelyze test-lotkavolterra.moz
+pmodelyze test-pendulum.moz
+pmodelyze test-timer.moz
 

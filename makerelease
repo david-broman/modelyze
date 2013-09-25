@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME=modelyze-1.1
+NAME=modelyze-1.11
 
 cd ~/Downloads
 rm -rf $NAME
@@ -9,13 +9,8 @@ cd $NAME
 
 build clean
 
+rm -rf old
 rm -rf .git
 rm -f buglist.txt
+rm makerelease
 
-cd library
-rm -f casadi*
-rm -f regression
-rm -f optimization.moz
-rm -f todo.txt
-rm -f synchronous*
-rm -f test-synch*

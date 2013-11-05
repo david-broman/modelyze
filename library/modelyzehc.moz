@@ -30,7 +30,6 @@ type ModePath = [Mode]
 // Internal transition for storing both source and target mode info
 let internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
 
-
 // Extract the current hierarical mode of equations as well as 
 // the resulting mode path. Transation information is preserved
 // in the equation system in form "internalTrans" so that actions
@@ -240,26 +239,6 @@ let makeInitModeArrays initvals:InitValMap ->
     let _ = setvals (Map.toList ypmap) yp in
     (yy, yp)
 
-// Save data for probe value in one  time point
-let makeStepVal currtime:Real -> yy:{Real} ->
-                probes:[(String,[Signal])] -> ukmap:UkMap -> StepVal =
-  let mkvals probes:[(String,[Signal])] -> [Real] =        
-    match probes with
-    | (s,u::us)::ss ->  
-      let v = if Map.mem u ukmap then (Array.get yy (fst(Map.find u ukmap))) else INFINITE in
-      v::(mkvals ((s,us)::ss))
-    | (s,[])::ss -> mkvals ss 
-    | [] -> []
-  in (currtime,mkvals probes)
-
-// Create a list of probe names from a probe map  
-let makeProbeNames probes:[(String,[Signal])] -> n:Int -> [String] =        
-  match probes with
-  | (s,u::us)::ss -> 
-    let s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "") in
-    s2::(makeProbeNames ((s,us)::ss) (n +. 1))
-  | (s,[])::ss -> makeProbeNames ss 1
-  | [] -> []
 
 // Generate the identity array specifying if a variable
 // appears differentiated or not. The array is used by
@@ -273,11 +252,6 @@ let initConditionCorrection ukmap:UkMap -> {Real} =
     | [] -> id
   in worker (Map.toList ukmap)
 
-// Reverse the simulation plot result
-let revResult lst:[StepVal] -> acc:[StepVal] -> [StepVal] =
-  match lst with
-  | x::xs -> revResult xs (x::acc)
-  | [] -> acc 
 
 // The main simulation function. Performs hybrid simulation using
 // hierarical mode machines and differential-algebraic equations
@@ -377,28 +351,10 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
                  updatedPath newEventPath
   in
     // Initiate the hybrid simulation loop (CT + DT)
-    let result = revResult (dtloop 0. [] model1 
-                 (Map.empty) (Map.empty) (Map.empty) [] [] []) [] in
+    let result = reverse (dtloop 0. [] model1 
+                 (Map.empty) (Map.empty) (Map.empty) [] [] []) in
     (makeProbeNames probelist 1,result) 
 
-// Pretty-print simulation result
-let pprintSimulation res:SimulationResult -> String =
-  let (names,stepvals) = res in
-  let pnames varnames:[String] -> String =
-    match varnames with
-    | n::ns -> n ++ "\t" ++ pnames(ns)
-    | [] -> "\n"
-  in
-  let psteps step:[StepVal] -> first:Bool -> String =
-    match step with
-    | (t,x::xs)::xxs if first ->        
-        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
-    | (t,x::xs)::xxs -> 
-        (if x == INFINITE then "?" else real2string x) ++
-        "\t" ++ psteps((t,xs)::xxs,false)
-    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
-    | [] -> ""
-  in "time\t" ++ pnames(names) ++ psteps(stepvals,true) 
  
 // Utility function to both simulate and pretty-print the result
 let printsim model:Equations -> steptime:Real -> endtime:Real -> () =

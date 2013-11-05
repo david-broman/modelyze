@@ -95,8 +95,6 @@ let printRealLine i:Real -> () =
     printLine  (real2string i)
 
 
-
-
 def reverse(lst:[?]) -> [?] = {
   def work(lst:[?],acc:[?]) -> [?] = {
       match lst with

@@ -19,65 +19,66 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include Elaboration
 include SimOutput
 
-let mkvar uks:(Int,UkMap) -> e:<> -> String =
-  match uks with
-  | (_,ma) -> "uk" ++ int2string(fst (Map.find e ma))
+def mkvar(uks:(Int,UkMap), e:<>) -> String = {
+    match uks with
+    | (_,ma) -> "uk" ++ int2string(fst (Map.find e ma))
+}
 
-let pprintModelica name:String -> 
-                   probelist:[(String,[Signal])] -> 
-                   model:Equations -> String =
-  let uks = realUnknowns model in
-  let real2modelicaString r:Real -> String = 
-    if r < 0. then "(" ++ real2string(r) ++ ")" else real2string(r)
-  in
-  let pprintUnknowns us:(Int,UkMap) -> initvalmap:InitValMap -> String = 
-    let initstr u:Signal -> String =
-      if Map.mem u initvalmap then
-         let (initval,guess) = Map.find u initvalmap in
-         "(start=" ++ real2string(initval) ++ 
-          (if guess then "" else ",fixed=true") ++ ")"
-      else "" 
-    in
-    let prn us:[(Signal,(Int,Bool))] -> String =
-      match us with
-      | (u,_)::us -> "  Real " ++ mkvar(uks,u) ++ 
-                     initstr(u) ++ ";\n" ++ prn(us) 
-      | [] -> ""       
-    in prn (Map.toList (snd us))
-  in
-  let pprintExpr expr:<> -> String =
-    match expr with
-    | e1 + e2 -> "(" ++ pprintExpr(e1) ++ " + " ++ pprintExpr(e2) ++ ")"
-    | e1 - e2 -> "(" ++ pprintExpr(e1) ++ " - " ++ pprintExpr(e2) ++ ")"
-    | e1 * e2 -> pprintExpr(e1) ++ " * " ++ pprintExpr(e2) 
-    | e1 / e2 -> pprintExpr(e1) ++ " / " ++ pprintExpr(e2) 
-    | -e ->     "(-" ++ pprintExpr(e) ++ ")" 
-    | e1^e2 -> pprintExpr(e1) ++ " ^ " ++ "(" ++ pprintExpr(e2) ++ ")"
-    | ~der e ->   "der(" ++ pprintExpr(e) ++ ")"
-    | ~sin e ->   "sin(" ++ pprintExpr(e) ++ ")"
-    | ~cos e ->   "cos(" ++ pprintExpr(e) ++ ")"
-    | ~tan e ->   "tan(" ++ pprintExpr(e) ++ ")"
-    | ~asin e ->  "asin(" ++ pprintExpr(e) ++ ")"
-    | ~acos e ->  "acos(" ++ pprintExpr(e) ++ ")"
-    | ~atan e ->  "atan(" ++ pprintExpr(e) ++ ")"
-    | ~sinh e ->  "sinh(" ++ pprintExpr(e) ++ ")"
-    | ~cosh e ->  "cosh(" ++ pprintExpr(e) ++ ")"
-    | ~tanh e ->  "tanh(" ++ pprintExpr(e) ++ ")"
-    | ~sqrt e ->  "sqrt(" ++ pprintExpr(e) ++ ")"
-    | ~exp e ->   "exp(" ++ pprintExpr(e) ++ ")"
-    | ~log e ->   "log(" ++ pprintExpr(e) ++ ")"
-    | ~log10 e -> "log10(" ++ pprintExpr(e) ++ ")"
-    | ~time -> "time"
-    | sym:<Real> -> mkvar uks expr
-    | lift r:Real -> real2modelicaString r
-  in
-  let pprintEqs model:Equations -> String = 
+def pprintModelica(name:String, probelist:[(String,[Signal])], model:Equations) -> String = {
+    def uks = realUnknowns(model);
+    def real2modelicaString(r:Real) -> String = {
+        if r < 0. then
+           "(" ++ real2string(r) ++ ")" 
+        else real2string(r)
+    };
+    def pprintUnknowns(us:(Int,UkMap), initvalmap:InitValMap) -> String = {
+        def initstr(u:Signal) -> String = {
+         if Map.mem u initvalmap then {
+            def (initval,guess) = (Map.find u initvalmap);
+            "(start=" ++ real2string(initval) ++ (if guess then "" else ",fixed=true") ++ ")";
+         }
+         else "" 
+        };
+        def prn(us:[(Signal,(Int,Bool))]) -> String = {
+             match us with
+             | (u,_)::us -> "  Real " ++ mkvar(uks,u) ++ initstr(u) ++ ";\n" ++ prn(us) 
+             | [] -> ""       
+        }; 
+        prn(Map.toList (snd us));
+    };
+  def pprintExpr(expr:<>) -> String = {
+      match expr with
+      | e1 + e2 -> "(" ++ pprintExpr(e1) ++ " + " ++ pprintExpr(e2) ++ ")"
+      | e1 - e2 -> "(" ++ pprintExpr(e1) ++ " - " ++ pprintExpr(e2) ++ ")"
+      | e1 * e2 -> pprintExpr(e1) ++ " * " ++ pprintExpr(e2) 
+      | e1 / e2 -> pprintExpr(e1) ++ " / " ++ pprintExpr(e2) 
+      | -e ->     "(-" ++ pprintExpr(e) ++ ")" 
+      | e1^e2 -> pprintExpr(e1) ++ " ^ " ++ "(" ++ pprintExpr(e2) ++ ")"
+      | der e ->   "der(" ++ pprintExpr(e) ++ ")"
+      | sin e ->   "sin(" ++ pprintExpr(e) ++ ")"
+      | cos e ->   "cos(" ++ pprintExpr(e) ++ ")"
+      | tan e ->   "tan(" ++ pprintExpr(e) ++ ")"
+      | asin e ->  "asin(" ++ pprintExpr(e) ++ ")"
+      | acos e ->  "acos(" ++ pprintExpr(e) ++ ")"
+      | atan e ->  "atan(" ++ pprintExpr(e) ++ ")"
+      | sinh e ->  "sinh(" ++ pprintExpr(e) ++ ")"
+      | cosh e ->  "cosh(" ++ pprintExpr(e) ++ ")"
+      | tanh e ->  "tanh(" ++ pprintExpr(e) ++ ")"
+      | sqrt e ->  "sqrt(" ++ pprintExpr(e) ++ ")"
+      | exp e ->   "exp(" ++ pprintExpr(e) ++ ")"
+      | log e ->   "log(" ++ pprintExpr(e) ++ ")"
+      | log10 e -> "log10(" ++ pprintExpr(e) ++ ")"
+      | time -> "time"
+      | sym:<Real> -> mkvar uks expr
+      | lift r:Real -> real2modelicaString r
+  };
+  def pprintEqs(model:Equations) -> String = {
     match model with
     | e1 ; e2 -> pprintEqs(e1) ++ pprintEqs(e2)
     | e1 = e2 -> "  " ++ pprintExpr(e1) ++ " = " ++ pprintExpr(e2) ++ ";\n" 
     | _ -> ""
-  in
-  let pprintOutput probes:[(String,[Signal])] -> n:Int -> String =        
+  };
+  def pprintOutput(probes:[(String,[Signal])], n:Int) -> String = {
     match probes with
     | (s,u::us)::ss -> 
          "  output Real " ++ s ++ (if n >. 1 then "_" ++ int2string(n) 
@@ -85,15 +86,17 @@ let pprintModelica name:String ->
          " = " ++ mkvar(uks,u) ++ ";\n" ++ pprintOutput((s,us)::ss,n +. 1)
     | (s,[])::ss -> pprintOutput ss 1
     | [] -> ""                             
-  in
+  };
     "model " ++ name ++ "\n" ++ pprintOutput(probelist,1) ++
     "protected\n" ++ pprintUnknowns(uks,initValues model) ++ 
     "equation\n" ++ pprintEqs(model) ++ "end " ++ name ++ ";"
-  
-let exportModelica name:String -> model:Equations -> String =
-  let (model1,probes) = elaborateProbes model in  
-  let model2 = elaborateConnections(model1) in
-  pprintModelica name (Map.toList probes) model2
+}  
+
+def exportModelica(name:String, model:Equations) -> String = {
+    def (model1,probes) = elaborateProbes(model);
+    def model2 = elaborateConnections(model1);
+    pprintModelica(name, Map.toList probes, model2);
+}
 
   
 

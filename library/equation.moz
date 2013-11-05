@@ -29,7 +29,7 @@ def (;) : Equations -> Equations -> Equations
 def NoEqn : Equations
 
 def init : Real -> Real -> Equations 
-let (<-)  = init
+def (<-)  = init
 
 def time : <Real>
 

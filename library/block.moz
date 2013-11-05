@@ -19,42 +19,45 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include Equation
 include Constants 
 
-let Feedback u1:Signal -> u2:Signal -> y:Signal -> Equations =
-  y = u1 - u2
+def Feedback(u1:Signal, u2:Signal, y:Signal) = {
+    y = u1 - u2;
+}
 
-let Gain k:Real -> u:Signal -> y:Signal -> Equations =
-  y = k * u
+def Gain(k:Real, u:Signal, y:Signal) = {
+  y = k * u;
+}
 
-let ConstantSource k:Real -> y:Signal -> Equations =
-  y = k
+def ConstantSource(k:Real, y:Signal) = {
+  y = k;
+}
 
-let Integrator k:Real -> y0:Real -> u:Signal -> y:Signal -> Equations =
-  init y y0;
-  y' = k * u
+def Integrator(k:Real, y0:Real, u:Signal, y:Signal) = {
+    init y y0;
+    y' = k * u;
+}
 
-let Derivative k:Real -> T:Real -> u:Signal -> y:Signal -> Equations =
-  let state:Signal in
-  state' = (if (abs k) >= eps then (u - state)/T else 0.);
-  y = (if (abs k) >= eps then (k/T)*(u - state) else 0.)
+def Derivative(k:Real, T:Real, u:Signal, y:Signal) = {
+    def state:Signal;
+    state' = (if (abs k) >= eps then (u - state)/T else 0.);
+    y = (if (abs k) >= eps then (k/T)*(u - state) else 0.);
+}
 
-let Add u1:Signal -> u2:Signal -> y:Signal -> Equations =
-  y = u1 + u2
+def Add(u1:Signal, u2:Signal, y:Signal) = {
+    y = u1 + u2;
+}
 
-let Add3 u1:Signal -> u2:Signal -> u3:Signal -> y:Signal -> Equations =
-  y = u1 + u2 + u3
+def Add3(u1:Signal, u2:Signal, u3:Signal, y:Signal) = {
+    y = u1 + u2 + u3;
+}
 
-let PID k:Real -> Ti:Real -> Td:Real -> Nd:Real -> 
-        u:Signal -> y:Signal -> Equations =
-  let s1:Signal in
-  let s2:Signal in
-  let s3:Signal in
-  let s4:Signal in
-  Gain 1.0 u s1;    
-  Integrator (1.0/Ti) 0.0 u s2;
-  Derivative Td (max (Td/Nd) (100.0*eps)) u s3;
-  Add3 s1 s2 s3 s4;
-  Gain k s4 y
-
+def PID(k:Real, Ti:Real, Td:Real, Nd:Real, u:Signal, y:Signal) = {
+    def s1,s2,s3,s4:Signal;
+    Gain(1.0,u,s1);    
+    Integrator(1.0/Ti, 0.0, u, s2);
+    Derivative(Td,max(Td/Nd,100.0*eps), u, s3);
+    Add3(s1,s2,s3,s4);
+    Gain(k,s4,y);
+}
 
 
 

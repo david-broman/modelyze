@@ -18,7 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 include Base
 
-let pi = 2.0 * (asin 1.0)
-let eps = 1e-15
+def pi = 2.0 * (asin 1.0)
+def eps = 1e-15
 
 

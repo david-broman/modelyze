@@ -28,17 +28,17 @@ include Equation
 
 // New syntax for the optimiation module
 type KeywordInterval
-let interval : KeywordInterval
+def interval : KeywordInterval
 
 type KeywordIntegral
-let integral : KeywordIntegral
+def integral : KeywordIntegral
 
 type OptProblem
 
-let minimize : <KeywordIntegral -> Real -> KeywordInterval -> 
+def minimize : <KeywordIntegral -> Real -> KeywordInterval -> 
                 Real -> Real -> Equations -> OptProblem>
 
-let input : <Real -> Equations>
+def input : <Real -> Equations>
 
 // Internal types
 type VarSet = Set Signal

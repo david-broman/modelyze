@@ -19,7 +19,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include ModelyzeDAE
 
 
-let g = 9.81
+def g = 9.81
 
 def Pendulum(m:Real,l:Real,angle:Real) = {
     def x,y,T:Real;
@@ -35,10 +35,10 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
 
 
 
-let pi = 3.1415
+def pi = 3.1415
 
-let main = 
-  printsim (Pendulum(5.0, 3.0, 45.0*pi/180.0)) 0.01 10.0
+def main = 
+   printsim (Pendulum(5.0, 3.0, 45.0*pi/180.0)) 0.01 10.0
    
 
 

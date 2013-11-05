@@ -29,41 +29,51 @@ def  eqContainer: EqNode -> Equations -> Equations
 type VarSet = Set Expr
 
 //Functions for generating fresh equation and variable nodes
-let makeVNode x:() -> VNode = let nv:Signal in nv 
-let makeENode x:() -> ENode = let ne:EqNode in ne
+def makeVNode(x:()) -> VNode = {
+    def nv:Signal;
+    nv;
+}
+
+def makeENode(x:()) -> ENode = {
+    def ne:EqNode;
+    ne;
+}
 
 // Generates an equation graph from an equation system. This
 // function can be used together with pantelides algrithm, 
 // implemented in pantelides.mkl
-let makeEquationGraph eqs:Equations -> (EqsGraph,VarMap,Equations) =
-  let travExpr exp:Expr -> accvar:VarSet -> accvarmap:VarMap -> 
-               (VarSet,VarMap) =
-    match exp with
-    | ~der (sym:Signal) -> 
-        let x = match exp with | ~der u -> u in
-        (Set.add exp accvar,Map.add x exp accvarmap) 
-    | sym:Signal -> (Set.add exp accvar,accvarmap) 
-    | e1 e2 -> let (accvar1,accvarmap1) = travExpr e1 accvar accvarmap in
-               travExpr e2 accvar1 accvarmap1 
-    | _ -> (accvar,accvarmap) 
-  in
-  let travEq eq:Equations -> accgraph:EqsGraph -> accvarmap:VarMap -> 
-             (EqsGraph,VarMap,<>) =
+def makeEquationGraph(eqs:Equations) -> (EqsGraph,VarMap,Equations) = {
+    def travExpr(exp:Expr, accvar:VarSet, accvarmap:VarMap) -> (VarSet,VarMap) = {
+        match exp with
+        | der (sym:Signal) -> {
+              def x = (match exp with | der u -> u);
+              (Set.add exp accvar,Map.add x exp accvarmap);
+          }
+        | sym:Signal -> (Set.add exp accvar,accvarmap) 
+        | e1 e2 -> {
+              def (accvar1,accvarmap1) = travExpr e1 accvar accvarmap;
+              travExpr(e2,accvar1,accvarmap1);
+          }
+        | _ -> (accvar,accvarmap) 
+  };
+  def travEq(eq:Equations, accgraph:EqsGraph, accvarmap:VarMap) -> (EqsGraph,VarMap,<>) = {
     match eq with
-    | e1 = e2 -> 
-        let eqnode:EqNode in
-        let (varset,accvarmap2) = travExpr (e1 - e2) (Set.empty) accvarmap in
-        let accgraph2 = Map.add eqnode (Set.toList varset) accgraph in
-        let neweq = eqContainer eqnode eq in
-        (accgraph2,accvarmap2,neweq)
-    | e1 e2 -> 
-        let (accgraph1,accvarmap1,e1b) = travEq e1 accgraph accvarmap in
-        let (accgraph2,accvarmap2,e2b) = travEq e2 accgraph1 accvarmap1 in
-        (accgraph2,accvarmap2,e1b e2b)
+    | e1 = e2 -> {
+        def eqnode:EqNode;
+        def (varset,accvarmap2) = travExpr(e1 - e2, Set.empty, accvarmap);
+        def accgraph2 = (Map.add eqnode (Set.toList varset) accgraph);
+        def neweq = eqContainer(eqnode,eq);
+        (accgraph2,accvarmap2,neweq);
+     }
+    | e1 e2 -> {
+        def (accgraph1,accvarmap1,e1b) = travEq(e1,accgraph,accvarmap);
+        def (accgraph2,accvarmap2,e2b) = travEq(e2,accgraph1,accvarmap1);
+        (accgraph2,accvarmap2,e1b e2b);
+      }
     | e -> (accgraph,accvarmap,e)
-  in
-    travEq eqs (Map.empty) (Map.empty)
-
+  };
+  travEq(eqs,Map.empty, Map.empty);
+}
 
 // Do index reduction using Panatelides algorithm. The original
 // equations are replaced with the differentiated ones. This

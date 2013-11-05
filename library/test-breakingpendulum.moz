@@ -62,10 +62,10 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
 }
 
 
-let main = 
-  let angle = 120.*3.14/180. in
-  printsim (BreakingPendulum 0.13 2. angle) 0.02 20.
-
+def main = {
+    def angle = 120.*3.14/180.;
+    printsim (BreakingPendulum 0.13 2. angle) 0.02 20.;
+}
 
 
 

@@ -155,9 +155,11 @@ def pantelides(equationGraph:EqsGraph, variableMap:VarMap,
   def updateAssign(lst:ColorVList, A:VarMap, B:EqMap,
                    assign:AssignMap) : AssignMap = {
     match lst with
-    | j::js -> let e = Map.find (Map.find j assign) B in
-               let v = Map.find j A in
-               updateAssign js A B (Map.add v e assign)
+    | j::js -> {
+        def e = (Map.find (Map.find j assign) B);
+        def v = (Map.find j A);
+        updateAssign js A B (Map.add v e assign);
+      }
     | [] -> assign
   };
 

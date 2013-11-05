@@ -19,32 +19,34 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include Electrical
 include Mechanical
 
-let ShaftElement flangeA:Rotational -> flangeB:Rotational -> 
-                 Equations =
-  let r1:Rotational in
-  Spring 8. flangeA r1;
-  Damper 1.5 flangeA r1;
-  Inertia 0.5 r1 flangeB
+def ShaftElement(flangeA:Rotational,flangeB:Rotational) -> Equations = {
+  def r1:Rotational;
+  Spring(8., flangeA, r1);
+  Damper(1.5, flangeA, r1);
+  Inertia(0.5, r1, flangeB);
+}
 
-let DCMotor flange:Rotational -> Equations =
-  let e1:Electrical in
-  let e2:Electrical in
-  let e3:Electrical in
-  let e4:Electrical in
-  ConstantVoltage 60. e1 e4;
-  Resistor 100. e1 e2;
-  Inductor 0.2 e2 e3;
-  EMF 1. e3 e4 flange;
-  Ground e4
+def DCMotor(flange:Rotational) -> Equations = {
+  def e1:Electrical;
+  def e2:Electrical;
+  def e3:Electrical;
+  def e4:Electrical;
+  ConstantVoltage(60.,e1,e4);
+  Resistor(100.,e1,e2);
+  Inductor(0.2,e2,e3);
+  EMF(1.,e3,e4,flange);
+  Ground(e4);
+}
 
-let FlexibleShaft n:Int -> flangeA:Rotational -> flangeB:Rotational -> 
-                  Equations =
+def FlexibleShaft(n:Int, flangeA:Rotational, flangeB:Rotational) -> Equations = {
   if n ==. 1 then 
-    ShaftElement flangeA flangeB 
-  else 
-    let r1:Rotational in
-    ShaftElement flangeA r1;
-    FlexibleShaft (n -. 1) r1 flangeB
+    ShaftElement(flangeA,flangeB)
+  else {
+    def r1:Rotational;
+    ShaftElement(flangeA,r1);
+    FlexibleShaft(n -. 1, r1, flangeB);
+  }
+}
 
 
 

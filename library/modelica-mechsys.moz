@@ -20,15 +20,15 @@ include ExportModelica
 include MechsysBasics
 include ModelyzeHC
 
-def MechSys =
-  let r1:Rotational in
-  let r2:Rotational in
-  let r3:Rotational in
-  DCMotor r1;
-  Inertia 0.2 r1 r2;
-  FlexibleShaft 120 r2 r3;
-  AngleSensor r3 (probe "phi") 
+def MechSys = {
+  def r1:Rotational;
+  def r2:Rotational;
+  def r3:Rotational;
+  DCMotor(r1);
+  Inertia(0.2,r1,r2);
+  FlexibleShaft(120,r2,r3);
+  AngleSensor(r3,probe "phi");
+}
 
-let main = 
-  //printsim MechSys 0.1 30
-  printLine (exportModelica "MechSys" MechSys)
+def main = 
+   printLine(exportModelica("MechSys",MechSys))

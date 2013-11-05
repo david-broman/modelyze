@@ -24,11 +24,11 @@ def Feedback(u1:Signal, u2:Signal, y:Signal) = {
 }
 
 def Gain(k:Real, u:Signal, y:Signal) = {
-  y = k * u;
+    y = k * u;
 }
 
 def ConstantSource(k:Real, y:Signal) = {
-  y = k;
+    y = k;
 }
 
 def Integrator(k:Real, y0:Real, u:Signal, y:Signal) = {

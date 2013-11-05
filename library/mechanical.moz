@@ -27,10 +27,10 @@ def Spring(c:Real, flangeA:Rotational, flangeB:Rotational) = {
 }
 
 def Damper(d:Real, flangeA:Rotational, flangeB:Rotational) = {
-  def tau:Torque;
-  def relphi:Angle;
-  Branch(tau,relphi,flangeB,flangeA);
-  tau = d * der(relphi);
+    def tau:Torque;
+    def relphi:Angle;
+    Branch(tau,relphi,flangeB,flangeA);
+    tau = d * der(relphi);
 }
 
 def Inertia(J:Real, flangeA:Rotational, flangeB:Rotational) = {

@@ -60,7 +60,6 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Keywords */
 %token <unit Ast.tokendata> FUN
-%token <unit Ast.tokendata> LET
 %token <unit Ast.tokendata> DEF
 %token <unit Ast.tokendata> IN
 %token <unit Ast.tokendata> IF
@@ -163,7 +162,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 %nonassoc WITH
 %nonassoc BAR
-%nonassoc LETUK 
+%nonassoc DEFUK 
 %left SEMI EQSEMI /*prec 1*/
 %nonassoc MYAPP
 %left OR  /*prec 2*/
@@ -191,37 +190,20 @@ main:
 top:
   | EOF
       { [] }
-  | LET letpat paramlist EQ term top
-      { let fi = mkinfo $1.i (tm_info $5) in
-        let (plst,endty) = $3 in
-        TopLet(fi,$2,endty,List.rev plst,$5,freein_tm $2 $5)::$6 }
-  | LET letpat EQ term top
-      { let fi = mkinfo $1.i (tm_info $4) in
-        TopLet(fi,$2,None,[],$4,freein_tm $2 $4)::$5 }
-  | LET letpat COLON ty EQ term top 
-      { let fi = mkinfo $1.i (tm_info $6) in
-        TopLet(fi,$2,Some $4,[],$6,freein_tm $2 $6)::$7 }
-  | LET letpat COLON ty top %prec LETUK
-      { let fi = mkinfo $1.i (ty_info $4) in
-        TopNu(fi,$2,$4)::$5 }
   | DEF identparen parenparamlist EQ term top
       { let fi = mkinfo $1.i (tm_info $5) in
         let (plst,endty) = $3 in
         TopLet(fi,$2,endty,List.rev plst,$5,freein_tm $2 $5)::$6 }  
-/*  | DEF identparen parenparamlist COLON ty EQ term top   //Results in a shift/reduce conflict.
-      { let fi = mkinfo $1.i (tm_info $7) in
-        let (plst,_) = $3 in
-        TopLet(fi,$2,Some $5,List.rev plst,$7,freein_tm $2 $7)::$8 }  */
   | DEF letpat EQ term top
       { let fi = mkinfo $1.i (tm_info $4) in
         TopLet(fi,$2,None,[],$4,freein_tm $2 $4)::$5 }
   | DEF letpat COLON ty EQ term top 
       { let fi = mkinfo $1.i (tm_info $6) in
         TopLet(fi,$2,Some $4,[],$6,freein_tm $2 $6)::$7 }
-  | DEF letpat COLON ty top %prec LETUK
+  | DEF letpat COLON ty top %prec DEFUK
       { let fi = mkinfo $1.i (ty_info $4) in
         TopNu(fi,$2,$4)::$5 }
-  | DEF IDENT COMMA revidentseq COLON ty top %prec LETUK
+  | DEF IDENT COMMA revidentseq COLON ty top %prec DEFUK
       { let fi = mkinfo $1.i (ty_info $6) in
         let nulst = List.map (fun x -> TopNu(fi,x,$6)) (List.rev $4) in        
         TopNu(fi,$2.v,$6)::(List.append nulst $7) }  
@@ -329,27 +311,10 @@ term:
   | FUN IDENT COLON tyatom ARROW term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmLam(fi,$1.l,$2.v,$4,$6) }
-  | LET letpat paramlist EQ term IN term
-      { let fi = mkinfo $1.i (tm_info $7) in
-        let (plst,endty) = $3 in
-        TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
-  | LET pat_atom EQ term IN term
-      { let fi = mkinfo $1.i (tm_info $6) in
-        TmMatch(fi,$1.l,$4,[PCase(fi,[Ast.no_auto_esc $2],None,[],$6)]) }
-  | LET letpat COLON ty EQ term IN term
-      { let fi = mkinfo $1.i (tm_info $8) in
-        TmLet(fi,$1.l,$2,Some $4,[],$6,$8,freein_tm $2 $6) }
-  | LET letpat COLON ty IN term
-      { let fi = mkinfo $1.i (tm_info $6) in
-        TmNu(fi,$1.l,$2,$4,$6) }
   | DEF identparen parenparamlist EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $7) in
         let (plst,endty) = $3 in
         TmLet(fi,$1.l,$2,endty,List.rev plst,$5,$7,freein_tm $2 $5) }
-/*  | DEF identparen parenparamlist COLON ty EQ cons SEMI term
-      { let fi = mkinfo $1.i (tm_info $7) in
-        let (plst,endty) = $3 in
-        TmLet(fi,$1.l,$2,Some $5,List.rev plst,$7,$9,freein_tm $2 $7) }  */
   | DEF pat_atom EQ cons SEMI term
       { let fi = mkinfo $1.i (tm_info $6) in
         TmMatch(fi,$1.l,$4,[PCase(fi,[Ast.no_auto_esc $2],None,[],$6)]) }
@@ -564,16 +529,6 @@ revpatseq:
         {[$1]}               
     |   revpatseq COMMA pattern
         {$3::$1}
-
-paramlist:
-  | param
-      { ([$1],None) }
-  | paramlist ARROW param
-      { let (lst,_) = $1 in
-        ($3::lst,None) }
-  | paramlist ARROW tyatom
-      { let (lst,_) = $1 in
-        (lst,Some $3) }
 
 parenparamlist:
   | revtmtyseq RPAREN rettype

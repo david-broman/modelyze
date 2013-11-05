@@ -28,62 +28,63 @@ type Transitions = [(Mode,Mode,Expr,Expr)]
 type ModePath = [Mode]
 
 // Internal transition for storing both source and target mode info
-let internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
+def internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
 
 // Extract the current hierarical mode of equations as well as 
 // the resulting mode path. Transation information is preserved
 // in the equation system in form "internalTrans" so that actions
 // also are affected by the differentiation procedure (handling of
 // higher-order derivatives).
-let extractHMode model:Equations -> freshMode:Bool ->
-    prePath:ModePath -> currPath:ModePath -> (Equations,ModePath) =
-  let extract m:Equations -> fresh:Bool ->
-    pre:ModePath -> curr:ModePath -> updated:ModePath ->
-      cmode:Mode -> (<>,ModePath) =
+def extractHMode(model:Equations, freshMode:Bool,
+    prePath:ModePath, currPath:ModePath) -> (Equations,ModePath) = {
+  def extract(m:Equations, fresh:Bool, pre:ModePath, curr:ModePath,
+              updated:ModePath, cmode:Mode) -> (<>,ModePath) = {
     match m with
     | hybridchart initmode s e -> 
       (match (pre,curr) with
-       | (_,[]) -> extract e true [] [] (s::updated) s
-       | (p::ps,c::cs) -> if p <==> c then extract e false ps cs (p::updated) p
-                          else extract e true ps cs (c::updated) c)
+       | (_,[]) -> extract(e,true,[],[],s::updated,s)
+       | (p::ps,c::cs) -> if p <==> c then extract(e,false,ps,cs,p::updated,p)
+                          else extract(e,true,ps,cs,c::updated,c))
     | mode s e -> if s <==> cmode  
-                      then extract e fresh pre curr updated s 
+                      then extract(e,fresh,pre,curr,updated,s) 
                       else (NoEqn,updated)
     | transition nmode when g action i -> 
           (internalTrans cmode nmode g i,updated) 
     | init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
-    | e1 e2 ->  
-         let (eqs1,up1) = extract e1 fresh pre curr updated cmode in
-         let (eqs2,up2) = extract e2 fresh pre curr up1 cmode in
+    | e1 e2 -> { 
+         def (eqs1,up1) = extract(e1,fresh,pre,curr,updated,cmode);
+         def (eqs2,up2) = extract(e2,fresh,pre,curr,up1,cmode);
          (eqs1 eqs2,up2)
+      }
     | e -> (e,updated)
-  in  
-    extract model freshMode prePath currPath [] topmode
+  };
+  extract(model,freshMode,prePath,currPath,[],topmode);
+}
 
 // Extract a list of transitions from an equation system.
-let extractTransitions model:Expr -> Transitions =
-  let extract e:Expr -> acc:Transitions -> Transitions =
+def extractTransitions(model:Expr) -> Transitions = {
+  def extract(e:Expr, acc:Transitions) -> Transitions = {
     match e with
     | internalTrans s1 s2 g i -> (s1,s2,g,i)::acc
-    | e1 e2 -> extract e2 (extract e1 acc)
+    | e1 e2 -> extract(e2,extract(e1,acc))
     | _ -> acc
-  in extract model [] 
+  };
+  extract(model,[]) 
+}
 
 
 // Extract value maps from arrays of real values for unknowns.
 // The function is used to when performing structural discrete changes
 // and transferring the mode during the event.
-let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap -> 
-                  (InitValMap,InitValMap) =
-  let worker lst:UkList -> yymap:InitValMap -> ypmap:InitValMap -> 
-             (InitValMap,InitValMap) =
+def makePreValMap(yy:{Real}, yp:{Real}, ukmap:UkMap) -> (InitValMap,InitValMap) = {
+  def worker(lst:UkList, yymap:InitValMap, ypmap:InitValMap) -> (InitValMap,InitValMap) = {
     match lst with
     | (u,(i,_))::xs ->
-         worker xs (Map.add u ((Array.get yy i)) yymap)
-                   (Map.add u ((Array.get yp i)) ypmap) 
+         worker(xs, Map.add u (Array.get yy i) yymap, Map.add u (Array.get yp i) ypmap)
     | [] -> (yymap,ypmap)
-  in
-    worker (Map.toList ukmap) (Map.empty) (Map.empty)
+  };
+  worker(Map.toList ukmap, Map.empty, Map.empty);
+}
 
 
 // Evaluate an expression of real type. The unknowns in the

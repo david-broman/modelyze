@@ -250,6 +250,7 @@ def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap,
   (yy, yp);
 }
 
+
 // Generate the identity array specifying if a variable
 // appears differentiated or not. The array is used by
 // IDA/Sundials for initial condition correction

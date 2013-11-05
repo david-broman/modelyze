@@ -51,17 +51,21 @@ def pprintSimulation(res:SimulationResult) -> String = {
   "time\t" ++ pnames(names) ++ psteps(stepvals,true) 
 }
 
-def makeStepVal(currtime:Real, yy:{Real}, probes:[(String,[Signal])], 
-                ukmap:UkMap) -> StepVal = {
-  def mkvals(probes:[(String,[Signal])]) -> [Real] = {        
+def makeStepVal(currtime:Real,yy:{Real},probes:[(String,[Signal])], ukmap:UkMap) -> StepVal = {
+  def mkvals(probes:[(String,[Signal])]) -> [Real] = {
     match probes with
-    | (s,u::us)::ss -> (Array.get yy (fst(Map.find u ukmap)))::
-                        (mkvals ((s,us)::ss))
+    | (s,u::us)::ss -> {
+         def v = (if Map.mem u ukmap then 
+                    (Array.get yy (fst(Map.find u ukmap))) 
+                  else INFINITE);
+         v::(mkvals((s,us)::ss))
+         }
     | (s,[])::ss -> mkvals(ss) 
     | [] -> []
-  };
-  (currtime,mkvals(probes))
+  }; 
+  (currtime,mkvals probes);
 }
+
   
 def makeProbeNames(probes:[(String,[Signal])], n:Int) -> [String] = {
   match probes with

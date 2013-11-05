@@ -18,20 +18,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 include HybridModeling
 include ModelyzeDAE
-include Mechanical
 include SimOutput
 
-// Data for simulation results for one point in time. The first element
-// of the time is the time value and the second a list of data points
-// representing the different variables (defined using probes).
-type StepVal = (Real,[Real])
-
-// Type definition for simulation result. Contains a list names
-// of the variables used as well as the data points.
-type SimulationResult = ([String],[StepVal])
-
-// Mapping of initial values. From unknown to expression.
-type InitValMap = (<Real> => <Real>)
 
 // List definition of transistions
 type Transitions = [(Mode,Mode,Expr,Expr)]
@@ -73,7 +61,7 @@ let extractHMode model:Equations -> freshMode:Bool ->
   in  
     extract model freshMode prePath currPath [] topmode
 
-// Extract a list of transitions from an equation syste.
+// Extract a list of transitions from an equation system.
 let extractTransitions model:Expr -> Transitions =
   let extract e:Expr -> acc:Transitions -> Transitions =
     match e with
@@ -82,15 +70,6 @@ let extractTransitions model:Expr -> Transitions =
     | _ -> acc
   in extract model [] 
 
-
-// Extract initial values from an equation system. 
-let initValues eqs:Equations -> InitValMap =
-  let get eqs:Equations -> acc:InitValMap -> InitValMap =
-    match eqs with
-    | e1 ; e2 -> get e2 (get e1 acc)
-    | init x v -> Map.add x v acc
-    | _ -> acc
-  in get eqs (Map.empty)
 
 // Extract value maps from arrays of real values for unknowns.
 // The function is used to when performing structural discrete changes

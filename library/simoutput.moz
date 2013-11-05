@@ -21,7 +21,13 @@ include Equation
 def probe : <String -> Real> 
 type ProbeMap =  (String => [Signal])
 
+// Data for simulation results for one point in time. The first element
+// of the time is the time value and the second a list of data points
+// representing the different variables (defined using probes).
 type StepVal = (Real,[Real])
+
+// Type definition for simulation result. Contains a list names
+// of the variables used as well as the data points.
 type SimulationResult = ([String],[StepVal])
 
 

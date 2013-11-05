@@ -40,7 +40,7 @@ def time : <Real>
 type UkMap = (Signal => (Int,Bool))
 type UkList = [(Signal,(Int,Bool))]
 
-type InitValMap = (<Real> => (Real,Bool))
+type InitValMap = (<Real> => <Real>)
 type UkSet = (Set <Real>)
 
 type Expr = <>
@@ -58,16 +58,19 @@ def cleanupEquations(eq:Equations) : Equations = {
     | _ -> eq
 }
 
+
 def initValues(eqs:Equations) -> InitValMap = {
   def get(eqs:Equations, acc:InitValMap) -> InitValMap = {
     match eqs with
     | e1 ; e2 -> get(e2,get(e1,acc))
-    | init x (lift v:Real) -> (Map.add x (v,false) acc)
+    | init x e -> (Map.add x e acc)
     | _ -> acc
   };
   get(eqs,Map.empty);
 }
   
+
+
 def unknowns(eqs:Equations) -> UkSet = {
   def get(e:<?>, acc:UkSet) ->  UkSet = {
      match e with

@@ -6,15 +6,15 @@ modelyze mechanical.moz
 modelyze modelyzeeoo.moz
 
 # Test EOO elaboration
-modelyze modelica-mechsys.moz > t.mo
-diff t.mo modelica-mechsys-output.mo 
-rm -f t.mo
+#modelyze modelica-mechsys.moz > t.mo
+#diff t.mo modelica-mechsys-output.mo 
+#rm -f t.mo
 
 
-pmodelyze test-breakingpendulum.moz 
+# pmodelyze test-breakingpendulum.moz 
 pmodelyze test-controlsys.moz 
 pmodelyze test-hybrid-ball-stairs.moz 
-pmodelyze test-lotkavolterra.moz
-pmodelyze test-pendulum.moz
-pmodelyze test-timer.moz
+# pmodelyze test-lotkavolterra.moz
+# pmodelyze test-pendulum.moz
+# pmodelyze test-timer.moz
 

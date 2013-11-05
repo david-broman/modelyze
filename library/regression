@@ -11,10 +11,10 @@ modelyze modelyzeeoo.moz
 #rm -f t.mo
 
 
-# pmodelyze test-breakingpendulum.moz 
+ pmodelyze test-breakingpendulum.moz 
 pmodelyze test-controlsys.moz 
 pmodelyze test-hybrid-ball-stairs.moz 
-# pmodelyze test-lotkavolterra.moz
-# pmodelyze test-pendulum.moz
-# pmodelyze test-timer.moz
+ pmodelyze test-lotkavolterra.moz
+ pmodelyze test-pendulum.moz
+ pmodelyze test-timer.moz
 

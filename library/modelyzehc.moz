@@ -30,6 +30,8 @@ type ModePath = [Mode]
 // Internal transition for storing both source and target mode info
 def internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
 
+def epsilon = 1e-9 
+
 // Extract the current hierarical mode of equations as well as 
 // the resulting mode path. Transation information is preserved
 // in the equation system in form "internalTrans" so that actions
@@ -89,37 +91,34 @@ def makePreValMap(yy:{Real}, yp:{Real}, ukmap:UkMap) -> (InitValMap,InitValMap) 
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up using initvalue maps.
-let evalFromMap expr:Expr -> valmap:InitValMap -> ctime:Real -> Real =
-  let yyfun s:Signal -> Signal = Map.find s valmap in
-  let ypfun s:Signal -> Signal = Map.find (der s) valmap in  
-  eval expr yyfun ypfun ctime 
+def evalFromMap(expr:Expr, valmap:InitValMap, ctime:Real) -> Real = {
+  def yyfun(s:Signal) -> Signal = (Map.find s valmap);
+  def ypfun(s:Signal) -> Signal = (Map.find (der s) valmap);
+  eval(expr,yyfun,ypfun,ctime)
+}
 
-def epsilon = 1e-9 
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
 // Redefines the evalFromArray in ModelyzeDAE
-let evalFromArray use_epsilon:Bool -> expr:Expr -> ukmap:UkMap -> ctime:Real ->
-                  yy:{Real} -> yp:{Real} -> Real =    
-  let yyfun s:Signal -> Signal = 
-      (Array.get yy (fst(Map.find s ukmap))) in
-  let yyfun_epsilon s:Signal -> Signal = 
+def evalFromArray(use_epsilon:Bool, expr:Expr, ukmap:UkMap, ctime:Real,
+                  yy:{Real}, yp:{Real}) -> Real = {
+  def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
+  def yyfun_epsilon(s:Signal) -> Signal = {
       if (Array.get yp (fst (Map.find s ukmap))) > 0. then
         (Array.get yy (fst(Map.find s ukmap))) + epsilon
       else
         (Array.get yy (fst(Map.find s ukmap))) - epsilon
-  in
-  let ypfun s:Signal -> Signal = 
-      (Array.get yp (fst (Map.find s ukmap))) in
-  eval expr (if use_epsilon then yyfun_epsilon else yyfun) ypfun ctime 
+  };
+  def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
+  eval(expr, if use_epsilon then yyfun_epsilon else yyfun, ypfun, ctime);
+}
 
-def epsilon = 1e-10 
 
 // Evaluate an expression that is assumed to have type Bool.
-let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} -> 
-      ukmap:UkMap -> ctime:Real -> Bool =
-  let evalReal expr:Expr -> Real = evalFromArray true expr ukmap ctime yy yp in
-  let evalBool expr:Expr -> Bool = 
+def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap, ctime:Real) -> Bool = {
+  def evalReal(expr:Expr) -> Real = evalFromArray(true,expr,ukmap,ctime,yy,yp);
+  def evalBool(expr:Expr) -> Bool = {
     match expr with
     | e1 == e2 -> error "Not allowed to compare for equality in transitions."
     | e1 != e2 -> error "Not allowed to compare for equality in transitions."
@@ -132,41 +131,42 @@ let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
     | e1 || e2 -> evalBool(e1) || evalBool(e2)
     | lift b:Bool -> b
     | _ -> error "The value is not a boolean type."
-  in
-    evalBool expr
+  };
+  evalBool(expr);
+}
 
  
 // Create the function that is used by IDA/Sundials for root finding 
 // (detecting zero-crossings). The root function is created by
 // evaluating the transitions that are extracted from the original
 // equation system.
-let makeRootFun ukmap:UkMap -> trans:Transitions -> 
-                ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] = 
-  let travGuard e:Expr -> acc:[Real] -> [Real] =
+def makeRootFun(ukmap:UkMap, trans:Transitions,ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = { 
+  def travGuard(e:Expr,acc:[Real]) -> [Real] = {
     match e with
     | e1 == e2 -> error "Operator == is not allowed in a transition guard."
     | e1 != e2 -> error "Operator != is not allowed in a transition guard."
-    | e1 >= e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
-    | e1 > e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
-    | e1 <= e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
-    | e1 < e2 -> (evalFromArray false (e1 - e2) ukmap ctime yy yp)::acc
-    | !e1 -> travGuard e acc 
-    | e1 && e2 -> travGuard e2 (travGuard e1 acc)
-    | e1 || e2 -> travGuard e2 (travGuard e1 acc)
+    | e1 >= e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
+    | e1 > e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
+    | e1 <= e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
+    | e1 < e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
+    | !e1 -> travGuard(e,acc) 
+    | e1 && e2 -> travGuard(e2,travGuard(e1,acc))
+    | e1 || e2 -> travGuard(e2,travGuard(e1,acc))
     | lift b:Bool -> acc
     | _ -> error "Illegal expression in transition guard."
-  in   
-  let travTrans trans:Transitions -> acc:[Real] -> [Real] = 
+  };
+  def travTrans(trans:Transitions, acc:[Real]) -> [Real] = { 
     match trans with
      | (_,_,g,_)::ts -> travTrans ts (travGuard g acc)
      | [] -> acc
-  in 
-    travTrans trans []
+  };
+  travTrans(trans,[]);
+}
 
 // Returns a tuple with the index of the searched root and a boolean stating
 // true if the transition is fired. 
-let isTransitionFired expr:Expr -> roots:{Int} -> index:Int -> (Int,Bool) =
-  let fired e:Expr -> i:Int -> (Int,Bool) = 
+def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
+  def fired(e:Expr, i:Int) -> (Int,Bool) = {
     match e with
     | e1 == e2 -> (i -. 1,(Array.get roots i) !=. 0)
     | e1 != e2 -> (i -. 1,(Array.get roots i) !=. 0)
@@ -175,191 +175,191 @@ let isTransitionFired expr:Expr -> roots:{Int} -> index:Int -> (Int,Bool) =
     | e1 <= e2 -> (i -. 1,(Array.get roots i) !=. 0)
     | e1 < e2 ->  (i -. 1,(Array.get roots i) !=. 0)
     | !e1 -> fired e1 i
-    | e1 && e2  -> let (i1,f1) = fired e1 i in 
-                   let (i2,f2) = fired e2 i1 in (i2,f1||f2)
-    | e1 || e2  -> let (i1,f1) = fired e1 i in 
-                   let (i2,f2) = fired e2 i1 in (i2,f1||f2)
+    | e1 && e2  -> {
+         def (i1,f1) = fired(e1,i);
+         def (i2,f2) = fired(e2,i1);
+         (i2,f1||f2)
+       }
+    | e1 || e2  -> {
+         def (i1,f1) = fired(e1,i);
+         def (i2,f2) = fired(e2,i1);
+         (i2,f1||f2)
+      }
     | lift b:Bool -> (i,false)
     | _ -> error "Error in term"
-  in fired expr index
-    
+  };
+  fired(expr,index);
+}
 
 // Create a list of expressions containing initiatiations that should
 // be executed when a an event (transistion occurs). The function takes
 // as input the current mode path and the mode path that should exists
 // after transition.
-let makeEventActions daesolv:DAESolver -> trans:Transitions -> sp:ModePath ->
-      ukmap:UkMap -> ctime:Real -> yy:{Real} -> yp:{Real} -> ([Expr],ModePath) =
-  let roots = DAESolver.roots daesolv in
-  let changeMode sp:ModePath -> prevS:Mode -> nextS:Mode -> ModePath =
+def makeEventActions(daesolv:DAESolver, trans:Transitions, sp:ModePath,
+      ukmap:UkMap, ctime:Real, yy:{Real}, yp:{Real}) -> ([Expr],ModePath) = {
+  def roots = (DAESolver.roots daesolv);
+  def changeMode(sp:ModePath, prevS:Mode, nextS:Mode) -> ModePath = {
     match sp with
     | s::ss -> if s <==> prevS then [nextS] 
-               else s::(changeMode ss prevS nextS)
+               else s::(changeMode(ss,prevS,nextS))
     | [] -> []
-  in 
-  let travTrans trans:Transitions -> acc:[Expr] -> sp:ModePath -> 
-                idx:Int -> ([Expr],ModePath) = 
+  };
+  def travTrans(trans:Transitions, acc:[Expr], sp:ModePath, idx:Int) -> ([Expr],ModePath) = {
     match trans with
      | (s1,s2,g,i)::ts -> 
-          let (i2,fired) = isTransitionFired g roots idx in 
+          def (i2,fired) = isTransitionFired(g,roots,idx);
           if fired && evalBoolFromArray(g,yy,yp,ukmap,ctime)
-            then travTrans ts (i::acc) (changeMode sp s1 s2) i2
-            else travTrans ts acc sp i2
+            then travTrans(ts,i::acc,changeMode(sp,s1,s2),i2)
+            else travTrans(ts,acc,sp,i2)
      | [] -> (acc,sp)
-  in 
-    if (Array.length roots) !=. 0 
-        then travTrans trans [] sp ((Array.length roots) -. 1) 
-        else ([],sp)
+  };
+  if (Array.length roots) !=. 0 then 
+    travTrans(trans,[],sp,(Array.length roots) -. 1)
+  else 
+    ([],sp)
+}
 
 // Extend an equation system with a list of new equations
-let addEquations inits:[Equations] -> eqs:Equations -> Equations =
+def addEquations(inits:[Equations], eqs:Equations) -> Equations = {
   match inits with
-  | e::es -> addEquations es (e;eqs)
+  | e::es -> addEquations(es, e;eqs)
   | [] -> eqs
+}
 
 // Generate arrays of initial values from init value map and old
 // mode information
-let makeInitModeArrays initvals:InitValMap -> 
-                        yymap:InitValMap -> ypmap:InitValMap -> 
-                        ctime:Real -> ukmap:UkMap -> ({Real},{Real}) =
-  let size = Map.size ukmap in
-  let yy = Array.make size 0. in
-  let yp = Array.make size 0. in
-  let setvals initvals:[(Signal,Signal)] -> arr:{Real} -> () =
+def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap, 
+                       ctime:Real, ukmap:UkMap) -> ({Real},{Real}) = {
+  def size = (Map.size ukmap);
+  def yy = (Array.make size 0.);
+  def yp = (Array.make size 0.);
+  def setvals(initvals:[(Signal,Signal)],  arr:{Real}) -> () = {
     match initvals with
-    | (u,e)::xs -> 
-        let v = evalFromMap e yymap ctime in
-        let _ = if Map.mem u ukmap 
-                  then Array.set arr (fst (Map.find u ukmap)) v  
-                  else ()
-        in setvals xs arr
+    | (u,e)::xs -> {
+         def v = evalFromMap(e,yymap,ctime);
+         def _ = (if Map.mem u ukmap then 
+                    Array.set arr (fst (Map.find u ukmap)) v  
+                 else ());
+         setvals(xs,arr);
+       }
     | [] -> ()
-  in 
-    let _ = setvals (Map.toList yymap) yy in
-    let _ = setvals (Map.toList initvals) yy in
-    let _ = setvals (Map.toList ypmap) yp in
-    (yy, yp)
-
+  }; 
+  def _ = setvals(Map.toList yymap, yy);
+  def _ = setvals(Map.toList initvals, yy);
+  def _ = setvals(Map.toList ypmap, yp);
+  (yy, yp);
+}
 
 // Generate the identity array specifying if a variable
 // appears differentiated or not. The array is used by
 // IDA/Sundials for initial condition correction
-let initConditionCorrection ukmap:UkMap -> {Real} =
-  let id = Array.make (Map.size ukmap) 0. in
-  let worker uklist:[(Signal,(Int,Bool))] -> {Real} =
+def initConditionCorrection(ukmap:UkMap) -> {Real} = {
+  def id = (Array.make (Map.size ukmap) 0.);
+  def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
     match uklist with
-    | (u,(i,true))::us -> let _ = Array.set id i 1.0 in worker us
+    | (u,(i,true))::us -> {
+        def _ = (Array.set id i 1.0); 
+        worker us;
+      }
     | _::us -> worker us
     | [] -> id
-  in worker (Map.toList ukmap)
+  };
+  worker(Map.toList ukmap)
+}
 
 
 // The main simulation function. Performs hybrid simulation using
 // hierarical mode machines and differential-algebraic equations
-let simulate model:Equations -> steptime:Real -> endtime:Real -> 
-             SimulationResult =
+def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
+
   // Extract probes
-
-  let (model1,probes) = elaborateProbes model in
-  let probelist = Map.toList probes in
-
+  def (model1,probes) = elaborateProbes(model);
+  def probelist = (Map.toList probes);
 
   // **** Start of discrete-time loop. ****
   //    Iterate for each mode change
-  let dtloop currtime:Real -> acc:[StepVal] -> model1:Equations -> 
-             yymap:InitValMap -> ypmap:InitValMap ->
-             olddmap:DerivMap -> transInits:[Expr] ->
-             prePath:ModePath -> newPath:ModePath ->
-             [StepVal] = 
+  def dtloop(currtime:Real, acc:[StepVal], model1:Equations, yymap:InitValMap, 
+             ypmap:InitValMap, olddmap:DerivMap, transInits:[Expr],
+             prePath:ModePath, newPath:ModePath) -> [StepVal] = {
+
     // Extract all equations and correct inits for a partiuclar mode path. 
-    let (model2,updatedPath) = 
-           extractHMode model1 (currtime == 0.) prePath newPath in
+    def (model2,updatedPath) = extractHMode(model1,currtime == 0.,prePath,newPath);
    
-
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
-    let (model3,newdmap) = elaborateDerivatives model2 olddmap in
-
+    def (model3,newdmap) = elaborateDerivatives(model2,olddmap);
 
     // Peforme index reduction
-    let (model3,newdmap) = indexReducationPantelides model3 (Map.empty) in
-
+    def (model3,newdmap) = indexReducationPantelides(model3,Map.empty);
 
     // Extract transitions
-    let transitions = extractTransitions model3 in
+    def transitions = extractTransitions(model3);
 
     // Add transition initializations to the current model
-    let model4 = addEquations transInits model3 in
+    def model4 = addEquations(transInits,model3);
 
-   
     // Create a map of unknowns to unique integer values
-    let ukmap = makeUkMap model4 in
-
+    def ukmap = makeUkMap(model4);
    
     // Create the DAE residual 
-    let residual = specialize (makeResidual ukmap) model4 in
-    //let residual = makeResidual ukmap model4 in
+    def residual = (specialize (makeResidual ukmap) model4);
 
     // Create a map with all initial values for the current state
-    let initvalmap = initValues model4 in
-    let (yy,yp) = makeInitModeArrays initvalmap yymap ypmap currtime ukmap in
-
+    def initvalmap = initValues(model4);
+    def (yy,yp) = makeInitModeArrays(initvalmap,yymap,ypmap,currtime,ukmap);
 
     // Auto correct initial conditions of the DAE
-    let id = initConditionCorrection ukmap in
+    def id = initConditionCorrection(ukmap);
 
     // Create the root function for detecting zero crossings
-    //let rootfun = specialize (makeRootFun ukmap) transitions in  
-    let rootfun = makeRootFun ukmap transitions in  
+    def rootfun = (specialize (makeRootFun ukmap) transitions);
 
     // Create the simulation instance for continuous-time simulation using IDA
-    let mode = DAESolver.makehybrid currtime yy yp id residual rootfun in
+    def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
     
     // Return the init values after an event or start of simulation (time 0)
-    let firststepval = makeStepVal currtime yy probelist ukmap in
+    def firststepval = makeStepVal(currtime,yy,probelist,ukmap);
 
   
     // **** Start of continuous-time loop *****
-    let ctloop currtime:Real -> acc:[StepVal] -> 
-               ([StepVal],Real,[Expr],ModePath) = 
-      if currtime > endtime 
-        then (acc,currtime,[],updatedPath)
-        else
-          // Compute the next step using numerical integration
-          let newtime = DAESolver.step steptime mode in 
-          // Save the step value
-          let stepval = makeStepVal newtime yy probelist ukmap in
-          // Check if there are event actions
-          let (transInits,newEventPath) = 
-              makeEventActions mode transitions updatedPath 
-                               ukmap newtime yy yp in
-          // End continuous-time loop?
-          if newtime == 0. || !(transInits <==> []) 
-            then (stepval::acc,newtime,transInits,newEventPath)
-            else ctloop (newtime + steptime) (stepval::acc)
-    in
+    def ctloop(currtime:Real, acc:[StepVal]) -> ([StepVal],Real,[Expr],ModePath) = {
+        if currtime > endtime then 
+            (acc,currtime,[],updatedPath)
+        else {
+            // Compute the next step using numerical integration
+            def newtime = (DAESolver.step steptime mode);
+            // Save the step value
+            def stepval = makeStepVal(newtime,yy,probelist,ukmap);
+            // Check if there are event actions
+            def (transInits,newEventPath) = 
+                makeEventActions(mode,transitions,updatedPath,ukmap,newtime,yy,yp);
+            // End continuous-time loop?
+            if newtime == 0. || !(transInits <==> []) 
+              then (stepval::acc,newtime,transInits,newEventPath)
+              else ctloop(newtime + steptime, stepval::acc)
+        };
+    };
       // Post processing after continuous-time simulation 
-      let (acc2,newtime,transInits,newEventPath) = 
-             ctloop currtime (firststepval::acc) in
+      def (acc2,newtime,transInits,newEventPath) = ctloop(currtime, firststepval::acc);
 
       // Close the continuous-time DAE solver instance.
-      let _ = DAESolver.close mode in
+      def _ = (DAESolver.close mode);
 
       // Perform another round of CT simulation?
-      if newtime > endtime || newtime - currtime < 1e-3 then acc2  
-      else 
-        let (yymap,ypmap) = makePreValMap yy yp ukmap in
-          dtloop newtime acc2 model1 yymap ypmap newdmap transInits 
-                 updatedPath newEventPath
-  in
+      if newtime > endtime || newtime - currtime < 1e-3 then 
+          acc2  
+      else {
+         def (yymap,ypmap) = makePreValMap yy yp ukmap;
+         dtloop(newtime,acc2,model1,yymap,ypmap,newdmap,transInits,updatedPath,newEventPath);
+      };
+  };
     // Initiate the hybrid simulation loop (CT + DT)
-    let result = reverse (dtloop 0. [] model1 
-                 (Map.empty) (Map.empty) (Map.empty) [] [] []) in
-    (makeProbeNames probelist 1,result) 
-
+    def result = reverse(dtloop(0.,[],model1,Map.empty,Map.empty,Map.empty,[],[],[]));
+    (makeProbeNames(probelist,1),result)
+}
  
 // Utility function to both simulate and pretty-print the result
-let printsim model:Equations -> steptime:Real -> endtime:Real -> () =
-      print (pprintSimulation (simulate model steptime endtime))
+def printsim(model:Equations, steptime:Real, endtime:Real) -> () =
+      print(pprintSimulation(simulate(model,steptime,endtime)))
 
 
 

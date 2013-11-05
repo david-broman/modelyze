@@ -86,57 +86,6 @@ let makePreValMap yy:{Real} -> yp:{Real} -> ukmap:UkMap ->
   in
     worker (Map.toList ukmap) (Map.empty) (Map.empty)
 
-// Evaluate an expression of real type. Uses general higher-order functons
-// to lookup unknowns.
-/*let eval expr:Expr -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
-         ctime:Real -> Real =
-  let worker e:<> -> Real = 
-    match e with
-    | (lift f:(Real -> Real -> Real)) e1 e2 -> 
-           f (worker e1) (worker e2)
-    | (lift f:(Real -> Real)) e1 -> f  (worker e1) 
-    | lift v:Real -> v
-    | time -> ctime
-    | der x -> (match x with 
-                | sym:Signal -> worker (ypfun x)  
-                | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Signal -> worker (yyfun e)
-    | _ ->  error "Unsupported model construct" 
-  in
-    worker expr 
-*/
-
-//Evaluation of a arbitary expression.
-/*
-let eval expr:<?> -> yyfun:(Signal->Signal) -> ypfun:(Signal->Signal) ->
-         ctime:Real -> ? =
-  let worker e:<> -> ? = 
-    match e with
-    | time -> ctime
-    | der x -> (match x with 
-                | sym:Signal -> worker (ypfun x)  
-                | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Signal -> worker (yyfun e)
-    | f e -> (worker f) (worker e)
-    | lift v:? -> v
-    | _ ->  error "Unsupported model construct" 
-  in
-    worker expr 
-*/
-
-type Varvals = <Real> -> <Real>
-def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
-    match expr with
-    | time -> ctime
-    | der x -> 
-        (match x with 
-         | sym:Real -> eval(yp(x), yy, yp, ctime)  
-         | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Real -> eval(yy(expr), yy, yp, ctime)
-    | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
-    | lift v:? -> v
-    | _ ->  error "Unsupported model construct" 
-}
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up using initvalue maps.
@@ -149,6 +98,7 @@ def epsilon = 1e-9
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
+// Redefines the evalFromArray in ModelyzeDAE
 let evalFromArray use_epsilon:Bool -> expr:Expr -> ukmap:UkMap -> ctime:Real ->
                   yy:{Real} -> yp:{Real} -> Real =    
   let yyfun s:Signal -> Signal = 
@@ -185,17 +135,7 @@ let evalBoolFromArray expr:Expr -> yy:{Real} -> yp:{Real} ->
   in
     evalBool expr
 
-// Create the residual function of the DAE. Used by IDA/Sundials.
-let makeResidual ukmap:UkMap -> model:Equations ->  
-                 ctime:Real -> yy:{Real} -> yp:{Real} -> [Real] =
-  let realExpr expr:Expr -> Real = evalFromArray false expr ukmap ctime yy yp  in
-  let traverseEq m:Equations -> acc:[Real] -> [Real] =
-    match m with
-    | e1 ; e2 -> traverseEq e2 (traverseEq e1 acc)
-    | e1 = e2 -> (realExpr(e1) - realExpr(e2)) :: acc
-    | _ -> acc
-  in traverseEq model [] 
-   
+ 
 // Create the function that is used by IDA/Sundials for root finding 
 // (detecting zero-crossings). The root function is created by
 // evaluating the transitions that are extracted from the original

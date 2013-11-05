@@ -17,11 +17,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include HybridModeling
+include ModelyzeDAE
 include Mechanical
-include Electrical
-include Elaboration
-include Differentiation
-include IndexReduction
 include SimOutput
 
 // Data for simulation results for one point in time. The first element
@@ -381,12 +378,9 @@ let simulate model:Equations -> steptime:Real -> endtime:Real ->
              prePath:ModePath -> newPath:ModePath ->
              [StepVal] = 
     // Extract all equations and correct inits for a partiuclar mode path. 
-    let (modelNoMode,updatedPath) = 
+    let (model2,updatedPath) = 
            extractHMode model1 (currtime == 0.) prePath newPath in
    
-    // Performe connection elaboration
-    let model2 = (elaborateConnections modelNoMode) in
-
 
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     let (model3,newdmap) = elaborateDerivatives model2 olddmap in

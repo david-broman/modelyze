@@ -17,7 +17,6 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 include IndexReduction
-include Elaboration
 include SimOutput
 
 type Residual = Real -> {Real} -> {Real} -> [Real]

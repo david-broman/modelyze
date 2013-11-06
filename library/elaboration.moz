@@ -19,6 +19,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 
 include Equation
+include Physical 
 
 type Node = <>
 type Unknown = <>

@@ -1,0 +1,53 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+include ModelyzeHEOO
+include Electrical
+include HybridElectrical
+
+/*
+def Circuit(switchtime:Real) = {
+    def n2, n3 : Electrical;
+    Resistor(1000.0, n2, n3);
+    Resistor(2000.0, n2, n3);
+    SineVoltage(220.0, 50.0, n2, n3);
+    VoltageSensor(n2,n3,probe("Voltage"));
+    Ground(n3);
+}
+*/
+
+
+def Circuit(switchtime:Real) = {
+    def n1, n2, n3, n4 : Electrical;
+    def v:Real;
+    Resistor(1000.0, n2, n3);
+    Resistor(1000.0, n4, n3);  
+    SineVoltage(220.0, 50.0, n1, n3);
+    TimedSwitch(0.05, n2, n4);
+    Ground(n3);
+    CurrentSensor(n2, n1,v);
+    v = probe("Current");
+}
+
+
+def main = 
+  printsim(Circuit(10.0), 0.0003, 0.1)
+  //dprint(Circuit(10.0))
+
+

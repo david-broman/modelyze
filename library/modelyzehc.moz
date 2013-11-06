@@ -192,7 +192,7 @@ def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
 }
 
 // Create a list of expressions containing initiatiations that should
-// be executed when a an event (transistion occurs). The function takes
+// be executed when an event (transistion occurs). The function takes
 // as input the current mode path and the mode path that should exists
 // after transition.
 def makeEventActions(daesolv:DAESolver, trans:Transitions, sp:ModePath,
@@ -319,7 +319,6 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
     
     // Return the init values after an event or start of simulation (time 0)
     def firststepval = makeStepVal(currtime,yy,probelist,ukmap);
-
   
     // **** Start of continuous-time loop *****
     def ctloop(currtime:Real, acc:[StepVal]) -> ([StepVal],Real,[Expr],ModePath) = {

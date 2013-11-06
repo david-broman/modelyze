@@ -1,0 +1,72 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include Physical
+include HybridModeling
+
+/*
+def TimedSwitch(switchTime:Real,p:Electrical, n:Electrical) = {
+    def free:Real;
+    Branch free 0.0 p n;
+}
+
+//Closed
+def TimedSwitch(switchTime:Real,p:Electrical, n:Electrical) = {
+    def i_p,i_n : Current;
+    def v_p,v_n : Voltage;
+    RefBranch i_p v_p p;
+    RefBranch i_n v_n n;
+    i_p = - i_n;
+    v_p = v_n;
+}
+
+// Open
+def TimedSwitch(switchTime:Real,p:Electrical, n:Electrical) = {
+    def i_p,i_n : Current;
+    def v_p,v_n : Voltage;
+    RefBranch i_p v_p p;
+    RefBranch i_n v_n n;
+    i_p = 0.;
+    i_n = 0.;
+}
+*/
+
+
+def TimedSwitch(switchTime:Real, p:Electrical, n:Electrical) = {
+    def i_p,i_n : Current;
+    def v_p,v_n : Voltage;
+    def Open, Closed : Mode;
+    def t:Real;
+    der(t) = 1.0;
+    RefBranch(i_p,v_p,p);
+    RefBranch(i_n,v_n,n);
+    hybridchart initmode Closed {
+      mode Closed{
+          i_p = - i_n;
+          v_p = v_n;
+          transition Open when (t >= switchTime) action nothing;
+       };
+       mode Open{
+          i_p = 0.0;
+          i_n = 0.0;
+       };
+    };  
+}
+
+
+

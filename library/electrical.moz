@@ -81,6 +81,7 @@ def EMF(k:Real, p:Electrical, n:Electrical, flange:Rotational) = {
     tau =  k * i;
 }
 
+
 def VoltageSensor(p:Electrical, n:Electrical, output:Signal) = {
   Branch 0.0 output p n;
 }

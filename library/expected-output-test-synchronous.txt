@@ -1,0 +1,42 @@
+0
+{resetCount_1 => 5, count_1 => 0, reset_1 => 0}
+1
+{resetCount_1 => 4, count_1 => 2, reset_1 => 0}
+2
+{resetCount_1 => 3, count_1 => 4, reset_1 => 0}
+3
+{resetCount_1 => 2, count_1 => 6, reset_1 => 0}
+4
+{resetCount_1 => 1, count_1 => 8, reset_1 => 0}
+5
+{resetCount_1 => 0, count_1 => 0, reset_1 => 1}
+6
+{resetCount_1 => 4, count_1 => 2, reset_1 => 0}
+7
+{resetCount_1 => 3, count_1 => 4, reset_1 => 0}
+8
+{resetCount_1 => 2, count_1 => 6, reset_1 => 0}
+9
+{resetCount_1 => 1, count_1 => 8, reset_1 => 0}
+10
+{resetCount_1 => 0, count_1 => 0, reset_1 => 1}
+11
+{resetCount_1 => 4, count_1 => 2, reset_1 => 0}
+12
+{resetCount_1 => 3, count_1 => 4, reset_1 => 0}
+13
+{resetCount_1 => 2, count_1 => 6, reset_1 => 0}
+14
+{resetCount_1 => 1, count_1 => 8, reset_1 => 0}
+15
+{resetCount_1 => 0, count_1 => 0, reset_1 => 1}
+16
+{resetCount_1 => 4, count_1 => 2, reset_1 => 0}
+17
+{resetCount_1 => 3, count_1 => 4, reset_1 => 0}
+18
+{resetCount_1 => 2, count_1 => 6, reset_1 => 0}
+19
+{resetCount_1 => 1, count_1 => 8, reset_1 => 0}
+20
+{resetCount_1 => 0, count_1 => 0, reset_1 => 1}

@@ -91,17 +91,17 @@ def makePreValMap(yy:{Real}, yp:{Real}, ukmap:UkMap) -> (InitValMap,InitValMap) 
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up using initvalue maps.
-def evalFromMap(expr:Expr, valmap:InitValMap, ctime:Real) -> Real = {
+def evalFromMap(expr:Expr, valmap:InitValMap) -> Real = {
   def yyfun(s:Signal) -> Signal = (Map.find s valmap);
   def ypfun(s:Signal) -> Signal = (Map.find (der s) valmap);
-  eval(expr,yyfun,ypfun,ctime)
+  eval(expr,yyfun,ypfun)
 }
 
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
 // Redefines the evalFromArray in ModelyzeDAE
-def evalFromArray(use_epsilon:Bool, expr:Expr, ukmap:UkMap, ctime:Real,
+def evalFromArray(use_epsilon:Bool, expr:Expr, ukmap:UkMap,
                   yy:{Real}, yp:{Real}) -> Real = {
   def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
   def yyfun_epsilon(s:Signal) -> Signal = {
@@ -111,13 +111,13 @@ def evalFromArray(use_epsilon:Bool, expr:Expr, ukmap:UkMap, ctime:Real,
         (Array.get yy (fst(Map.find s ukmap))) - epsilon
   };
   def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
-  eval(expr, if use_epsilon then yyfun_epsilon else yyfun, ypfun, ctime);
+  eval(expr, if use_epsilon then yyfun_epsilon else yyfun, ypfun);
 }
 
 
 // Evaluate an expression that is assumed to have type Bool.
-def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap, ctime:Real) -> Bool = {
-  def evalReal(expr:Expr) -> Real = evalFromArray(true,expr,ukmap,ctime,yy,yp);
+def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap) -> Bool = {
+  def evalReal(expr:Expr) -> Real = evalFromArray(true,expr,ukmap,yy,yp);
   def evalBool(expr:Expr) -> Bool = {
     match expr with
     | e1 == e2 -> error "Not allowed to compare for equality in transitions."
@@ -145,10 +145,10 @@ def makeRootFun(ukmap:UkMap, trans:Transitions,ctime:Real, yy:{Real}, yp:{Real})
     match e with
     | e1 == e2 -> error "Operator == is not allowed in a transition guard."
     | e1 != e2 -> error "Operator != is not allowed in a transition guard."
-    | e1 >= e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
-    | e1 > e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
-    | e1 <= e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
-    | e1 < e2 -> evalFromArray(false,e1-e2,ukmap,ctime,yy,yp)::acc
+    | e1 >= e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 > e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 <= e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 < e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
     | !e1 -> travGuard(e,acc) 
     | e1 && e2 -> travGuard(e2,travGuard(e1,acc))
     | e1 || e2 -> travGuard(e2,travGuard(e1,acc))
@@ -196,7 +196,7 @@ def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
 // as input the current mode path and the mode path that should exists
 // after transition.
 def makeEventActions(daesolv:DAESolver, trans:Transitions, sp:ModePath,
-      ukmap:UkMap, ctime:Real, yy:{Real}, yp:{Real}) -> ([Expr],ModePath) = {
+      ukmap:UkMap, yy:{Real}, yp:{Real}) -> ([Expr],ModePath) = {
   def roots = (DAESolver.roots daesolv);
   def changeMode(sp:ModePath, prevS:Mode, nextS:Mode) -> ModePath = {
     match sp with
@@ -208,7 +208,7 @@ def makeEventActions(daesolv:DAESolver, trans:Transitions, sp:ModePath,
     match trans with
      | (s1,s2,g,i)::ts -> 
           def (i2,fired) = isTransitionFired(g,roots,idx);
-          if fired && evalBoolFromArray(g,yy,yp,ukmap,ctime)
+          if fired && evalBoolFromArray(g,yy,yp,ukmap)
             then travTrans(ts,i::acc,changeMode(sp,s1,s2),i2)
             else travTrans(ts,acc,sp,i2)
      | [] -> (acc,sp)
@@ -229,14 +229,14 @@ def addEquations(inits:[Equations], eqs:Equations) -> Equations = {
 // Generate arrays of initial values from init value map and old
 // mode information
 def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap, 
-                       ctime:Real, ukmap:UkMap) -> ({Real},{Real}) = {
+                       ukmap:UkMap) -> ({Real},{Real}) = {
   def size = (Map.size ukmap);
   def yy = (Array.make size 0.);
   def yp = (Array.make size 0.);
   def setvals(initvals:[(Signal,Signal)],  arr:{Real}) -> () = {
     match initvals with
     | (u,e)::xs -> {
-         def v = evalFromMap(e,yymap,ctime);
+         def v = evalFromMap(e,yymap);
          def _ = (if Map.mem u ukmap then 
                     Array.set arr (fst (Map.find u ukmap)) v  
                  else ());
@@ -306,7 +306,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
 
     // Create a map with all initial values for the current state
     def initvalmap = initValues(model4);
-    def (yy,yp) = makeInitModeArrays(initvalmap,yymap,ypmap,currtime,ukmap);
+    def (yy,yp) = makeInitModeArrays(initvalmap,yymap,ypmap,ukmap);
 
     // Auto correct initial conditions of the DAE
     def id = initConditionCorrection(ukmap);
@@ -331,7 +331,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
             def stepval = makeStepVal(newtime,yy,probelist,ukmap);
             // Check if there are event actions
             def (transInits,newEventPath) = 
-                makeEventActions(mode,transitions,updatedPath,ukmap,newtime,yy,yp);
+                makeEventActions(mode,transitions,updatedPath,ukmap,yy,yp);
             // End continuous-time loop?
             if newtime == 0. || !(transInits <==> []) 
               then (stepval::acc,newtime,transInits,newEventPath)

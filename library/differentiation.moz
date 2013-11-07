@@ -44,7 +44,6 @@ def extractDerivatives(eqs:Equations, dmap:DerivMap, olddmap:DerivMap) ->(Equati
   def extractHOder(expr:Expr, k:Int, dmap:DerivMap) -> DerivMap = {
     match expr with
     | der e -> extractHOder(e,k +. 1,dmap)
-    | time -> dmap
     | sym:Signal -> makeHOder(expr,k,dmap)
     | e1 e2 -> extractHOder(e2,k,extractHOder(e1,k,dmap))
     | _ -> dmap
@@ -59,10 +58,6 @@ def extractDerivatives(eqs:Equations, dmap:DerivMap, olddmap:DerivMap) ->(Equati
        | (_,~NoEqn)     -> (e1b,dmap2)
        | (_,_)         -> (e1b;e2b,dmap2))
     }
-  | der time = _ -> (eqs,extractHOder eqs 0 dmap)
-  | der _ = time -> (eqs,extractHOder eqs 0 dmap)
-  | _ = der time -> (eqs,extractHOder eqs 0 dmap)
-  | time = der _ -> (eqs,extractHOder eqs 0 dmap)
   | der sym:Signal = sym:Signal ->
       (match eqs with | der x = dx -> (NoEqn,Map.add x dx dmap))
   | sym:Signal = der sym:Signal ->
@@ -76,7 +71,6 @@ def differentiateModel(expr:Expr) -> Expr = {
   def eulerNumber = 2.71828182845904523536;
   def sdiff(expr:Signal) -> Signal = {
     match expr with
-    | ~time -> 1.
     | sym:Signal -> hoDer expr 1
     | ~hoDer x (lift k:Int) -> hoDer x (k +. 1)
     | ~der e -> sdiff(sdiff(e))

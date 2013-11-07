@@ -50,6 +50,8 @@ def SineVoltage(V:Real, f:Real, p:Electrical, n:Electrical) = {
     def PI = 3.1415;
     def i:Current;
     def v:Voltage;
+    def time:Real;
+    time' = 1.0;
     Branch i v p n;
     v = V * sin(2.0 * PI * f * time);
 }

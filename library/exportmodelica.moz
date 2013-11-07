@@ -68,7 +68,6 @@ def pprintModelica(name:String, probelist:[(String,[Signal])], model:Equations) 
       | exp e ->   "exp(" ++ pprintExpr(e) ++ ")"
       | log e ->   "log(" ++ pprintExpr(e) ++ ")"
       | log10 e -> "log10(" ++ pprintExpr(e) ++ ")"
-      | time -> "time"
       | sym:<Real> -> mkvar uks expr
       | lift r:Real -> real2modelicaString r
   };

@@ -1,20 +1,21 @@
 #!/bin/bash
 
+test_file()
+{
+  echo "Test" $1".moz"
+  modelyze $1".moz" > test.out
+  diff test.out "expected-output-"$1".txt"
 
-modelyze electrical.moz
-modelyze mechanical.moz
-modelyze modelyzeeoo.moz
+}
 
-# Test EOO elaboration
-modelyze modelica-mechsys.moz > t.mo
-diff t.mo modelica-mechsys-output.mo 
-rm -f t.mo
+test_file "modelica-mechsys" 
+test_file "test-breakingpendulum"
+test_file "test-controlsys"
+test_file "test-hybrid-ball-stairs"
+test_file "test-lotkavolterra"
+test_file "test-pendulum"
+test_file "test-simpleresistorswitch"
+test_file "test-synchronous"
+test_file "test-timer"
 
-
-pmodelyze test-breakingpendulum.moz 
-pmodelyze test-controlsys.moz 
-pmodelyze test-hybrid-ball-stairs.moz 
-pmodelyze test-lotkavolterra.moz
-pmodelyze test-pendulum.moz
-pmodelyze test-timer.moz
-
+rm -f test.out

@@ -23,30 +23,29 @@ type Residual = Real -> {Real} -> {Real} -> [Real]
 type Varvals = <Real> -> <Real>
 
 // General expression evaluation
-def eval(expr:<?>, yy:Varvals, yp:Varvals, ctime:Real) -> ? = {
+def eval(expr:<?>, yy:Varvals, yp:Varvals) -> ? = {
     match expr with
-    | time -> ctime
     | der x -> 
         (match x with 
-         | sym:Real -> eval(yp(x), yy, yp, ctime)  
+         | sym:Real -> eval(yp(x), yy, yp)  
          | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Real -> eval(yy(expr), yy, yp, ctime)
-    | f e -> (eval(f,yy,yp,ctime)) (eval(e,yy,yp,ctime))
+    | sym:Real -> eval(yy(expr), yy, yp)
+    | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
     | lift v:? -> v
     | _ ->  error "Unsupported model construct" 
 }
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
-def evalFromArray(expr:Expr, ukmap:UkMap, ctime:Real, yy:{Real}, yp:{Real}) -> Real = {
+def evalFromArray(expr:Expr, ukmap:UkMap, yy:{Real}, yp:{Real}) -> Real = {
   def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
   def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
-  eval(expr,yyfun,ypfun,ctime);
+  eval(expr,yyfun,ypfun);
 }
 
 // Create the residual function of the DAE. Used by IDA/Sundials.
 def makeResidual(ukmap:UkMap, model:Equations, ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = {
-  def realExpr(expr:Expr) = evalFromArray(expr,ukmap,ctime,yy,yp);
+  def realExpr(expr:Expr) = evalFromArray(expr,ukmap,yy,yp);
   def traverseEq(m:Equations,acc:[Real]) -> [Real] = {
     match m with
     | e1 ; e2 -> traverseEq(e2,traverseEq(e1,acc))

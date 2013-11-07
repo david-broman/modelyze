@@ -31,7 +31,6 @@ def NoEqn : Equations
 def init : Real -> Real -> Equations 
 def (<-)  = init
 
-def time : <Real>
 
 // Ukmap maps an unknown (signal type) to an integer value
 // representing a unique integer number for the unknown in
@@ -75,7 +74,6 @@ def unknowns(eqs:Equations) -> UkSet = {
   def get(e:<?>, acc:UkSet) ->  UkSet = {
      match e with
      | e1 e2 -> get e2 (get e1 acc)
-     | ~time -> acc
      | sym:<Real> -> Set.add e acc
      | _ -> acc
   }; 
@@ -100,7 +98,6 @@ def noEquations(eqs:Equations) -> Int = {
 def realUnknowns(eqs:Equations) -> (Int,UkMap) = {
   def get(e:<?>, acc:(Int,UkMap)) -> (Int,UkMap) = {
      match e with
-     | time -> acc
      | der x -> 
         (match x with 
          | sym:<Real> -> {

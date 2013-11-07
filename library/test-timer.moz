@@ -33,10 +33,15 @@ def Timer(timeout:Real, t:Signal) = {
     };
 }
 
-def mini = {
+def TimerModel(text:String) =
+{
     def x:Real;
     Timer(3.0, x);
-    probe("x") = x;    
+    probe(text) = x;    
+}
+
+def mini = {
+  TimerModel("x");
 }
 
 

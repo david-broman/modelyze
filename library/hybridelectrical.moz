@@ -25,7 +25,7 @@ include HybridModeling
  * the switch is initally closed. After 'switchTime' number of seconds, the component
  * switches from opened to close (or closed to opened).
  */
-def TimedSwitch(switchTime:Real, initiallyOpen:Bool, p:Electrical, n:Electrical) = {
+def TimedSwitch(switchTime:Real, initiallyClosed:Bool, p:Electrical, n:Electrical) = {
     def i_p,i_n : Current;
     def v_p,v_n : Voltage;
     def Open, Closed : Mode;
@@ -33,16 +33,16 @@ def TimedSwitch(switchTime:Real, initiallyOpen:Bool, p:Electrical, n:Electrical)
     der(time) = 1.0;
     RefBranch(i_p,v_p,p);
     RefBranch(i_n,v_n,n);
-    hybridchart initmode (if initiallyOpen then Open else Closed) {
+    hybridchart initmode (if initiallyClosed then Closed else Open) {
       mode Closed{
           i_p = - i_n;
           v_p = v_n;
-          transition Open when (time > switchTime && !initiallyOpen) action nothing;
+          transition Open when (time > switchTime && initiallyClosed) action nothing;
        };
        mode Open{
           i_p = 0.0;
           i_n = 0.0;
-          transition Closed when (time > switchTime && initiallyOpen) action nothing;
+          transition Closed when (time > switchTime && !initiallyClosed) action nothing;
        };
     };  
 }

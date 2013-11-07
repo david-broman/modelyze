@@ -19,51 +19,30 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include Physical
 include HybridModeling
 
-/*
-def TimedSwitch(switchTime:Real,p:Electrical, n:Electrical) = {
-    def free:Real;
-    Branch free 0.0 p n;
-}
 
-//Closed
-def TimedSwitch(switchTime:Real,p:Electrical, n:Electrical) = {
-    def i_p,i_n : Current;
-    def v_p,v_n : Voltage;
-    RefBranch i_p v_p p;
-    RefBranch i_n v_n n;
-    i_p = - i_n;
-    v_p = v_n;
-}
-
-// Open
-def TimedSwitch(switchTime:Real,p:Electrical, n:Electrical) = {
-    def i_p,i_n : Current;
-    def v_p,v_n : Voltage;
-    RefBranch i_p v_p p;
-    RefBranch i_n v_n n;
-    i_p = 0.;
-    i_n = 0.;
-}
-*/
-
-
-def TimedSwitch(switchTime:Real, p:Electrical, n:Electrical) = {
+/**
+ * The TimedSwitch is initally opened if variable 'initallyOpen' is true, else 
+ * the switch is initally closed. After 'switchTime' number of seconds, the component
+ * switches from opened to close (or closed to opened).
+ */
+def TimedSwitch(switchTime:Real, initiallyOpen:Bool, p:Electrical, n:Electrical) = {
     def i_p,i_n : Current;
     def v_p,v_n : Voltage;
     def Open, Closed : Mode;
-    def t:Real;
-    der(t) = 1.0;
+    def time:Real;
+    der(time) = 1.0;
     RefBranch(i_p,v_p,p);
     RefBranch(i_n,v_n,n);
-    hybridchart initmode Closed {
+    hybridchart initmode (if initiallyOpen then Open else Closed) {
       mode Closed{
           i_p = - i_n;
           v_p = v_n;
-          transition Open when (t >= switchTime) action nothing;
+          transition Open when (time > switchTime && !initiallyOpen) action nothing;
        };
        mode Open{
           i_p = 0.0;
           i_n = 0.0;
+          transition Closed when (time > switchTime && initiallyOpen) action nothing;
        };
     };  
 }

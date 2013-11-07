@@ -21,17 +21,6 @@ include ModelyzeHEOO
 include Electrical
 include HybridElectrical
 
-/*
-def Circuit(switchtime:Real) = {
-    def n2, n3 : Electrical;
-    Resistor(1000.0, n2, n3);
-    Resistor(2000.0, n2, n3);
-    SineVoltage(220.0, 50.0, n2, n3);
-    VoltageSensor(n2,n3,probe("Voltage"));
-    Ground(n3);
-}
-*/
-
 
 def Circuit(switchtime:Real) = {
     def n1, n2, n3, n4 : Electrical;
@@ -39,7 +28,7 @@ def Circuit(switchtime:Real) = {
     Resistor(1000.0, n2, n3);
     Resistor(1000.0, n4, n3);  
     SineVoltage(220.0, 50.0, n1, n3);
-    TimedSwitch(0.05, n2, n4);
+    TimedSwitch(0.05, false, n2, n4);
     Ground(n3);
     CurrentSensor(n2, n1,v);
     v = probe("Current");
@@ -48,6 +37,5 @@ def Circuit(switchtime:Real) = {
 
 def main = 
   printsim(Circuit(10.0), 0.0003, 0.1)
-  //dprint(Circuit(10.0))
 
 

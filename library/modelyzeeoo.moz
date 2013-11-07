@@ -20,8 +20,6 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include ModelyzeDAE
 include Elaboration
 
-
 def printsim(model:Equations, steptime:Real, endtime:Real) = {
-    def model1 = elaborateConnections(model); 
-    print(pprintSimulation(ctSim(model1,steptime,endtime)))
+    print(pprintSimulation(ctSim(elaborateConnections(model),steptime,endtime)))
 }

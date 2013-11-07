@@ -21,15 +21,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include ModelyzeHC
 include Elaboration
 
-
 def printsim(model:Equations, steptime:Real, endtime:Real) = {
-    def model1 = elaborateConnections(model); 
-   // def _ = dprint("----------");
-   // def _ = dprint(model);
-   // def _ = dprint("----------");
-   // dprint(model1);
-    print(pprintSimulation(simulate(model1,steptime,endtime)))
-    //simulate(model1,steptime,endtime)
+    print(pprintSimulation(simulate(elaborateConnections(model),steptime,endtime)))
 }
 
 

@@ -43,6 +43,8 @@ def TimerModel(text:String) =
 def mini = {
   TimerModel("x");
 }
+//  TimerModel("y");
+//}
 
 
 def main = printsim(mini, 0.1, 10.0)

@@ -130,31 +130,37 @@ let mk_tymodel ty =
 let check_istype_array fi l ty_ar =
   match ty_ar with
     | TyArray(_,l',ty) when l = l' -> ty
+    | TyDyn(_,_) -> ty_ar
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_ARRAY_TYPE,ERROR,fi,[pprint_ty ty_ar]))
 
 let check_istype_map fi l ty_ma =
   match ty_ma with
     | TyMap(_,l',ty1,ty2) when l = l' -> (ty1,ty2)
+    | TyDyn(_,_) -> (ty_ma,ty_ma)
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_MAP_TYPE,ERROR,fi,[pprint_ty ty_ma]))
 
 let check_istype_set fi l ty_set =
   match ty_set with
     | TySet(_,l',ty) when l = l' -> ty
+    | TyDyn(_,_) -> ty_set
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_SET_TYPE,ERROR,fi,[pprint_ty ty_set]))
 
 let check_istype_daesolver fi l ty_daesolver =
   match ty_daesolver with
     | TyDAESolver(_,l') when l = l' -> ()
+    | TyDyn(_,_) -> ()
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_DAESOLVER_TYPE,ERROR,fi,[pprint_ty ty_daesolver]))
         
 let check_istype_int fi l ty_int =
   match ty_int with 
     | TyInt(_,l') when l = l' -> ()
+    | TyDyn(_,_) -> ()
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_INT_TYPE,ERROR,fi,[pprint_ty ty_int; ustring_of_int l]))
 
 let check_istype_real fi l ty_real =
   match ty_real with 
     | TyReal(_,l') when l = l' -> ()
+    | TyDyn(_,_) -> ()
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_REAL_TYPE,ERROR,fi,[pprint_ty ty_real; ustring_of_int l]))
 
 let check_istype_resroot fi l ty_residual =
@@ -175,8 +181,6 @@ let check_and_lift_arg_type_consistency fi e1 elem_ty container_ty =
   else if consistent (TySym(NoInfo,0,elem_ty)) container_ty 
   then (meet (TySym(NoInfo,0,elem_ty)) container_ty, TmLift(NoInfo,0,e1,elem_ty))
   else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,[pprint_ty elem_ty; pprint_ty container_ty]))
-
-
 
 
 

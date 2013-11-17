@@ -90,26 +90,64 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
   worker (Map.toList ukmap);
 }
 
+
+type Time = Real
+type SolverState = ?
+type VarArray = {Real}
+
+type State = (Time, SolverState, VarArray, UkMap) 
+
+def daeInit(model:Equations) -> State = {
+    def (model1,_) = elaborateDerivatives(model,Map.empty);
+    def (model2,_) = indexReducationPantelides(model1, Map.empty);
+    def ukmap = makeUkMap(model2);
+    def residual = (specialize (makeResidual(ukmap)) model2);
+    def (yy,yp) = makeInitValues(model2, ukmap);
+    def id = initConditionCorrection(ukmap);
+    def solverState = (DAESolver.make yy yp id residual);
+    (0.,solverState, yy, ukmap);
+}
+
+
+def daeDoStep(state:State, comStepSize:Real) -> (State, Time) = {
+    def (currTime, solverState, yy, ukmap) = state;
+    def newtime = (DAESolver.step comStepSize solverState);
+    def newState = (newtime, solverState, yy, ukmap);
+    (newState, newtime);
+}
+
+
+def daeGet(state:State, var:<Real>) -> Real = {
+    def (currTime, solverState, yy, ukmap) = state;
+    if Map.mem var ukmap then 
+       Array.get yy (fst(Map.find var ukmap))
+    else 
+       INFINITE;
+}
+
+
+def daeSet(state:State, var:<Real>, value:Real) -> State = {
+    state;    
+}   
+
+
 def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
   def (model1,probes) = elaborateProbes(model);
   def probelist = (Map.toList probes);
-  def (model2,_) = elaborateDerivatives(model1,Map.empty);
-  def (model3,_) = indexReducationPantelides(model2, Map.empty);
-  def ukmap = makeUkMap(model3);
-  def residual = (specialize (makeResidual(ukmap)) model3);
-  def (yy,yp) = makeInitValues(model3, ukmap);
-  def id = initConditionCorrection(ukmap);
-  def state = (DAESolver.make yy yp id residual);
+
+  def state = daeInit(model1);
+  def stepval = makeRealStepVal(0., probelist, daeGet(state));
+
   def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
     if currtime >= endtime then acc
     else {
-      def newtime = (DAESolver.step steptime state);
-      def stepval = makeStepVal(newtime, yy, probelist, ukmap);
-      if newtime == 0. then acc
-      else simloop(newtime,stepval::acc);
+        def (state,newtime) = daeDoStep(state, steptime);
+        def stepval = makeRealStepVal(newtime, probelist, daeGet(state));      
+        if newtime == 0. then acc
+        else simloop(newtime,stepval::acc);
     }
   };  
-    (makeProbeNames probelist 1,reverse(simloop(0.,[]))) 
+  (makeProbeNames probelist 1,reverse(simloop(0.,[stepval]))) 
 }
 
 

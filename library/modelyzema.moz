@@ -62,13 +62,14 @@ def maSim(model:Model, steptime:Real, endtime:Real) -> SimulationResult = {
         | _ -> (acc,probes)
   };
 
-  def actors = initActors(model, [], Map.empty);
+  def (comps,probes) = initActors(model, [], Map.empty);
 
 //  def _ = dprint("------------");
 //  def _ = dprint(model);
   def _ = dprint("------------");
-  def _ = dprint(actors);
+  def _ = dprint(comps);
   def _ = dprint("------------");
+  def _ = dprint(probes);
 
   def state = daeInit(model1);
   def stepval = makeRealStepVal(0., probelist, daeGet(state));

@@ -339,9 +339,13 @@ let id2str id args =
     | TYPE_UK_LEV_MISMATCH -> us"TYPE_UK_LEV_MISMATCH"
     | TYPE_DESUGAR_ESC_LEV_ZERO -> us"TYPE_DESUGAR_ESC_LEV_ZERO"
     | TYPE_NIL_LEV_MONOTONICITY -> us"TYPE_NIL_LEV_MONOTONICITY"
-    | TYPE_CONS_TYPE_MISMATCH -> us"TYPE_CONS_TYPE_MISMATCH"
+    | TYPE_CONS_TYPE_MISMATCH -> 
+         us"The types of the cons operator do not match. The type on the left-hand side is " ^.
+          (List.nth args 0) ^. us", whereas the type on the right hand side is " ^.
+          (List.nth args 1) ^. us"."
     | TYPE_CONS_LEV_MONOTONICITY -> us"TYPE_CONS_LEV_MONOTONICITY"
-    | TYPE_CONS_NOT_A_LIST -> us"TYPE_CONS_NOT_A_LIST"
+    | TYPE_CONS_NOT_A_LIST -> us"The type of right hand side of the cons expression is " ^.
+         (List.nth args 0) ^. us", which is not a list type."        
     | TYPE_LCASE_IDENTICAL_IDENTIFIERS -> us"TYPE_LCASE_IDENTICAL_IDENTIFIERS"
     | TYPE_LCASE_DIFFERENT_CASE_TYPES -> us"TYPE_LCASE_DIFFERENT_CASE_TYPES"
     | TYPE_LCASE_LEVEL_MISMATCH -> us"TYPE_LCASE_LEVEL_MISMATCH"

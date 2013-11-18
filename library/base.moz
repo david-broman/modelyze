@@ -76,6 +76,10 @@ def (++) : String -> String -> String = @@string_concat
 
 def INFINITE = 1./0.
 
+type RealSignal = <Real>
+type IntSignal = <Int>
+type BoolSignal = <Bool>
+
 
 def abs(x:Real) -> Real = {
   if x < 0. then x * -1.0 else x;

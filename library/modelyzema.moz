@@ -1,0 +1,96 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include SimOutput
+
+type State = ?
+type InitState = State
+type Time = Real
+type VarTy = <?>
+type ValTy = ?
+type Model = <?>
+
+type InitTy = Model -> State 
+type DoStepTy = State -> Real -> (State, Time)
+type GetTy = State -> VarTy -> ValTy
+type SetTy = State -> VarTy -> ValTy -> State
+type GetAsStrTy = State -> VarTy -> String
+type InputVars = [VarTy]
+type OutputVars = [VarTy]
+
+type Actors
+def (;) : Actors -> Actors -> Actors
+
+def Actor : Model -> InputVars -> OutputVars -> InitTy -> DoStepTy -> 
+            GetTy -> SetTy -> Actors
+
+
+type Act = (State,InputVars,OutputVars,InitTy,DoStepTy,GetTy,SetTy)
+
+def maSim(model:Model, steptime:Real, endtime:Real) -> SimulationResult = {
+  def (model1,probes) = elaborateProbes(model);
+  def probelist = (Map.toList probes);
+
+  def initActors(model:Model, acc:[Act], probes:ProbeMap) -> 
+                 ([Act],ProbeMap) = {
+      match model with
+        | e1 ; e2 -> {
+              def (acc2,probes2) = initActors(e1,acc,probes);
+              initActors(e2,acc2,probes2);
+          }
+        | Actor m (lift inp:InputVars) (lift outp:OutputVars) 
+                (lift initf:InitTy) (lift dostepf:DoStepTy) 
+                (lift getf:GetTy) (lift setf:SetTy) -> {
+          def (m2,probes2) = elabProbesAcc(m,probes);
+          ((m2,inp,outp,initf,dostepf,getf,setf)::acc,probes2);
+        }
+        | _ -> (acc,probes)
+  };
+
+  def actors = initActors(model, [], Map.empty);
+
+//  def _ = dprint("------------");
+//  def _ = dprint(model);
+  def _ = dprint("------------");
+  def _ = dprint(actors);
+  def _ = dprint("------------");
+
+  def state = daeInit(model1);
+  def stepval = makeRealStepVal(0., probelist, daeGet(state));
+
+  def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
+    if currtime >= endtime then acc
+    else {
+        def (state,newtime) = daeDoStep(state, steptime);
+        def stepval = makeRealStepVal(newtime, probelist, daeGet(state));      
+        if newtime == 0. then acc
+        else simloop(newtime,stepval::acc);
+    }
+  };  
+  (makeProbeNames probelist 1,reverse(simloop(0.,[stepval]))) 
+}
+
+
+def printsim(model:Actors, steptime:Real, endtime:Real) = {
+    print(pprintSimulation(maSim(model,steptime,endtime)));
+}
+
+
+
+
+

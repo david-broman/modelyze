@@ -23,3 +23,4 @@ val typeofterm :   Ast.tm -> Ast.ty
 
 val typecheck : Ast.tm -> Ast.tm
 
+val consistent : Ast.ty -> Ast.ty -> bool

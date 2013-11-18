@@ -93,20 +93,21 @@ def addProbe(s:String, u:Signal, ps:ProbeMap) = {
     else Map.add s [u] ps
 }
 
-def elaborateProbes(model:Equations) -> (<Equations>,ProbeMap) = {
-  def elab(e:<>, ps:ProbeMap) -> (<>,ProbeMap) = {
+def elabProbesAcc(e:<?>, ps:ProbeMap) -> (<?>,ProbeMap) = {
     match e with
     | probe (lift s:String) -> {
         def u:Signal; 
         (u,addProbe s u ps);
       }
     | e1 e2 -> {
-       def (e1b,ps1) = elab(e1,ps);
-       def (e2b,ps2) = elab(e2,ps1);
+       def (e1b,ps1) = elabProbesAcc(e1,ps);
+       def (e2b,ps2) = elabProbesAcc(e2,ps1);
        (e1b e2b,ps2);
       }
     | _ -> (e,ps)
-  };
-  elab(model,Map.empty);
+}
+
+def elaborateProbes(model:<?>) -> (<?>,ProbeMap) = {
+  elabProbesAcc(model,Map.empty);
 }
  

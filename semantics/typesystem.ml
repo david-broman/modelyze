@@ -522,7 +522,7 @@ and typeof_daesolver_op fi l op ts env  =
           let (ty1,e1') = typeof env e1 in
           let (ty2,e2') = typeof env e2 in
             if not (consistent ty2 (TyList(NoInfo,0,TyDyn(NoInfo,0)))) then
-	      raise (Mkl_type_error(TYPE_CONS_TYPE_MISMATCH,ERROR,fi,[pprint_ty ty2]))
+	      raise (Mkl_type_error(TYPE_CONS_NOT_A_LIST,ERROR,fi,[pprint_ty ty2]))
             else
               let ty3 = match ty2 with TyList(_,_,ty) -> ty | ty -> ty in
                 if not (consistent ty1 ty3) then 

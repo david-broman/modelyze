@@ -130,6 +130,11 @@ def daeSet(state:State, var:<Real>, value:Real) -> State = {
     state;    
 }   
 
+def daeGetAsStr(state:State, var:<Real>) -> String = {
+    real2string(daeGet(state,var))
+}
+
+
 
 def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
   def (model1,probes) = elaborateProbes(model);

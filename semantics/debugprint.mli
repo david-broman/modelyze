@@ -25,4 +25,4 @@ val pprint : Evalast.tm -> ustring
 
 val getDebugSymId : Evalast.tm -> ustring
 
-
+val pprint_pat : Evalast.mpat -> ustring

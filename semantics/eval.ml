@@ -222,6 +222,33 @@ let rec readback syms d tm =
       | TmDebugId(id,t) -> TmDebugId(id,readback syms d t)
 
 
+let rec consistent ty_a ty_b = 
+  match ty_a,ty_b with
+    | ty,TyDyn -> true
+    | TyDyn,ty -> true
+    | TyBool,TyBool -> true
+    | TyInt,TyInt -> true
+    | TyReal,TyReal -> true
+    | TyString,TyString -> true
+    | TyArrow(ty1,ty2), TyArrow(ty3,ty4) ->
+        consistent ty1 ty3 && consistent ty2 ty4
+    | TyUnit,TyUnit -> true
+    | TyList(ty1),TyList(ty2) -> 
+        consistent ty1 ty2
+    | TyTuple(tys1),TyTuple(tys2) -> 
+        List.for_all2 consistent tys1 tys2
+    | TySym(ty1),TySym(ty2) -> 
+        consistent ty1 ty2
+    | TySymData(tyid1),TySymData(tyid2) 
+        when tyid1 = tyid2 -> true
+    | TyArray(ty1),TyArray(ty2) -> 
+        consistent ty1 ty2
+    | TyMap(ty1,ty2), TyMap(ty3,ty4) ->
+        consistent ty1 ty3 && consistent ty2 ty4
+    | TySet(ty1),TySet(ty2) -> 
+        consistent ty1 ty2
+    | TyDAESolver,TyDAESolver -> true
+    | _ , _ ->  false
             
 
 let symcount = ref 0 
@@ -290,7 +317,7 @@ and eval venv norec t =
                  eval venv norec  t2                  
 	     | TmSymApp(v1,v2),MPatSymApp -> 
                  eval (v1::v2::venv) norec t2            
-	     | TmLift(v1,ty1),MPatLift(ty2) when ty1 = ty2 ->	
+	     | TmLift(v1,ty1),MPatLift(ty2) when consistent ty1 ty2 ->	
                  eval (v1::venv) norec t2      
 	     | TmLift(v1,ty1),MPatLift(TyDyn)  ->	
                  eval (v1::venv) norec t2                          
@@ -325,7 +352,8 @@ and eval venv norec t =
           eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
       | TmDPrint(t) -> let t' = eval venv norec t  in 
 	  pprint t' |> uprint_endline; t'
-      | TmDPrintType(t) -> pprint t |> uprint_endline; eval venv norec t
+      | TmDPrintType(t) -> us"[Printing types is not supported]" 
+                           |> uprint_endline; eval venv norec t
       | TmSymStr(t) -> let t' = eval venv norec t  in 
             TmConst(Ast.ConstString(Debugprint.getDebugSymId t'))
       | TmError(fi,t) ->  

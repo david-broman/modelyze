@@ -354,7 +354,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
   };
     // Initiate the hybrid simulation loop (CT + DT)
     def result = reverse(dtloop(0.,[],model1,Map.empty,Map.empty,Map.empty,[],[],[]));
-    (makeProbeNames(probelist,1),result)
+    (makeProbeNames("",probelist),result)
 }
  
 // Utility function to both simulate and pretty-print the result

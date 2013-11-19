@@ -25,18 +25,31 @@ def SimpleDAE(initval:Real, c:Real) = {
     probe("x") = x;
 }
 
+def SimpleDAE2() = {
+    def y:Real;
+    init y 1.;
+    der(y) = -1. * y;
+    probe("x") = y;
+}
+
 include ModelyzeMA
 
 
-def SimpleDAEActor(initval:Real, c:Real) = {
-  Comp(SimpleDAE(initval,c),[],[],daeInit,daeDoStep,daeGet,daeSet);    
+def SimpleDAEActor(name:String, initval:Real, c:Real) = {
+  Comp(name,SimpleDAE(initval,c),[],[],daeInit,daeDoStep,daeGet,daeSet);    
+}
+
+
+def Foo(name:String) = {
+  Comp(name,SimpleDAE2(),[],[],daeInit,daeDoStep,daeGet,daeSet);    
 }
 
 
 
 def MainModel() = {
-    SimpleDAEActor(0.5,-1.0);
-    SimpleDAEActor(0.8,1.0);
+    SimpleDAEActor("DAE1",0.5,-1.0);
+    SimpleDAEActor("DAE2",0.8,1.0);
+    Foo("Foo");
 }
 
 def main = printsim(MainModel(),0.1, 5.0)

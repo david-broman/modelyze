@@ -20,6 +20,7 @@ include Equation
 
 def probe : <String -> Real> 
 type ProbeMap =  (String => [Signal])
+type ProbeList =  [(String, [Signal])]
 
 // Data for simulation results for one point in time. The first element
 // of the time is the time value and the second a list of data points
@@ -67,7 +68,7 @@ def makeStepVal(currtime:Real,yy:{Real},probes:[(String,[Signal])], ukmap:UkMap)
 }
 
 
-def getProbeVals(probes:[(String,[Signal])], get:(<Real> -> Real)) -> [Real] = {
+def getProbeVals(probes:ProbeList, get:(<Real> -> Real)) -> [Real] = {
   def mkvals(probes:[(String,[Signal])]) -> [Real] = {
     match probes with
     | (s,u::us)::ss -> (get(u))::(mkvals((s,us)::ss))
@@ -78,14 +79,12 @@ def getProbeVals(probes:[(String,[Signal])], get:(<Real> -> Real)) -> [Real] = {
 }
 
   
-def makeProbeNames(probes:[(String,[Signal])], n:Int) -> [String] = {
-  match probes with
-  | (s,u::us)::ss -> {
-      def s2 = s ++ (if n >. 1 then "_" ++ int2string(n) else "");
-      s2::(makeProbeNames((s,us)::ss, n +. 1));
-    }
-  | (s,[])::ss -> makeProbeNames(ss,1)
-  | [] -> []
+def makeProbeNames(name:String, probes:ProbeList) -> [String] = {
+    match probes with
+    | (s,u::us)::ss -> (if name <==> "" then s else name ++ "." ++ s)::
+                       (makeProbeNames(name,(s,us)::ss))
+    | (s,[])::ss -> makeProbeNames(name,ss)
+    | [] -> []
 }
 
 def addProbe(s:String, u:Signal, ps:ProbeMap) = {

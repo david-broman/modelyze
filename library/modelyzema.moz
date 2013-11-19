@@ -33,45 +33,65 @@ type GetAsStrTy = State -> VarTy -> String
 type InputVars = [VarTy]
 type OutputVars = [VarTy]
 
-type Actors
-def (;) : Actors -> Actors -> Actors
+type Components
+def (;) : Components -> Components -> Components
 
-def Actor : Model -> InputVars -> OutputVars -> InitTy -> DoStepTy -> 
-            GetTy -> SetTy -> Actors
+def Comp : Model -> InputVars -> OutputVars -> InitTy -> DoStepTy -> 
+           GetTy -> SetTy -> Components
 
 
-type Act = (State,InputVars,OutputVars,InitTy,DoStepTy,GetTy,SetTy)
+type Component = (State,InputVars,OutputVars,InitTy,DoStepTy,GetTy,SetTy)
+
+def initComponents(model:Model, acc:[Component], probes:ProbeMap) -> 
+                 ([Component],ProbeMap) = {
+    match model with
+    | e1 ; e2 -> {
+        def (acc2,probes2) = initComponents(e1,acc,probes);
+        initComponents(e2,acc2,probes2);
+      }
+    | Comp m (lift inp:InputVars) (lift outp:OutputVars) 
+             (lift initf:InitTy) (lift dostepf:DoStepTy) 
+             (lift getf:GetTy) (lift setf:SetTy) -> {
+         def (m2,probes2) = elabProbesAcc(m,probes);
+         ((initf(m2),inp,outp,initf,dostepf,getf,setf)::acc,probes2);
+      }
+    | _ -> (acc,probes)
+}
+
+def localGetProbeVals(comps:[Component], probes:[(String,[Signal])]) -> [Real] = {
+    match comps with 
+    | (state,inp,outp,initp,dostep,get,set)::cs -> {        
+         def pvals = getProbeVals(probes,get(state));
+         def _ = dprint(probes);
+         append(pvals,localGetProbeVals(cs, probes));
+      }
+    | [] -> []
+}
+                   
 
 def maSim(model:Model, steptime:Real, endtime:Real) -> SimulationResult = {
-  def (model1,probes) = elaborateProbes(model);
-  def probelist = (Map.toList probes);
+    def (model1,probes) = elaborateProbes(model);
+    def probelist = (Map.toList probes);
 
-  def initActors(model:Model, acc:[Act], probes:ProbeMap) -> 
-                 ([Act],ProbeMap) = {
-      match model with
-        | e1 ; e2 -> {
-              def (acc2,probes2) = initActors(e1,acc,probes);
-              initActors(e2,acc2,probes2);
-          }
-        | Actor m (lift inp:InputVars) (lift outp:OutputVars) 
-                (lift initf:InitTy) (lift dostepf:DoStepTy) 
-                (lift getf:GetTy) (lift setf:SetTy) -> {
-          def (m2,probes2) = elabProbesAcc(m,probes);
-          ((m2,inp,outp,initf,dostepf,getf,setf)::acc,probes2);
-        }
-        | _ -> (acc,probes)
-  };
 
-  def (comps,probes) = initActors(model, [], Map.empty);
+    def (comps,probes) = initComponents(model, [], Map.empty);
 
-//  def _ = dprint("------------");
-//  def _ = dprint(model);
-  def _ = dprint("------------");
-  def _ = dprint(comps);
-  def _ = dprint("------------");
-  def _ = dprint(probes);
+    def _ = dprint("------------");
+    def _ = dprint(comps);
+    def _ = dprint("------------");
+    def _ = dprint(probes);
+    def _ = dprint("------------");
+//    def _ = dprint(probes);
 
-  def state = daeInit(model1);
+    def stepval = (0.,localGetProbeVals(comps,probelist));
+    
+
+    (makeProbeNames probelist 1,reverse([stepval]))
+}
+
+/*
+
+
   def stepval = makeRealStepVal(0., probelist, daeGet(state));
 
   def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
@@ -84,10 +104,10 @@ def maSim(model:Model, steptime:Real, endtime:Real) -> SimulationResult = {
     }
   };  
   (makeProbeNames probelist 1,reverse(simloop(0.,[stepval]))) 
-}
+*/
 
 
-def printsim(model:Actors, steptime:Real, endtime:Real) = {
+def printsim(model:Components, steptime:Real, endtime:Real) = {
     print(pprintSimulation(maSim(model,steptime,endtime)));
 }
 

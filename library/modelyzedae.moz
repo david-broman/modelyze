@@ -130,6 +130,7 @@ def daeSet(state:State, var:<Real>, value:Real) -> State = {
     state;    
 }   
 
+
 def daeGetAsStr(state:State, var:<Real>) -> String = {
     real2string(daeGet(state,var))
 }
@@ -141,13 +142,13 @@ def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
   def probelist = (Map.toList probes);
 
   def state = daeInit(model1);
-  def stepval = makeRealStepVal(0., probelist, daeGet(state));
+  def stepval = (0., getProbeVals(probelist, daeGet(state)));
 
   def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
     if currtime >= endtime then acc
     else {
         def (state,newtime) = daeDoStep(state, steptime);
-        def stepval = makeRealStepVal(newtime, probelist, daeGet(state));      
+        def stepval = (newtime, getProbeVals(probelist, daeGet(state)));     
         if newtime == 0. then acc
         else simloop(newtime,stepval::acc);
     }

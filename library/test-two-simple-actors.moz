@@ -29,14 +29,14 @@ include ModelyzeMA
 
 
 def SimpleDAEActor(initval:Real, c:Real) = {
-  Actor(SimpleDAE(initval,c),[],[],daeInit,daeDoStep,daeGet,daeSet);    
+  Comp(SimpleDAE(initval,c),[],[],daeInit,daeDoStep,daeGet,daeSet);    
 }
 
 
 
 def MainModel() = {
-//    SimpleDAEActor(1.0,-1.0);
-    SimpleDAEActor(1.0,1.0);
+    SimpleDAEActor(0.5,-1.0);
+    SimpleDAEActor(0.8,1.0);
 }
 
 def main = printsim(MainModel(),0.1, 5.0)

@@ -103,14 +103,20 @@ def printRealLine(i:Real) -> () = {
 }
 
 def reverse(lst:[?]) -> [?] = {
-  def work(lst:[?],acc:[?]) -> [?] = {
-      match lst with
-      | l::ls -> work(ls,l::acc) 
-      | [] -> acc
-  };
-  work(lst,[])
+    def work(lst:[?],acc:[?]) -> [?] = {
+        match lst with
+        | l::ls -> work(ls,l::acc) 
+        | [] -> acc
+    };
+    work(lst,[])
 }
 
-
-
+def append(l1:[?], l2:[?]) -> [?] = {
+    def work(lst:[?]) -> [?] = {
+        match lst with
+        | l::ls -> l::(work(ls))
+        | [] -> l2
+    };
+    work(l1)        
+}
 

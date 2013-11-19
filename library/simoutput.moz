@@ -67,14 +67,14 @@ def makeStepVal(currtime:Real,yy:{Real},probes:[(String,[Signal])], ukmap:UkMap)
 }
 
 
-def makeRealStepVal(currtime:Real,probes:[(String,[Signal])], get:(<Real> -> Real)) -> StepVal = {
+def getProbeVals(probes:[(String,[Signal])], get:(<Real> -> Real)) -> [Real] = {
   def mkvals(probes:[(String,[Signal])]) -> [Real] = {
     match probes with
     | (s,u::us)::ss -> (get(u))::(mkvals((s,us)::ss))
     | (s,[])::ss -> mkvals(ss) 
     | [] -> []
   }; 
-  (currtime,mkvals probes);
+  mkvals probes;
 }
 
   

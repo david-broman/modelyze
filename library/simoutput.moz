@@ -64,7 +64,7 @@ def makeStepVal(currtime:Real,yy:{Real},probes:[(String,[Signal])], ukmap:UkMap)
     | (s,[])::ss -> mkvals(ss) 
     | [] -> []
   }; 
-  (currtime,mkvals probes);
+  (currtime,reverse(mkvals probes));
 }
 
 

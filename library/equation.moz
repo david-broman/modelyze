@@ -40,6 +40,7 @@ type UkMap = (Signal => (Int,Bool))
 type UkList = [(Signal,(Int,Bool))]
 
 type InitValMap = (<Real> => <Real>)
+type InitValList = [(<Real>,<Real>)]
 type UkSet = (Set <Real>)
 
 type Expr = <>

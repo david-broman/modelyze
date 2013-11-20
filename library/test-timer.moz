@@ -22,29 +22,28 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include ModelyzeHC
 
 
-def Timer(timeout:Real, t:Signal) = {
+def Timer(timeout:Real, start:Real, t:Signal) = {
     def Time:Mode;
     hybridchart initmode Time {
       mode Time {
-        init t 0.;
+        init t start;
         t' = 1.0;
-        transition Time when (t >= timeout) action (t <- 0.);
+        transition Time when (t >= timeout) action (t <- start+0.5);
       };
     };
 }
 
-def TimerModel(text:String) =
+def TimerModel(start:Real,text:String) =
 {
     def x:Real;
-    Timer(3.0, x);
+    Timer(3.0, start, x);
     probe(text) = x;    
 }
 
 def mini = {
-  TimerModel("x");
+  TimerModel(0.2, "x");
+  TimerModel(0.5, "y");
 }
-//  TimerModel("y");
-//}
 
 
 def main = printsim(mini, 0.1, 10.0)

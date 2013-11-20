@@ -31,40 +31,7 @@ def internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
 
 def epsilon = 1e-9 
 
-// Extract the current hierarical mode of equations as well as 
-// the resulting mode path. Transation information is preserved
-// in the equation system in form "internalTrans" so that actions
-// also are affected by the differentiation procedure (handling of
-// higher-order derivatives).
-/*
-88888888888888888888888888888
-def extractHMode(model:Equations, freshMode:Bool,
-    prePath:ModePath, currPath:ModePath) -> (Equations,ModePath) = {
-  def extract(m:Equations, fresh:Bool, pre:ModePath, curr:ModePath,
-              updated:ModePath, cmode:Mode) -> (<>,ModePath) = {
-    match m with
-    | hybridchart initmode s e -> 
-      (match (pre,curr) with
-       | (_,[]) -> extract(e,true,[],[],s::updated,s)
-       | (p::ps,c::cs) -> if p <==> c then extract(e,false,ps,cs,p::updated,p)
-                          else extract(e,true,ps,cs,c::updated,c))
-    | mode s e -> if s <==> cmode  
-                      then extract(e,fresh,pre,curr,updated,s) 
-                      else (NoEqn,updated)
-    | transition nmode when g action i -> 
-          (internalTrans cmode nmode g i,updated) 
-    | init x e -> if fresh then (init x e,updated) else (NoEqn,updated)
-    | e1 e2 -> { 
-         def (eqs1,up1) = extract(e1,fresh,pre,curr,updated,cmode);
-         def (eqs2,up2) = extract(e2,fresh,pre,curr,up1,cmode);
-         (eqs1 eqs2,up2)
-      }
-    | e -> (e,updated)
-  };
-  extract(model,freshMode,prePath,currPath,[],topmode);
-}
-88888888888888888888888888888
-*/
+
 // newModes = Set of new modes that should be active
 // activeCharts = Set of default modes for all active charts
 // updatedNew =  Updated of all new modes (if new modes are discovered)
@@ -369,8 +336,9 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
             // Check if there are event actions
             def (transInits,newModes3) = 
                 makeEventActions(mode,transitions,newModes2,ukmap,yy,yp);
+                
             // End continuous-time loop?
-            if newtime == 0. || !(transInits <==> []) 
+            if newtime == 0. ||   !(transInits <==> []) 
                then (stepval::acc,newtime,transInits,newModes3)
                else ctloop(newtime + steptime, stepval::acc)
         };

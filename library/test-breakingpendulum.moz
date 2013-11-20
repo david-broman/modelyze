@@ -16,11 +16,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-  Name:  Bouncing Pendulum
-  Cases: - Tests transistion between two states.
-         - Tests the use of higher-order derivatives.
-*/
 
 include ModelyzeHC
 include Mechanical

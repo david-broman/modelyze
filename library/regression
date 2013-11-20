@@ -17,5 +17,6 @@ test_file "test-pendulum"
 test_file "test-simpleresistorswitch"
 test_file "test-synchronous"
 test_file "test-timer"
+test_file "test-very-fast-fly"
 
 rm -f test.out

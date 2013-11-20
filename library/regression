@@ -3,7 +3,7 @@
 test_file()
 {
   echo "Test" $1".moz"
-  modelyze $1".moz" > test.out
+  moz $1".moz" > test.out
   diff test.out "expected-output-"$1".txt"
 
 }

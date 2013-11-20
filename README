@@ -62,12 +62,12 @@ Under folder "library", a simple standard library for Modelyze is provided.
 The files named "test-*" are testfiles programs. To execute a program, 
 run for instance:
 
-./modelize test-lotkavolterra.moz
+./moz test-lotkavolterra.moz
 
 This prints the plot data to the standard output. If GnuPlot is installed,
 plotting can be done as follows:
 
-./pmodelize test-hybrid-ball-stairs.moz
+./mozplot test-hybrid-ball-stairs.moz
 
 LICENSE
 -------

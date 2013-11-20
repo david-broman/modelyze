@@ -271,15 +271,9 @@ def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap,
   def yy = (Array.make size 0.);
   def yp = (Array.make size 0.);
   def setvals(initvals:[(Signal,Signal)],  arr:{Real}) -> () = {
-//def _ = dprint("-- set");
-
     match initvals with
     | (u,e)::xs -> {
-//def _ = dprint("-- X (in)");
-//def _ = dprint(("e:",e));
-//def _ = dprint(("yymap:",yymap));
          def v = evalFromMap(e,yymap);
-//def _ = dprint("-- Y (in)");
          def _ = (if Map.mem u ukmap then 
                     Array.set arr (fst (Map.find u ukmap)) v  
                  else ());
@@ -287,13 +281,9 @@ def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap,
        }
     | [] -> ()
   }; 
-//def _ = dprint("-- S (in)");
   def _ = setvals(Map.toList initvals, yy);
-//def _ = dprint("-- T");
   def _ = setvals(Map.toList yymap, yy);
-//def _ = dprint("-- U");
   def _ = setvals(Map.toList ypmap, yp);
-//def _ = dprint("-- V");
   (yy, yp);
 }
 
@@ -330,65 +320,36 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
              ypmap:InitValMap, olddmap:DerivMap, 
              newModes:Modes, activeCharts:Modes) -> [StepVal] = {
 
-//def _ = dprint(("start currtime: ", currtime));
-
     // Extract all equations and correct inits for a partiuclar mode path. 
     // But, keep transitions, since these can contain equations in the action
-//def _ = dprint("-- I (start)");
     def (model2,newModes2,activeCharts2) = extractHMode(model1,newModes,activeCharts,topmode);
-//def _ = dprint("-- J");
    
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     def (model3,newdmap) = elaborateDerivatives(model2,olddmap);
-//def _ = dprint("-- K");
 
     // Peforme index reduction
     def (model3,newdmap) = indexReducationPantelides(model3,Map.empty);
-//def _ = dprint("-- L");
 
     // Extract transitions
     def transitions = extractTransitions(model3);
-//def _ = dprint("-- M");
-
-    // Add transition initializations to the current model
-    //def transInitvalmap = makeTransInitvalmap(transInits);
-    def model4 = model3;
-//def _ = dprint("-- N");
 
     // Create a map of unknowns to unique integer values
-    def ukmap = makeUkMap(model4);
-//def _ = dprint("-- O");
-//def _ = dprint("---- END ----");
-//def _ = dprint(("ukmap: ", ukmap));
+    def ukmap = makeUkMap(model3);
    
     // Create the DAE residual 
-    def residual = (specialize (makeResidual ukmap) model4);
-
-//def _ = dprint("-- P");
+    def residual = (specialize (makeResidual ukmap) model3);
 
     // Create a map with all initial values for the current state
-    def initvalmap = initValues(model4);
-//def _ = dprint("-- Q");
-//def _ = dprint("--------");
-//def _ = dprint(("time: ", currtime));
-//def _ = dprint(("initvalmap: ", initvalmap));
-//def _ = dprint(("yymap: ", yymap));
-//def _ = dprint(("ypmap: ", ypmap));
-//def _ = dprint(("ukmap: ", ukmap));
+    def initvalmap = initValues(model3);
 
+    // Create the actual value arrays used in simulation mode
     def (yy,yp) = makeInitModeArrays(initvalmap,yymap,ypmap,ukmap);
-//def _ = dprint("-- R");
-
-//def _ = dprint(("yy: ", yy));
-
-//def _ = dprint(("initvalmap: ", initvalmap));
 
     // Auto correct initial conditions of the DAE
     def id = initConditionCorrection(ukmap);
 
     // Create the root function for detecting zero crossings
     def rootfun = (specialize (makeRootFun ukmap) transitions);
-
 
     // Create the simulation instance for continuous-time simulation using IDA
     def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
@@ -401,17 +362,13 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
         if currtime > endtime then 
             (acc,currtime,[],newModes2)
         else {
-//def _ = dprint(("ct time: ", currtime));
             // Compute the next step using numerical integration
             def newtime = (DAESolver.step steptime mode);
-//def _ = dprint("-- A");
             // Save the step value
             def stepval = makeStepVal(newtime,yy,probelist,ukmap);
-//def _ = dprint("-- B");
             // Check if there are event actions
             def (transInits,newModes3) = 
                 makeEventActions(mode,transitions,newModes2,ukmap,yy,yp);
-//def _ = dprint("-- C");
             // End continuous-time loop?
             if newtime == 0. || !(transInits <==> []) 
                then (stepval::acc,newtime,transInits,newModes3)
@@ -421,26 +378,15 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
       // Post processing after continuous-time simulation 
       def (acc2,newtime,transInits,newModes) = ctloop(currtime, firststepval::acc);
 
-//def _ = dprint("-- D (out)");
-
-//def _ = dprint("*--------");
-//def _ = dprint(("newModes: ", newModes));
-//def _ = dprint(("transitions: ", transitions));
-//def _ = dprint((newtime, "transInits:", transInits));  
-
       // Close the continuous-time DAE solver instance.
       def _ = (DAESolver.close mode);
-//def _ = dprint("-- E");
 
       // Perform another round of CT simulation?
       if newtime > endtime || newtime - currtime < 1e-3 then 
           acc2  
       else {
-//def _ = dprint("-- F");
          def (yymap,ypmap) = makePreValMap yy yp ukmap;
-//def _ = dprint("-- G");
          def yymap2 = addTransinits(yymap, transInits, yy, yp, ukmap);
-//def _ = dprint("-- H");
          dtloop(newtime,acc2,model1,yymap2,ypmap,newdmap,newModes,activeCharts2);
       };
   };
@@ -453,7 +399,6 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
 def printsim(model:Equations, steptime:Real, endtime:Real) -> () = {
     print(pprintSimulation(simulate(model,steptime,endtime)));
 }
-//    def _ = simulate(model,steptime,endtime);()}
 
 
 

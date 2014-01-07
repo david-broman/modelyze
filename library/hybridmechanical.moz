@@ -1,0 +1,51 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include Physical
+include HybridModeling
+
+
+/**
+ * The TimedBreak is initally opened if variable 'initallyOpen' is true, else 
+ * the switch is initally closed. After 'switchTime' number of seconds, the component
+ * switches from opened to close (or closed to opened).
+ */
+def TimedBreak(switchTime:Real, initiallyClosed:Bool, p:Rotational, n:Rotational) = {
+    def i_p,i_n : Current;
+    def v_p,v_n : Voltage;
+    def Open, Closed : Mode;
+    def time:Real;
+    der(time) = 1.0;
+    RefBranch(i_p,v_p,p);
+    RefBranch(i_n,v_n,n);
+    hybridchart initmode (if initiallyClosed then Closed else Open) {
+      mode Closed{
+          i_p = - i_n;
+          v_p = v_n;
+          transition Open when (time > switchTime && initiallyClosed) action nothing;
+       };
+       mode Open{
+          i_p = 0.0;
+          i_n = 0.0;
+          transition Closed when (time > switchTime && !initiallyClosed) action nothing;
+       };
+    };  
+}
+
+
+

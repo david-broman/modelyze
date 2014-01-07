@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
-Modelyze toolchain, version 1.11
+Modelyze toolchain, version 1.12
 -----------------------------------------------------
 This project contains a simple interpreter for the 
 Modelyze language. For a detailed overview of the
@@ -42,7 +42,7 @@ do the following steps:
 2. Install Macports (including X11 support)
    http://www.macports.org/
 3. Install Objective Caml compiler, ocamlfind, and gnuplot via Macports
-   >> sudo port install ocaml caml-findlib gnuplot
+   >> sudo port install ocaml ocaml-findlib gnuplot
 4. Unzip the Modelyze source code and compile the project using command
    >> build byte
 
@@ -81,6 +81,10 @@ General Public License according to file "library/COPYING.LESSER".
 
 REVISIONS
 ---------
+
+Version 1.12 November 22, 2013
+  - Added new regression testing system
+  - Added a number of new DSLs
 
 Version 1.11 September 24, 2013
   - Minor bugfixes and cleanup.

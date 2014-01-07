@@ -16,6 +16,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+include Equation
 include IndexReduction
 include SimOutput
 
@@ -126,16 +127,13 @@ def daeGet(state:State, var:<Real>) -> Real = {
        INFINITE;
 }
 
-
 def daeSet(state:State, var:<Real>, value:Real) -> State = {
     state;    
 }   
 
-
 def daeGetAsStr(state:State, var:<Real>) -> String = {
     real2string(daeGet(state,var))
 }
-
 
 
 def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {

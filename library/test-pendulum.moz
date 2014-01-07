@@ -38,7 +38,7 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
 def pi = 3.1415
 
 def main = 
-   printsim (Pendulum(5.0, 3.0, 45.0*pi/180.0)) 0.01 10.0
+   printsim(Pendulum(5.0, 3.0, 45.0*pi/180.0), 0.01, 10.0)
    
 
 

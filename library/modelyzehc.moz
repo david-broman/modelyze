@@ -275,10 +275,9 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
 
 // The main simulation function. Performs hybrid simulation using
 // hierarical mode machines and differential-algebraic equations
-def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
+def simulate(model:Equations, steptime:Real, endtime:Real, 
+             probes:ProbeMap) -> SimulationResult = {
 
-  // Extract probes
-  def (model1,probes) = elaborateProbes(model);
   def probelist = (Map.toList probes);
 
   // **** Start of discrete-time loop. ****
@@ -286,7 +285,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
   def dtloop(currtime:Real, acc:[StepVal], model1:Equations, yymap:InitValMap, 
              ypmap:InitValMap, olddmap:DerivMap, 
              newModes:Modes, activeCharts:Modes) -> [StepVal] = {
-
+       
     // Extract all equations and correct inits for a partiuclar mode path. 
     // But, keep transitions, since these can contain equations in the action
     def (model2,newModes2,activeCharts2) = extractHMode(model1,newModes,activeCharts,topmode);
@@ -359,13 +358,17 @@ def simulate(model:Equations, steptime:Real, endtime:Real) -> SimulationResult =
       };
   };
     // Initiate the hybrid simulation loop (CT + DT)
-    def result = dtloop(0.,[],model1,Map.empty,Map.empty,Map.empty,Set.empty,Set.empty);
+    def result = dtloop(0.,[],model,Map.empty,Map.empty,Map.empty,Set.empty,Set.empty);
     (reverse(makeProbeNames("",probelist)), reverse(result))
 }
  
 // Utility function to both simulate and pretty-print the result
 def printsim(model:Equations, steptime:Real, endtime:Real) -> () = {
-    print(pprintSimulation(simulate(model,steptime,endtime)));
+    // Extract probes
+    def (model1,probes) = elaborateProbes(model);
+
+    // Simulate and print result
+    print(pprintSimulation(simulate(model1,steptime,endtime,probes)));
 }
 
 

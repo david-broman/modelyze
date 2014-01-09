@@ -49,3 +49,7 @@ def TimedSwitch(switchTime:Real, initiallyClosed:Bool, p:Electrical, n:Electrica
 
 
 
+
+
+
+

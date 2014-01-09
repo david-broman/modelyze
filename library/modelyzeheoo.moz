@@ -22,7 +22,8 @@ include ModelyzeHC
 include Elaboration
 
 def printsim(model:Equations, steptime:Real, endtime:Real) = {
-    print(pprintSimulation(simulate(elaborateConnections(model),steptime,endtime)))
+    def (model1,probes) = elaborateProbes(model);
+    print(pprintSimulation(simulate(elaborateConnections(model1),steptime,endtime,probes)))
 }
 
 

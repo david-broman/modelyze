@@ -66,7 +66,7 @@ let rec consistent ty_a ty_b =
     | TyList(fi,_,ty1),TyList(_,_,ty2) -> 
         consistent ty1 ty2
     | TyTuple(fi,_,tys1),TyTuple(_,_,tys2) -> 
-        List.for_all2 consistent tys1 tys2
+        (try List.for_all2 consistent tys1 tys2 with _ -> false)
     | TySym(fi,_,ty1),TySym(_,_,ty2) -> 
         consistent ty1 ty2
     | TySymData(fi,_,tyid1,id),TySymData(_,_,tyid2,_) 

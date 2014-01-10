@@ -66,8 +66,8 @@ and tm =
   | TmSym         of sym * ty 
   | TmGenSym      of ty
   | TmSymApp      of tm * tm 
-  | TmLift         of tm * ty
-  | TmCase       of tm * mpat * tm * tm
+  | TmLift        of tm * ty
+  | TmCase        of tm * mpat * tm * tm
   | TmEqual       of tm * tm
   | TmLcase       of tm * tm * tm
   | TmCons        of tm * tm

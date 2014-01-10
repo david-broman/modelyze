@@ -28,10 +28,32 @@ exception Cannot_eval
 
 
 
-(* State when two terms are equal. Note that comparing variables, closures
-   and fix terms always return false *)
+(* State when two terms are equal using operator <==>. 
+   Note that comparing variables, closures and fix terms always return false *)
 let rec tm_equiv t1 t2 = 
-  t1 = t2
+  match t1,t2 with
+  | TmConst(c1),TmConst(c2) -> c1 = c2
+  | TmSym(s1,_),TmSym(s2,_) -> s1 = s2
+  | TmSymApp(t1a,t1b),TmSymApp(t2a,t2b) -> tm_equiv t1a t2a && tm_equiv t1b t2b
+  | TmLift(t1,ty1),TmLift(t2,ty2) -> tm_equiv t1 t2 
+  | TmCons(t1a,t1b),TmCons(t2a,t2b) -> tm_equiv t1a t2a && tm_equiv t1b t2b
+  | TmNil,TmNil -> true         
+  | TmTuple(ts1),TmTuple(ts2) -> 
+       List.length ts1 = List.length ts2 && List.for_all2 tm_equiv ts1 ts2
+  | TmArray(ta1),TmArray(ta2) -> (   
+      if Array.length ta1 <> Array.length ta2 then false else 
+        let (i,eq) = (ref 0,ref true) in
+        while !i < Array.length ta1 && !eq do
+          if ta1.(!i) <> ta2.(!i) then eq := false;
+          i := !i + 1;
+        done;
+        !eq)
+  | TmMap(i1,s1),TmMap(i2,s2) -> 
+      i1 = i2 && (PMap.foldi (fun k v eq -> eq && 
+                     (try PMap.find k s2 = v with _ -> false)) s1 true)
+  | TmSet(i1,s1),TmSet(i2,s2) -> 
+      i1 = i2 && (PMap.foldi (fun k v eq -> eq && PMap.mem k s2) s1 true)
+  | _ -> false
 
 
 let eval_array_op op array_lst =

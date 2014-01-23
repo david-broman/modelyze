@@ -18,7 +18,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 open Ustring.Op
 open Info
-
+  
 
 (** Handling of Modelica messages (errors and warnings) *)
 

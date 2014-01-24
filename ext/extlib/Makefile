@@ -1,9 +1,8 @@
 
-include 
+all:	
+	ocamlbuild extlib.cma
+	ocamlbuild extlib.cmxa
 
-all: 
-	make -f local.mk
-  
 clean:
-	make -f local.mk clean
+	ocamlbuild -clean
 

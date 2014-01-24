@@ -1,11 +1,11 @@
 
-DIRS = src,ext/ucaml,ext/extlib,ext/sundials
+DIRS = src,ext/ucaml/src,ext/extlib,ext/sundials
 
 .PHONY: all clean
 
 # Init submodules if needed and make native version. 
 # The resulting executable can be found under /bin and /library (symlinks)
-all:    ext/ucaml/utils.ml native
+all:    ext/ucaml/Makefile native
 
 
 # Compile native version
@@ -25,9 +25,15 @@ comp_c_files:
 
 
 # If ucaml content does not exist, init and update submodules
-ext/ucaml/utils.ml:
+ext/ucaml/Makefile:
 	git submodule init
 	git submodule update
+	cd ext/ucaml; git checkout master
+
+# Update git sub modules
+update:
+	cd ext/ucaml; git checkout master; git pull
+
 
 # Clean all submodules and the main Modelyze source
 clean:

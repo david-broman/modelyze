@@ -1,3 +1,0 @@
-<mam> or <syntax> or <utils> or <semantics> or <solvers/sundialsstub> or <other/ustring> or <other/utils> or <other/extlib>: include
-<solvers/sundialsstub/*> or <syntax/*> or <semantics/*> or <other/ustring/*> or <other/utils/*> or <other/extlib>:  pkg_num
-

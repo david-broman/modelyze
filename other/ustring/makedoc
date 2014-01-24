@@ -1,4 +1,0 @@
-#!/bin/bash
-
-ocamlbuild ustring.docdir/index.html
-cp -rf _build/ustring.docdir doc

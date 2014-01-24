@@ -37,13 +37,16 @@ INSTALLATION (Mac OS)
 To run the Modelyze interpreter on an UNIX-based system, 
 do the following steps:
 
-1. Install the SUNDIALS solver suite version 2.4.0 or later. 
+1. Install the SUNDIALS solver suite. The current version is tested on version 2.5.0.
    http://computation.llnl.gov/casc/sundials/
+   For help, see  "SUNDIALS QUICK GUIDE" below.
 2. Install Macports (including X11 support)
    http://www.macports.org/
 3. Install Objective Caml compiler, ocamlfind, and gnuplot via Macports
    >> sudo port install ocaml ocaml-findlib gnuplot
-4. Unzip the Modelyze source code and compile the project using command
+4. Make sure that you have the following paths in the environment variables.
+   
+5. Unzip the Modelyze source code and compile the project using command
    >> build byte
 
 INSTALLATION (Ubuntu 10.11)
@@ -52,6 +55,24 @@ INSTALLATION (Ubuntu 10.11)
    >>sudo apt-get install ocaml ocaml-findlib gnuplot libsundials-serial
 2. Unzip the Modelyze source code and compile the project using command
    >> build byte
+
+
+SUNDIALS QUICK GUIDE
+-----------------------------------
+Here are some step-by-step instructions for installing SUNDIALS. These instructions
+were tested on MacOS 10.5.7 and SUNDIALS v.2.5.0.
+
+- Download the full SUNDIALS package sundials-2.5.0.tar.gz from 
+  http://computation.llnl.gov/casc/sundials/.
+
+- Unzip it. Run the following commands within the unzipped folder
+  >> ./configure
+  >> make
+  >> sudo make install
+
+- Header files are now installed under /usr/local/include and the
+  library files are installed under /usr/local/lib
+
  
  
 
@@ -76,6 +97,8 @@ All files in the Modelyze toolchain project, excepts for files in the folders
 to file COPYING. Files under folder "other/" have specific licenses given 
 in each sub-folder. Files under folder "library/" are under the GNU Lesser
 General Public License according to file "library/COPYING.LESSER".
+
+
 
 
 

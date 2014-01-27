@@ -1,3 +1,0 @@
-[submodule "ext/ucaml"]
-	path = ext/ucaml
-	url = https://github.com/david-broman/ucaml.git

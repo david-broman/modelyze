@@ -1,5 +1,7 @@
 
-DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
+DIRS = src,ext/ucamlib/src,ext/extlib
+
+# ,ext/sundials
 
 .PHONY: all clean
 
@@ -11,17 +13,17 @@ all:    ext/ucamlib/Makefile native
 # Compile native version
 native: comp_c_files
 	ocamlbuild -Is $(DIRS) moz.native 
-	mv moz.native bin/moz
-	(cd library; rm -f moz; ln -s ../_build/src/moz.native moz)
+	@mv moz.native bin/moz
+	@(cd library; rm -f moz; ln -s ../_build/src/moz.native moz)
 
 # Compile byte code version
 byte: 	comp_c_files
 	ocamlbuild -Is $(DIRS) moz.byte	
-	mv moz.byte bin/moz
-	(cd library; rm -f moz; ln -s ../_build/src/moz.byte moz)
+	@mv moz.byte bin/moz
+	@(cd library; rm -f moz; ln -s ../_build/src/moz.byte moz)
 
 comp_c_files:
-	ocamlbuild ext/sundials/ida_stubs.o
+#	ocamlbuild ext/sundials/ida_stubs.o
 
 
 # If ucamlib content does not exist, init and update submodules
@@ -37,5 +39,5 @@ update:
 
 # Clean all submodules and the main Modelyze source
 clean:
-	ocamlbuild -clean
+	@ocamlbuild -clean
 

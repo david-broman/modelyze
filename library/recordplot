@@ -1,0 +1,4 @@
+#!/bin/bash
+
+moz $1".moz" > "expected-output-"$1".txt"
+

@@ -9,7 +9,10 @@ test_file()
 }
 
 test_file "modelica-mechsys" 
+
+test_file "test-breaking-controlsys"
 test_file "test-breakingpendulum"
+test_file "test-capacitor-switch"
 test_file "test-controlsys"
 test_file "test-hybrid-ball-stairs"
 test_file "test-lotkavolterra"

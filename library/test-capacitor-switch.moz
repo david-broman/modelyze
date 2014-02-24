@@ -38,24 +38,6 @@ def Circuit(switchtime:Real) = {
 }
 
 
-/*
-def Circuit(switchtime:Real) = {
-    def n1, n2, n3, n4a, n4b, n5 : Electrical;
-    def c,v:Real;
-    ConstantVoltage(10.0, n1, n3);
-    TimedSwitch(0.05, true, n1, n2);
-    Resistor(20., n2, n5);
-    Resistor(20., n2, n4a);
-    TimedSwitch(2.0,true,n4a,n4b);
-    TimedSwitch(0.8,false,n4a,n4b);
-    Capacitor(0.001, n4b, n3);  
-    Ground(n3);
-    CurrentSensor(n5, n3,c);
-    VoltageSensor(n4b,n3,v);
-    v = probe("Voltage");
-    c = probe("Current");
-}
-*/
 
 def main = 
   printsim(Circuit(10.0), 0.0003, 0.1)

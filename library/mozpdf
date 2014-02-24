@@ -1,7 +1,7 @@
 
 
 #!/bin/bash
-../bin/mkl $1  > mozplot.dat 
+../bin/moz $1  > mozplot.dat 
 gnuplot mozplotps.cfg > /dev/null 2>&1
 rm -f mozplot.dat
 ps2pdf mozplot.ps

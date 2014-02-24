@@ -92,8 +92,8 @@ plotting can be done as follows:
 LICENSE
 -------
 All files in the Modelyze toolchain project, excepts for files in the folders 
-"library/" and "other/" are under the GNU General Public Licence according 
-to file COPYING. Files under folder "other/" have specific licenses given 
+"library/" and "ext/" are under the GNU General Public Licence according 
+to file COPYING. Files under folder "ext/" have specific licenses given 
 in each sub-folder. Files under folder "library/" are under the GNU Lesser
 General Public License according to file "library/COPYING.LESSER".
 

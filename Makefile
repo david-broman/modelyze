@@ -37,19 +37,19 @@ all:    ext/ucamlib/Makefile native
 
 # Compile native version
 native: comp_c_files
-	ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
+	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
 	@mv moz.native bin/moz
 	@(cd library; rm -f moz; ln -s ../_build/src/moz.native moz)
 
 # Compile byte code version (is not currently working)
 byte: 	comp_c_files
-	ocamlbuild -Is $(DIRS) moz.byte	-lflag -custom,$(C_FILES)
+	@ocamlbuild -Is $(DIRS) moz.byte -lflag -custom,$(C_FILES)
 	@mv moz.byte bin/moz
 	@(cd library; rm -f moz; ln -s ../_build/src/moz.byte moz)
 
 # C-files 
 comp_c_files:
-	ocamlbuild ext/sundials/ida_stubs.o 
+	@ocamlbuild ext/sundials/ida_stubs.o -cflags '-ccopt -Qunused-arguments'
 
 # If ucamlib content does not exist, init and update submodules
 ext/ucamlib/Makefile:

@@ -51,7 +51,7 @@ do the following steps:
 INSTALLATION (Ubuntu 10.11)
 ---------------------------
 1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal
-   >>sudo apt-get install ocaml gnuplot libsundials-serial
+   >>sudo apt-get install ocaml gnuplot libsundials-serial-dev
 2. Unzip the Modelyze source code and compile the project using command
    >> make
 

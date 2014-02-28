@@ -45,8 +45,8 @@ other Mac OS versions as well.
 3. Install Objective Caml compiler and gnuplot via Macports.
    Note that version 4.01.0 or later is required.
    >> sudo port install ocaml gnuplot
-4. If you do not have git installed, install it:
-   >> sudo apt-get install git
+4. If you do not have git installed, install it. 
+   See for instance http://gitx.frim.nl/
 5. If you have not done it already, clone the Modelyze project from GitHub:
    >> git clone https://github.com/david-broman/modelyze.git
 6. Compile the code:

@@ -16,10 +16,17 @@
 # along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+OS = $(shell uname)
 
-# This is the path to standard C libraries. Currently, what is needed is that
-# SUNDIALS libraries are installed at this path.
+# This is the path to standard C libraries for MaxOS
+ifeq ($(OS), Darwin)
 C_LIBS = /usr/local/lib
+endif
+
+# This is the path to standard C libraries for Linux (Ubuntu)
+ifeq ($(OS), Linux)
+C_LIBS = /usr/lib
+endif
 
 # Directories where ocamlbuild can find source code.
 DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
@@ -35,10 +42,11 @@ C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsund
 all:    ext/ucamlib/Makefile native
 
 
+
 # Compile native version
 native: comp_c_files
 	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
-	@mv moz.native bin/moz
+	@rm -f moz.native
 	@(cd library; rm -f moz; ln -s ../_build/src/moz.native moz)
 
 # Compile byte code version (is not currently working)

@@ -3,7 +3,7 @@
 test_file()
 {
   echo "Test" $1".moz"
-  moz $1".moz" > test.out
+  ./moz $1".moz" > test.out
   diff test.out "expected-output-"$1".txt"
 
 }
@@ -11,13 +11,13 @@ test_file()
 test_file "modelica-mechsys" 
 
 test_file "test-breaking-controlsys"
-test_file "test-breakingpendulum"
+# test_file "test-breakingpendulum"
 test_file "test-capacitor-switch"
 test_file "test-controlsys"
 test_file "test-hybrid-ball-stairs"
 test_file "test-lotkavolterra"
 test_file "test-pendulum"
-test_file "test-simpleresistorswitch"
+# test_file "test-simpleresistorswitch"
 test_file "test-synchronous"
 test_file "test-timer"
 test_file "test-very-fast-fly"

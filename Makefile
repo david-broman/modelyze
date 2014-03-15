@@ -55,9 +55,10 @@ byte: 	comp_c_files
 	@mv moz.byte bin/moz
 	@(cd library; rm -f moz; ln -s ../_build/src/moz.byte moz)
 
-# C-files 
+# C-files. Ugly treatment of error that latest ocaml generates.  
 comp_c_files:
-	@ocamlbuild ext/sundials/ida_stubs.o -cflags '-ccopt -Qunused-arguments'
+	@ocamlbuild ext/sundials/ida_stubs.o -cflags '-ccopt -Wno-error=unused-command-line-argument-hard-error-in-future' > /dev/null 2>&1
+
 
 # If ucamlib content does not exist, init and update submodules
 ext/ucamlib/Makefile:

@@ -39,7 +39,7 @@ C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsund
 
 # Init submodules if needed and make native version. 
 # The resulting executable can be found under /bin and /library (symlinks)
-all:    ext/ucamlib/Makefile native
+all:    native
 
 
 
@@ -60,15 +60,15 @@ comp_c_files:
 	@ocamlbuild ext/sundials/ida_stubs.o -cflags '-ccopt -Wno-error=unused-command-line-argument-hard-error-in-future' > /dev/null 2>&1
 
 
-# If ucamlib content does not exist, init and update submodules
-ext/ucamlib/Makefile:
-	git submodule init
-	git submodule update
-	cd ext/ucamlib; git checkout master
-
-# Update git sub modules
-update:
-	cd ext/ucamlib; git checkout master; git pull
+# Handling subtree for ext/ucamlib
+UCAMLIB_GIT = https://github.com/david-broman/ucamlib.git
+UCAMLIB_MSG = 'Updated ucamlib'
+add_ucamlib:
+	git subtree add --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash 
+pull_ucamlib:
+	git subtree pull --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash -m $(UCAMLIB_MSG)
+push_ucamlib:
+	git subtree push --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash
 
 
 # Clean all submodules and the main Modelyze source

@@ -64,7 +64,7 @@ comp_c_files:
 UCAMLIB_GIT = https://github.com/david-broman/ucamlib.git
 UCAMLIB_MSG = 'Updated ucamlib'
 add_ucamlib:
-	git subtree add --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash 
+	git subtree add --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash -m 'Added ucamlib'
 pull_ucamlib:
 	git subtree pull --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash -m $(UCAMLIB_MSG)
 push_ucamlib:

@@ -7,9 +7,9 @@ open Message
 
 
 
-let mkleval filename =   
+let mkleval libpath filename =   
   (try 
-         Fileincluder.read_file_chain filename 
+         Fileincluder.read_file_chain libpath filename 
       |> Toplevel.desugar 
       |> Pattern.desugar
       |> Typesystem.typecheck 
@@ -31,14 +31,34 @@ let mkleval filename =
   
 
 let menu() =
-    printf "Usage: moz <file.moz>\n"
+    printf "Modelyze Interpreter. (C) Copyright David Broman 2010-2014\n";
+    printf "Usage: moz [OPTIONS] <file.moz>\n";
+    printf "\n";
+    printf "OPTIONS:\n";
+    printf "    --libpaths=<path>  Colon separated paths to Modelyze library files.\n"
+
+let extract_libpaths str = 
+  let str2 = Ustring.trim (us str) in
+  let switch = us"--libpaths=" in
+  let switch_len = Ustring.length switch in
+  if not (Ustring.starts_with str2 switch) then None 
+  else
+    let str3 = Ustring.sub str2 switch_len (Ustring.length str2 - switch_len) in
+    let slash = us"/" in
+    let str4 = List.map (fun s -> if Ustring.ends_with s slash 
+                                  then s else s ^. slash) (
+                         Ustring.split str3 (us":")) in
+    Some(List.map Ustring.to_utf8 str4)
+  
 
 
 let main =
-  if Array.length Sys.argv < 2 then menu()
-  else
-    let filename = Sys.argv.(1) in
-    mkleval filename
+  match Array.length Sys.argv with
+  | 2 -> mkleval [] (Sys.argv.(1))
+  | 3 -> (match extract_libpaths Sys.argv.(1) with 
+          | Some(paths) -> mkleval paths (Sys.argv.(2)) 
+          | None -> menu())
+  | _ -> menu()
 
 
 

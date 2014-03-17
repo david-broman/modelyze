@@ -60,35 +60,43 @@ let remove_duplicates toplst =
         | [] -> List.rev acc
   in worker toplst (IdMap.empty) []
 
+(* Find a file. First in local directory, then search in libpaths *)
+let find_file libpaths file =
+  let rec search paths =
+    match paths with
+    | p::ps -> if Sys.file_exists (p ^ file) then (p ^ file) else search ps
+    | [] -> file
+  in
+    search (""::libpaths)  
 
-let rec read_module fi visited cached nameid =
+let rec read_module libpaths fi visited cached nameid =
   if IdSet.mem nameid visited then
     raise (Mkl_static_error(STATIC_CIRCULAR_DEP_INCLUDE,
                             ERROR,fi,[Symtbl.get nameid]))
   else
      try (IdMap.find nameid cached,cached)
      with Not_found ->   
-       let toplst1 = parse_file fi (Ustring.to_utf8 (Symtbl.get nameid)) in
+       let toplst1 = parse_file fi (find_file libpaths (Ustring.to_utf8 (Symtbl.get nameid))) in
        let visited' = IdSet.add nameid visited in
-       let toplst2 = expand_top nameid 0 toplst1 visited' cached [] in
+       let toplst2 = expand_top libpaths nameid 0 toplst1 visited' cached [] in
        let toplst3 = remove_duplicates toplst2 in
        (toplst3,IdMap.add nameid toplst3 cached)
 
 
-and expand_top nameid k toplst visited cached acc =
+and expand_top libpaths nameid k toplst visited cached acc =
   match toplst with
     | TopInclude(fi,id)::ts -> 
-        let (toplst',cached') = read_module fi visited cached id in
-        expand_top nameid k ts visited cached' (List.rev_append toplst' acc)
+        let (toplst',cached') = read_module libpaths fi visited cached id in
+        expand_top libpaths nameid k ts visited cached' (List.rev_append toplst' acc)
     | t::ts -> 
         let fpos = (nameid,k) in
-        expand_top nameid (k+1) ts visited cached ((t,fpos)::acc)
+        expand_top libpaths nameid (k+1) ts visited cached ((t,fpos)::acc)
     | [] -> List.rev acc
 
 
-let read_file_chain filename =     
+let read_file_chain libpaths filename =     
   filename |> String.lowercase |> us |> Symtbl.add 
-           |> read_module Info.NoInfo (IdSet.empty) (IdMap.empty) 
+           |> read_module libpaths Info.NoInfo (IdSet.empty) (IdMap.empty) 
            |> fst |> List.split |> fst
   
 

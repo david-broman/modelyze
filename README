@@ -87,21 +87,21 @@ were tested on MacOS 10.5.7 and SUNDIALS v.2.5.0.
   library files are installed under /usr/local/lib
 
  
- 
-
 
 EXECUTING EXAMPLES
 --------------------
 Under folder "library", a simple standard library for Modelyze is provided.
-The files named "test-*" are testfiles programs. To execute a program, 
-run for instance:
+Folder "demo" contains a number of demo files that use these libraries. 
+To execute a demo example, got to folder "demo" and run for instance:
 
-./moz test-lotkavolterra.moz
+./moz lotkavolterra.moz
 
 This prints the plot data to the standard output. If GnuPlot is installed,
 plotting can be done as follows:
 
-./mozplot test-hybrid-ball-stairs.moz
+./mozplot hybrid-ball-stairs.moz
+
+
 
 LICENSE
 -------
@@ -117,6 +117,10 @@ General Public License according to file "library/COPYING.LESSER".
 
 REVISIONS
 ---------
+
+Version 1.1x 
+  - Created demo, test, and library directories
+  - Added library-path parameter
 
 Version 1.12 November 22, 2013
   - Added new regression testing system

@@ -47,13 +47,13 @@ all:    native
 native: comp_c_files
 	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
 	@rm -f moz.native
-	@(cd library; rm -f moz; ln -s ../_build/src/moz.native moz)
+	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz
 
 # Compile byte code version (is not currently working)
 byte: 	comp_c_files
 	@ocamlbuild -Is $(DIRS) moz.byte -lflag -custom,$(C_FILES)
-	@mv moz.byte bin/moz
-	@(cd library; rm -f moz; ln -s ../_build/src/moz.byte moz)
+	@rm -f moz.byte
+	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.byte moz
 
 # C-files. Ugly treatment of error that latest ocaml generates.  
 comp_c_files:
@@ -74,4 +74,5 @@ push_ucamlib:
 # Clean all submodules and the main Modelyze source
 clean:
 	@ocamlbuild -clean
+	@rm -rf bin
 

@@ -18,6 +18,6 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
 val parse_file : Info.info -> string -> Ast.top list
 
-val read_file_chain : string -> Ast.top list 
+val read_file_chain : string list -> string -> Ast.top list 
 
 

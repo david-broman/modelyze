@@ -319,7 +319,16 @@ end
 type ustring = Op.ustring
 type t = Op.ustring
 
+let compare s1 s2 = 
+  let s1 = collapse_ustring s1 in
+  let s2 = collapse_ustring s2 in
+  compare s1 s2
 
+let equal s1 s2 = Op.( =. ) s1 s2 
+
+let not_equal s1 s2 = Op.( <>. ) s1 s2 
+
+let hash t = Hashtbl.hash (collapse_ustring t)
 
 
 
@@ -444,6 +453,12 @@ let split s c =
         ((ref (Uchars (Array.sub s2 last (i-last))))::acc)
   in
     if len = 0 then [] else List.rev (worker 0 0 [])
+
+let starts_with s1 s2 = 
+  try equal (sub s1 0 (length s2)) s2 with _ -> false
+
+let ends_with s1 s2 =
+  try equal (sub s1 (length s1 - length s2) (length s2)) s2 with _ -> false
 
 (* TODO implement*) 
 let unix2dos s = s 
@@ -732,16 +747,5 @@ let write_file ?(encode_type=Utf8) fn s =
   in
   Utils.write_binfile fn data
 
-
-let compare s1 s2 = 
-  let s1 = collapse_ustring s1 in
-  let s2 = collapse_ustring s2 in
-  compare s1 s2
-
-let equal s1 s2 = Op.( =. ) s1 s2 
-
-let not_equal s1 s2 = Op.( <>. ) s1 s2 
-
-let hash t = Hashtbl.hash (collapse_ustring t)
 
 

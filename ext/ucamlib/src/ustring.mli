@@ -363,6 +363,14 @@ val split : ustring -> ustring -> ustring list
     For instance, if string ["This is a string"] is split using the space
     character [" "], then list [\["This";"is";"a";"string"\]] is returned.*)
 
+val starts_with : ustring -> ustring -> bool
+(** [starts_with s1 s2] returns true if string [s1] starts with [s2], that is,
+    [s2] is the prefix of [s1]. *)
+
+val ends_with : ustring -> ustring -> bool
+(** [ends_with s1 s1] returns true if string [s1] ends with [s2]. For instance,
+    if [s1="file/"] and [s2="/"], then [(ends_with s1 s2)] is true. *)
+
 val unix2dos : string -> string 
 (** Function [Ustring.unix2dos s] returns a string where newline characters in 
     string [s] are converted to the DOS and Windows standard. The ustring 

@@ -99,8 +99,6 @@ val genlist : (int -> 'a) -> int -> 'a list
 
 val xor : bool -> bool -> bool
 
-
-
 module Int :
 sig
   type t = int
@@ -109,4 +107,5 @@ end
 (** Integer module with functions [compare] and type [t], which makes it easy to be
     passed as argument to functors [Set.Make] and [Map.Make]
 *)
+
 

@@ -41,7 +41,7 @@ let extract_libpaths str =
   let str2 = Ustring.trim (us str) in
   let switch = us"--libpaths=" in
   let switch_len = Ustring.length switch in
-  if not (Ustring.starts_with str2 switch) then None 
+  if not (Ustring.starts_with switch str2) then None 
   else
     let str3 = Ustring.sub str2 switch_len (Ustring.length str2 - switch_len) in
     let slash = us"/" in

@@ -454,10 +454,10 @@ let split s c =
   in
     if len = 0 then [] else List.rev (worker 0 0 [])
 
-let starts_with s1 s2 = 
+let starts_with s2 s1 = 
   try equal (sub s1 0 (length s2)) s2 with _ -> false
 
-let ends_with s1 s2 =
+let ends_with s2 s1 =
   try equal (sub s1 (length s1 - length s2) (length s2)) s2 with _ -> false
 
 (* TODO implement*) 

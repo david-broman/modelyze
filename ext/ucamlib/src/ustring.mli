@@ -364,12 +364,11 @@ val split : ustring -> ustring -> ustring list
     character [" "], then list [\["This";"is";"a";"string"\]] is returned.*)
 
 val starts_with : ustring -> ustring -> bool
-(** [starts_with s1 s2] returns true if string [s1] starts with [s2], that is,
-    [s2] is the prefix of [s1]. *)
+(** [starts_with w s] returns true if string [s] starts with [w]. *)
 
 val ends_with : ustring -> ustring -> bool
-(** [ends_with s1 s1] returns true if string [s1] ends with [s2]. For instance,
-    if [s1="file/"] and [s2="/"], then [(ends_with s1 s2)] is true. *)
+(** [ends_with w s] returns true if string [s] ends with [w]. For instance,
+    if [s="file/"] and [w="/"], then [(ends_with w s)] is true. *)
 
 val unix2dos : string -> string 
 (** Function [Ustring.unix2dos s] returns a string where newline characters in 

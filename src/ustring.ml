@@ -76,13 +76,13 @@ let collapse_ustring s =
    A with the new string and the size is returned. *) 
 let normalize_newlines s = 
   let len = String.length s in
-  let s2 = String.create len in
+  let s2 = Bytes.create len in
   let rec worker i n prev_x0d =
     if i < len then begin
       let c = s.[i] in 
-	if c = '\x0D' then (s2.[n] <- '\x0A'; worker (i+1) (n+1) true)
+	if c = '\x0D' then (Bytes.set s2 n '\x0A'; worker (i+1) (n+1) true)
 	else if c = '\x0A' && prev_x0d then worker (i+1) n false 
-	else (s2.[n] <- c; worker (i+1) (n+1) false)
+	else (Bytes.set s2 n c; worker (i+1) (n+1) false)
     end else n
   in let n = worker 0 0 false in (s2,n)
 
@@ -151,9 +151,9 @@ let rec to_latin1 s =
   match !s with
     | Uchars(a) -> begin
 	let len = Array.length a in
-	let sout = String.create len in
+	let sout = Bytes.create len in
 	  try 
-	    for i = 0 to len-1 do sout.[i] <- (char_of_int (a.(i))) done;
+	    for i = 0 to len-1 do Bytes.set sout i (char_of_int (a.(i))) done;
 	    sout
 	  with 
 	      Invalid_argument _ -> raise (Invalid_argument "Ustring.to_latin1")
@@ -181,32 +181,33 @@ let rec to_utf8 s =
     | Uchars(a) ->
         let ilen = Array.length a in
 	let olen = calc_size_to_utf8 a in
-	let sout = String.create olen in
+	let sout = Bytes.create olen in
 	let rec convert i j =
 	  if i >= ilen then () else begin
 	    let ai = a.(i) in
 	    if ai <= 0b1111111 then begin  
-	      sout.[j] <- char_of_int ai; 
+              Bytes.set sout j (char_of_int ai);
 	      convert (i+1) (j+1)
 	    end else if ai <= 0b11111111111 then begin
-	      sout.[j] <- char_of_int ((ai lsr 6) lor 0b11000000);
-	      sout.[j+1] <- char_of_int ((ai land 0b111111) 
-					 lor 0b10000000);
+	      Bytes.set sout j (char_of_int ((ai lsr 6) lor 0b11000000));
+	      Bytes.set sout (j+1) (char_of_int ((ai land 0b111111) 
+					 lor 0b10000000));
+
 	      convert (i+1) (j+2)
 	    end else if ai <= 0b1111111111111111 then begin
-	      sout.[j] <- char_of_int ((ai lsr 12) lor 0b11100000);
-	      sout.[j+1] <- char_of_int (((ai lsr 6) land 0b111111) 
-					 lor 0b10000000);
-	      sout.[j+2] <- char_of_int ((ai land 0b111111) lor 0b10000000);
+	      Bytes.set sout j (char_of_int ((ai lsr 12) lor 0b11100000));
+	      Bytes.set sout (j+1) (char_of_int (((ai lsr 6) land 0b111111) 
+					 lor 0b10000000));
+	      Bytes.set sout (j+2) (char_of_int ((ai land 0b111111) lor 0b10000000));
 	      convert (i+1) (j+3)
 	    end else begin
-	      sout.[j] <- char_of_int ((ai lsr 18) lor 0b11110000);
-	      sout.[j+1] <- char_of_int (((ai lsr 12) land 0b111111) 
-					 lor 0b10000000);
-	      sout.[j+2] <- char_of_int (((ai lsr 6) land 0b111111) 
-					 lor 0b10000000);
-	      sout.[j+3] <- char_of_int ((ai land 0b111111) 
-					 lor 0b10000000);
+	      Bytes.set sout j  (char_of_int ((ai lsr 18) lor 0b11110000));
+	      Bytes.set sout (j+1) (char_of_int (((ai lsr 12) land 0b111111) 
+					 lor 0b10000000));
+	      Bytes.set sout (j+2) (char_of_int (((ai lsr 6) land 0b111111) 
+					 lor 0b10000000));
+	      Bytes.set sout (j+3) (char_of_int ((ai land 0b111111) 
+					 lor 0b10000000));
 	      convert (i+1) (j+4)
 	    end
 	  end
@@ -571,14 +572,14 @@ let lexing_function ic enc_type inbuf outbuf stream_pos s n =
 	if rlen = 0 then String.sub s 0 pos
 	else if rlen + pos = n then s
 	else worker s (pos+rlen) 
-    in worker (String.create n) 0      
+    in worker (Bytes.create n) 0      
   in
   let read_to_inbuf i =
     let l1 = String.length !inbuf in
     if l1 >= i then 0 else begin
       let s2 = input_string ic (i - l1) in
       let l2 = String.length s2 in
-      let s3 = String.create (l1 + l2) in 
+      let s3 = Bytes.create (l1 + l2) in 
 	String.blit !inbuf 0 s3 0 l1;
 	String.blit s2 0 s3 l1 l2;
 	inbuf := s3;
@@ -658,7 +659,7 @@ let read_bom ic =
   let utf16be = "\xFE\xFF" in
   let utf16le = "\xFF\xFE" in
   let utf8    = "\xEF\xBB\xBF" in
-  let s = String.create 4 in
+  let s = Bytes.create 4 in
   let l = ref 0 in
   try 
     really_input ic s 0 2; l := 2;
@@ -700,7 +701,7 @@ let read_from_channel ?(encode_type=Auto) ic =
   (* Should not fail, since UTF-8 is already checked*)
   let fail() = assert false in 
   fun l -> begin
-    let s = String.create readsize in
+    let s = Bytes.create readsize in
     let read_l = reader s readsize in
     let s2 = !buf ^ (String.sub s 0 read_l) in
     let len2 = String.length s2 in

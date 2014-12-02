@@ -48,6 +48,7 @@ test:
 
 apidoc:
 	ocamlbuild -Is $(DIRS) doc/ucamlib.docdir/index.html
+	@rm -f doc/api
 	@mv ucamlib.docdir api; mv api doc/.
 
 clean:

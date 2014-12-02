@@ -5,8 +5,7 @@ let shellcmd cmd =
   let tmpout = "tmp_" ^ uid ^ "_out" in
   let tmperr = "tmp_" ^ uid ^ "_err" in
   let retcode = Sys.command (cmd ^ " 1> " ^ tmpout ^ " 2> " ^ tmperr) in
-  let msgout = Ustring.read_file tmpout in
-  let msgerr = Ustring.read_file tmperr in
+  let msgout = Utils.read_binfile tmpout in
+  let msgerr = Utils.read_binfile tmperr in
   Sys.remove tmpout; Sys.remove tmperr; 
-  (retcode, msgout, msgerr)
-
+  (retcode, msgout, msgerr) 

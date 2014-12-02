@@ -51,9 +51,6 @@ val find_associndex : 'a -> ('a * 'b) list -> ('b * int)
     Raises [Not_found] if [x] is not a key in [l].*)
 
 
-val ( |> ) : 'a -> ('a -> 'b) -> 'b
-(** Pipe-forward operator *)
-
 val ( <| ) :  ('a -> 'b) -> 'a -> 'b
 (** Pipe-backward operator *)
 

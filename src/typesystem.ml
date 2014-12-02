@@ -366,7 +366,7 @@ and typeof_daesolver_op fi l op ts env  =
 
 
  
- and typeof2 env t =
+ and typeof_top env t =
   let (ty2,t2) = typeof env t in
   match ty2 with
   | TyEnv((x,ty2)::_) -> (ty2,t2)
@@ -387,7 +387,10 @@ and typeof_daesolver_op fi l op ts env  =
           (match List.length env2 with
            | 0 -> 
              raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))
-           | 1 -> (let ty1 = List.assoc x env in (ty1,TmVar(fi,x)))           
+           | _ -> (let ty1 = List.assoc x env in (ty1,TmVar(fi,x)))           
+           (* Note that the above _ should be changed to 1. But, then we need
+              to handle typeof_top in a correct way *)
+           
            | _ -> (TyEnv(env2),TmVar(fi,x))))
 
       | TmLam(fi,l,x,ty1,t2) ->

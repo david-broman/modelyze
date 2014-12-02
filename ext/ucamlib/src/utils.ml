@@ -32,7 +32,6 @@ let find_associndex x l =
       | (y,v)::ys -> if x = y then (v,c) else findidx ys (c+1)
   in findidx l 0
 
-let (|>) x f = f x 
 
 let (<|) f x = f x 
 
@@ -78,8 +77,8 @@ let rec option_split lst =
 
 
 let string_of_intlist il = 
-  let s = String.create (List.length il) in
-  il |> List.fold_left (fun i x -> (s.[i] <- char_of_int x); i+1) 0 |> ignore;
+  let s = Bytes.create (List.length il) in
+  il |> List.fold_left (fun i x -> (Bytes.set s i (char_of_int x)); i+1) 0 |> ignore;
   s
 
 let intlist_of_string s =
@@ -96,7 +95,7 @@ let write_binfile filename str =
 let read_binfile filename =
   let f = open_in_bin filename in
   let size = in_channel_length f in
-  let s = String.create size in
+  let s = Bytes.create size in
   try 
     let rec readinput pos size =
       let read = input f s pos size in

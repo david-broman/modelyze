@@ -57,7 +57,7 @@ byte: 	comp_c_files
 
 # C-files. Ugly treatment of error that latest ocaml generates.  
 comp_c_files:
-	@ocamlbuild ext/sundials/ida_stubs.o -cflags '-ccopt -Wno-error=unused-command-line-argument-hard-error-in-future' > /dev/null 2>&1
+	@ocamlbuild ext/sundials/ida_stubs.o  > /dev/null 2>&1
 
 
 # Handling subtree for ext/ucamlib

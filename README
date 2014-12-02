@@ -43,7 +43,7 @@ other Mac OS versions as well.
 2. Install Macports (including X11 support)
    http://www.macports.org/
 3. Install Objective Caml compiler and gnuplot via Macports.
-   Note that version 4.01.0 or later is required.
+   Note that version 4.02.1 or later is required.
    >> sudo port install ocaml gnuplot
 4. If you do not have git installed, install it. 
    See for instance http://gitx.frim.nl/

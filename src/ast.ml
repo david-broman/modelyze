@@ -57,6 +57,7 @@ type ty =
   | TyMap       of info * level * ty * ty
   | TySet       of info * level * ty 
   | TyDAESolver of info * level
+  | TyEnv       of (ident * ty) list
 
 (** Primitive, built-in functions *)
 type primitive = 
@@ -342,6 +343,7 @@ let pprint_ty t =
 	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
         | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
 	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
+        | TyEnv(_) -> us"TyEnv"
   in pprint_ty false t
 
 let pprint_array_op op =

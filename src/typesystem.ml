@@ -362,17 +362,7 @@ and typeof_daesolver_op fi l op ts env  =
 	            (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                      [ustring_of_int (List.length ts)]))
 
-(* ( (f x1) (f2 (g x2) x3) x4 *)
 
-
-(* 
- and typeof_top env t =
-  let (ty2,t2) = typeof env t in
-  match ty2 with
-  | TyEnv((x,ty2)::_) -> (ty2,t2)
-  | ty2 -> (ty2,t2)
-  | _ -> failwith "Internal error: Type of top error"
-*)
 
  and typeof env t =
     match t with
@@ -383,11 +373,16 @@ and typeof_daesolver_op fi l op ts env  =
  *)
 
       | TmVar(fi,x) -> (           
-          let env2 = List.filter (fun (y,_) -> y = x) env in
-          (match List.length env2 with
+          let env_with_depth = 
+            List.mapi (fun i (_,ty) -> (i,ty)) (List.filter (fun (y,_) -> y = x) env)
+          in
+          (match List.length env_with_depth with
            | 0 -> 
              raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))
-           | _ -> (let ty1 = List.assoc x env in (ty1,TmVar(fi,x)))))
+           | _ -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
+           | _ -> (TyEnv(NoInfo,x,env_with_depth),TmVar(fi,x))
+             
+          ))
            (* Note that the above _ should be changed to 1. But, then we need
               to handle typeof_top in a correct way *)
            

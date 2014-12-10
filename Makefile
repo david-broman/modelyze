@@ -71,6 +71,9 @@ push_ucamlib:
 	git subtree push --prefix ext/ucamlib $(UCAMLIB_GIT) master --squash
 
 
+test:   all
+	@cd test; ./regression
+
 # Clean all submodules and the main Modelyze source
 clean:
 	@ocamlbuild -clean

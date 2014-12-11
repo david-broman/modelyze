@@ -54,7 +54,7 @@ let translate t =
       | (x,ty)::res -> TmLam(mkfuns res t d ((x,d)::denv) )
   and trans t d denv  = 
     match t with
-      | Ast.TmVar(_,id) -> 
+      | Ast.TmVar(_,id,k) -> 
 	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
 	   with Not_found -> assert false)
       | Ast.TmLam(_,l,id,ty,t) -> 

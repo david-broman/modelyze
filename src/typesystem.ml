@@ -384,15 +384,15 @@ and typeof_pure env t =
             raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))))
  *)
 
-      | TmVar(fi,x) -> (           
+      | TmVar(fi,x,k) -> (           
           let env_with_depth = 
             List.mapi (fun i (_,ty) -> (i,ty)) (List.filter (fun (y,_) -> y = x) env)
           in
           (match List.length env_with_depth with
            | 0 -> 
              raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))
-           | 1 -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
-           | _ -> (TyEnv(NoInfo,x,env_with_depth),TmVar(fi,x))))
+           | 1 -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x,k))
+           | _ -> (TyEnv(NoInfo,x,env_with_depth),TmVar(fi,x,k))))
 
       | TmLam(fi,l,x,ty1,t2) ->
           let (ty2,t2') = typeof_pure ((x,ty1)::env)  t2 in

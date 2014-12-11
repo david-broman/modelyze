@@ -198,7 +198,7 @@ and top =
     is interpreted. *)
 and tm = 
     (* Basic terms *)
-  | TmVar         of info * ident
+  | TmVar         of info * ident * int
   | TmLam         of info * level * ident * ty * tm
   | TmApp         of info * level * tm * tm * specialize
   | TmFix         of info * level * tm
@@ -423,7 +423,7 @@ and pprint_cases cases =
 
 and pprint tm = 
   match tm with
-  | TmVar(_,id) -> Symtbl.get id        
+  | TmVar(_,id,_) -> Symtbl.get id        
   | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
       us":" ^. pprint_ty ty ^. us" -> " ^. pprint t ^. us")"
   | TmApp(_,l,t1,t2,fs) -> (if fs then us"specialize(" else us"(" )
@@ -832,7 +832,7 @@ let primitive_arity p =
 
 let rec tm_info t =
   match t with
-    | TmVar(fi,_) -> fi
+    | TmVar(fi,_,_) -> fi
     | TmLam(fi,_,_,_,_) -> fi
     | TmApp(fi,_,_,_,_) -> fi
     | TmFix(fi,_,_) -> fi
@@ -866,7 +866,7 @@ let rec tm_info t =
 
 let rec set_tm_info newfi tm = 
   match tm with
-    | TmVar(_,x) -> TmVar(newfi,x)
+    | TmVar(_,x,i) -> TmVar(newfi,x,i)
     | TmLam(_,l,y,ty,t) -> TmLam(newfi,l,y,ty,t)
     | TmApp(_,l,t1,t2,fs) -> TmApp(newfi,l,t1,t2,fs)
     | TmFix(_,l,t) -> TmFix(newfi,l,t)
@@ -1041,7 +1041,7 @@ and fv_patcases cases =
 (** Free variables in a term *)
 and fv_tm t = 
   match t with
-    | TmVar(fi,x) -> VarSet.singleton(x)
+    | TmVar(fi,x,i) -> VarSet.singleton(x)
     | TmLam(fi,l,y,ty,t) -> VarSet.diff (fv_tm t) (VarSet.singleton y)
     | TmApp(fi,l,t1,t2,_) -> VarSet.union (fv_tm t1) (fv_tm t2)
     | TmFix(fi,l,t) -> fv_tm t

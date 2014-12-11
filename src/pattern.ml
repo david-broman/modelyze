@@ -82,7 +82,7 @@ and subst_var_mtrans x y mtrans =
 
 and subst_var (x:int) (y:int) (tm:tm)  =
     match tm with
-      | TmVar(fi,z) as tt -> if x = z then TmVar(fi,y) else tt
+      | TmVar(fi,z,k) as tt -> if x = z then TmVar(fi,y,k) else tt
       | TmLam(fi,l,z,ty1,t2) as tt -> 
 	  if x = z then tt else TmLam(fi,l,z,ty1,subst_var x y t2)
       | TmApp(fi,l,t1,t2,fs) -> TmApp(fi,l,subst_var x y t1, subst_var x y t2,fs)
@@ -175,7 +175,7 @@ and dsmatch_list l u us eqs default =
   let x2 = fresh_var() in
   let t1 = dsmatch l (x1::x2::us) eqs_cons default in
   let t2 = dsmatch l us eqs_nil default in
-    TmLcase(fi,l,TmVar(fi,u),x1,x2,t1,t2)
+    TmLcase(fi,l,TmVar(fi,u,0),x1,x2,t1,t2)
 
 and dsmatch_tuple l u us eqs default len =
   let eqs_tuple = filtermap (function
@@ -190,7 +190,7 @@ and dsmatch_tuple l u us eqs default len =
   let rec mkproj vars n = 
     match vars with
       | x::xs -> 
-	  TmLet(fi,l,x,None,[],TmProj(fi,l,n,TmVar(fi,u)),mkproj xs (n+1),false)
+	  TmLet(fi,l,x,None,[],TmProj(fi,l,n,TmVar(fi,u,0)),mkproj xs (n+1),false)
       | [] -> dsmatch l (xn@us) eqs_tuple default 
   in mkproj xn 0
 
@@ -211,7 +211,7 @@ and dsmatch_model l u us eqs default =
         let fi = eqs_info eqs in
         let (x1,x2) = (fresh_var(), fresh_var ()) in
         let tm1 = dsmatch l (x1::x2::us) eqs def in
-          TmCase(fi,l,TmVar(fi,u),mpatcon fi x1 x2,tm1,def) 
+          TmCase(fi,l,TmVar(fi,u,0),mpatcon fi x1 x2,tm1,def) 
     in
       mk_mod qsapp (fun fi x1 x2 -> MPatSymApp(fi,x1,x2)) default
 
@@ -232,7 +232,7 @@ and generate_conditional fi l vtranss t1op e default =
   let rec collapse vtranss (btm,vts) = 
       match vtranss with
         | VTransExpr(fi,x,t)::vs -> 
-            collapse vs ((mktm_and_equal fi l btm (TmVar(fi,x)) t),vts)       
+            collapse vs ((mktm_and_equal fi l btm (TmVar(fi,x,0)) t),vts)       
         | (VTransModUk(fi,x,ty) as v)::vs -> collapse vs (btm,v::vts)
         | (VTransModVal(fi,x,y,ty) as v)::vs -> collapse vs (btm,v::vts)
         | [] -> (btm,List.rev vts)
@@ -246,16 +246,16 @@ and generate_conditional fi l vtranss t1op e default =
     if List.length vst + (if btm = tm_true l then 1 else 0) <= 1 
     then ((fun e -> e),default)
     else ((fun e -> TmLet(fi,l,x,None,[],TmLam(fi,l,y,TyUnit(fi,l),default),e,false)),
-          TmApp(fi,l,TmVar(fi,x),TmConst(fi,l,ConstUnit),false))
+          TmApp(fi,l,TmVar(fi,x,0),TmConst(fi,l,ConstUnit),false))
   in 
   let e' =  if btm = tm_true l then e else TmIf(fi,l,btm,e,defval) in
   let e'' = List.fold_right 
     (fun vt e -> match vt with
        | VTransExpr(_,_,_) -> assert false
        | VTransModUk(fi,u,ty) -> 
-            TmCase(fi,l,TmVar(fi,u),MPatSym(fi,ty),e,defval)
+            TmCase(fi,l,TmVar(fi,u,0),MPatSym(fi,ty),e,defval)
        | VTransModVal(fi,u,x,ty) ->
-            TmCase(fi,l,TmVar(fi,u),MPatLift(fi,x,ty),e,defval)) vst e' in
+            TmCase(fi,l,TmVar(fi,u,0),MPatLift(fi,x,ty),e,defval)) vst e' in
   deffun e''
 
 and dsmatch l uvars eqs default  = 
@@ -319,7 +319,7 @@ and desugar_match fi l t cases  =
 and desugar tm =
   let rec ds tm =
     match tm with
-      | TmVar(fi,x) as tt -> tt 
+      | TmVar(fi,x,_) as tt -> tt 
       | TmLam(fi,l,x,ty1,t2) -> TmLam(fi,l,x,ty1,ds t2)
       | TmApp(fi,l,t1,t2,fs) -> TmApp(fi,l,ds t1,ds t2,fs) 
       | TmFix(fi,l,t) -> TmFix(fi,l,ds t) 

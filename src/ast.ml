@@ -57,10 +57,10 @@ type ty =
   | TyMap       of info * level * ty * ty
   | TySet       of info * level * ty 
   | TyDAESolver of info * level
-  | TyEnv       of info * ident * (int * ty) list
+  | TyEnv       of info * ident * (int * (ty * tm)) list
 
 (** Primitive, built-in functions *)
-type primitive = 
+and primitive = 
   | PrimIntMod 
   | PrimIntAdd
   | PrimIntSub
@@ -121,7 +121,7 @@ type primitive =
 
 (** Constants. Models e.g. integers, strings, built-in 
     functions and model relations *)
-type const =
+and const =
   | ConstBool     of bool
   | ConstInt      of int
   | ConstReal     of float
@@ -238,7 +238,6 @@ and tm =
   | TmDPrintType  of tm
   | TmSymStr      of info * tm
   | TmError       of info * level * tm
-
 
 let rec metastr n = 
   if n == 0 then us"" else us"#" ^. metastr (n-1)      

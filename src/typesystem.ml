@@ -366,9 +366,9 @@ and typeof_daesolver_op fi l op ts env  =
    Basically used everywhere, except for function application *)
 and typeof_pure env t = 
   match typeof env t with
-  | (TyEnv(fi,id,lst),t2) -> 
+  | (TyEnv(fi,id,lst),_) -> 
       (match lst with 
-       | (_,ty2)::_ -> (ty2,t2)
+       | (_,(ty2,t2))::_ -> (ty2,t2)
        | [] -> failwith "TyEnv should not have an empty type list.")
       
   | othertypes -> othertypes
@@ -386,12 +386,12 @@ and typeof_pure env t =
 
       | TmVar(fi,x,k) -> (           
           let env_with_depth = 
-            List.mapi (fun i (_,ty) -> (i,ty)) (List.filter (fun (y,_) -> y = x) env)
+            List.mapi (fun i (_,ty) -> (i,(ty,TmVar(fi,x,i)))) (List.filter (fun (y,_) -> y = x) env)
           in
           (match List.length env_with_depth with
            | 0 -> 
              raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))
-           | 1 -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x,k))
+           | 1 -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x,k)) 
            | _ -> (TyEnv(NoInfo,x,env_with_depth),TmVar(fi,x,k))))
 
       | TmLam(fi,l,x,ty1,t2) ->
@@ -440,7 +440,16 @@ and typeof_pure env t =
                       Some(TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e1',e2''))
                 | _,_ -> None)
 
-          in        
+          in
+(*
+          (match ty1 with
+          | TyEnv(fi,id,tylst) -> 
+            let filter_check tylst 
+              List.filter (fun (k,ty) -> match_app ty ty2) tylst
+            List.mapi (fun i (_,ty) -> (i,ty)) (List.filter (fun (y,_) -> y = x) env)
+
+               let 
+*)        
               (match match_app ty1 ty2 with
                 | Some(ty,tm) -> (ty,tm)
                 | None -> 

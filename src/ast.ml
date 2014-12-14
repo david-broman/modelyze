@@ -316,7 +316,7 @@ let pprint_const c l =
     | ConstUnit ->  us"()"
     | ConstPrim(p,_) -> pprint_primitive p
 
-let pprint_ty t =
+let rec pprint_ty t =
   let rec pprint_ty left t =
       match t with 
 	| TyBool(_,l) -> metastr l ^. us"Bool"  
@@ -342,17 +342,22 @@ let pprint_ty t =
 	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
         | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
 	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
-        | TyEnv(_,_,_) -> us"TyEnv"
+        | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
+            (List.map (fun (k,(ty,tm)) -> 
+                         us"(" ^. ustring_of_int k ^. us",(" ^. 
+                         pprint_ty false ty ^. us"," ^. pprint tm ^. us")")))
+            |> Ustring.concat (us",")) ^. us")")                            
+
   in pprint_ty false t
 
-let pprint_array_op op =
+and pprint_array_op op =
   match op with
   | ArrayOpLength -> us"length"
   | ArrayOpMake -> us"make"
   | ArrayOpGet -> us"get"
   | ArrayOpSet -> us"set"
 
-let pprint_map_op op =
+and pprint_map_op op =
   match op with
   | MapOpSize -> us"size"
   | MapOpEmpty -> us"empty"
@@ -362,7 +367,7 @@ let pprint_map_op op =
   | MapOpRemove -> us"remove"
   | MapOpToList -> us"fold"
 
-let pprint_set_op op =
+and pprint_set_op op =
   match op with
   | SetOpSize -> us"size"
   | SetOpEmpty -> us"empty"
@@ -371,7 +376,7 @@ let pprint_set_op op =
   | SetOpRemove -> us"remove"
   | SetOpToList -> us"toList"
 
-let pprint_daesolver_op op =
+and pprint_daesolver_op op =
   match op with
   | DAESolverOpMake -> us"make"
   | DAESolverOpMakeHybrid -> us"makehybrid"
@@ -380,14 +385,14 @@ let pprint_daesolver_op op =
   | DAESolverOpClose -> us"close"
   | DAESolverOpRoots -> us"roots"
 
-let pprint_mpat p = 
+and pprint_mpat p = 
   match p with
   | MPatSym(_,ty) -> us"sym:" ^. pprint_ty ty 
   | MPatSymApp(_,x,y) -> us"(symapp " ^. Symtbl.get x ^. us" " ^. Symtbl.get y ^. us")"
   | MPatLift(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
 
 
-let rec pprint_pat p =
+and pprint_pat p =
   match p with 
   | PatVar(_,x,_) -> Symtbl.get x
   | PatExpr(_,t) -> pprint t
@@ -422,7 +427,7 @@ and pprint_cases cases =
 
 and pprint tm = 
   match tm with
-  | TmVar(_,id,_) -> Symtbl.get id        
+  | TmVar(_,id,k) -> Symtbl.get id ^. us"{" ^. ustring_of_int k ^. us"}"       
   | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
       us":" ^. pprint_ty ty ^. us" -> " ^. pprint t ^. us")"
   | TmApp(_,l,t1,t2,fs) -> (if fs then us"specialize(" else us"(" )

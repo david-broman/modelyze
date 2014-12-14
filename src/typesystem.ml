@@ -378,15 +378,10 @@ and typeof_pure env t =
 
  and typeof env t =
     match t with
- (*     | TmVar(fi,x) -> ( 
-          try let ty1 = List.assoc x env in (ty1,TmVar(fi,x))
-	  with Not_found -> (
-            raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))))
- *)
-
       | TmVar(fi,x,k) -> (           
           let env_with_depth = 
-            List.mapi (fun i (_,ty) -> (i,(ty,TmVar(fi,x,i)))) (List.filter (fun (y,_) -> y = x) env)
+            List.mapi (fun i (_,ty) -> (i,(ty,TmVar(fi,x,i)))) 
+                         (List.filter (fun (y,_) -> y = x) env)
           in
           (match List.length env_with_depth with
            | 0 -> 
@@ -407,57 +402,51 @@ and typeof_pure env t =
 		  else (ty1,TmFix(fi,l,t'))
 	      | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
 	    end
-        | TmApp(fi,_,e1,e2,fs)  -> 
-          (* Next step is to remove _pure from the ty1.  *)
-          let (ty1,e1') = typeof_pure env e1 in
+      | TmApp(fi,_,e1,e2,fs)  -> 
+          let (ty1,e1') = typeof env e1 in
           let (ty2,e2') = typeof_pure env e2 in
-          let match_app ty1 ty2 =
+          let match_app ty1 ty2 e =
              (match ty1,ty2 with
                   (* L-APP1 *) 
                 | TyArrow(fi2,_,ty11,ty12),ty2 
                     when consistent ty11 ty2
-                     -> Some(ty12,TmApp(fi,0,e1',e2',fs))
+                     -> Some(ty12,TmApp(fi,0,e,e2',fs))
                     (* L-APP2 *)
                 | TyDyn(fi2,_),ty2 
-                    -> Some(TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
+                    -> Some(TyDyn(fi2,0), TmApp(fi,0,e,e2',fs))
                     (* L-APP3 *) 
                 | TyArrow(fi2,_,ty11,ty12),ty2 
                     when consistent ty11 (TySym(NoInfo,0,ty2))
-                      -> Some(ty12,TmApp(fi,0,e1',TmLift(NoInfo,0,e2',ty2),fs))
+                      -> Some(ty12,TmApp(fi,0,e,TmLift(NoInfo,0,e2',ty2),fs))
                     (* L-APP4 *)
                 | TyArrow(fi2,_,ty11,ty12),ty2 
                     when (consistent (TySym(NoInfo,0,ty11)) ty2)
-                      -> Some(TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e1',ty1),e2'))  
+                      -> Some(TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e,ty1),e2'))  
                     (* L-APP5 *)
                 | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
                     when (consistent (TySym(NoInfo,0,ty11)) (lift_type ty2)) 
                       -> let e2'' = lift_expr e2' ty2 in
-                        Some(TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,e1',e2''))
+                        Some(TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,e,e2''))
                           (* L-APP6 *)
                 | TySym(fi2,_,TyDyn(fi3,_)),ty2 
                     -> let e2'' = lift_expr e2' ty2 in
-                      Some(TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e1',e2''))
+                      Some(TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e,e2''))
                 | _,_ -> None)
-
           in
           (match ty1 with
            | TyEnv(fi,x,tylst) -> 
                let rec filterlst lst = (
                   match lst with
                   | (k,(ty,tm))::ls -> (
-                        match match_app ty ty2 with
+                        match match_app ty ty2 tm with
                         | Some(ty2,tm2) -> (k,(ty2,tm2))::(filterlst ls)
-                        | None -> filterlst ls)
+                        | None ->  filterlst ls)
                   | [] -> [])
-               in
-               (match filterlst tylst with
-                | [(k,(ty,tm))] -> (ty,tm) 
-                | lst -> (TyEnv(fi,x,lst), e1') 
-               )
-                (*    (TyEnv(fi,x,filterlst tylst), e1') *)
+               in         
+                    (TyEnv(fi,x,filterlst tylst), e1')  
 
             | _ -> 
-              (match match_app ty1 ty2 with
+              (match match_app ty1 ty2 e1' with
                 | Some(ty,tm) -> (ty,tm)
                 | None -> 
                   (match ty1,ty2 with 
@@ -471,45 +460,6 @@ and typeof_pure env t =
                     | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,tm_info e1,[pprint_ty ty1;missing_infix_message env ty1]))
                   )))
 
-
-(*      | TmApp(fi,_,e1,e2,fs)  -> 
-          let (ty1,e1') = typeof_pure env e1 in
-          let (ty2,e2') = typeof_pure env e2 in
-            (match ty1,ty2 with
-                 (* L-APP1 *) 
-               | TyArrow(fi2,_,ty11,ty12),ty2 
-                   when consistent ty11 ty2
-                     -> (ty12,TmApp(fi,0,e1',e2',fs))
-                   (* L-APP2 *)
-               | TyDyn(fi2,_),ty2 
-                   -> (TyDyn(fi2,0), TmApp(fi,0,e1',e2',fs))
-                   (* L-APP3 *) 
-               | TyArrow(fi2,_,ty11,ty12),ty2 
-                   when consistent ty11 (TySym(NoInfo,0,ty2))
-                     -> (ty12,TmApp(fi,0,e1',TmLift(NoInfo,0,e2',ty2),fs))
-                   (* L-APP4 *)
-               | TyArrow(fi2,_,ty11,ty12),ty2 
-                   when (consistent (TySym(NoInfo,0,ty11)) ty2)
-                     -> (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e1',ty1),e2'))  
-                   (* L-APP5 *)
-               | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
-                   when (consistent (TySym(NoInfo,0,ty11)) (lift_type ty2)) 
-                     -> let e2'' = lift_expr e2' ty2 in
-                       (TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,e1',e2''))
-                         (* L-APP6 *)
-               | TySym(fi2,_,TyDyn(fi3,_)),ty2 
-                   -> let e2'' = lift_expr e2' ty2 in
-                     (TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e1',e2''))
-                       (* Error handling: Incomplete symbol application. Missing argument *)
-               | TySym(_,_,(TyArrow(fi1,_,ty11,ty12))),TySym(_,_,(TyArrow(fi2,_,ty21,ty22))) ->
-                   raise (Mkl_type_error(TYPE_SYMAPP_MISSING_ARG,ERROR,mk_right_info(tm_info e2),[pprint_ty ty21]))                  
-                       (* Error handling: Incorrect argument to a symbolic function*)
-               | TyArrow(fi2,_,ty11,ty12),ty2 | TySym(_,_,TyArrow(fi2,_,ty11,ty12)),ty2  -> 
-                   raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,tm_info e2,[pprint_ty (remove_sym_type ty11); missing_infix_message env ty2]))
-                       (* Error handling: Not a function *)
-               | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,tm_info e1,[pprint_ty ty1;missing_infix_message env ty1]))
-            )              
-*)
       | TmLet(fi,_,x,ty,plst,e1,e2,recu) ->
 	  let t1_env = mk_letenv plst 0 env in
           let (ty1,e1') = 

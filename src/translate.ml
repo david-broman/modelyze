@@ -17,7 +17,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 *)
 
 open Evalast
-
+open Printf
 
 
 let rec trans_ty ty =

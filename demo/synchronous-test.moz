@@ -161,7 +161,7 @@ def main = {
     //def target = 0; // general processor
     def target = 1; // PRET
     def code = generateCode(sortedSignals, codeGenSteps, loopDelay, false, showSet, target);
-    def _ = printLine(code);
+    def _ = printl(code);
    ()
 }
 

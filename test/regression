@@ -18,7 +18,7 @@ test_file "hybrid-ball-stairs"
 test_file "lotkavolterra"
 test_file "pendulum"
 # test_file "simpleresistorswitch"
-test_file "synchronous"
+test_file "synchronous-test"
 test_file "timer"
 test_file "very-fast-fly"
 

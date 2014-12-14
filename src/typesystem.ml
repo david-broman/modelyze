@@ -408,8 +408,7 @@ and typeof_pure env t =
 	      | _ -> raise (Mkl_type_error(TYPE_FIX_ERROR,ERROR,tm_info t,[]))
 	    end
         | TmApp(fi,_,e1,e2,fs)  -> 
-          (* Next step is to implement only typeof here and to actually filter out
-             types in the tyenv if they do not match *)
+          (* Next step is to remove _pure from the ty1.  *)
           let (ty1,e1') = typeof_pure env e1 in
           let (ty2,e2') = typeof_pure env e2 in
           let match_app ty1 ty2 =
@@ -441,15 +440,23 @@ and typeof_pure env t =
                 | _,_ -> None)
 
           in
-(*
           (match ty1 with
-          | TyEnv(fi,id,tylst) -> 
-            let filter_check tylst 
-              List.filter (fun (k,ty) -> match_app ty ty2) tylst
-            List.mapi (fun i (_,ty) -> (i,ty)) (List.filter (fun (y,_) -> y = x) env)
+           | TyEnv(fi,x,tylst) -> 
+               let rec filterlst lst = (
+                  match lst with
+                  | (k,(ty,tm))::ls -> (
+                        match match_app ty ty2 with
+                        | Some(ty2,tm2) -> (k,(ty2,tm2))::(filterlst ls)
+                        | None -> filterlst ls)
+                  | [] -> [])
+               in
+               (match filterlst tylst with
+                | [(k,(ty,tm))] -> (ty,tm) 
+                | lst -> (TyEnv(fi,x,lst), e1') 
+               )
+                (*    (TyEnv(fi,x,filterlst tylst), e1') *)
 
-               let 
-*)        
+            | _ -> 
               (match match_app ty1 ty2 with
                 | Some(ty,tm) -> (ty,tm)
                 | None -> 
@@ -462,7 +469,7 @@ and typeof_pure env t =
                        raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,tm_info e2,[pprint_ty (remove_sym_type ty11); missing_infix_message env ty2]))
                     (* Error handling: Not a function *)
                     | ty1,ty2 -> raise (Mkl_type_error(TYPE_APP_ABS_MISMATCH,ERROR,tm_info e1,[pprint_ty ty1;missing_infix_message env ty1]))
-                  ))
+                  )))
 
 
 (*      | TmApp(fi,_,e1,e2,fs)  -> 

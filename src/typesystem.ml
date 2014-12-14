@@ -407,32 +407,40 @@ and typeof_pure env t =
           let (ty1,e1') = typeof env e1 in
           let (ty2,e2') = typeof_pure env e2 in
           let match_app ty1 ty2 e =
-             (match ty1,ty2 with
-                  (* L-APP1 *) 
-                | TyArrow(fi2,_,ty11,ty12),ty2 
+             (match ty1,ty2,e2' with
+         (*  //This is incorrect and does not work. I should implement 
+               this using the consistent operator instead.       
+                  | TyArrow(fi2,_,TyReal(_,_),ty12), TyInt(_,_), 
+                    TmConst(fi3,_,ConstInt(i)) 
+                    -> 
+                  Some(ty12,TmApp(fi,0,e,
+                                 TmConst(fi2,0,ConstReal(float_of_int(i))),fs)) 
+         *)
+                    (* L-APP1 *) 
+                | TyArrow(fi2,_,ty11,ty12),ty2,_ 
                     when consistent ty11 ty2
                      -> Some(ty12,TmApp(fi,0,e,e2',fs))
                     (* L-APP2 *)
-                | TyDyn(fi2,_),ty2 
+                | TyDyn(fi2,_),ty2,_ 
                     -> Some(TyDyn(fi2,0), TmApp(fi,0,e,e2',fs))
                     (* L-APP3 *) 
-                | TyArrow(fi2,_,ty11,ty12),ty2 
+                | TyArrow(fi2,_,ty11,ty12),ty2,_ 
                     when consistent ty11 (TySym(NoInfo,0,ty2))
                       -> Some(ty12,TmApp(fi,0,e,TmLift(NoInfo,0,e2',ty2),fs))
                     (* L-APP4 *)
-                | TyArrow(fi2,_,ty11,ty12),ty2 
+                | TyArrow(fi2,_,ty11,ty12),ty2,_ 
                     when (consistent (TySym(NoInfo,0,ty11)) ty2)
                       -> Some(TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,TmLift(NoInfo,0,e,ty1),e2'))  
                     (* L-APP5 *)
-                | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2
+                | TySym(fi2,_,TyArrow(fi3,_,ty11,ty12)),ty2,_
                     when (consistent (TySym(NoInfo,0,ty11)) (lift_type ty2)) 
                       -> let e2'' = lift_expr e2' ty2 in
                         Some(TySym(ty_info ty12,0,ty12), TmSymApp(fi,0,e,e2''))
                           (* L-APP6 *)
-                | TySym(fi2,_,TyDyn(fi3,_)),ty2 
+                | TySym(fi2,_,TyDyn(fi3,_)),ty2,_ 
                     -> let e2'' = lift_expr e2' ty2 in
                       Some(TySym(fi2,0,TyDyn(fi3,0)), TmSymApp(fi,0,e,e2''))
-                | _,_ -> None)
+                | _,_,_ -> None)
           in
           (match ty1 with
            | TyEnv(fi,x,tylst) -> 

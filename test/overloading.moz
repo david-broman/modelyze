@@ -13,3 +13,5 @@ def _ = printl("Hello")
 def _ = printl(max(77,18))   
 def _ = printl(max(44.12,18.23))
 
+// Test literals for integers and reals
+//def _ = printl(100.0 + 200)

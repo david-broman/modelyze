@@ -366,7 +366,7 @@ and typeof_daesolver_op fi l op ts env  =
    Basically used everywhere, except for function application *)
 and typeof_pure env t = 
   match typeof env t with
-  | (TyEnv(fi,id,lst),_) -> 
+  | (TyEnv(fi,lst),_) -> 
       (match lst with 
        | (_,(ty2,t2))::_ -> (ty2,t2)
        | [] -> failwith "TyEnv should not have an empty type list.")
@@ -387,7 +387,7 @@ and typeof_pure env t =
            | 0 -> 
              raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))
            | 1 -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x,k)) 
-           | _ -> (TyEnv(NoInfo,x,env_with_depth),TmVar(fi,x,k))))
+           | _ -> (TyEnv(NoInfo,env_with_depth),TmVar(fi,x,k))))
 
       | TmLam(fi,l,x,ty1,t2) ->
           let (ty2,t2') = typeof_pure ((x,ty1)::env)  t2 in
@@ -434,7 +434,7 @@ and typeof_pure env t =
                 | _,_ -> None)
           in
           (match ty1 with
-           | TyEnv(fi,x,tylst) -> 
+           | TyEnv(fi,tylst) -> 
                let rec filterlst lst = (
                   match lst with
                   | (k,(ty,tm))::ls -> (
@@ -443,7 +443,7 @@ and typeof_pure env t =
                         | None ->  filterlst ls)
                   | [] -> [])
                in         
-                    (TyEnv(fi,x,filterlst tylst), e1')  
+                    (TyEnv(fi,filterlst tylst), e1')  
 
             | _ -> 
               (match match_app ty1 ty2 e1' with

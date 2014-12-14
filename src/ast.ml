@@ -39,7 +39,13 @@ type fname = int
 type recursive = bool 
 type specialize = bool
 
-(** Definition of types in the language *)
+(** Definition of types in the language.
+    Special notes:
+    TyEnv defines an environment type that is used internally by the typechecker
+    for handling overloading of variables. The integer value is a level type
+    that states how far away the actual overloaded variable is. Used in the
+    the translation function to increase the index number. The tuple with a type
+    and a term expresses one possible overloading choice. *)
 type ty = 
   | TyBool      of info * level
   | TyInt       of info * level
@@ -57,7 +63,7 @@ type ty =
   | TyMap       of info * level * ty * ty
   | TySet       of info * level * ty 
   | TyDAESolver of info * level
-  | TyEnv       of info * ident * (int * (ty * tm)) list
+  | TyEnv       of info * (int * (ty * tm)) list
 
 (** Primitive, built-in functions *)
 and primitive = 
@@ -342,7 +348,7 @@ let rec pprint_ty t =
 	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
         | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
 	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
-        | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
+        | TyEnv(_,lst) -> (us"TyEnv(" ^. ((lst |>
             (List.map (fun (k,(ty,tm)) -> 
                          us"(" ^. ustring_of_int k ^. us",(" ^. 
                          pprint_ty false ty ^. us"," ^. pprint tm ^. us")")))
@@ -932,7 +938,7 @@ let ty_info ty =
     | TyMap(fi,_,_,_) -> fi 
     | TySet(fi,_,_) -> fi
     | TyDAESolver(fi,_) -> fi
-    | TyEnv(fi,_,_) -> fi
+    | TyEnv(fi,_) -> fi
 
 let rec set_ty_info newfi ty = 
   match ty with 
@@ -954,7 +960,7 @@ let rec set_ty_info newfi ty =
         TyMap(newfi,l,set_ty_info newfi ty1,set_ty_info newfi ty2)
     | TySet(_,l,ty) -> TySet(newfi,l,set_ty_info newfi ty)
     | TyDAESolver(_,l) -> TyDAESolver(newfi,l)
-    | TyEnv(_,id,lst) -> TyEnv(newfi,id,lst)
+    | TyEnv(_,lst) -> TyEnv(newfi,lst)
 
 let ty_lev ty =
   match ty with 
@@ -974,7 +980,7 @@ let ty_lev ty =
     | TyMap(_,l,_,_) -> l
     | TySet(_,l,_) -> l
     | TyDAESolver(_,l) -> l
-    | TyEnv(_,_,_) -> 0
+    | TyEnv(_,_) -> 0
 
 
 (** Change so that pattern variables cannot automatically be escaped *)

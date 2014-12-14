@@ -1,25 +1,31 @@
 #!/bin/bash
 
-test_file()
+test_demo_file()
 {
   echo "Test" $1".moz"
   ../bin/moz --libpaths=../library/ ../demo/$1".moz" > test.out
   diff test.out "expected-output-"$1".txt"
-
 }
-   
-test_file "modelica-mechsys" 
 
-test_file "breaking-controlsys"
-# test_file "breakingpendulum"
-test_file "capacitor-switch"
-test_file "controlsys"
-test_file "hybrid-ball-stairs"
-test_file "lotkavolterra"
-test_file "pendulum"
-# test_file "simpleresistorswitch"
-test_file "synchronous-test"
-test_file "timer"
-test_file "very-fast-fly"
+test_local_file()
+{
+  echo "Test" $1".moz"
+  ../bin/moz --libpaths=../library/ $1".moz" > test.out
+  diff test.out "expected-output-"$1".txt"
+}
+
+   
+test_demo_file "modelica-mechsys" 
+test_demo_file "breaking-controlsys"
+test_demo_file "capacitor-switch"
+test_demo_file "controlsys"
+test_demo_file "hybrid-ball-stairs"
+test_demo_file "lotkavolterra"
+test_demo_file "pendulum"
+test_demo_file "synchronous-test"
+test_demo_file "timer"
+test_demo_file "very-fast-fly"
+
+test_local_file "overloading"
 
 rm -f test.out

@@ -63,7 +63,7 @@ type ty =
   | TyMap       of info * level * ty * ty
   | TySet       of info * level * ty 
   | TyDAESolver of info * level
-  | TyEnv       of info * (int * (ty * tm)) list
+  | TyEnv       of info * ident * (int * (ty * tm)) list
 
 (** Primitive, built-in functions *)
 and primitive = 
@@ -348,7 +348,7 @@ let rec pprint_ty t =
 	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
         | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
 	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
-        | TyEnv(_,lst) -> (us"TyEnv(" ^. ((lst |>
+        | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
             (List.map (fun (k,(ty,tm)) -> 
                          us"(" ^. ustring_of_int k ^. us",(" ^. 
                          pprint_ty false ty ^. us"," ^. pprint tm ^. us")")))
@@ -938,7 +938,7 @@ let ty_info ty =
     | TyMap(fi,_,_,_) -> fi 
     | TySet(fi,_,_) -> fi
     | TyDAESolver(fi,_) -> fi
-    | TyEnv(fi,_) -> fi
+    | TyEnv(fi,_,_) -> fi
 
 let rec set_ty_info newfi ty = 
   match ty with 
@@ -960,7 +960,7 @@ let rec set_ty_info newfi ty =
         TyMap(newfi,l,set_ty_info newfi ty1,set_ty_info newfi ty2)
     | TySet(_,l,ty) -> TySet(newfi,l,set_ty_info newfi ty)
     | TyDAESolver(_,l) -> TyDAESolver(newfi,l)
-    | TyEnv(_,lst) -> TyEnv(newfi,lst)
+    | TyEnv(_,x,lst) -> TyEnv(newfi,x,lst)
 
 let ty_lev ty =
   match ty with 
@@ -980,7 +980,7 @@ let ty_lev ty =
     | TyMap(_,l,_,_) -> l
     | TySet(_,l,_) -> l
     | TyDAESolver(_,l) -> l
-    | TyEnv(_,_) -> 0
+    | TyEnv(_,_,_) -> 0
 
 
 (** Change so that pattern variables cannot automatically be escaped *)

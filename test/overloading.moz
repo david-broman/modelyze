@@ -1,0 +1,15 @@
+
+
+include Base
+
+// Test overloading of add for Integers and Reals
+def _ = printl(4.1 + 77.12)
+def _ = printl(6.32 + 8.121)
+def _ = printl(5 + 8)
+def _ = printl(44 + 99)
+
+// Test oversloading of printl and max.
+def _ = printl("Hello")
+def _ = printl(max(77,18))   
+def _ = printl(max(44.12,18.23))
+

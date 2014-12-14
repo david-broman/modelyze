@@ -38,7 +38,7 @@ let rec trans_ty ty =
   | Ast.TyMap(_,_,ty1,ty2) -> TyMap(trans_ty ty1,trans_ty ty2)
   | Ast.TySet(_,_,ty) -> TySet(trans_ty ty)
   | Ast.TyDAESolver(_,_) -> TyDAESolver
-  | Ast.TyEnv(_,_) -> TyEnv
+  | Ast.TyEnv(_,_,_) -> TyEnv
 
 let trans_pat l p denv =
   match p with

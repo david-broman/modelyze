@@ -362,18 +362,19 @@ and typeof_daesolver_op fi l op ts env  =
 	            (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                      [ustring_of_int (List.length ts)]))
 
+ 
 (* Type of function that picks the top element if we have a type environment. 
    Basically used everywhere, except for function application *)
 and typeof_pure env t = 
   match typeof env t with
-  | (TyEnv(fi,lst),_) -> 
+  | (TyEnv(fi,x,lst),_) -> 
       (match lst with 
        | (_,(ty2,t2))::_ -> (ty2,t2)
-       | [] -> failwith "TyEnv should not have an empty type list.")
+       | [] -> raise (Mkl_type_error (TYPE_NO_OVERLOADING,ERROR,fi,[Symtbl.get x])))
+
+
       
   | othertypes -> othertypes
-
-
 
 
  and typeof env t =
@@ -387,7 +388,7 @@ and typeof_pure env t =
            | 0 -> 
              raise (Mkl_type_error (TYPE_VAR_NOT_DEFINED,ERROR,fi,[Symtbl.get x]))
            | 1 -> let ty1 = List.assoc x env in (ty1,TmVar(fi,x,k)) 
-           | _ -> (TyEnv(NoInfo,env_with_depth),TmVar(fi,x,k))))
+           | _ -> (TyEnv(fi,x,env_with_depth),TmVar(fi,x,k))))
 
       | TmLam(fi,l,x,ty1,t2) ->
           let (ty2,t2') = typeof_pure ((x,ty1)::env)  t2 in
@@ -434,7 +435,7 @@ and typeof_pure env t =
                 | _,_ -> None)
           in
           (match ty1 with
-           | TyEnv(fi,tylst) -> 
+           | TyEnv(fi,x,tylst) -> 
                let rec filterlst lst = (
                   match lst with
                   | (k,(ty,tm))::ls -> (
@@ -443,7 +444,7 @@ and typeof_pure env t =
                         | None ->  filterlst ls)
                   | [] -> [])
                in         
-                    (TyEnv(fi,filterlst tylst), e1')  
+                    (TyEnv(fi,x,filterlst tylst), e1')  
 
             | _ -> 
               (match match_app ty1 ty2 e1' with

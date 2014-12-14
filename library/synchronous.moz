@@ -19,7 +19,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 /* The synchronous domain was developed by Hokeun Kim, 2013 */
 
-include IBase
+include Base
 
 type SigInt = <Int>
 type SigBool = <Bool>

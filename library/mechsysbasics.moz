@@ -39,12 +39,12 @@ def DCMotor(flange:Rotational) -> Equations = {
 }
 
 def FlexibleShaft(n:Int, flangeA:Rotational, flangeB:Rotational) -> Equations = {
-  if n ==. 1 then 
+  if n == 1 then 
     ShaftElement(flangeA,flangeB)
   else {
     def r1:Rotational;
     ShaftElement(flangeA,r1);
-    FlexibleShaft(n -. 1, r1, flangeB);
+    FlexibleShaft(n-1, r1, flangeB);
   }
 }
 

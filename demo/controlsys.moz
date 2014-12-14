@@ -49,12 +49,12 @@ def ShaftElement(flangeA:Rotational, flangeB:Rotational) = {
 
 
 def FlexibleShaft(n:Int, flangeA:Rotational, flangeB:Rotational) -> Equations = {
-    if n ==. 1 then 
+    if n == 1 then 
       ShaftElement(flangeA,flangeB)
     else {
       def r1:Rotational;
       ShaftElement(flangeA,r1);
-      FlexibleShaft(n -. 1, r1, flangeB);
+      FlexibleShaft(n - 1, r1, flangeB);
     };
 }
 
@@ -62,12 +62,12 @@ type Element = <?> -> <?> -> Equations
 
 def serialize(n:Int, f1:Rotational, f2:Rotational, elem:Element) -> Equations = {
     def recursive(n:Int, f1:Rotational, f2:Rotational) -> Equations = {
-       if n ==. 1 then
+       if n == 1 then
             elem(f1,f2)
        else{
             def node:?;
             elem(f1,node);
-            recursive(n -. 1, node, f2);
+            recursive(n - 1, node, f2);
        }
     };
     recursive(n, f1, f2);

@@ -17,16 +17,16 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 
 def (mod) : Int -> Int -> Int = @@int_mod
-def (+.) : Int -> Int -> Int = @@int_add
-def (-.) : Int -> Int -> Int = @@int_sub
-def (*.) : Int -> Int -> Int = @@int_mul
-def (/.) : Int -> Int -> Int = @@int_div
-def (<.) : Int -> Int -> Bool = @@int_less
-def (<=.) : Int -> Int -> Bool = @@int_less_equal
-def (>.) : Int -> Int -> Bool = @@int_great
-def (>=.) : Int -> Int -> Bool = @@int_great_equal
-def (==.) : Int -> Int -> Bool = @@int_equal
-def (!=.) : Int -> Int -> Bool = @@int_not_equal
+def (+) : Int -> Int -> Int = @@int_add
+def (-) : Int -> Int -> Int = @@int_sub
+def (*) : Int -> Int -> Int = @@int_mul
+def (/) : Int -> Int -> Int = @@int_div
+def (<) : Int -> Int -> Bool = @@int_less
+def (<=) : Int -> Int -> Bool = @@int_less_equal
+def (>) : Int -> Int -> Bool = @@int_great
+def (>=) : Int -> Int -> Bool = @@int_great_equal
+def (==) : Int -> Int -> Bool = @@int_equal
+def (!=) : Int -> Int -> Bool = @@int_not_equal
 def (+) : Real -> Real -> Real = @@real_add
 def (-) : Real -> Real -> Real = @@real_sub
 def (*) : Real -> Real -> Real = @@real_mul
@@ -40,7 +40,7 @@ def (!=) : Real -> Real -> Bool = @@real_not_equal
 def (!) : Bool -> Bool = @@bool_not
 def (&&) : Bool -> Bool -> Bool = @@bool_and
 def (||) : Bool -> Bool -> Bool = @@bool_or
-def (--.) : Int -> Int = @@int_neg
+def (--) : Int -> Int = @@int_neg
 def (--) : Real -> Real = @@real_neg
 def print : String -> () = @@print
 def bool2string : Bool -> String = @@bool2string

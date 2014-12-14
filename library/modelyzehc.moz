@@ -163,12 +163,12 @@ def makeRootFun(ukmap:UkMap, trans:Transitions,ctime:Real, yy:{Real}, yp:{Real})
 def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
   def fired(e:Expr, i:Int) -> (Int,Bool) = {
     match e with
-    | e1 == e2 -> (i -. 1,(Array.get roots i) !=. 0)
-    | e1 != e2 -> (i -. 1,(Array.get roots i) !=. 0)
-    | e1 >= e2 -> (i -. 1,(Array.get roots i) !=. 0)
-    | e1 > e2  -> (i -. 1,(Array.get roots i) !=. 0)
-    | e1 <= e2 -> (i -. 1,(Array.get roots i) !=. 0)
-    | e1 < e2 ->  (i -. 1,(Array.get roots i) !=. 0)
+    | e1 == e2 -> (i - 1,(Array.get roots i) != 0)
+    | e1 != e2 -> (i - 1,(Array.get roots i) != 0)
+    | e1 >= e2 -> (i - 1,(Array.get roots i) != 0)
+    | e1 > e2  -> (i - 1,(Array.get roots i) != 0)
+    | e1 <= e2 -> (i - 1,(Array.get roots i) != 0)
+    | e1 < e2 ->  (i - 1,(Array.get roots i) != 0)
     | !e1 -> fired e1 i
     | e1 && e2  -> {
          def (i1,f1) = fired(e1,i);
@@ -202,8 +202,8 @@ def makeEventActions(daesolv:DAESolver, trans:Transitions, newModes:Modes,
             else travTrans(ts,acc,newModes,i2)
      | [] -> (acc,newModes)
   };
-  if (Array.length roots) !=. 0 then 
-    travTrans(trans,[],newModes,(Array.length roots) -. 1)
+  if (Array.length roots) != 0 then 
+    travTrans(trans,[],newModes,(Array.length roots) - 1)
   else 
     ([],newModes)
 }

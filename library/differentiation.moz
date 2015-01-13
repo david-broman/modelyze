@@ -28,22 +28,22 @@ def hoDer : <Real -> Int -> Real>
 //differentiated symbols are mapped back to old values.
 def extractDerivatives(eqs:Equations, dmap:DerivMap, olddmap:DerivMap) ->(Equations,DerivMap) = {
   def makeHOder(x:Signal, k:Int, dmap:DerivMap) -> DerivMap = {
-    if k >. 1 then 
-      if Map.mem x dmap then makeHOder (Map.find x dmap) (k -. 1) dmap
+    if k > 1 then 
+      if Map.mem x dmap then makeHOder (Map.find x dmap) (k - 1) dmap
       else 
         if Map.mem x olddmap then {
           def dx = (Map.find x olddmap);
-          makeHOder dx (k -. 1) (Map.add x dx dmap);
+          makeHOder dx (k - 1) (Map.add x dx dmap);
         }
         else{
           def u:Signal;
-          makeHOder u (k -. 1) (Map.add x u dmap);
+          makeHOder u (k - 1) (Map.add x u dmap);
         }
     else dmap
   };
   def extractHOder(expr:Expr, k:Int, dmap:DerivMap) -> DerivMap = {
     match expr with
-    | der e -> extractHOder(e,k +. 1,dmap)
+    | der e -> extractHOder(e,k + 1,dmap)
     | sym:Signal -> makeHOder(expr,k,dmap)
     | e1 e2 -> extractHOder(e2,k,extractHOder(e1,k,dmap))
     | _ -> dmap
@@ -72,7 +72,7 @@ def differentiateModel(expr:Expr) -> Expr = {
   def sdiff(expr:Signal) -> Signal = {
     match expr with
     | sym:Signal -> hoDer expr 1
-    | ~hoDer x (lift k:Int) -> hoDer x (k +. 1)
+    | ~hoDer x (lift k:Int) -> hoDer x (k + 1)
     | ~der e -> sdiff(sdiff(e))
     | e1 + e2 -> sdiff(e1) + sdiff(e2)
     | e1 - e2 -> sdiff(e1) - sdiff(e2)
@@ -105,7 +105,7 @@ def differentiateModel(expr:Expr) -> Expr = {
 //representing chains of derivatives.
 def removeHOderivatives(expr:Expr, dmap:DerivMap) -> Expr = {
   def getDeriv(x:Signal, k:Int) -> Expr = {
-    if k >. 1 then getDeriv (Map.find x dmap) (k -. 1)
+    if k > 1 then getDeriv (Map.find x dmap) (k - 1)
     else 
       if Map.mem x dmap then Map.find x dmap
       else der x

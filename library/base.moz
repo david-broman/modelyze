@@ -17,16 +17,16 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 
 def (mod) : Int -> Int -> Int = @@int_mod
-def (+.) : Int -> Int -> Int = @@int_add
-def (-.) : Int -> Int -> Int = @@int_sub
-def (*.) : Int -> Int -> Int = @@int_mul
-def (/.) : Int -> Int -> Int = @@int_div
-def (<.) : Int -> Int -> Bool = @@int_less
-def (<=.) : Int -> Int -> Bool = @@int_less_equal
-def (>.) : Int -> Int -> Bool = @@int_great
-def (>=.) : Int -> Int -> Bool = @@int_great_equal
-def (==.) : Int -> Int -> Bool = @@int_equal
-def (!=.) : Int -> Int -> Bool = @@int_not_equal
+def (+) : Int -> Int -> Int = @@int_add
+def (-) : Int -> Int -> Int = @@int_sub
+def (*) : Int -> Int -> Int = @@int_mul
+def (/) : Int -> Int -> Int = @@int_div
+def (<) : Int -> Int -> Bool = @@int_less
+def (<=) : Int -> Int -> Bool = @@int_less_equal
+def (>) : Int -> Int -> Bool = @@int_great
+def (>=) : Int -> Int -> Bool = @@int_great_equal
+def (==) : Int -> Int -> Bool = @@int_equal
+def (!=) : Int -> Int -> Bool = @@int_not_equal
 def (+) : Real -> Real -> Real = @@real_add
 def (-) : Real -> Real -> Real = @@real_sub
 def (*) : Real -> Real -> Real = @@real_mul
@@ -40,9 +40,8 @@ def (!=) : Real -> Real -> Bool = @@real_not_equal
 def (!) : Bool -> Bool = @@bool_not
 def (&&) : Bool -> Bool -> Bool = @@bool_and
 def (||) : Bool -> Bool -> Bool = @@bool_or
-def (--.) : Int -> Int = @@int_neg
+def (--) : Int -> Int = @@int_neg
 def (--) : Real -> Real = @@real_neg
-def print : String -> () = @@print
 def bool2string : Bool -> String = @@bool2string
 def int2string : Int -> String = @@int2string 
 def real2string : Real -> String = @@real2string
@@ -81,26 +80,25 @@ type IntSignal = <Int>
 type BoolSignal = <Bool>
 
 
-def abs(x:Real) -> Real = {
-  if x < 0. then x * -1.0 else x;
-}
+def abs(x:Real) -> Real = if x < 0. then x * -1.0 else x
+def abs(x:Int) -> Int = if x < 0 then x * -1 else x
 
-def max(x:Real, y:Real) -> Real = {
-  if x >= y then x else y;
-}
+def max(x:Real, y:Real) -> Real = if x >= y then x else y
+def max(x:Int, y:Int) -> Int = if x >= y then x else y
 
-def printLine(s:String) -> () = {
+
+
+def print : String -> () = @@print
+def print(i:Int) -> () = print(int2string(i))
+def print(i:Real) -> () = print(real2string(i))
+
+def printl(s:String) -> () = {
     def _ = print s;
     print "\n";
 }
+def printl(i:Int) -> () = printl(int2string(i))
+def printl(i:Real) -> () = printl(real2string(i))
 
-def printIntLine(i:Int) -> () = {
-    printLine(int2string(i))
-}
-
-def printRealLine(i:Real) -> () = {
-    printLine(real2string(i));
-}
 
 def reverse(lst:[?]) -> [?] = {
     def work(lst:[?],acc:[?]) -> [?] = {
@@ -119,4 +117,5 @@ def append(l1:[?], l2:[?]) -> [?] = {
     };
     work(l1)        
 }
+
 

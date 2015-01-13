@@ -48,6 +48,7 @@ let ty_normalize ty =
           TyMap(fi,l,norm isSym ty1, norm isSym ty2)
       | TySet(fi,l,ty1) -> TySet(fi,l, norm isSym ty1)
       | TyDAESolver(_,_) -> ty
+      | TyEnv(_,_,_) -> ty
   in
     norm false ty
 
@@ -75,6 +76,7 @@ let ty_typesubst typemap numap ty =
           TyMap(fi,l,subst ty1,subst ty2)
       | TySet(fi,l,ty) -> TySet(fi,l,subst ty)
       | TyDAESolver(_,_) as tt -> tt
+      | TyEnv(_,_,_) -> ty
   in
     ty_normalize (subst ty)
 
@@ -92,7 +94,7 @@ let rec pat_typesubst typemap numap pat =
     (* Introduce auto escape for global symbol definitions. *)
   | PatVar(fi,id,auto_esc_allowed) as pp -> 
      if auto_esc_allowed && List.mem id numap then
-        PatExpr(fi,TmVar(fi,id))
+        PatExpr(fi,TmVar(fi,id,0))
       else pp
   | PatExpr(fi,t) -> PatExpr(fi,tm_typesubst typemap numap t)
   | PatSym(fi,ty) -> PatSym(fi,tysub ty)
@@ -118,7 +120,7 @@ and tm_typesubst typemap numap tm =
   let patsub = pat_typesubst typemap numap in
   let vtranssub = vtrans_typesubst typemap numap in
   match tm with
-    | TmVar(fi,x) as tt -> tt 
+    | TmVar(fi,x,_) as tt -> tt 
     | TmLam(fi,l,y,ty,t) -> TmLam(fi,l,y,tysub ty,tmsub t)
     | TmApp(fi,l,t1,t2,fs) -> TmApp(fi,l,tmsub t1,tmsub t2,fs)
     | TmFix(fi,l,t) -> TmFix(fi,l,tmsub t)

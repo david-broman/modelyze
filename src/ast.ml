@@ -1,4 +1,4 @@
-(*
+(* 
 Modelyze toolchain
 Copyright (C) 2010-2012 David Broman
 Modelyze toolchain is free software: you can redistribute it and/or modify
@@ -39,7 +39,13 @@ type fname = int
 type recursive = bool 
 type specialize = bool
 
-(** Definition of types in the language *)
+(** Definition of types in the language.
+    Special notes:
+    TyEnv defines an environment type that is used internally by the typechecker
+    for handling overloading of variables. The integer value is a level type
+    that states how far away the actual overloaded variable is. Used in the
+    the translation function to increase the index number. The tuple with a type
+    and a term expresses one possible overloading choice. *)
 type ty = 
   | TyBool      of info * level
   | TyInt       of info * level
@@ -57,9 +63,10 @@ type ty =
   | TyMap       of info * level * ty * ty
   | TySet       of info * level * ty 
   | TyDAESolver of info * level
+  | TyEnv       of info * ident * (int * (ty * tm)) list
 
 (** Primitive, built-in functions *)
-type primitive = 
+and primitive = 
   | PrimIntMod 
   | PrimIntAdd
   | PrimIntSub
@@ -120,7 +127,7 @@ type primitive =
 
 (** Constants. Models e.g. integers, strings, built-in 
     functions and model relations *)
-type const =
+and const =
   | ConstBool     of bool
   | ConstInt      of int
   | ConstReal     of float
@@ -197,7 +204,7 @@ and top =
     is interpreted. *)
 and tm = 
     (* Basic terms *)
-  | TmVar         of info * ident
+  | TmVar         of info * ident * int
   | TmLam         of info * level * ident * ty * tm
   | TmApp         of info * level * tm * tm * specialize
   | TmFix         of info * level * tm
@@ -237,7 +244,6 @@ and tm =
   | TmDPrintType  of tm
   | TmSymStr      of info * tm
   | TmError       of info * level * tm
-
 
 let rec metastr n = 
   if n == 0 then us"" else us"#" ^. metastr (n-1)      
@@ -316,7 +322,7 @@ let pprint_const c l =
     | ConstUnit ->  us"()"
     | ConstPrim(p,_) -> pprint_primitive p
 
-let pprint_ty t =
+let rec pprint_ty t =
   let rec pprint_ty left t =
       match t with 
 	| TyBool(_,l) -> metastr l ^. us"Bool"  
@@ -342,16 +348,22 @@ let pprint_ty t =
 	      metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
         | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
 	| TyDAESolver(_,l) -> metastr l ^. us"SimInst"  
+        | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
+            (List.map (fun (k,(ty,tm)) -> 
+                         us"(" ^. ustring_of_int k ^. us",(" ^. 
+                         pprint_ty false ty ^. us"," ^. pprint tm ^. us")")))
+            |> Ustring.concat (us",")) ^. us")")                            
+
   in pprint_ty false t
 
-let pprint_array_op op =
+and pprint_array_op op =
   match op with
   | ArrayOpLength -> us"length"
   | ArrayOpMake -> us"make"
   | ArrayOpGet -> us"get"
   | ArrayOpSet -> us"set"
 
-let pprint_map_op op =
+and pprint_map_op op =
   match op with
   | MapOpSize -> us"size"
   | MapOpEmpty -> us"empty"
@@ -361,7 +373,7 @@ let pprint_map_op op =
   | MapOpRemove -> us"remove"
   | MapOpToList -> us"fold"
 
-let pprint_set_op op =
+and pprint_set_op op =
   match op with
   | SetOpSize -> us"size"
   | SetOpEmpty -> us"empty"
@@ -370,7 +382,7 @@ let pprint_set_op op =
   | SetOpRemove -> us"remove"
   | SetOpToList -> us"toList"
 
-let pprint_daesolver_op op =
+and pprint_daesolver_op op =
   match op with
   | DAESolverOpMake -> us"make"
   | DAESolverOpMakeHybrid -> us"makehybrid"
@@ -379,14 +391,14 @@ let pprint_daesolver_op op =
   | DAESolverOpClose -> us"close"
   | DAESolverOpRoots -> us"roots"
 
-let pprint_mpat p = 
+and pprint_mpat p = 
   match p with
   | MPatSym(_,ty) -> us"sym:" ^. pprint_ty ty 
   | MPatSymApp(_,x,y) -> us"(symapp " ^. Symtbl.get x ^. us" " ^. Symtbl.get y ^. us")"
   | MPatLift(_,x,ty) -> us"lift " ^. Symtbl.get x ^. us":" ^. pprint_ty ty
 
 
-let rec pprint_pat p =
+and pprint_pat p =
   match p with 
   | PatVar(_,x,_) -> Symtbl.get x
   | PatExpr(_,t) -> pprint t
@@ -421,7 +433,7 @@ and pprint_cases cases =
 
 and pprint tm = 
   match tm with
-  | TmVar(_,id) -> Symtbl.get id        
+  | TmVar(_,id,k) -> Symtbl.get id ^. us"{" ^. ustring_of_int k ^. us"}"       
   | TmLam(_,l,x,ty,t) -> us"(" ^.metastr l ^. us"fun " ^. Symtbl.get x ^.  
       us":" ^. pprint_ty ty ^. us" -> " ^. pprint t ^. us")"
   | TmApp(_,l,t1,t2,fs) -> (if fs then us"specialize(" else us"(" )
@@ -830,7 +842,7 @@ let primitive_arity p =
 
 let rec tm_info t =
   match t with
-    | TmVar(fi,_) -> fi
+    | TmVar(fi,_,_) -> fi
     | TmLam(fi,_,_,_,_) -> fi
     | TmApp(fi,_,_,_,_) -> fi
     | TmFix(fi,_,_) -> fi
@@ -864,7 +876,7 @@ let rec tm_info t =
 
 let rec set_tm_info newfi tm = 
   match tm with
-    | TmVar(_,x) -> TmVar(newfi,x)
+    | TmVar(_,x,i) -> TmVar(newfi,x,i)
     | TmLam(_,l,y,ty,t) -> TmLam(newfi,l,y,ty,t)
     | TmApp(_,l,t1,t2,fs) -> TmApp(newfi,l,t1,t2,fs)
     | TmFix(_,l,t) -> TmFix(newfi,l,t)
@@ -926,6 +938,7 @@ let ty_info ty =
     | TyMap(fi,_,_,_) -> fi 
     | TySet(fi,_,_) -> fi
     | TyDAESolver(fi,_) -> fi
+    | TyEnv(fi,_,_) -> fi
 
 let rec set_ty_info newfi ty = 
   match ty with 
@@ -947,6 +960,7 @@ let rec set_ty_info newfi ty =
         TyMap(newfi,l,set_ty_info newfi ty1,set_ty_info newfi ty2)
     | TySet(_,l,ty) -> TySet(newfi,l,set_ty_info newfi ty)
     | TyDAESolver(_,l) -> TyDAESolver(newfi,l)
+    | TyEnv(_,x,lst) -> TyEnv(newfi,x,lst)
 
 let ty_lev ty =
   match ty with 
@@ -966,6 +980,7 @@ let ty_lev ty =
     | TyMap(_,l,_,_) -> l
     | TySet(_,l,_) -> l
     | TyDAESolver(_,l) -> l
+    | TyEnv(_,_,_) -> 0
 
 
 (** Change so that pattern variables cannot automatically be escaped *)
@@ -1036,7 +1051,7 @@ and fv_patcases cases =
 (** Free variables in a term *)
 and fv_tm t = 
   match t with
-    | TmVar(fi,x) -> VarSet.singleton(x)
+    | TmVar(fi,x,i) -> VarSet.singleton(x)
     | TmLam(fi,l,y,ty,t) -> VarSet.diff (fv_tm t) (VarSet.singleton y)
     | TmApp(fi,l,t1,t2,_) -> VarSet.union (fv_tm t1) (fv_tm t2)
     | TmFix(fi,l,t) -> fv_tm t

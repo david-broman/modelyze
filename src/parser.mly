@@ -31,15 +31,15 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
   let rec metastr n = if n = 0 then us"" else us"#" ^. metastr (n-1) 
 
   let mk_binop fi l op t1 t2 = 
-    TmApp(fi,l,TmApp(fi,l,(TmVar(fi,Symtbl.add (us op))),t1,false),t2,false)
+    TmApp(fi,l,TmApp(fi,l,(TmVar(fi,Symtbl.add (us op),0)),t1,false),t2,false)
   let mk_unop fi l op t1 = 
-    TmApp(fi,l,(TmVar(fi,Symtbl.add (us op))),t1,false)
+    TmApp(fi,l,(TmVar(fi,Symtbl.add (us op),0)),t1,false)
 
   let mk_binpat_op fi l op t1 t2 = 
-    PatSymApp(fi,PatSymApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1),t2)
+    PatSymApp(fi,PatSymApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op),0)),t1),t2)
 
   let mk_unpat_op fi l op t1 = 
-    PatSymApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op))),t1)
+    PatSymApp(fi,PatExpr(fi,TmVar(fi,Symtbl.add (us op),0)),t1)
 
   let wildcard = Symtbl.add (us"@@wildcard")  	  
 
@@ -653,11 +653,11 @@ app_left:
   | atom
       { $1 }
   | IDENTPAREN RPAREN 
-      { let t1 = TmVar($1.i,$1.v) in 
+      { let t1 = TmVar($1.i,$1.v,0) in 
         let t2 = TmConst($2.i,0,ConstUnit) in
         TmApp(mkinfo $1.i $2.i,0,t1,t2,false) }
   | IDENTPAREN revtmseq RPAREN
-      { let tm_ident = TmVar($1.i,$1.v) in
+      { let tm_ident = TmVar($1.i,$1.v,0) in
         let fi = mkinfo $1.i $3.i in
         let rec mkapps lst =
           match lst with
@@ -689,7 +689,7 @@ app_left:
   | SPECIALIZE atom atom
       { TmApp(mktminfo $2 $3,0,$2,$3,true) } 
   | SPECIALIZE IDENTPAREN atom RPAREN
-      { let tm_ident = TmVar($2.i,$2.v) in
+      { let tm_ident = TmVar($2.i,$2.v,0) in
         TmApp(mkinfo $1.i $4.i,0,tm_ident,$3,true) } 
   | SPECIALIZE LPAREN atom PARENAPP atom RPAREN
       { TmApp(mktminfo $3 $5,0,$3,$5,true) } 
@@ -702,8 +702,8 @@ app_right:
 
 atom:
   | IDENT
-      { if $1.l = 0 then TmVar($1.i,$1.v)
-        else  (TmVar($1.i,$1.v)) }
+      { if $1.l = 0 then TmVar($1.i,$1.v,0)
+        else  (TmVar($1.i,$1.v,0)) }
   | TRUE 
       { TmConst($1.i,$1.l,ConstBool(true)) }
   | FALSE 

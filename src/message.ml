@@ -269,6 +269,9 @@ type id =
   | RUNTIME_TYPE_ERROR
      (*  arg1 = operation
          arg2 = argument *)
+  | TYPE_NO_OVERLOADING 
+     (*  arg1 = variable name *)
+
 type severity =
   | ERROR
   | WARNING
@@ -395,6 +398,8 @@ let id2str id args =
     | STATIC_CIRCULAR_DEP_INCLUDE -> us"STATIC_CIRCULAR_DEP_INCLUDE"
     | STATIC_ERROR_OPEN_FILE -> us"STATIC_ERROR_OPEN_FILE"
     | RUNTIME_TYPE_ERROR -> us"RUNTIME_TYPE_ERROR"
+    | TYPE_NO_OVERLOADING -> us"There is no overloaded function '" ^.
+                             (List.nth args 0) ^. us"' for the given arguments."
 
 
 

@@ -51,7 +51,7 @@ and ty =
   | TyMap       of ty * ty
   | TySet       of ty 
   | TyDAESolver
-
+  | TyEnv
 
 and tm =
   | TmVar         of index

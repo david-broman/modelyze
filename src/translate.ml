@@ -17,7 +17,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 *)
 
 open Evalast
-
+open Printf
 
 
 let rec trans_ty ty =
@@ -38,12 +38,25 @@ let rec trans_ty ty =
   | Ast.TyMap(_,_,ty1,ty2) -> TyMap(trans_ty ty1,trans_ty ty2)
   | Ast.TySet(_,_,ty) -> TySet(trans_ty ty)
   | Ast.TyDAESolver(_,_) -> TyDAESolver
+  | Ast.TyEnv(_,_,_) -> TyEnv
 
 let trans_pat l p denv =
   match p with
   | Ast.MPatSym(_,ty) -> (MPatSym(trans_ty ty),denv)
   | Ast.MPatSymApp(_,id1,id2) -> (MPatSymApp,(id1,l)::(id2,l)::denv)
   | Ast.MPatLift(_,id,ty) -> (MPatLift(trans_ty ty),(id,l)::denv)
+
+let find_index x assoclist skipcount =
+  let rec findidx assoclist c k =
+    match assoclist with
+      | [] -> raise Not_found
+      | (y,v)::ys -> if x = y then 
+                       if k = 0 then (v,c) 
+                       else findidx ys (c+1) (k-1)
+                     else 
+                       findidx ys (c+1) k 
+  in findidx assoclist 0 skipcount
+
 
 let translate t =
   let rec nl l d t = t in
@@ -53,8 +66,8 @@ let translate t =
       | (x,ty)::res -> TmLam(mkfuns res t d ((x,d)::denv) )
   and trans t d denv  = 
     match t with
-      | Ast.TmVar(_,id) -> 
-	  (try let (l2,i) = Utils.find_associndex id denv in nl l2 d (TmVar(i)) 
+      | Ast.TmVar(_,id,k) -> 
+	  (try let (l2,i) = find_index id denv k in nl l2 d (TmVar(i))  
 	   with Not_found -> assert false)
       | Ast.TmLam(_,l,id,ty,t) -> 
 	  nl l d (TmLam(trans t  l ((id,l)::denv) ))

@@ -19,7 +19,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 /* The synchronous domain was developed by Hokeun Kim, 2013 */
 
-include IBase
+include Base
 
 type SigInt = <Int>
 type SigBool = <Bool>
@@ -357,7 +357,7 @@ def generateCode(signalList : [(Eq, Eq)], maxCount : Int, loopDelay : Int, showA
 def viewEqIdx(sortedSignals :  [(Eq, Eq)], idx : Int) -> () = {
     match sortedSignals with
         | (k, expr)::es -> {
-            def _ = printLine(symstr(k) ++ ": " ++ int2string(idx));
+            def _ = printl(symstr(k) ++ ": " ++ int2string(idx));
             viewEqIdx(es, idx + 1);
            }
 	| [] -> ()

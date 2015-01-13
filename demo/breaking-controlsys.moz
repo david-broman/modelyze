@@ -54,12 +54,12 @@ type Element = <?> -> <?> -> Equations
 
 def serialize(n:Int, f1:Rotational, f2:Rotational, elem:Element) -> Equations = {
     def recursive(n:Int, f1:Rotational, f2:Rotational) -> Equations = {
-       if n ==. 1 then
+       if n == 1 then
             elem(f1,f2)
        else{
             def node:?;
             elem(f1,node);
-            recursive(n -. 1, node, f2);
+            recursive(n - 1, node, f2);
        }
     };
     recursive(n, f1, f2);

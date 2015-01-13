@@ -14,8 +14,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
-Modelyze toolchain, version 1.13
------------------------------------------------------
+Modelyze toolchain, version 1.14 BETA (under development)
+----------------------------------------------------------
 This project contains a simple interpreter for the 
 Modelyze language. For a detailed overview of the
 Modelyze language, please see the technical report:
@@ -117,6 +117,9 @@ General Public License according to file "library/COPYING.LESSER".
 
 REVISIONS
 ---------
+
+Version 1.14 BETA (Under development)
+  - Added support for function overloading.
 
 Version 1.13 January 13, 2015
   - Created demo, test, and library directories

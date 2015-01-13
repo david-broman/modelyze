@@ -1,5 +1,5 @@
 Modelyze toolchain
-Copyright (C) 2010-2014 David Broman
+Copyright (C) 2010-2015 David Broman
 
 Modelyze toolchain is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 
-Modelyze toolchain, version 1.12
+Modelyze toolchain, version 1.13
 -----------------------------------------------------
 This project contains a simple interpreter for the 
 Modelyze language. For a detailed overview of the
@@ -118,9 +118,10 @@ General Public License according to file "library/COPYING.LESSER".
 REVISIONS
 ---------
 
-Version 1.1x 
+Version 1.13 January 13, 2015
   - Created demo, test, and library directories
   - Added library-path parameter
+  - Solved many minor issues
 
 Version 1.12 November 22, 2013
   - Added new regression testing system

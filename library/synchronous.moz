@@ -357,7 +357,7 @@ def generateCode(signalList : [(Eq, Eq)], maxCount : Int, loopDelay : Int, showA
 def viewEqIdx(sortedSignals :  [(Eq, Eq)], idx : Int) -> () = {
     match sortedSignals with
         | (k, expr)::es -> {
-            def _ = printl(symstr(k) ++ ": " ++ int2string(idx));
+            def _ = println(symstr(k) ++ ": " ++ int2string(idx));
             viewEqIdx(es, idx + 1);
            }
 	| [] -> ()

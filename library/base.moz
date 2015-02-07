@@ -78,6 +78,7 @@ def INFINITE = 1./0.
 type RealSignal = <Real>
 type IntSignal = <Int>
 type BoolSignal = <Bool>
+type Dyn = ?
 
 
 def abs(x:Real) -> Real = if x < 0. then x * -1.0 else x
@@ -92,12 +93,12 @@ def print : String -> () = @@print
 def print(i:Int) -> () = print(int2string(i))
 def print(i:Real) -> () = print(real2string(i))
 
-def printl(s:String) -> () = {
+def println(s:String) -> () = {
     def _ = print s;
     print "\n";
 }
-def printl(i:Int) -> () = printl(int2string(i))
-def printl(i:Real) -> () = printl(real2string(i))
+def println(i:Int) -> () = println(int2string(i))
+def println(i:Real) -> () = println(real2string(i))
 
 
 def reverse(lst:[?]) -> [?] = {

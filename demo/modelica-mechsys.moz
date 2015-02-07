@@ -31,4 +31,4 @@ def MechSys = {
 }
 
 def main = 
-   printl(exportModelica("MechSys",MechSys))
+   println(exportModelica("MechSys",MechSys))

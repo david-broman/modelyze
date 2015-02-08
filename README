@@ -59,12 +59,16 @@ The following has been tested on Ubuntu 14.04.01 LTS, but should work on
 other Linux distributions as well.
 
 1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal:
-   >> sudo apt-get install ocaml gnuplot libsundials-serial-dev
-2. If you do not have git installed, install it:
+   >> sudo apt-get install ocaml libsundials-serial-dev
+2. Install GNUplot if you would like to plot
+   >> sudo apt-get install gnuplot
+   NOTE: There seems to be a problem with GNUPLOT an X11, so the above
+   might now work on all Ubuntu installations.
+3. If you do not have git installed, install it:
    >> sudo apt-get install git
-3. If you have not done it already, clone the Modelyze project from GitHub:
+4. If you have not done it already, clone the Modelyze project from GitHub:
    >> git clone https://github.com/david-broman/modelyze.git
-4. Compile the code:
+5. Compile the code:
    >> cd modelyze
    >> make
 

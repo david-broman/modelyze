@@ -60,10 +60,13 @@ other Linux distributions as well.
 
 1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal:
    >> sudo apt-get install ocaml libsundials-serial-dev
-2. Install GNUplot if you would like to plot
+2. Install GNUplot if you would like to plot:
    >> sudo apt-get install gnuplot
-   NOTE: There seems to be a problem with GNUPLOT an X11, so the above
-   might now work on all Ubuntu installations.
+   NOTE: There seems to be a problem with GNUPLOT and X11 on Ubuntu, so the 
+   above might now work on all Ubuntu installations. If this is the case,
+   try the following:
+   >> sudo apt-get install libx11-dev libxt-dev libreadline-gplv2-dev glib-2.0
+   >> sudo apt-get install gnuplot-x11
 3. If you do not have git installed, install it:
    >> sudo apt-get install git
 4. If you have not done it already, clone the Modelyze project from GitHub:

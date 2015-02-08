@@ -42,18 +42,13 @@ C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsund
 all:    native
 
 
-
 # Compile native version
-native: comp_c_files
+native: bytesfix comp_c_files
 	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
+	@rm -f bytes.ml
 	@rm -f moz.native
 	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz
 
-# Compile byte code version (is not currently working)
-byte: 	comp_c_files
-	@ocamlbuild -Is $(DIRS) moz.byte -lflag -custom,$(C_FILES)
-	@rm -f moz.byte
-	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.byte moz
 
 # C-files. Ugly treatment of error that latest ocaml generates.  
 comp_c_files:
@@ -77,5 +72,20 @@ test:   all
 # Clean all submodules and the main Modelyze source
 clean:
 	@ocamlbuild -clean
+	@rm -f bytes.ml
 	@rm -rf bin
 
+
+# Solves a problem because of the introduction of module Bytes in the standard
+# library in OCaml version 4.02. In the fix, we create a bytes.ml file locally
+# if the current OCaml version does not inclue module Bytes.
+
+BYTES = "let length s = String.length s\n"\
+        "let create l = String.create l\n"\
+        "let get s n = String.get s n\n"\
+        "let set s n c = String.set s n c\n"
+
+bytesfix:
+	@echo "let main = Bytes.create 1" > t.ml
+	@ocaml t.ml >/dev/null 2>&1 || echo $(BYTES) > bytes.ml
+	@rm -f t.ml

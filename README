@@ -37,19 +37,15 @@ INSTALLATION (Mac OS)
 The following has been tested on OS X 10.9.2, but should work on 
 other Mac OS versions as well.
 
-1. Install the SUNDIALS solver suite. The current version is tested on version 2.5.0.
-   http://computation.llnl.gov/casc/sundials/
-   For help, see  "SUNDIALS QUICK GUIDE" below.
-2. Install Macports (including X11 support)
+1. Install Macports (including X11 support)
    http://www.macports.org/
-3. Install Objective Caml compiler and gnuplot via Macports.
-   Note that version 4.02.1 or later is required.
-   >> sudo port install ocaml gnuplot
-4. If you do not have git installed, install it. 
-   See for instance http://gitx.frim.nl/
-5. If you have not done it already, clone the Modelyze project from GitHub:
+2. Install Objective Caml compiler, Gnuplot, and Sundials via Macports.
+   >> sudo port install ocaml gnuplot sundials
+3. If you do not have Git installed, install it. 
+   See for instance http://gitx.frim.nl/, or just install it via Macports.
+4. If you have not done it already, clone the Modelyze project from GitHub:
    >> git clone https://github.com/david-broman/modelyze.git
-6. Compile the code:
+5. Compile the code:
    >> cd modelyze
    >> make
 
@@ -63,7 +59,7 @@ other Linux distributions as well.
 2. Install GNUplot if you would like to plot:
    >> sudo apt-get install gnuplot
    NOTE: There seems to be a problem with GNUPLOT and X11 on Ubuntu, so the 
-   above might now work on all Ubuntu installations. If this is the case,
+   above might not work on all Ubuntu installations. If this is the case,
    try the following:
    >> sudo apt-get install libx11-dev libxt-dev libreadline-gplv2-dev glib-2.0
    >> sudo apt-get install gnuplot-x11
@@ -76,24 +72,6 @@ other Linux distributions as well.
    >> make
 
 
-
-SUNDIALS QUICK GUIDE
------------------------------------
-Here are some step-by-step instructions for installing SUNDIALS. These instructions
-were tested on MacOS 10.5.7 and SUNDIALS v.2.5.0.
-
-- Download the full SUNDIALS package sundials-2.5.0.tar.gz from 
-  http://computation.llnl.gov/casc/sundials/.
-
-- Unzip it. Run the following commands within the unzipped folder
-  >> ./configure
-  >> make
-  >> sudo make install
-
-- Header files are now installed under /usr/local/include and the
-  library files are installed under /usr/local/lib
-
- 
 
 EXECUTING EXAMPLES
 --------------------
@@ -127,6 +105,7 @@ REVISIONS
 
 Version 1.14 BETA (Under development)
   - Added support for function overloading.
+  - Fixed a bug when using Sundials via Macports.
 
 Version 1.13 January 13, 2015
   - Created demo, test, and library directories

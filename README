@@ -104,6 +104,7 @@ REVISIONS
 ---------
 
 Version 1.14 BETA (Under development)
+  - Improved error messages.
   - Added support for function overloading.
   - Fixed a bug when using Sundials via Macports.
 

@@ -87,8 +87,6 @@ def abs(x:Int) -> Int = if x < 0 then x * -1 else x
 def max(x:Real, y:Real) -> Real = if x >= y then x else y
 def max(x:Int, y:Int) -> Int = if x >= y then x else y
 
-
-
 def print : String -> () = @@print
 def print(i:Int) -> () = print(int2string(i))
 def print(i:Real) -> () = print(real2string(i))
@@ -101,8 +99,8 @@ def println(i:Int) -> () = println(int2string(i))
 def println(i:Real) -> () = println(real2string(i))
 
 
-def reverse(lst:[?]) -> [?] = {
-    def work(lst:[?],acc:[?]) -> [?] = {
+def reverse(lst:[Dyn]) -> [Dyn] = {
+    def work(lst:[Dyn],acc:[Dyn]) -> [Dyn] = {
         match lst with
         | l::ls -> work(ls,l::acc) 
         | [] -> acc
@@ -110,8 +108,8 @@ def reverse(lst:[?]) -> [?] = {
     work(lst,[])
 }
 
-def append(l1:[?], l2:[?]) -> [?] = {
-    def work(lst:[?]) -> [?] = {
+def append(l1:[Dyn], l2:[Dyn]) -> [Dyn] = {
+    def work(lst:[Dyn]) -> [Dyn] = {
         match lst with
         | l::ls -> l::(work(ls))
         | [] -> l2
@@ -125,7 +123,14 @@ def length(l:[Dyn]) -> Int = {
     | [] -> 0
 }
 
-
+def nth(l:[Dyn], n:Int) -> Dyn = {
+    def work(l:[Dyn], k:Int) -> Dyn = {
+        match l with
+        | e::ls -> if k == n then e else work(ls, k+1)
+        | [] -> error "There is no nth element in the list."
+    };
+    work(l, 0)
+}
 
 
 

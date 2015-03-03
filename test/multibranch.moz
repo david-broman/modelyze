@@ -1,0 +1,18 @@
+
+
+include Elaboration
+
+
+// Test the feature of multi branches
+def model = {
+    def n1, n2, n3:Electrical;
+    def i1a, i1b, v1a, v1b:Real;
+    def i2a, i2b, v2a, v2b:Real;
+    def i3a, i3b, v3a, v3b:Real;
+    MultiBranch([i1a,i1b],[v1a,v1b],n1,n2);
+    MultiBranch([i2a,i2b],[v2a,v2b],n2,n3);
+    MultiRefBranch([i3a,i3b],[v3a,v3b],n1);
+}
+
+def main =
+    dprint(elaborateConnections(model))

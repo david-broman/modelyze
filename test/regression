@@ -27,5 +27,5 @@ test_demo_file "timer"
 test_demo_file "very-fast-fly"
 
 test_local_file "overloading"
-
+test_local_file "multibranch"
 rm -f test.out

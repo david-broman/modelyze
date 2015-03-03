@@ -16,29 +16,36 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+include ModelyzeDAE
 
 
-include Equation
+def g = 9.81
 
-def Branch : Real -> Real -> Dyn -> Dyn -> Equations
-def RefBranch : Real -> Real -> Dyn -> Equations
+def Problem() = {
+    def x,y,z:Real;
+    init x 4.0;
+    init y 5.0;
+   
+    x' = y' + z;
+    x' = 2.0 * x;
+    x*x = 10.0;     
 
-def MultiBranch : [<Real>] -> [<Real>] -> Dyn -> Dyn -> Equations
-def MultiRefBranch : [<Real>] -> [<Real>] -> Dyn -> Equations
+    probe "x" = x;
+}
 
-type Electrical 
-type Voltage = <Real>
-type Current = <Real>
+//BUG: Stack overflow. Problem in pantelides?
 
-type Rotational  
-type AngularVelocity = Real
-type AngularAcceleration = Real
-type Angle = Real
-type Torque = Real
 
-type Translational
-type Force = Real
-type Position = Real
-type Velocity = Real
-type Acceleration = Real
+def pi = 3.1415
+
+def main = 
+   printsim(Problem(), 0.01, 10.0)
+   
+
+
+
+
+
+
+
 

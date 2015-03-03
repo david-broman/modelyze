@@ -1,6 +1,6 @@
 ############################################################################
 # Modelyze toolchain
-# Copyright (C) 2010-2014 David Broman
+# Copyright (C) 2010-2015 David Broman
 #
 # Modelyze toolchain is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +18,16 @@
 
 OS = $(shell uname)
 
-# This is the path to standard C libraries for MaxOS
-ifeq ($(OS), Darwin)
-C_LIBS = /usr/local/lib
-endif
 
-# This is the path to standard C libraries for Linux (Ubuntu)
-ifeq ($(OS), Linux)
+#Check if Sundials is installed using MacPort
+ifneq (,$(wildcard /opt/local/include/ida/ida.h))
+C_LIBS = /opt/local/lib
+export CPATH = /opt/local/include
+# Check if MacOS. If so, use the path to standard C libraries.
+else ifeq ($(OS), Darwin)
+C_LIBS = /usr/local/lib
+# If Linux (Ubuntu), use the path to standard C libraries.
+else ifeq ($(OS), Linux)
 C_LIBS = /usr/lib
 endif
 

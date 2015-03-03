@@ -67,8 +67,9 @@ type id =
          arg4 = line number of the meta-down operation *)
   | TYPE_SYMAPP_MISSING_ARG
   | TYPE_APP_ARG_MISMATCH 
-      (* arg1 = type of function parameter 
-         arg2 = type of application argument *)
+      (* arg0 = extra info
+         arg1 = type of application argument 
+         arg2 = expected type *)
   | TYPE_APP_ABS_MISMATCH 
       (* arg1 = type left hand side 
          arg2 = type of application argument *)
@@ -221,9 +222,9 @@ type id =
   | TYPE_NU_LET_NOT_MODELTYPE
       (* arg1 = type *)
   | TYPE_UNKNOWN_TYPE 
-      (* arg1 = the type *)
+      (* arg0 = the type *)
   | RUNTIME_ERROR
-      (* arg1 = user defined error message *)
+      (* arg0 = user defined error message *)
   | PATMATCH_UNUSED_PATTERN
   | PATMATCH_MIXING_PATTERN_TYPES
   | TYPE_MATCH_MONOTONICITY
@@ -265,7 +266,7 @@ type id =
   | STATIC_CIRCULAR_DEP_INCLUDE
       (* arg1 = name of the include *)
   | STATIC_ERROR_OPEN_FILE
-     (*  arg1 = file name *)
+     (*  arg0 = file name *)
   | RUNTIME_TYPE_ERROR
      (*  arg1 = operation
          arg2 = argument *)
@@ -305,13 +306,13 @@ let id2str id args =
     | TYPE_IF_EXP_LEV_MONOTONICITY -> us"TYPE_IF_EXP_LEV_MONOTONICITY"
     | TYPE_LAM_VAR_LEV_MONOTONICITY -> us"TYPE_LAM_VAR_LEV_MONOTONICITY"
     | TYPE_LAM_EXP_LEV_MONOTONICITY -> us"TYPE_LAM_EXP_LEV_MONOTONICITY"
-    | TYPE_VAR_NOT_DEFINED -> us"Variable '" ^. (List.nth args 0) ^. us"' is not defined."
+    | TYPE_VAR_NOT_DEFINED -> us"Unknown identifier '" ^. (List.nth args 0) ^. us"'."
     | TYPE_META_UP_ON_FREE_VAR -> us"TYPE_META_UP_ON_FREE_VAR"
     | TYPE_META_DOWN_ON_FREE_VAR -> us"TYPE_META_DOWN_ON_FREE_VAR"
     | TYPE_SYMAPP_MISSING_ARG -> us"Missing argument of type '" ^. (List.nth args 0) ^. us"'."
-    | TYPE_APP_ARG_MISMATCH -> (List.nth args 1) ^.
-                               us"Illegal argument type. Expected an argument of type '" ^.
-                               (List.nth args 0) ^. us"'."
+    | TYPE_APP_ARG_MISMATCH -> (List.nth args 0) ^.
+                               us"Illegal argument type. Expected an argument of type " ^.
+                               (List.nth args 1) ^. us", but the argument has type " ^. (List.nth args 2) ^. us"."
     | TYPE_APP_ABS_MISMATCH -> (List.nth args 1) ^.
                                us"The expression of type '" ^. (List.nth args 0) ^. 
                                us"' is not a function and shall not have any arguments."
@@ -377,8 +378,8 @@ let id2str id args =
     | TYPE_ERROR_TERM_LEV_MONOTONICITY -> us"TYPE_ERROR_TERM_LEV_MONOTONICITY"
     | TYPE_ERROR_TERM_NOT_STRING -> us"TYPE_ERROR_TERM_NOT_STRING"
     | TYPE_NU_LET_NOT_MODELTYPE -> us"TYPE_NU_LET_NOT_MODELTYPE"
-    | TYPE_UNKNOWN_TYPE -> us"TYPE_UNKNOWN_TYPE"
-    | RUNTIME_ERROR -> us"RUNTIME_ERROR"
+    | TYPE_UNKNOWN_TYPE -> us"Unkown type '" ^. (List.nth args 0) ^. us"'."
+    | RUNTIME_ERROR -> (List.nth args 0)
     | PATMATCH_UNUSED_PATTERN -> us"PATMATCH_UNUSED_PATTERN"
     | PATMATCH_MIXING_PATTERN_TYPES -> us"PATMATCH_MIXING_PATTERN_TYPES"
     | TYPE_MATCH_MONOTONICITY -> us"TYPE_MATCH_MONOTONICITY"
@@ -396,7 +397,7 @@ let id2str id args =
     | TYPE_ERROR_TERM_NOT_SYM -> us"The supplied term is not a symbol type but of type " ^.
                                  (List.nth args 0) ^. us"'."
     | STATIC_CIRCULAR_DEP_INCLUDE -> us"STATIC_CIRCULAR_DEP_INCLUDE"
-    | STATIC_ERROR_OPEN_FILE -> us"STATIC_ERROR_OPEN_FILE"
+    | STATIC_ERROR_OPEN_FILE -> us"Cannot open file '" ^. (List.nth args 0) ^. us"'" 
     | RUNTIME_TYPE_ERROR -> us"RUNTIME_TYPE_ERROR"
     | TYPE_NO_OVERLOADING -> us"There is no overloaded function '" ^.
                              (List.nth args 0) ^. us"' for the given arguments."

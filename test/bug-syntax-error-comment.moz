@@ -1,0 +1,14 @@
+
+include ModelyzeHEOO
+include Electrical
+
+def Circuit() = {
+  def v : Real;
+  der(v) = 1.0;
+  
+  v = probe("v");
+  //BUG: This comment gives a syntax error message.
+} 
+
+def main = printsim(Circuit(), 0.01, 4.0)
+

@@ -31,6 +31,7 @@ type BranchList = [Branches]
 type ExprMap = (Node => Expr)
 type ExprList = [(Node, Expr)]
 
+type MultiNodeMap = (Node => [Node])
 
 type SubExprMap = (<> => Signal)
 type SubExprList = [(<>,Signal)]
@@ -109,8 +110,66 @@ def potentials(model:Equations) -> (Equations,BranchSet) = {
 }
 
 
+def addMultiNode(node:Node, length:Int, nodemap:MultiNodeMap) -> MultiNodeMap = {
+    if Map.mem node nodemap then nodemap
+    else {
+      def makeNodes(n:Int) -> [Node] = {
+          def node:<Real>;
+          if n == 0 then [] else node::makeNodes(n-1); 
+      };
+      Map.add node (makeNodes(length)) nodemap;
+    };
+}
+
+def makeBranches(i_lst:[<Real>],v_lst:[<Real>],p_lst:[<Dyn>],n_lst:[<Dyn>]) -> Equations = {
+    match (i_lst,v_lst,p_lst,n_lst) with
+    |(i::[],v::[],p::[],n::[]) -> Branch(i,v,p,n) 
+    |(i::is,v::vs,p::ps,n::ns) -> Branch(i,v,p,n) ; makeBranches(is,vs,ps,ns)
+    | _ -> error "Incorrect number of elements when generating multi branches." 
+}
+
+def makeRefBranches(i_lst:[<Real>],v_lst:[<Real>],p_lst:[<Dyn>]) -> Equations = {
+    match (i_lst,v_lst,p_lst) with
+    |(i::[],v::[],p::[]) -> RefBranch(i,v,p) 
+    |(i::is,v::vs,p::ps) -> RefBranch(i,v,p) ; makeRefBranches(is,vs,ps)
+    | _ -> error "Incorrect number of elements when generating multi reference branches." 
+}
+
+def expandMultiBranches(model:Equations) -> Equations = {
+    def expand(m:Equations, mnodemap:MultiNodeMap) -> (Equations,MultiNodeMap) = {     
+        match m with
+        | MultiBranch (lift i_lst:[<Real>]) (lift v_lst:[<Real>]) p n -> {
+            def len = length(i_lst);
+            if len != length(v_lst)
+            then error "Multi branches need to have the same dimentions."
+            else{
+                def map2 = addMultiNode(p,len,addMultiNode(n,len,mnodemap));  
+                (makeBranches(i_lst,v_lst, Map.find p map2, Map.find n map2), map2);
+            }
+          }
+        | MultiRefBranch (lift i_lst:[<Real>]) (lift v_lst:[<Real>]) p -> {
+            def len = length(i_lst);
+            if len != length(v_lst)
+            then error "Multi reference branches need to have the same dimentions."
+            else{
+                def map2 = addMultiNode(p,len,mnodemap);  
+                (makeRefBranches(i_lst,v_lst, Map.find p map2), map2);
+            }
+          }
+        | e1 ; e2 -> {
+            def (e1b,map2) = expand(e1,mnodemap);
+            def (e2b,map3) = expand(e2,map2);
+            (e1b ; e2b, map3);
+          }
+        | _ -> (m,mnodemap)
+    };
+    def (eqs,_) = expand(model,Map.empty);
+    eqs;
+}
+
+ 
 def elaborateConnections(model:Equations) -> Equations = {
-     def (model2,branchset2) = potentials(model);
+     def (model2,branchset2) = potentials(expandMultiBranches(model));
      sumzero(model2,branchset2);
 }
 

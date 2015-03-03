@@ -35,8 +35,8 @@ let ty_normalize ty =
       | TyArrow(fi,l,ty1,ty2) -> 
           TyArrow(fi,l,norm isSym ty1, norm isSym ty2)
       | TyUnit(_,_) -> ty
-      | TyList(fi,l,ty1) -> TyList(fi,l,norm isSym ty1)
-      | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map (norm isSym) tys)
+      | TyList(fi,l,ty1) -> TyList(fi,l,norm false ty1)
+      | TyTuple(fi,l,tys) -> TyTuple(fi,l,List.map (norm false) tys)
       | TySym(fi,l,(TySym(_,_,TyDyn(_,_)) as tty)) -> tty
       | TySym(fi,l,ty1) -> 
           if isSym then norm true ty1 else TySym(fi,l,norm true ty1)
@@ -162,7 +162,10 @@ and tm_typesubst typemap numap tm =
     | TmSymStr(fi,t) -> TmSymStr(fi,tmsub t)
     | TmError(fi,l,t) -> TmError(fi,l,tmsub t)
 
+
 let desugar tlst =
+  (* numap is used for auto escape of global symbol definitions 
+  when doing pattern matching *)
   let rec ds tlst tyno typemap numap =
     match tlst with  
       | TopLet(fi,id,ty,plst,t1,recu)::ts -> 

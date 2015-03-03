@@ -1,0 +1,46 @@
+/*
+* Felmeddelande bugg
+*/
+
+include ModelyzeHEOO
+include Electrical
+
+// Induces the wrong error
+def VoltageSource(V:Real, p:Electrical, n:Electrical) = {
+    def i:Current;
+    def v:Voltage;
+    Branch i v p n;
+    v = V;
+}
+
+// Correct formulation
+def VoltageSourceWorks(V:<Real>, p:Electrical, n:Electrical) = {
+    def i:Current;
+    def v:Voltage;
+    Branch i v p n;
+    v = V;
+}
+
+
+def mainSys() = {
+  def n1,n2,n3 : Electrical;
+  def vOut : Real;
+  
+  def V : Real;
+  
+  V' = 1.0;
+  
+  Resistor(1000.0,n1,n2);
+  Capacitor(0.25/1000.0,n2,n3);
+  Ground(n3);
+  
+  // BUG: using the wrong function here produces a wierd error message
+  VoltageSource(V,n1,n3);	
+  //VoltageSourceWorks(V,n1,n3);
+  
+  VoltageSensor(n2,n3,vOut);
+  
+  probe("Vout") = vOut;
+}
+
+def main = printsim(mainSys(),0.005,1.0)

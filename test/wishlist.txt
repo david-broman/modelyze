@@ -1,0 +1,5 @@
+
+
+* Consistency when using ; at the end of defintions. Right now, you
+  need to use ; for definitions within functions, but not when
+  they are outside functions.

@@ -1,0 +1,38 @@
+
+include ModelyzeHEOO
+include Electrical
+
+def LowPassFilterRC(cutOff : Real, n1 : Electrical , n3 : Electrical) = {
+  def n2 : Electrical;
+  def vOutRC : Real;
+  Resistor(1000.0,n1,n2);
+  Capacitor(1.0/cutOff/1000.0/2.0/3.1415,n2,n3);
+  VoltageSensor(n2,n3,vOutRC);
+  Ground(n3);	// BUG: This extra ground results in a stack overflow.
+  vOutRC = probe("Voltage_Out_RC");
+}
+
+def LowPassFilterRL(cutOff : Real, n1 : Electrical , n3 : Electrical) = {
+  def n2 : Electrical;
+  def vOutRL : Real;
+  Resistor(1000.0,n2,n3);
+  Inductor(1000.0/2.0/3.1415/cutOff,n1,n2);
+  VoltageSensor(n2,n3,vOutRL);
+  vOutRL = probe("Voltage_Out_RL");
+}
+
+def Circuit() = {
+  def vp,vn : Electrical;
+  def vIn : Real;
+  def fSine = 2.0;
+
+  SineVoltage(1.0,fSine,vp,vn);
+  LowPassFilterRC(1.0,vp,vn);
+  LowPassFilterRL(1.0,vp,vn);
+  Ground(vn);
+  VoltageSensor(vp,vn,vIn);
+  vIn = probe("Voltage_In");
+} 
+
+def main = printsim(Circuit(), 0.01, 4.0)
+

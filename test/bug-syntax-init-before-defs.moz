@@ -1,0 +1,15 @@
+
+
+include ModelyzeDAE
+
+def M() = {
+  def x : Real;
+  init x 1.0;	// BUG: It is not possible to have inits before some defines.
+  def k = 5;
+
+  
+  der(x) = k;
+  probe("x") = x;  
+}
+
+def main = printsim(M(),0.01,10.0)

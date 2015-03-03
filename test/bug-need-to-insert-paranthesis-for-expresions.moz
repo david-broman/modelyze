@@ -1,0 +1,43 @@
+include ModelyzeDAE
+
+def g = 9.81
+
+def DoublePend(ith1 : Real, ith2 : Real) = {
+  def x1,y1,x2,y2,th1,th2,T1,T2 : Real;
+  def L1 = 2.0; def L2 = 2.0; def m1 = 2.0; def m2 = 2.0;
+  
+  //def ith3 = -ith2;
+  init th1 ith1;
+  init th2 -ith2;	// BUG: If there is no paranthesis around expression
+                        //      -ith2, i.e.  init th2 (-ith2) we get 
+                        //      a quite bad error message.
+  
+  //Functions!
+  x1'' = -th1'*th1'*L1*sin(th1) + th1''*L1*cos(th1);
+  y1'' = th1'*th1'*L1*cos(th1) + th1''*L1*sin(th1);
+  x2'' = x1'' - th2'*th2'*L2*sin(th2) + th2''*L2*cos(th2);
+  y2'' = y1'' + th2'*th2'*L2*cos(th2) + th2''*L2*sin(th2);
+  m1*x1'' = -T1*sin(th1) + T2*sin(th2);
+  m1*y1'' = T1*cos(th1) - T2*cos(th2) - m1*g;
+  m2*x2'' = -T2*sin(th2);
+  m2*y2'' = T2*cos(th2) - m2*g;
+  
+  probe("Theta_1") = th1;
+  probe("Theta_2") = -th2;
+  
+}
+
+
+
+def main = printsim(DoublePend(0.78,-1.57),0.01,20.0)
+
+
+
+
+
+
+
+
+
+
+

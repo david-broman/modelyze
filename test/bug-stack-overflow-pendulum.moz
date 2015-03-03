@@ -1,0 +1,51 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include ModelyzeDAE
+
+
+def g = 9.81
+
+def Problem() = {
+    def x,y,z:Real;
+    init x 4.0;
+    init y 5.0;
+   
+    x' = y' + z;
+    x' = 2.0 * x;
+    x*x = 10.0;     
+
+    probe "x" = x;
+}
+
+//BUG: Stack overflow. Problem in pantelides?
+
+
+def pi = 3.1415
+
+def main = 
+   printsim(Problem(), 0.01, 10.0)
+   
+
+
+
+
+
+
+
+

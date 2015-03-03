@@ -1,0 +1,13 @@
+
+
+include ModelyzeDAE
+
+def M() = {
+  def x : Real;
+  init x 1.0;	
+  
+  der(x) = 2;  //BUG: Should be possible to write 2 instead of 2.0. 
+  probe("x") = x;  
+}
+
+def main = printsim(M(),0.01,10.0)

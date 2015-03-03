@@ -1,0 +1,22 @@
+
+
+include ModelyzeDAE
+
+def M(x : Real) = {
+  //BUG: This results in an infinit loop  
+  x = -x;	
+}
+
+
+def main = printsim(M(1.0),0.01,20.0)
+
+
+
+
+
+
+
+
+
+
+

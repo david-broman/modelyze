@@ -1,0 +1,56 @@
+
+
+include physical
+include modelyzeEOO
+
+type Translational 
+
+def LinearInertia(m : Real, flangeA : Translational, flangeB : Translational) = {
+  def fA : Force;
+  def fB : Force;
+  def x  : Position;
+  RefBranch(fA,x,flangeA);
+  RefBranch(-fB,x,flangeB);
+  m*x'' = fA - fB;
+}
+
+def LinearPositionSensor(flangeB : Translational , s : Signal) = {
+  def x : Position;
+  RefBranch(0.0,x,flangeB);
+  s = x;
+}
+
+def LinearRod(r : Real, flangeA : Translational, flangeB : Translational) = {
+  def x : Position;
+  def f : Force;
+  Branch(f,-r,flangeA,flangeB);
+}
+
+def ConstantForce(f : Real, flangeB : Translational) = {
+  def x : Position;
+  RefBranch(-f,x,flangeB);
+}
+
+def MainSys() = {
+  def t0,t1,t2,t3 : Translational;
+  def s1,s2 : Signal;
+  
+  LinearInertia(1.0,t0,t1);
+  LinearRod(100.0,t1,t2);
+  ConstantForce(1.0,t0);
+  LinearInertia(1.0,t2,t3);	//BUG: Works correctly if this is line is removed. But,
+                                //with the intertia, we loose the distance specified by 
+                                //the rod.
+  
+  LinearPositionSensor(t1,s1);
+  LinearPositionSensor(t2,s2);
+  probe("s1(ska_komma_efter)") = s1;
+  probe("s2(ska_ligga_framför)") = s2;
+  
+}
+
+def main = printsim(MainSys(),0.1,20.0)
+
+
+
+

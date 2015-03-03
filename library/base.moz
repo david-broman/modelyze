@@ -119,4 +119,17 @@ def append(l1:[?], l2:[?]) -> [?] = {
     work(l1)        
 }
 
+def length(l:[Dyn]) -> Int = {
+    match l with
+    | _::ls -> length(ls) + 1 
+    | [] -> 0
+}
+
+
+
+
+
+
+
+
 

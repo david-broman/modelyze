@@ -21,5 +21,6 @@ include ModelyzeDAE
 include Elaboration
 
 def printsim(model:Equations, steptime:Real, endtime:Real) = {
-    print(pprintSimulation(ctSim(elaborateConnections(model),steptime,endtime)))
+     print(pprintSimulation(ctSim(elaborateConnections(model),steptime,endtime))) 
+  /*   dprint(elaborateConnections(model))  */
 }

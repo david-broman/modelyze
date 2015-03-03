@@ -17,10 +17,14 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+
 include Equation
 
-def Branch : Real -> Real -> ? -> ? -> Equations
-def RefBranch : Real -> Real -> ? -> Equations
+//def Branch : [Real] -> [Real] -> ? -> ? -> Equations
+//def Branch : [<Real>] -> [<Real>] -> Dyn -> Dyn -> Equations
+//def Branch : Real -> Real -> Dyn -> Dyn -> Equations
+def Branch : ? -> ? -> ? -> ? -> Equations
+def RefBranch : Real -> Real -> Dyn -> Equations
 
 type Electrical 
 type Voltage = <Real>

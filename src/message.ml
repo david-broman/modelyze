@@ -67,8 +67,9 @@ type id =
          arg4 = line number of the meta-down operation *)
   | TYPE_SYMAPP_MISSING_ARG
   | TYPE_APP_ARG_MISMATCH 
-      (* arg1 = type of function parameter 
-         arg2 = type of application argument *)
+      (* arg0 = extra info
+         arg1 = type of application argument 
+         arg2 = expected type *)
   | TYPE_APP_ABS_MISMATCH 
       (* arg1 = type left hand side 
          arg2 = type of application argument *)
@@ -309,9 +310,9 @@ let id2str id args =
     | TYPE_META_UP_ON_FREE_VAR -> us"TYPE_META_UP_ON_FREE_VAR"
     | TYPE_META_DOWN_ON_FREE_VAR -> us"TYPE_META_DOWN_ON_FREE_VAR"
     | TYPE_SYMAPP_MISSING_ARG -> us"Missing argument of type '" ^. (List.nth args 0) ^. us"'."
-    | TYPE_APP_ARG_MISMATCH -> (List.nth args 1) ^.
-                               us"Illegal argument type. Expected an argument of type '" ^.
-                               (List.nth args 0) ^. us"'."
+    | TYPE_APP_ARG_MISMATCH -> (List.nth args 0) ^.
+                               us"Illegal argument type. Expected an argument of type " ^.
+                               (List.nth args 1) ^. us", but the argument has type " ^. (List.nth args 2) ^. us"."
     | TYPE_APP_ABS_MISMATCH -> (List.nth args 1) ^.
                                us"The expression of type '" ^. (List.nth args 0) ^. 
                                us"' is not a function and shall not have any arguments."

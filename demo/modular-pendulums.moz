@@ -1,0 +1,34 @@
+/*
+ * Builds a double pendulum arm recursively using the mechanical2d
+ * library. The amount of pendulums can be changed by changing the 
+ * n_pendulums variable.
+ * 
+ * In order to animate this in MATLAB run the armanim.m script in
+ * env/matlab with the correct filepath and filename. (typically 
+ * filepath = ../../demo; filename = modular-pendulums.moz
+ */
+
+include mechanical2d	// Includes the parts
+include modelyzeEOO
+
+def n_pendulums = 2
+
+def SinglePendulum(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeMid : Mechanical2D;
+  def K = 0.0; def d = 0.0; def L = 0.5;
+  
+  SpringJoint(K,d,flangeA,flangeMid);
+  VerticalArmLink(L,flangeMid,flangeB);
+}
+
+def mainSys() = {
+  def f1,f2,f3 : Mechanical2D;
+  def sth : Signal;
+  
+  ArmFixed(f1);
+  SerializeArms(1,n_pendulums,f1,f2,SinglePendulum);
+  
+}
+
+
+def main = printsim(mainSys(),0.005,20.0)

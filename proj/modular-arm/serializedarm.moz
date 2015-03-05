@@ -1,0 +1,90 @@
+/*
+* A serial robot arm with spring loaded joints :)
+*/
+
+include mechanical2d	// Includes the parts
+include modelyzeEOO
+
+def singleArmElement(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeMid : Mechanical2D;
+  def K = 0.5; def d = 0.2; def L = 0.5;
+  
+  SpringJoint(K,d,flangeA,flangeMid);
+  ArmLink(L,flangeMid,flangeB);
+}
+
+def recursiveArms(ic : Int , imax : Int, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  def sth : Signal;
+  
+  if (ic == imax) then {
+    singleArmElement(flangeA,flangeB);
+    RotSensor(flangeB,sth);
+    probe("th_" ++ int2string(ic)) = sth;
+    
+  } else {
+    def flangeMid : Mechanical2D;
+    
+    singleArmElement(flangeA,flangeMid);
+    recursiveArms(ic+1,imax,flangeMid,flangeB);
+    RotSensor(flangeMid,sth);
+    probe("th_" ++ int2string(ic)) = sth;
+     
+  };
+
+}
+
+
+def mainSys() = {
+  def f1,f2,f3,f4 : Mechanical2D;
+  
+  def sth : Signal;
+  
+  // How many joints
+  def imax : Int = 4;
+  
+  // Connections
+  ArmFixed(f1);
+  recursiveArms(1,imax,f1,f2);
+  ConstantTorqueJoint(2.0,0.2,f2,f3);
+  ArmLink(0.5,f3,f4);
+  
+  RotSensor(f3,sth);
+  probe("th_" ++ int2string(imax+1)) = sth;
+}
+
+def mainSys2() = {
+  def f1,f2,f3,f4,f5 : Mechanical2D;
+  
+  // Signal vars
+  def sth2, sth4 : Signal;
+  
+  // HOW MANY JOINTS!
+  def imax : Int = 1;
+  
+  // Connections
+  ArmFixed(f1);
+  SpringJoint(1.0,0.5,f1,f2);
+  ArmLink(0.5,f2,f3);
+  ConstantTorqueJoint(4.0,0.5,f3,f4);
+  ArmLink(0.5,f4,f5);
+  
+  // Sensors
+  RotSensor(f2,sth2);
+  RotSensor(f4,sth4);
+  
+  probe("th_" ++ int2string(imax)) = sth2;
+  probe("th_" ++ int2string(imax+1)) = sth4;
+    
+}
+
+def main = printsim(mainSys(),0.005,20.0)
+/*{
+  def _ = print("first\n");
+  def eqs = elaborateConnections(mainSys());
+  def _ = print(int2string(noEquations(eqs)) ++ "\n");
+  //print(pprintSimulation(ctSim(eqs,0.01,20.0))); 
+  def _ = pprintSimulation(ctSim(eqs,0.01,20.0));
+  print("done\n");
+}*/
+
+

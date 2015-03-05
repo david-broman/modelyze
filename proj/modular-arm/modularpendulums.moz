@@ -1,0 +1,30 @@
+/*
+ * Test a pendulum modular arm with gravity
+ */
+
+include mechanical2d	// Includes the parts
+include modelyzeEOO
+
+
+def SinglePendulum(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeMid : Mechanical2D;
+  def K = 0.0; def d = 0.0; def L = 0.5;
+  
+  SpringJoint(K,d,flangeA,flangeMid);
+  VerticalArmLink(L,flangeMid,flangeB);
+}
+
+def mainSys() = {
+  def f1,f2,f3 : Mechanical2D;
+  def sth : Signal;
+  
+  def imax = 2;
+  
+  ArmFixed(f1);
+  SerializeArms(1,imax,f1,f2,SinglePendulum);
+  
+}
+
+
+def main = printsim(mainSys(),0.005,20.0)
+	   //dprint(elaborateConnections(mainSys()))

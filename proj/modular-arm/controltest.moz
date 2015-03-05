@@ -1,0 +1,43 @@
+/*
+* Tests PID-control with a arm with DC-motors
+*/
+
+include mechanical2d	// Includes the parts
+include modelyzeEOO
+
+def PI = 3.14
+
+def mainSys() = {
+  // Single Arm
+  def f1,f2,f3,f4,f5 : Mechanical2D;
+  def u1 : Signal;	// In voltage
+  def ref: Signal;	// Control reference
+  
+  // Signal vars
+  def sth1,sth2 : Signal;
+  
+  // Connections
+  ArmFixed(f1);
+  DCmotorJoint(u1,f1,f2);
+  //SpringJoint(0.0,0.0,f1,f2);
+  ArmLink(0.5,f2,f3);
+  //DCmotorJoint(u1,f3,f4);
+  SpringJoint(1.0,0.2,f3,f4);
+  ArmLink(0.5,f4,f5);
+  
+  RotSensor(f2,sth1);
+  RotSensor(f4,sth2);
+  
+  PIDcontroller(10.0,0.0,6.0,ref,sth1,u1);
+  ref = PI/2.0;
+  
+  
+  //probe("u1") = u1;
+  probe("ref") = ref;
+  probe("th_1") = sth1;
+  probe("th_2") = sth2;
+  
+}
+
+def main = printsim(mainSys(),0.01,10.0)
+	   //dprint(elaborateConnections(mainSys()))

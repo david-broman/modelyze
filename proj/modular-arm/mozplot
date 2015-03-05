@@ -1,0 +1,5 @@
+#!/bin/bash
+../../bin/moz --libpaths=../../library/ $1 > mozplot.dat 
+gnuplot -persist mozplot.cfg > /dev/null 2>&1
+rm -f mozplot.dat
+

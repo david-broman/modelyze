@@ -1,0 +1,39 @@
+/*
+* Verification test, tests two different formulations of a
+* single arm joint that should yield the same result.
+*/
+
+include mechanical2d	// Includes the parts
+include modelyzeEOO
+
+def mainSys() = {
+  // Single Arm
+  def f1,f2,f3 : Mechanical2D;
+  
+  // Modular arm
+  def g1,g2,g3,g4 : Mechanical2D;
+  
+  // Signal vars
+  def s1th,s2th : Signal;
+  
+  // Connections for the single arm
+  ArmFixed(f1);
+  ConstantTorqueJoint(2.0,0.5,f1,f2);
+  ArmLink(1.0,f2,f3);
+  
+  RotSensor(f2,s1th);
+  
+  // Connections for the modular arm
+  ArmFixed(g1);
+  ConstantTorqueJoint(2.0,0.5,g1,g2);
+  ArmLink(0.5,g2,g3);
+  ArmLink(0.5,g3,g4);
+  
+  RotSensor(g2,s2th);
+  
+  probe("Single") = s1th;
+  probe("Modular") = s2th;
+  
+}
+
+def main = printsim(mainSys(),0.005,10.0)

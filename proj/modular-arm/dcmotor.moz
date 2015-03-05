@@ -1,0 +1,17 @@
+include ModelyzeDAE
+
+def DCmotor(u:Real, R:Real, K:Real, L:Real, J:Real, c:Real) = {
+  def e, T , i, th, th2 : Real;
+  
+  u - R*i - L*i' - e = 0.0;
+  e = K*th';
+  J*th'' = T - c*th';
+  T = K*i;
+  
+  J*th2'' = K*(u - K*th2')/R - c*th2';
+  
+  probe("Theta_Adv") = th';
+  probe("Theta_Simpl") = th2';
+}
+
+def main = printsim(DCmotor(24.0,1.0,0.2,0.5,0.0843333,0.5),0.05,10.0)

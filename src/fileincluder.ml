@@ -95,7 +95,7 @@ and expand_top libpaths nameid k toplst visited cached acc =
 
 
 let read_file_chain libpaths filename =     
-  filename |> String.lowercase |> us |> Symtbl.add 
+  filename |> us |> Symtbl.add 
            |> read_module libpaths Info.NoInfo (IdSet.empty) (IdMap.empty) 
            |> fst |> List.split |> fst
   

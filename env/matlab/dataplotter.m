@@ -1,17 +1,18 @@
 % Plots generic output data from modelyze
 clear all; close all; clc;
 %%
-useSaved = 0;   % Use a saved simulation instead of simulating
+filepath = '../../proj/modular-arm';
+filename = 'modularpendulums.moz';
 
+useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved
     load('QuintuplePendulum.mat'); clear L;
 else
-    filepath = '/home/vkozma/modelyze/Modular Arm';
-    d = ExecuteModelyze(filepath,'controltest.moz');
+    d = ExecuteModelyze(filepath,filename);
     if isempty(d); return; end % ERROR
 end
 %%
-fig = figure(1);
+fig = figure;
 hold on;
 xlabel('Time')
 

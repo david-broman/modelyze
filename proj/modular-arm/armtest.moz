@@ -1,5 +1,5 @@
 /*
-* Demo for the 2D modular robotics library
+* Test for the 2d robot arm
 */
 
 include mechanical2d	// Includes the parts
@@ -11,30 +11,48 @@ def mainSys() = {
   // Signal vars
   def sth1,sth2,sth3 : Signal;
   
-  def M1 = -1.0;
+  def M1 = 0.0;
   def M2 = 2.0;
-  def M3 = -1.0;
   
   // Connections
   ArmFixed(f1);
   ConstantTorqueJoint(M1,0.5,f1,f2);
-  ArmLink(0.5,f2,f3);
+  ArmLink2(0.5,f2,f3);
   ConstantTorqueJoint(M2,0.5,f3,f4);
-  ArmLink(0.5,f4,f5);
-  ConstantTorqueJoint(M3,0.5,f5,f6);
-  ArmLink(0.5,f6,f7);
+  ArmLink2(0.5,f4,f5);
   
   // Sensors
   RotSensor(f3,sth1);
   RotSensor(f5,sth2);
-  RotSensor(f7,sth3);
   
   // In order for the MATLAB animation scripts to properly 
   // identify the angles they need to be named on the form 
   // th_# where # is the number of the joint
-  probe("th_3") = sth3;
   probe("th_2") = sth2;
   probe("th_1") = sth1;
 }
 
-def main = printsim(mainSys(),0.005,10.0)
+def mainSys2() = {
+  def f1,f2,f3 : Mechanical2D;
+  def g1,g2,g3 : Mechanical2D;
+  def sth1,sth2 : Signal;
+  
+  ArmFixed(f1);
+  ConstantTorqueJoint(1.0,0.5,f1,f2);
+  ArmLink(0.5,f2,f3);
+  
+  ArmFixed(g1);
+  ConstantTorqueJoint(1.0,0.5,g1,g2);
+  ArmLink(0.5,g2,g3);
+  
+  RateSensor(f2,sth1);
+  RateSensor(g2,sth2);
+  
+  probe("th_link1") = sth1;
+  probe("th_link2") = sth2;
+  
+}
+
+
+
+def main = printsim(mainSys(),0.001,10.0)

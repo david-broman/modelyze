@@ -16,7 +16,7 @@ for i = 1:length(dr)
         scriptInd = i;
     end
 end
-runscript = 0;  % Should be zero if you don't wanna rerun the script
+runscript = 1;  % Should be zero if you don't wanna rerun the script
 if scriptInd == 0
     error('Couldn''t find the script file %s',mozscript);
 elseif storeInd == 0

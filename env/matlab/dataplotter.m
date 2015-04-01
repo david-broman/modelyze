@@ -1,8 +1,8 @@
 % Plots generic output data from modelyze
 clear all; close all; clc;
 %%
-filepath = '../../proj/modular-arm';
-filename = 'modularpendulums.moz';
+filepath = '../../demo';
+filename = 'pendulum.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved

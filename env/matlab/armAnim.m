@@ -1,8 +1,8 @@
 % Animates a robotic arm in real time simulated by modelyze
 clear all; close all; clc
 
-filepath = '../../proj/modular-arm';
-filename = 'modularpendulums.moz';
+filepath = '../../demo';
+filename = 'modular-pendulums.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved
@@ -23,7 +23,7 @@ if N == 0; error('MODELYZE DATA CONTAINS ONLY TIME'); end;
 % etc.
 iAngles = [];
 for i = 2:(N+1)
-    if regexpi(lower(d.textdata{i}),'th_\d') == 1
+    if regexpi(d.textdata{i},'th_\d') == 1
         n = strsplit(d.textdata{i},'_');
         iAngles(str2double(n{end})) = i;
     end

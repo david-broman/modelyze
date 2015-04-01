@@ -87,6 +87,23 @@ plotting can be done as follows:
 ./mozplot hybrid-ball-stairs.moz
 
 
+DISPLAYING ANIMATIONS FOR THE 2D-MECHANICS LIBRARY WITH MATLAB
+---------------------------------------------------------------
+In the folder "env/matlab" there's scripts that can visualize the output from
+provided by the mechanical2d library. In order to use these follow these steps:
+
+1. Install MATLAB 
+2. Open MATLAB, navigate to the env/matlab folder and open the armAnim.m script
+3. Change the file path and filename to your liking and run the script
+
+There's also another MATLAB script, dataplotter.m, for plotting the output of
+any modelyze script that can be used instead of GNUplot.
+
+NOTE: currently the animation script uses the angles of each joint as input
+and can thus not extract the length of the links so the script assumes all 
+lengths are 0.5 meters. This will be fixed later when an initialization bug 
+is fixed so the script can use the position of each joint instead.
+
 
 LICENSE
 -------

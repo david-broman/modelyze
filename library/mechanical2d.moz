@@ -7,45 +7,6 @@ include modelyzeEOO
 
 def ArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   // A single arm link mounted parallel to the ground
-  
-  // Joint parameters
-  def Lm = L/2.0; 	// distance to center of mass
-  def m = L*2.0; 	// 2 kg per meter arm
-  def I = m*L*L/3.0;	// Moment of inertia @ endpoint
-  
-  // X - Forces and positions
-  def fxA, fxB : Force;
-  def xA, xB : Position;
-  // Y - Forces and positions
-  def fyA, fyB : Force;
-  def yA, yB : Position;
-  // Torques and angles
-  def MA, MB : Torque;
-  def thA, thB : Angle;
-  // Position of center of mass
-  def xm,ym : Position;
-  
-  // BRANCHES!!!!!!!!
-  MultiRefBranch([fxA,fyA,MA],[xA,yA,thA],flangeA);
-  MultiRefBranch([-fxB,-fyB,-MB],[xB,yB,thB],flangeB);
-  
-  // Positions of the center of mass
-  xm = xA + Lm*cos(thA);
-  ym = yA + Lm*sin(thA);
-  
-  // Position equations
-  thA = thB;
-  xB = xA + L*cos(thA);
-  yB = yA + L*sin(thA);
-  
-  // Force and torque equations
-  I*thA'' = MA - MB - yA''*Lm*cos(thA) + xA''*Lm*sin(thA) + fxB*L*sin(thA) - fyB*L*cos(thA);
-  fxA = m*xm'' + fxB;
-  fyA = m*ym'' + fyB;
-}
-
-def ArmLink2(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // A single arm link mounted parallel to the ground
   // Modelled with a torque balance around the center of mass
   
   // Joint parameters
@@ -84,16 +45,13 @@ def ArmLink2(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   m*ym'' = fyA - fyB;
 }
 
-def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // An arm link mounted vertically so that the gravity affects
-  // the arm in the y-direction
+def ArmLinkOld(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  // A single arm link mounted parallel to the ground
   
   // Joint parameters
   def Lm = L/2.0; 	// distance to center of mass
   def m = L*2.0; 	// 2 kg per meter arm
-  def I = m*L*L/3.0;	// Moment of inertia @ flangeA
-  
-  def g = 9.81;
+  def I = m*L*L/3.0;	// Moment of inertia @ endpoint
   
   // X - Forces and positions
   def fxA, fxB : Force;
@@ -121,12 +79,12 @@ def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = 
   yB = yA + L*sin(thA);
   
   // Force and torque equations
-  I*thA'' = MA - MB - yA''*Lm*cos(thA) + xA''*Lm*sin(thA) + fxB*L*sin(thA) - fyB*L*cos(thA) - g*m*Lm*cos(thA);
+  I*thA'' = MA - MB - yA''*Lm*cos(thA) + xA''*Lm*sin(thA) + fxB*L*sin(thA) - fyB*L*cos(thA);
   fxA = m*xm'' + fxB;
-  fyA = m*ym'' + fyB + g*m;
+  fyA = m*ym'' + fyB;
 }
 
-def VerticalArmLink2(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   // An arm link mounted vertically so that the gravity affects
   // the arm in the y-direction
   
@@ -166,6 +124,48 @@ def VerticalArmLink2(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) =
   I*thA'' = MA - MB  + fxA*Lm*sin(thA) - fyA*Lm*cos(thA) + fxB*(L-Lm)*sin(thA) - fyB*(L-Lm)*cos(thA);
   m*xm'' = fxA - fxB;
   m*ym''=  fyA - fyB - g*m;
+}
+
+def VerticalArmLinkOld(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  // An arm link mounted vertically so that the gravity affects
+  // the arm in the y-direction
+  
+  // Joint parameters
+  def Lm = L/2.0; 	// distance to center of mass
+  def m = L*2.0; 	// 2 kg per meter arm
+  def I = m*L*L/3.0;	// Moment of inertia @ flangeA
+  
+  def g = 9.81;
+  
+  // X - Forces and positions
+  def fxA, fxB : Force;
+  def xA, xB : Position;
+  // Y - Forces and positions
+  def fyA, fyB : Force;
+  def yA, yB : Position;
+  // Torques and angles
+  def MA, MB : Torque;
+  def thA, thB : Angle;
+  // Position of center of mass
+  def xm,ym : Position;
+  
+  // BRANCHES!!!!!!!!
+  MultiRefBranch([fxA,fyA,MA],[xA,yA,thA],flangeA);
+  MultiRefBranch([-fxB,-fyB,-MB],[xB,yB,thB],flangeB);
+  
+  // Positions of the center of mass
+  xm = xA + Lm*cos(thA);
+  ym = yA + Lm*sin(thA);
+  
+  // Position equations
+  thA = thB;
+  xB = xA + L*cos(thA);
+  yB = yA + L*sin(thA);
+  
+  // Force and torque equations
+  I*thA'' = MA - MB - yA''*Lm*cos(thA) + xA''*Lm*sin(thA) + fxB*L*sin(thA) - fyB*L*cos(thA) - g*m*Lm*cos(thA);
+  fxA = m*xm'' + fxB;
+  fyA = m*ym'' + fyB + g*m;
 }
 
 def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
@@ -309,7 +309,7 @@ def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out
 
 type ArmElement = <?> -> <?> -> Equations
 
-def SerializeArms(is : Int, imax : Int, flangeA : Mechanical2D, flangeB : Mechanical2D, elem : ArmElement) -> Equations = {
+def SerializeArms(imax : Int, flangeA : Mechanical2D, flangeB : Mechanical2D, elem : ArmElement) -> Equations = {
   def recursiveArms(ic : Int , imax : Int, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
     def sth : Signal;
     
@@ -329,7 +329,7 @@ def SerializeArms(is : Int, imax : Int, flangeA : Mechanical2D, flangeB : Mechan
     };
 
   };
-  recursiveArms(is,imax,flangeA,flangeB);
+  recursiveArms(1,imax,flangeA,flangeB);
 }
 
 

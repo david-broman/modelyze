@@ -23,7 +23,6 @@ def SinglePendulum(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
 
 def mainSys() = {
   def f1,f2,f3 : Mechanical2D;
-  def sth : Signal;
   
   ArmFixed(f1);
   SerializeArms(n_pendulums,f1,f2,SinglePendulum);

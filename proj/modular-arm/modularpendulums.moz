@@ -11,7 +11,7 @@ def SinglePendulum(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   def K = 0.0; def d = 0.0; def L = 0.5;
   
   SpringJoint(K,d,flangeA,flangeMid);
-  VerticalArmLink2(L,flangeMid,flangeB);
+  VerticalArmLink(L,flangeMid,flangeB);
 }
 
 def mainSys() = {
@@ -21,7 +21,7 @@ def mainSys() = {
   def imax = 2;
   
   ArmFixed(f1);
-  SerializeArms(1,imax,f1,f2,SinglePendulum);
+  SerializeArms(imax,f1,f2,SinglePendulum);
   
 }
 

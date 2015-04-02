@@ -5,54 +5,116 @@
 include mechanical2d	// Includes the parts
 include modelyzeEOO
 
+def PI = 3.1415
+
 def mainSys() = {
   def f1,f2,f3,f4,f5,f6,f7 : Mechanical2D;
   
   // Signal vars
   def sth1,sth2,sth3 : Signal;
+  def u1,u2,u3,ref1,ref2,ref3 : Signal;
+  def time : Real;
   
-  def M1 = 0.0;
-  def M2 = 2.0;
+  time' = 1.0;
   
-  // Connections
   ArmFixed(f1);
-  ConstantTorqueJoint(M1,0.5,f1,f2);
-  ArmLink2(0.5,f2,f3);
-  ConstantTorqueJoint(M2,0.5,f3,f4);
-  ArmLink2(0.5,f4,f5);
+  DCmotorJoint(u1,f1,f2);
+  ArmLink(0.5,f2,f3);
+  DCmotorJoint(u2,f3,f4);
+  ArmLink(0.5,f4,f5);
+  DCmotorJoint(u3,f5,f6);
+  ArmLink(0.5,f6,f7);
   
-  // Sensors
-  RotSensor(f3,sth1);
-  RotSensor(f5,sth2);
+  RotSensor(f2,sth1);
+  RotSensor(f4,sth2);
+  RotSensor(f6,sth3);
+  
+  //PIDcontroller(20.0,0.0,1.0,ref1,sth1,u1);
+  OutputFeedbackController(ref1,sth1,u1);
+  ref1 = PI/2.0 * sin(2.0 * PI * 0.5 * time);
+  
+  PIDcontroller(20.0,0.0,1.0,ref2,sth2,u2);
+  ref2 = 0.0;
+  
+  PIDcontroller(20.0,0.0,1.0,ref3,sth3,u3);
+  ref3 = ref1;
+  
   
   // In order for the MATLAB animation scripts to properly 
   // identify the angles they need to be named on the form 
   // th_# where # is the number of the joint
-  probe("th_2") = sth2;
   probe("th_1") = sth1;
+  probe("th_2") = sth2;
+  probe("th_3") = sth3;
+  
+  probe("u_1") = u1;
+  probe("u_2") = u2;
+  probe("u_3") = u3;
 }
 
 def mainSys2() = {
-  def f1,f2,f3 : Mechanical2D;
-  def g1,g2,g3 : Mechanical2D;
-  def sth1,sth2 : Signal;
+  def f1,f2,f3,f4,f5 : Mechanical2D;
+  def g1,g2,g3,g4,g5 : Mechanical2D;
+  def sthf1,sthf2,sthg1,sthg2 : Signal;
   
   ArmFixed(f1);
-  ConstantTorqueJoint(1.0,0.5,f1,f2);
+  DCmotorJointOld(10.0,f1,f2);
   ArmLink(0.5,f2,f3);
+  DCmotorJointOld(0.0,f3,f4);
+  ArmLink(0.5,f4,f5);
   
   ArmFixed(g1);
-  ConstantTorqueJoint(1.0,0.5,g1,g2);
+  DCmotorJointOld(10.0,g1,g2);
   ArmLink(0.5,g2,g3);
+  DCmotorJoint(0.0,g3,g4);
+  ArmLink(0.5,g4,g5);
   
-  RateSensor(f2,sth1);
-  RateSensor(g2,sth2);
+  RotSensor(f2,sthf1);
+  RotSensor(f4,sthf2);
   
-  probe("th_link1") = sth1;
-  probe("th_link2") = sth2;
+  RotSensor(g2,sthg1);
+  RotSensor(g4,sthg2);
+  
+  probe("th_f_1") = sthf1';
+  probe("th_f_2") = sthf2';
+  probe("th_g_1") = sthg1';
+  probe("th_g_2") = sthg2';
   
 }
 
+def mainSys3() = {
+  def f1,f2,f3 : Mechanical2D;
+  def g1,g2,g3 : Mechanical2D;
+  def sthf1,sthg1 : Signal;
+  def uf,ug,ref : Signal;
+  def time : Real;
+  
+  init ref (PI/2.0);
+  
+  time' = 1.0;
+  
+  ArmFixed(f1);
+  DCmotorJoint(uf,f1,f2);
+  ArmLink(0.5,f2,f3);
+  
+  ArmFixed(g1);
+  DCmotorJoint(ug,g1,g2);
+  ArmLink(0.5,g2,g3);
+  
+  RotSensor(f2,sthf1);
+  RotSensor(g2,sthg1);
+  
+  ref = PI/2.0;
+  OutputFeedbackController(ref,sthf1,uf);
+  PIDcontroller(20.0,0.0,1.0,ref,sthg1,ug);
+  
+  //probe("ug") = ug;
+  //probe("uf") = uf;
+  probe("ref") = ref;
+  probe("th_f_1") = sthf1;
+  probe("th_g_1") = sthg1;
+
+}
 
 
-def main = printsim(mainSys(),0.001,10.0)
+def main = printsim(mainSys3(),0.001,10.0)

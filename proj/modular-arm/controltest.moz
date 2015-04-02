@@ -28,7 +28,7 @@ def mainSys() = {
   RotSensor(f2,sth1);
   RotSensor(f4,sth2);
   
-  PIDcontroller(10.0,0.0,6.0,ref,sth1,u1);
+  PIDcontroller(20.0,0.0,1.0,ref,sth1,u1);
   ref = PI/2.0;
   
   

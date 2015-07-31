@@ -5,13 +5,19 @@
 include physical
 include modelyzeEOO
 
+def FrictionModel(Tf : <Real>, w : <Real>, c1 : Real, c2 : Real, c3 : Real) = {
+  // Nonlinear continuously differentiable friction model
+  Tf = sign(w)*c1*(1.0 - exp(-c2*abs(w))) + c3*w;
+}
+
+
 def ArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   // A single arm link mounted parallel to the ground
   // Modelled with a torque balance around the center of mass
   
   // Joint parameters
   def Lm = L/2.0; 	// Distance to center of mass from flangeA
-  def m = L*0.4; 	// 2 kg per meter arm
+  def m = L*0.4; 	// 0.4 kg per meter arm
   def I = m*L*L/12.0;	// Moment of inertia @ com
   
   // X - Forces and positions
@@ -51,7 +57,7 @@ def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = 
   
   // Joint parameters
   def Lm = L/2.0; 	// distance to center of mass
-  def m = L*0.4; 	// 2 kg per meter arm
+  def m = L*0.4; 	// 0.4 kg per meter arm
   def I = m*L*L/12.0;	// Moment of inertia @ com
   
   def g = 9.81;
@@ -87,6 +93,26 @@ def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = 
   m*ym''=  fyA - fyB - g*m;
 }
 
+def MasslessConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  // X - Forces!
+  def fx : Force;
+  def dx : Position;
+  // Y - Forces!
+  def fy : Force;
+  def dy : Position;
+  // Torques and angles
+  def Mth : Torque;
+  def dth : Angle;
+  
+  // BRANCHES!!!!!!!!
+  MultiBranch([-fx,-fy,-Mth],[dx,dy,dth],flangeA,flangeB);
+  
+  // Equations:
+  dx = 0.0;
+  dy = 0.0;
+  M = -df*dth' - Mth;
+}
+
 def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   // PARAMETERS
   def m = 0.6;	// Mass of the entire Joint
@@ -114,14 +140,39 @@ def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB
   JB*thB'' = M - TB - df*dth';
 }
 
+def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  // PARAMETERS 
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
+  def eta = 0.75; def df = 1.0;
+  def i : Real;
+  
+  // X - Forces!
+  def fx : Force;
+  def dx : Position;
+  // Y - Forces!
+  def fy : Force;
+  def dy : Position;
+  // Torques and angles
+  def Mth : Torque;
+  def dth : Angle;
+  
+  // BRANCHES!!!!!!!!
+  MultiBranch([fx,fy,Mth],[-dx,-dy,-dth],flangeA,flangeB);
+  
+  // Equations
+  dx = 0.0;
+  dy = 0.0;
+  u - R*i - n*K*dth' = 0.0;
+  Mth =  eta*n*K*i - df*dth';  
+}
+
 def DCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   //DC-motor parameters
   def K = 0.0229; def R = 1.83; def L = 0.192e-3; def n = 238.0;
   // Mechanical parameters
   def m = 0.6; // Mass of the entire joint
   def JA = 0.006; // Moment of inertia around flangeA
-  def Jmotor = 9e-7 + 0.05e-7; // Rotor + encoder inertia
-  def JB = Jmotor * n * n + 0.249e-7 + 0.006; // Moment of inertia around flangeB
+  def JB = 0.249e-7 + 0.006; // Moment of inertia around flangeB
   def df = 0.1;	// Friction
   
   // Forces and positions
@@ -315,7 +366,6 @@ def ConstantTorqueJointOld(M : <Real>, df : <Real>, flangeA : Mechanical2D, flan
   dy = 0.0;
   I*dth'' = -M - df*dth' - Mth;
 }
-
 def DCmotorJointOld(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   // PARAMETERS 
   def K = 0.0229*238.0; def R = 1.83; def I = 0.0; def df = 0.1;
@@ -338,8 +388,7 @@ def DCmotorJointOld(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) 
   dx = 0.0;
   dy = 0.0;
   u - R*i + K*dth' = 0.0;
-  I*dth'' =  - K*i - df*dth' - Mth;
-  
+  I*dth'' =  - K*i - df*dth' - Mth;  
 }
 
 def ArmLinkOld(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {

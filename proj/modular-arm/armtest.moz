@@ -116,5 +116,18 @@ def mainSys3() = {
 
 }
 
+def mainSys4() = {
+  def f1,f2,f3 : Mechanical2D;
+  def sth1 : Signal;
+  
+  ArmFixed(f1);
+  MasslessDCmotorJoint(10.0, f1,f2);
+  ArmLink(4.0,f2,f3);
+  
+  RotSensor(f2,sth1);
+  
+  probe("w_1") = sth1';
+  
+}
 
-def main = printsim(mainSys3(),0.001,10.0)
+def main = printsim(mainSys4(),0.001,10.0)

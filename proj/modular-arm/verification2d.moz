@@ -36,4 +36,36 @@ def mainSys() = {
   
 }
 
-def main = printsim(mainSys(),0.005,10.0)
+def mainSys2() = {
+  // Single Arm
+  def f1,f2,f3,f4,f5 : Mechanical2D;
+  // Modular arm
+  def g1,g2,g3,g4,g5,g6,g7 : Mechanical2D;
+  // Signals
+  def s1f,s2f,s1g,s2g : Signal;
+  
+  // Single Arm 
+  ArmFixed(f1);
+  SpringJoint(0.0,0.0,f1,f2);
+  ArmLink(0.5,f2,f3);
+  ConstantTorqueJoint(2.0,0.5,f3,f4);
+  ArmLink(1.0,f4,f5);
+  RateSensor(f2,s1f); RateSensor(f4,s2f);
+  
+  // Modular Arm
+  ArmFixed(g1);
+  SpringJoint(0.0,0.0,g1,g2);
+  ArmLink(0.25,g2,g3);
+  ArmLink(0.25,g3,g4);
+  ConstantTorqueJoint(2.0,0.5,g4,g5);
+  ArmLink(0.5,g5,g6);
+  ArmLink(0.5,g6,g7);
+  RateSensor(g2,s1g); RateSensor(g5,s2g);
+  
+  probe("Single_1") = s1f;
+  probe("Single_2") = s2f;
+  probe("Modular_1") = s1g;
+  probe("Modular_2") = s2g;
+}
+
+def main = printsim(mainSys2(),0.005,4.0)

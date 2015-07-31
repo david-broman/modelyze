@@ -4,7 +4,7 @@ clear all; close all; clc
 filepath = '../../demo';
 filename = 'modular-pendulums.moz';
 
-useSaved = 0;   % Use a saved simulation instead of simulating
+useSaved = 1;   % Use a saved simulation instead of simulating
 if useSaved
     load('QuintuplePendulum.mat');
 else

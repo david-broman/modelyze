@@ -43,3 +43,4 @@ type Velocity = Real
 type Acceleration = Real
 
 type Mechanical2D
+type TempType

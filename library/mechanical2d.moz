@@ -1,24 +1,25 @@
 /*
-* Modular arm part library!
+* 2D - mechanical parts library
+* 
+* Author: Viktor Kozma
 */
 
 include physical
 include modelyzeEOO
 
-def FrictionModel(Tf : <Real>, w : <Real>, c1 : Real, c2 : Real, c3 : Real) = {
+/*********************** FRICTION MODELS ***********************/
+
+def FrictionModel(Tf : <Real>, w : <Real>, c1 : <Real>, c2 : <Real>, c3 : <Real>) = {
   // Nonlinear continuously differentiable friction model
   Tf = sign(w)*c1*(1.0 - exp(-c2*abs(w))) + c3*w;
 }
 
+/*********************** ARM LINK ***********************/
 
-def ArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+// Switch name?
+def ArmLink(L : Real, Lm : Real, I : Real, m : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // A single arm link mounted parallel to the ground
   // Modelled with a torque balance around the center of mass
-  
-  // Joint parameters
-  def Lm = L/2.0; 	// Distance to center of mass from flangeA
-  def m = L*0.4; 	// 0.4 kg per meter arm
-  def I = m*L*L/12.0;	// Moment of inertia @ com
   
   // X - Forces and positions
   def fxA, fxB : Force;
@@ -50,15 +51,20 @@ def ArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   m*xm'' = fxA - fxB;
   m*ym'' = fyA - fyB;
 }
-
-def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // An arm link mounted vertically so that the gravity affects
-  // the arm in the y-direction
-  
-  // Joint parameters
-  def Lm = L/2.0; 	// distance to center of mass
+//Overloaded function for easier use
+def ArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // Some default parameters
+  def Lm = L/2.0; 	// Distance to center of mass from flangeA
   def m = L*0.4; 	// 0.4 kg per meter arm
   def I = m*L*L/12.0;	// Moment of inertia @ com
+  ArmLink(L,Lm,I,m,flangeA,flangeB);
+}
+
+/*********************** VERTICAL ARM LINK ***********************/
+
+def VerticalArmLinkT(L : Real, Lm : Real, I : Real, m : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // An arm link mounted vertically so that the gravity affects
+  // the arm in the y-direction
   
   def g = 9.81;
   
@@ -92,8 +98,17 @@ def VerticalArmLink(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = 
   m*xm'' = fxA - fxB;
   m*ym''=  fyA - fyB - g*m;
 }
+def VerticalArmLink(L : Real, flangeA: Mechanical2D, flangeB : Mechanical2D) -> Equations = {  
+  // Joint parameters
+  def Lm = L/2.0; 	// distance to center of mass
+  def m = L*0.4; 	// 0.4 kg per meter arm
+  def I = m*L*L/12.0;	// Moment of inertia @ com
+  VerticalArmLinkT(L,Lm,I,m,flangeA,flangeB);
+}
 
-def MasslessConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+/*********************** MASSLESS CONSTANT TORQUE ***********************/
+
+def MasslessConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // X - Forces!
   def fx : Force;
   def dx : Position;
@@ -113,12 +128,10 @@ def MasslessConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D,
   M = -df*dth' - Mth;
 }
 
-def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // PARAMETERS
-  def m = 0.6;	// Mass of the entire Joint
-  def JA = 0.006; // Moment of Inertia around flangeA
-  def JB = 0.006; // Moment of Inertia around flangeB
-  
+/*********************** CONSTANT TORQUE JOINT WITH INERTIA ***********************/
+
+def ConstantTorqueJoint(M : <Real>, df : <Real>, JA : Real, JB : Real, m : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+
   // Forces and positions
   def fxA, fyA, fxB, fyB : Force;
   def TA, TB : Torque;
@@ -139,12 +152,19 @@ def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB
   JA*thA'' = -M + TA + df*dth';
   JB*thB'' = M - TB - df*dth';
 }
+def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  def m = 0.6;	// Mass of the entire Joint
+  def JA = 0.006; // Moment of Inertia around flangeA
+  def JB = 0.006; // Moment of Inertia around flangeB
+  ConstantTorqueJoint(M,df,JA,JB,m,flangeA,flangeB);
+}
 
-def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+/*********************** MASSLESS DC MOTOR JOINT ***********************/
+
+def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, c1 : <Real>, c2 : <Real>, c3 : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // PARAMETERS 
-  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
-  def eta = 0.75; def df = 1.0;
   def i : Real;
+  def Tf : <Real>;
   
   // X - Forces!
   def fx : Force;
@@ -153,55 +173,83 @@ def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanica
   def fy : Force;
   def dy : Position;
   // Torques and angles
-  def Mth : Torque;
+  def T : Torque;
   def dth : Angle;
   
   // BRANCHES!!!!!!!!
-  MultiBranch([fx,fy,Mth],[-dx,-dy,-dth],flangeA,flangeB);
+  MultiBranch([fx,fy,T],[-dx,-dy,-dth],flangeA,flangeB);
   
   // Equations
   dx = 0.0;
   dy = 0.0;
-  u - R*i - n*K*dth' = 0.0;
-  Mth =  eta*n*K*i - df*dth';  
+  FrictionModel(Tf,dth',c1,c2,c3);
+  //probe("Tf") = Tf; // For testing
+  u - R*i - L*i' - n*K*dth' = 0.0;
+  T =  eta*n*K*i - Tf;
+}
+def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // Default DC-motor joint, based on an DCX26L with n = 150
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
+  def eta = 0.75; def df = 0.1;
+  MasslessDCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,flangeA,flangeB);
+}
+def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, df : Real,  flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // DC-motor joint with only linear friction
+  MasslessDCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,flangeA,flangeB);  
 }
 
-def DCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  //DC-motor parameters
-  def K = 0.0229; def R = 1.83; def L = 0.192e-3; def n = 238.0;
-  // Mechanical parameters
-  def m = 0.6; // Mass of the entire joint
-  def JA = 0.006; // Moment of inertia around flangeA
-  def JB = 0.249e-7 + 0.006; // Moment of inertia around flangeB
-  def df = 0.1;	// Friction
+/*********************** DC MOTOR JOINT WITH INERTIA ***********************/
+
+def DCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, c1 : <Real>, c2 : <Real>, c3 : <Real>, JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   
   // Forces and positions
   def fxA, fyA, fxB, fyB : Force;
   def TA, TB : Torque;
-  def xA, yA, xB, yB : Position;
+  def xA, yA, xB, yB, x, y : Position;
   def thA, thB : Angle;
   def dth : Angle;
-  def i,M : Real;
+  def i,Tm : Real;
+  def Tf : <Real>;
   
   MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flangeA);
   MultiRefBranch([-fxB,-fyB,-TB],[xB,yB,thB],flangeB);
   
   // Equations:
-  xA = xB;
-  yA = yB;
+  x = xA + offset_A*cos(thA);
+  xB = x + offset_B*cos(thB);
+  y = yA + offset_A*sin(thA);
+  yB = y + offset_B*sin(thB);
+  
+  //xB = xA;
+  //yB = yA;
   dth = thB - thA;
   
-  m*xA'' = fxA - fxB;
-  m*yA'' = fyA - fyB;
+  m*x'' = fxA - fxB;
+  m*y'' = fyA - fyB;
   
-  u - R*i - K*n*dth' = 0.0;
-  M = K*n*i;
-  
-  JA*thA'' = -M + TA + df*dth';
-  JB*thB'' = M - TB - df*dth';
+  u - R*i - L*i' - K*n*dth' = 0.0;
+  Tm = eta*K*n*i;
+  FrictionModel(Tf,dth',c1,c2,c3);
+  JA*thA'' = -Tm + TA + Tf;
+  JB*thB'' = Tm - TB - Tf;
+}
+def DCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // Default DC motor joint with a DCX26L attached
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
+  def eta = 0.75; def df = 0.1;
+  def m = 1.4; // Mass of the entire joint
+  def JA = 0.05; // Moment of inertia around flangeA
+  def JB = 0.249e-7 + 0.05; // Moment of inertia around flangeB
+  DCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,JA,JB,m,0.0,0.0,flangeA,flangeB);  
+}
+def DCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, df : Real, JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // DC-motor joint with only linear friction
+  DCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,JA,JB,m,offset_A,offset_B,flangeA,flangeB);
 }
 
-def SpringJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+/*********************** SPRING JOINT ***********************/
+
+def SpringJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // X - Forces!
   def fx : Force;
   def dx : Position;
@@ -217,12 +265,12 @@ def SpringJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical
   
   dx = 0.0;
   dy = 0.0;
-  Mth = -K*dth - d*dth';
-  
-  
+  Mth = -K*dth - d*dth';  
 }
 
-def ArmFixed(flange : Mechanical2D) = {
+/*********************** ARM FIXATION ***********************/
+
+def ArmFixed(flange : Mechanical2D) -> Equations = {
   def fx, fy : Force;
   def M : Torque;
   def x,y : Position;
@@ -232,7 +280,7 @@ def ArmFixed(flange : Mechanical2D) = {
   x = 0.0; y = 0.0; th = 0.0;  
 }
 
-def ArmFixedY(flange : Mechanical2D) = {
+def ArmFixedY(flange : Mechanical2D) -> Equations = {
   def fx, fy : Force;
   def M : Torque;
   def x,y : Position;
@@ -242,7 +290,9 @@ def ArmFixedY(flange : Mechanical2D) = {
   y = 0.0;
 }
 
-def PositionSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) = {
+/*********************** SENSORS ***********************/
+
+def PositionSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) -> Equations = {
   def x,y : Position;
   def th : Angle;
   def fx,fy : Force;
@@ -256,7 +306,7 @@ def PositionSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signa
   sth = th;
 }
 
-def SpeedSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) = {
+def SpeedSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) -> Equations = {
   def x,y : Position;
   def th : Angle;
   def fx,fy : Force;
@@ -270,7 +320,7 @@ def SpeedSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) 
   sth = th';
 }
 
-def AccSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) = {
+def AccSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) -> Equations = {
   def x,y : Position;
   def th : Angle;
   def fx,fy : Force;
@@ -284,17 +334,19 @@ def AccSensor(flangeP : Mechanical2D, sx : Signal, sy : Signal, sth : Signal) = 
   sth = th'';
 }
 
-def RotSensor(flangeP : Mechanical2D, sth : Signal) = {
+def RotSensor(flangeP : Mechanical2D, sth : Signal) -> Equations = {
   def sx,sy : Signal;
   PositionSensor(flangeP,sx,sy,sth);
 }
 
-def RateSensor(flangeP : Mechanical2D, sth : Signal) = {
+def RateSensor(flangeP : Mechanical2D, sth : Signal) -> Equations = {
   def sx,sy : Signal;
   SpeedSensor(flangeP,sx,sy,sth);
 }
 
-def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out : Signal) = {
+/*********************** FEEDBACK CONTROLLERS ***********************/
+
+def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out : Signal) -> Equations = {
   
   def err, Ierr : Real;
 
@@ -304,12 +356,14 @@ def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out
   
 }
 
-def OutputFeedbackController(ref : Signal, meas : Signal, uout : Signal) = {
+def OutputFeedbackController(ref : Signal, meas : Signal, uout : Signal) -> Equations = {
   def ufb, uff : Signal;
   30.65 * meas' + 377.4 * meas = ufb' + 16.26 * ufb;
   41.93 * ref' + 377.4 * ref = uff' + 16.26 * uff;
   uout = uff - ufb;
 }
+
+/*********************** RECURSION ***********************/
 
 type ArmElement = <?> -> <?> -> Equations
 

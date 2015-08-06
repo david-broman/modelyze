@@ -1,0 +1,39 @@
+/*
+* Validates that the friction model is working as intended
+*/
+
+include mechanical2d	// Includes the parts
+include modelyzeEOO
+
+
+def mainSys() = {
+  def f1,f2,f3 : Mechanical2D;
+  def s : Signal;
+  def uIn : Signal;
+  
+  // Motor parameters 
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 40.0;
+  def eta = 0.75;
+  
+  def c1 = 0.2;
+  def c2 = 2.5;
+  def c3 = 0.2;
+  
+  def time : Real;
+  
+  time' = 1.0;
+  
+  uIn = 4.0*time - 1.0*time*time;
+  
+  ArmFixed(f1);
+  MasslessDCmotorJoint(uIn,K,R,L,n,eta,c1,c2,c3,f1,f2);
+  ArmLink(0.5,f2,f3);
+  RateSensor(f2,s);
+  
+  probe("w") = s;
+  probe("uIn") = uIn;
+  
+}
+
+
+def main = printsim(mainSys(),0.01,5.0)

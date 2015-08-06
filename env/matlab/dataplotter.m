@@ -1,8 +1,8 @@
 % Plots generic output data from modelyze
 clear all; close all; clc;
 %%
-filepath = '../../demo';
-filename = 'pendulum.moz';
+filepath = '../../proj/modular-arm';
+filename = 'frictionverification.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved
@@ -12,9 +12,13 @@ else
     if isempty(d); return; end % ERROR
 end
 %%
+scrz = get(0,'ScreenSize');
+FIGURE_X = 600; FIGURE_Y = 300;
+
 fig = figure;
+set(fig,'Position',[scrz(3)*1/2-FIGURE_X/2, scrz(4)*1/2-FIGURE_Y/2, FIGURE_X, FIGURE_Y])
 hold on;
-xlabel('Time')
+xlabel('Time [sec]')
 
 % Assumes time is in first column
 t = d.data(:,1);

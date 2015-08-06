@@ -39,5 +39,39 @@ def mainSys() = {
   
 }
 
+def mainSys2() = {
+  def f1,f2,f3 : Mechanical2D;
+  def g1,g2,g3 : Mechanical2D;
+  def sthf1,sthg1 : Signal;
+  def uf,ug,ref : Signal;
+  def time : Real;
+  
+  init ref (PI/2.0);
+  
+  time' = 1.0;
+  
+  ArmFixed(f1);
+  DCmotorJoint(uf,f1,f2);
+  ArmLink(0.5,f2,f3);
+  
+  ArmFixed(g1);
+  DCmotorJoint(ug,g1,g2);
+  ArmLink(0.5,g2,g3);
+  
+  RotSensor(f2,sthf1);
+  RotSensor(g2,sthg1);
+  
+  ref = PI/2.0;
+  OutputFeedbackController(ref,sthf1,uf);
+  PIDcontroller(20.0,0.0,1.0,ref,sthg1,ug);
+  
+  //probe("ug") = ug;
+  //probe("uf") = uf;
+  probe("ref") = ref;
+  probe("th_f_1") = sthf1;
+  probe("th_g_1") = sthg1;
+
+}
+
 def main = printsim(mainSys(),0.01,10.0)
 	   //dprint(elaborateConnections(mainSys()))

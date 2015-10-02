@@ -5,14 +5,32 @@
 */
 
 include physical
-include modelyzeEOO
+include ModelyzeHEOO
 
 /*********************** FRICTION MODELS ***********************/
 
-def FrictionModel(Tf : <Real>, w : <Real>, c1 : <Real>, c2 : <Real>, c3 : <Real>) = {
+type FrictionElement = <?> -> <?> -> Equations
+
+def ExponentialFriction(Tf : <Real>, w : <Real>, c1 : <Real>, c2 : <Real>, c3 : <Real>) = {
   // Nonlinear continuously differentiable friction model
   Tf = sign(w)*c1*(1.0 - exp(-c2*abs(w))) + c3*w;
 }
+
+def LinearFriction(Tf : Signal, w : Signal, d : <Real>) = {
+  // Linear friction
+  Tf = d*w;
+}
+
+def QuadraticFriction(Tf : Signal, w : Signal, c1 : <Real>, c2 : <Real>) = {
+  // Quadratic friction (note: be careful about going to fast with this representation)
+  Tf = c1*w + sign(w)*c2*w*w;
+}
+
+def ColoumbFriction(Tf : Signal, w : Signal, c1 : <Real>, c2 : <Real>, c3 : <Real>) = {
+  // Ghetto implementation of the coloumb friction
+  Tf = c1 + c2*w + sign(w)*c3*w*w;
+}
+
 
 /*********************** ARM LINK ***********************/
 
@@ -161,7 +179,7 @@ def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB
 
 /*********************** MASSLESS DC MOTOR JOINT ***********************/
 
-def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, c1 : <Real>, c2 : <Real>, c3 : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, frictionFunction : FrictionElement, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // PARAMETERS 
   def i : Real;
   def Tf : <Real>;
@@ -182,7 +200,7 @@ def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta
   // Equations
   dx = 0.0;
   dy = 0.0;
-  FrictionModel(Tf,dth',c1,c2,c3);
+  frictionFunction(Tf,dth');
   //probe("Tf") = Tf; // For testing
   u - R*i - L*i' - n*K*dth' = 0.0;
   T =  eta*n*K*i - Tf;
@@ -190,17 +208,16 @@ def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta
 def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // Default DC-motor joint, based on an DCX26L with n = 150
   def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
-  def eta = 0.75; def df = 0.1;
-  MasslessDCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,flangeA,flangeB);
-}
-def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, df : Real,  flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
-  // DC-motor joint with only linear friction
-  MasslessDCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,flangeA,flangeB);  
+  def eta = 0.75; def df = 0.2;
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,df);
+  };
+  MasslessDCmotorJoint(u,K,R,L,n,eta,frictionFunction,flangeA,flangeB);
 }
 
 /*********************** DC MOTOR JOINT WITH INERTIA ***********************/
 
-def DCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, c1 : <Real>, c2 : <Real>, c3 : <Real>, JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+def DCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, frictionFunction : FrictionElement, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   
   // Forces and positions
   def fxA, fyA, fxB, fyB : Force;
@@ -229,9 +246,9 @@ def DCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real,
   
   u - R*i - L*i' - K*n*dth' = 0.0;
   Tm = eta*K*n*i;
-  FrictionModel(Tf,dth',c1,c2,c3);
-  JA*thA'' = -Tm + TA + Tf;
-  JB*thB'' = Tm - TB - Tf;
+  frictionFunction(Tf,dth');
+  JA*thA'' = -Tm + TA + Tf + fxA*offset_A*sin(thA) - fyA*offset_A*cos(thA);
+  JB*thB'' = Tm - TB - Tf + fxB*offset_B*sin(thB) - fyB*offset_B*cos(thB);
 }
 def DCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // Default DC motor joint with a DCX26L attached
@@ -240,12 +257,41 @@ def DCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> 
   def m = 1.4; // Mass of the entire joint
   def JA = 0.05; // Moment of inertia around flangeA
   def JB = 0.249e-7 + 0.05; // Moment of inertia around flangeB
-  DCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,JA,JB,m,0.0,0.0,flangeA,flangeB);  
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,df);
+  };
+  DCmotorJoint(u,K,R,L,n,eta,JA,JB,m,0.0,0.0,frictionFunction,flangeA,flangeB);  
 }
-def DCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, df : Real, JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
-  // DC-motor joint with only linear friction
-  DCmotorJoint(u,K,R,L,n,eta,0.0,0.0,df,JA,JB,m,offset_A,offset_B,flangeA,flangeB);
+
+/*********************** FREE ROLLING JOINT ***********************/
+def FreeJoint(JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, frictionFunction : FrictionElement, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  def fxA, fyA, fxB, fyB : Force;
+  def TA, TB : Torque;
+  def xA, yA, xB, yB, x, y : Position;
+  def thA, thB : Angle;
+  def dth : Angle;
+  def Tf : <Real>;
+  
+  MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flangeA);
+  MultiRefBranch([-fxB,-fyB,-TB],[xB,yB,thB],flangeB);
+  
+  // Equations:
+  x = xA + offset_A*cos(thA);
+  xB = x + offset_B*cos(thB);
+  y = yA + offset_A*sin(thA);
+  yB = y + offset_B*sin(thB);
+  
+  dth = thB - thA;
+  
+  m*x'' = fxA - fxB;
+  m*y'' = fyA - fyB;
+  
+  frictionFunction(Tf,dth');
+  
+  JA*thA'' = TA + Tf + fxA*offset_A*sin(thA) - fyA*offset_A*cos(thA);
+  JB*thB'' = - TB - Tf + fxB*offset_B*sin(thB) - fyB*offset_B*cos(thB);  
 }
+
 
 /*********************** SPRING JOINT ***********************/
 
@@ -344,6 +390,37 @@ def RateSensor(flangeP : Mechanical2D, sth : Signal) -> Equations = {
   SpeedSensor(flangeP,sx,sy,sth);
 }
 
+/*********************** Voltage Generators ***********************/
+
+def SineVoltage(V : Real, f : Real, u : Signal) = {
+  def time : Real;
+  time' = 1.0;
+  u = V * sin(2.0 * 3.1415 * f * time);  
+}
+
+def StepVoltage(V : Real, tstart : Real, trun : Real, u : Signal) = {
+  def start, high, stop : Mode;
+  def time : Real;
+  time' = 1.0;
+  
+  hybridchart initmode (start) {
+    mode start {
+      u = 0.0*time;
+      transition high when (time >= tstart) action nothing;
+    };
+    mode high {
+      u = V + 0.0*time;
+      transition stop when (time >= (tstart+trun)) action nothing;
+    };
+    mode stop {
+      u = 0.0*time;
+      transition start when (time < 0.0) action nothing;
+    };
+  };
+  
+}
+
+
 /*********************** FEEDBACK CONTROLLERS ***********************/
 
 def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out : Signal) -> Equations = {
@@ -356,12 +433,14 @@ def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out
   
 }
 
-def OutputFeedbackController(ref : Signal, meas : Signal, uout : Signal) -> Equations = {
+// Output feedback PD-controller
+def PDcontroller(s1 : Real, s0 : Real, p1 : Real, p0 : Real, r0 : Real, ref : Signal, meas : Signal, uout : Signal) -> Equations = {
   def ufb, uff : Signal;
-  30.65 * meas' + 377.4 * meas = ufb' + 16.26 * ufb;
-  41.93 * ref' + 377.4 * ref = uff' + 16.26 * uff;
+  ufb' + r0*ufb = s1*meas' + s0*meas;
+  uff' + r0*uff = p1*ref' + s0*ref;  
   uout = uff - ufb;
 }
+
 
 /*********************** RECURSION ***********************/
 

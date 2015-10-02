@@ -2,7 +2,7 @@
 clear all; close all; clc
 
 filepath = '../../proj/modular-arm';
-filename = 'armtest.moz';
+filename = 'sometest.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved
@@ -12,7 +12,7 @@ else
     d = ExecuteModelyze(filepath,filename);
     if isempty(d); return; end % ERROR
     % Arm lengths: TODO: make acquiring these automatic
-    L(1) = 1.0; L(2) = 1.0;
+    L(1) = 0.3; L(2) = 0.2;
 end
 
 N = size(d.data,2) - 1; % How many entries in addition to time

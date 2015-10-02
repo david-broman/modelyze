@@ -10,7 +10,7 @@
 */
 
 include mechanical2d	// Includes the parts
-include modelyzeEOO
+//include modelyzeEOO
 
 
 // Fixes the arm part to the ground
@@ -26,6 +26,8 @@ def Fix(flangeStart : Mechanical2D, flangeEnd : Mechanical2D) = {
   
 }
 
+/************************ NORMAL FORCE STUFF ************************/
+
 def BuildNormalForce(mAdd : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   // For passing along the normal force in the system  
   def FnA, FnB, tmpA, tmpB : Real;
@@ -39,14 +41,20 @@ def ReadNormalForce(flange : Mechanical2D, st : Signal) = {
   RefBranch(0.0,st,flange);
 }
 
+
+/************************ LINK OBJECT ************************/
+
 // A 20x20mm joint with specfic length
 def Link20x20mm(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  def m = 0.5*L;
+  def m = 0.4*L;
   def Lm = L/2.0;
-  def I = m*L*L/12.0;	// Moment of inertia @ com
+  def J = m*L*L/12.0;	// Moment of inertia @ com
   
-  BuildNormalForce(m,flangeA, flangeB);// Todo: the holes remove some of the inertia/mass
-  ArmLink(L, Lm, I, m, flangeA, flangeB);
+  // TODO: the holes remove some of the inertia/mass, alternatively
+  // include the screws parameters in here
+  
+  BuildNormalForce(m,flangeA, flangeB);
+  ArmLink(L, Lm, J, m, flangeA, flangeB);
 }
 
 // A torque with no mass
@@ -55,28 +63,48 @@ def TorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mecha
   MasslessConstantTorqueJoint(M,df,flangeA,flangeB);  
 }
 
-// One joint object for each physical prototype
+/************************ MOTOR JOINT OBJECTS ************************/
+// One joint object for each physical one
 
 // DCX26L with gear ratio 150
 def JointType1(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   
   def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
-  def eta = 0.75; def df = 0.1;
+  def eta = 0.75;
   def mA = 0.7; def mB = 0.7; // Mass of the parts of the joint
   def JA = 0.05; // Moment of inertia around flangeA
-  def JB = 0.249e-7 + 0.05; // Moment of inertia around flangeB
-  def offset_A = 0.02; def offset_B = 0.055; // Lengths from end of link to middle of joint
+  def JB = 0.041756; // Moment of inertia around flangeB
+  def offset_A = 0.02; def offset_B = 0.057; // Lengths from end of link to middle of joint
   
   def Fn : Signal;
-  def c1, c2, c3 : Real;
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,0.041679);
+  }; // Friction function
   
-  BuildNormalForce((mA+mB),flangeA,flangeB);
-  
+  BuildNormalForce((mA+mB),flangeA,flangeB);  
   ReadNormalForce(flangeB,Fn);
-  c1 = 0.0;	// Solver can't handle this :S
-  c2 = 0.0;	// Solver can't handle this :S
-  c3 = 0.01*(Fn+mB*9.81);
   
-  //DCmotorJoint(u,K,R,L,n,eta,c1,c2,c3,JA,JB,(mA+mB),flangeA,flangeB);
-  DCmotorJoint(u,K,R,L,n,eta,c1,c2,c3,JA,JB,mA+mB,offset_A,offset_B,flangeA,flangeB);
+  DCmotorJoint(u,K,R,L,n,eta,JA,JB,mA+mB,offset_A,offset_B,frictionFunction,flangeA,flangeB);
+
 }
+
+/************************ NON-MOTOR JOINT OBJECTS ************************/
+
+// Just two 20x20 links joined together by a screw
+def ScrewJoint(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def JA = 0.0; def JB = 0.0;	// No rotating inertias
+  def m = 0.0366;
+  def offset_A = -0.01; def offset_B = -0.01; // negative offsets
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,0.0066);
+  }; // F
+  
+  BuildNormalForce(m,flangeA,flangeB);
+  FreeJoint(JA, JB, m, offset_A, offset_B, frictionFunction, flangeA, flangeB);
+}
+
+
+/************************ END EFFECTORS ************************/
+
+
+

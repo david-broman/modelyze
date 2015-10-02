@@ -2,7 +2,7 @@
 clear all; close all; clc;
 %%
 filepath = '../../proj/modular-arm';
-filename = 'frictionverification.moz';
+filename = 'sometest.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved

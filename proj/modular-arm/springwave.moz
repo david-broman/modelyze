@@ -8,7 +8,7 @@ include modelyzeEOO
 
 def SingleLinkElement(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   def flangeMid : Mechanical2D;
-  def K = 5.0; def d = 1.0; def L = 0.5;
+  def K = 3.0; def d = 0.75; def L = 0.5;
   
   SpringJoint(K,d,flangeA,flangeMid);
   ArmLink(L,flangeMid,flangeB);
@@ -20,12 +20,12 @@ def mainSys() = {
   def time : Real;
   
   time' = 1.0;
-  T1 = 20.0 * cos(2.0 * 3.1415 * 1.0 * time);
+  T1 = 10.0 * cos(2.0 * 3.1415 * 1.0 * time);
   
   ArmFixed(f1);
   ConstantTorqueJoint(T1,0.0,f1,f2);
   ArmLink(0.5,f2,f3);
-  SerializeArms(2,4,f3,f4,SingleLinkElement);
+  SerializeArms(2,6,f3,f4,SingleLinkElement);
   
   RotSensor(f2,sth1);
   probe("th_1") = sth1;

@@ -18,7 +18,7 @@ def mainSys() = {
   def f1,f2,f3 : Mechanical2D;
   def sth : Signal;
   
-  def imax = 2;
+  def imax = 7;
   
   ArmFixed(f1);
   SerializeArms(imax,f1,f2,SinglePendulum);

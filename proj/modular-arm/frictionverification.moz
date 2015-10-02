@@ -18,6 +18,10 @@ def mainSys() = {
   def c1 = 0.2;
   def c2 = 2.5;
   def c3 = 0.2;
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    ExponentialFriction(Tf,w,c1,c2,c3);
+    probe("Tf") = Tf;
+  };
   
   def time : Real;
   
@@ -26,7 +30,7 @@ def mainSys() = {
   uIn = 4.0*time - 1.0*time*time;
   
   ArmFixed(f1);
-  MasslessDCmotorJoint(uIn,K,R,L,n,eta,c1,c2,c3,f1,f2);
+  MasslessDCmotorJoint(uIn,K,R,L,n,eta,frictionFunction,f1,f2);
   ArmLink(0.5,f2,f3);
   RateSensor(f2,s);
   

@@ -1,0 +1,30 @@
+/*
+* Test for the 2d robot arm
+*/
+
+include modulararmslib
+
+def mainSys() = {
+  def f1,f2,f3,f4,f5 : Mechanical2D;
+  def sth1, sth2 : Signal;
+  def u : Signal;
+  
+  Fix(f1,f5);
+  JointType1(u,f1,f2);
+  Link20x20mm(0.3,f2,f3);
+  ScrewJoint(f3,f4);
+  Link20x20mm(0.2,f4,f5);
+  
+  SineVoltage(12.0,0.6,u);
+  
+  RotSensor(f2,sth1);
+  RotSensor(f4,sth2);
+  
+  probe("th_2") = sth2; 
+  probe("th_1") = sth1;
+  probe("u") = u;
+  
+}
+
+def main = printsim(mainSys(),0.01,10.0)
+//def main = dprint(elaborateConnections(mainSys()))

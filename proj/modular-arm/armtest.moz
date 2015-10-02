@@ -8,11 +8,11 @@ def mainSys() = {
   def f1,f2,f3,f4,f5 : Mechanical2D;
   def sth1,sth2, su1, su2, su3 : Signal;
   
-  Fix(f1,f4);
-  JointType1(10.0,f1,f2);
-  Link20x20mm(1.0,f2,f3);
+  Fix(f1,f5);
+  JointType1(24.0,f1,f2);
+  Link20x20mm(0.5,f2,f3);
   JointType1(0.0,f3,f4);
-  //Link20x20mm(1.0,f4,f5);
+  Link20x20mm(0.5,f4,f5);
   
   RotSensor(f2,sth1);
   RotSensor(f4,sth2);
@@ -31,11 +31,19 @@ def mainSys() = {
 }
 
 def mainSys2() = {
+  
+  def FE(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,1.0);
+  };
+  
   def f1,f2,f3 : Mechanical2D;
   def s1 : Signal;
   
   ArmFixed(f1);
-  DCmotorJoint(24.0,f1,f2);
+  //DCmotorJoint(24.0,f1,f2);
+  MasslessDCmotorJoint(24.0,f1,f2);
+  //TestJoint(24.0,FE,f1,f2);
+  //LinearDamper(0.1,f1,f2);
   ArmLink(1.0,f2,f3);
   
   RateSensor(f2,s1);
@@ -43,5 +51,5 @@ def mainSys2() = {
   probe("w1") = s1;
 }
 
-def main = printsim(mainSys(),0.01,10.0)
-//def main = dprint(elaborateConnections(mainSys()))
+def main = printsim(mainSys(),0.01,3.0)
+//def main = dprint(elaborateConnections(mainSys2()))

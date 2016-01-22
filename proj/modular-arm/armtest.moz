@@ -6,7 +6,8 @@ include modulararmslib
 
 def mainSys() = {
   def f1,f2,f3,f4,f5 : Mechanical2D;
-  def sth1,sth2, su1, su2, su3 : Signal;
+  def sth1,sth2 : Signal;
+  def su1, su2, su3, su4, su5 : Signal;
   
   Fix(f1,f5);
   JointType1(24.0,f1,f2);
@@ -18,16 +19,19 @@ def mainSys() = {
   RotSensor(f4,sth2);
   
   ReadNormalForce(f1,su1);
-  ReadNormalForce(f3,su2);
-  //ReadNormalForce(f5,su3);
+  ReadNormalForce(f2,su2);
+  ReadNormalForce(f3,su3);
+  ReadNormalForce(f4,su4);
+  ReadNormalForce(f5,su5);
   
 //   probe("Fn1") = su1;
 //   probe("Fn2") = su2;
 //   probe("Fn3") = su3;
+//   probe("Fn4") = su4;
+//   probe("Fn5") = su5;
   probe("th_1") = sth1';
   probe("th_2") = sth2';
-  
-  
+
 }
 
 def mainSys2() = {
@@ -51,5 +55,57 @@ def mainSys2() = {
   probe("w1") = s1;
 }
 
-def main = printsim(mainSys(),0.01,3.0)
+def mainSys3() = {
+  def g1,g2,g3,g4,g5 : Mechanical2D;
+  def h1,h2,h3,h4,h5 : Mechanical2D;
+  def sf1, sf2, sg1, sg2, sh1, sh2 : Signal;
+  
+  
+  // Refbranch version
+  ArmFixed(g1);
+  MasslessDCmotorJoint(24.0,g1,g2);
+  ArmLink(2.0,g2,g3);
+  MasslessDCmotorJoint(-12.0,g3,g4);
+  ArmLink(2.0,g4,g5);
+  RateSensor(g2,sg1);
+  RateSensor(g4,sg2);
+  
+  // Abused real dc motor joint
+  ArmFixed(h1);
+  DCmotorJointNoMass(24.0,h1,h2);
+  ArmLink(2.0,h2,h3);
+  DCmotorJointNoMass(-12.0,h3,h4);
+  ArmLink(2.0,h4,h5);
+  RateSensor(h2,sh1);
+  RateSensor(h4,sh2);
+  
+  probe("g1") = sg1;
+  probe("g2") = sg2;
+  
+  probe("h1") = sh1;
+  probe("h2") = sh2;
+
+}
+
+def mainSys4() = {
+  def f1,f2,f3,f4,f5,f6,f7 : Mechanical2D;
+  
+  def sth1, sth2, sth3 : Signal;
+  
+  ArmFixed(f1);
+  DCmotorJoint(10.0,f1,f2);
+  ArmLink(0.5,f2,f3);
+  DCmotorJoint(5.0,f3,f4);
+  ArmLink(0.3,f4,f5);
+  DCmotorJoint(-5.0,f3,f6);
+  ArmLink(0.3,f6,f7);
+  
+  probeRot(f1,1);
+  probeRot(f4,2);
+  probeRot(f6,3);
+  
+}
+
+
+def main = printsim(mainSys4(),0.01,10.0)
 //def main = dprint(elaborateConnections(mainSys2()))

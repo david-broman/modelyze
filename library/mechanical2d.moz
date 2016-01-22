@@ -46,14 +46,14 @@ def ArmLink(L : Real, Lm : Real, I : Real, m : Real, flangeA : Mechanical2D, fla
   def fyA, fyB : Force;
   def yA, yB : Position;
   // Torques and angles
-  def MA, MB : Torque;
+  def TA, TB : Torque;
   def thA, thB : Angle;
   // Position of center of mass
   def xm,ym : Position;
   
   // BRANCHES!!!!!!!!
-  MultiRefBranch([fxA,fyA,MA],[xA,yA,thA],flangeA);
-  MultiRefBranch([-fxB,-fyB,-MB],[xB,yB,thB],flangeB);
+  MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flangeA);
+  MultiRefBranch([-fxB,-fyB,-TB],[xB,yB,thB],flangeB);
   
   // Positions of the center of mass
   xm = xA + Lm*cos(thA);
@@ -65,7 +65,7 @@ def ArmLink(L : Real, Lm : Real, I : Real, m : Real, flangeA : Mechanical2D, fla
   yB = yA + L*sin(thA);
   
   // Force and torque equations
-  I*thA'' = MA - MB  + fxA*Lm*sin(thA) - fyA*Lm*cos(thA) + fxB*(L-Lm)*sin(thA) - fyB*(L-Lm)*cos(thA);
+  I*thA'' = TA - TB  + fxA*Lm*sin(thA) - fyA*Lm*cos(thA) + fxB*(L-Lm)*sin(thA) - fyB*(L-Lm)*cos(thA);
   m*xm'' = fxA - fxB;
   m*ym'' = fyA - fyB;
 }
@@ -93,14 +93,14 @@ def VerticalArmLinkT(L : Real, Lm : Real, I : Real, m : Real, flangeA : Mechanic
   def fyA, fyB : Force;
   def yA, yB : Position;
   // Torques and angles
-  def MA, MB : Torque;
+  def TA, TB : Torque;
   def thA, thB : Angle;
   // Position of center of mass
   def xm,ym : Position;
   
   // BRANCHES!!!!!!!!
-  MultiRefBranch([fxA,fyA,MA],[xA,yA,thA],flangeA);
-  MultiRefBranch([-fxB,-fyB,-MB],[xB,yB,thB],flangeB);
+  MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flangeA);
+  MultiRefBranch([-fxB,-fyB,-TB],[xB,yB,thB],flangeB);
   
   // Positions of the center of mass
   xm = xA + Lm*cos(thA);
@@ -112,7 +112,7 @@ def VerticalArmLinkT(L : Real, Lm : Real, I : Real, m : Real, flangeA : Mechanic
   yB = yA + L*sin(thA);
   
   // Force and torque equations
-  I*thA'' = MA - MB  + fxA*Lm*sin(thA) - fyA*Lm*cos(thA) + fxB*(L-Lm)*sin(thA) - fyB*(L-Lm)*cos(thA);
+  I*thA'' = TA - TB  + fxA*Lm*sin(thA) - fyA*Lm*cos(thA) + fxB*(L-Lm)*sin(thA) - fyB*(L-Lm)*cos(thA);
   m*xm'' = fxA - fxB;
   m*ym''=  fyA - fyB - g*m;
 }
@@ -127,23 +127,24 @@ def VerticalArmLink(L : Real, flangeA: Mechanical2D, flangeB : Mechanical2D) -> 
 /*********************** MASSLESS CONSTANT TORQUE ***********************/
 
 def MasslessConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
-  // X - Forces!
-  def fx : Force;
-  def dx : Position;
-  // Y - Forces!
-  def fy : Force;
-  def dy : Position;
-  // Torques and angles
-  def Mth : Torque;
+  // Forces and positions
+  def fxA, fyA, fxB, fyB : Force;
+  def TA, TB : Torque;
+  def xA, yA, xB, yB, x, y : Position;
+  def thA, thB : Angle;
   def dth : Angle;
   
-  // BRANCHES!!!!!!!!
-  MultiBranch([-fx,-fy,-Mth],[dx,dy,dth],flangeA,flangeB);
+  MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flangeA);
+  MultiRefBranch([-fxB,-fyB,-TB],[xB,yB,thB],flangeB);
   
-  // Equations:
-  dx = 0.0;
-  dy = 0.0;
-  M = -df*dth' - Mth;
+  // Equations
+  xA = xB;
+  yA = yB;
+  dth = thB - thA;
+  fxA = fxB;
+  fyA = fyB;
+  TA = M - df*dth';
+  TB = M - df*dth';
 }
 
 /*********************** CONSTANT TORQUE JOINT WITH INERTIA ***********************/
@@ -178,32 +179,31 @@ def ConstantTorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB
 }
 
 /*********************** MASSLESS DC MOTOR JOINT ***********************/
-
 def MasslessDCmotorJoint(u : Signal, K : Real, R : Real, L : Real, n : Real, eta : Real, frictionFunction : FrictionElement, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
-  // PARAMETERS 
-  def i : Real;
+  
+  // Forces and positions
+  def fxA, fyA, fxB, fyB : Force;
+  def TA, TB : Torque;
+  def xA, yA, xB, yB, x, y : Position;
+  def thA, thB : Angle;
+  def dth : Angle;
+  def i,Tm : Real;
   def Tf : <Real>;
   
-  // X - Forces!
-  def fx : Force;
-  def dx : Position;
-  // Y - Forces!
-  def fy : Force;
-  def dy : Position;
-  // Torques and angles
-  def T : Torque;
-  def dth : Angle;
-  
-  // BRANCHES!!!!!!!!
-  MultiBranch([fx,fy,T],[-dx,-dy,-dth],flangeA,flangeB);
+  MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flangeA);
+  MultiRefBranch([-fxB,-fyB,-TB],[xB,yB,thB],flangeB);
   
   // Equations
-  dx = 0.0;
-  dy = 0.0;
+  xA = xB;
+  yA = yB;
+  dth = thB - thA;
+  fxA = fxB;
+  fyA = fyB;
+  TA = Tm - Tf;
+  TB = Tm - Tf;
   frictionFunction(Tf,dth');
-  //probe("Tf") = Tf; // For testing
-  u - R*i - L*i' - n*K*dth' = 0.0;
-  T =  eta*n*K*i - Tf;
+  u - R*i - L*i' - K*n*dth' = 0.0;
+  Tm = eta*K*n*i;
 }
 def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
   // Default DC-motor joint, based on an DCX26L with n = 150
@@ -214,6 +214,7 @@ def MasslessDCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanica
   };
   MasslessDCmotorJoint(u,K,R,L,n,eta,frictionFunction,flangeA,flangeB);
 }
+
 
 /*********************** DC MOTOR JOINT WITH INERTIA ***********************/
 
@@ -257,10 +258,21 @@ def DCmotorJoint(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> 
   def m = 1.4; // Mass of the entire joint
   def JA = 0.05; // Moment of inertia around flangeA
   def JB = 0.249e-7 + 0.05; // Moment of inertia around flangeB
+  def offset_A = 0.0; def offset_B = 0.0;
   def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
     LinearFriction(Tf,w,df);
   };
-  DCmotorJoint(u,K,R,L,n,eta,JA,JB,m,0.0,0.0,frictionFunction,flangeA,flangeB);  
+  DCmotorJoint(u,K,R,L,n,eta,JA,JB,m,offset_A,offset_B,frictionFunction,flangeA,flangeB);  
+}
+def DCmotorJointNoMass(u :Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
+  // DC motor joint with no inertia and default parameters, used to compare to real massless joint for verifying equations
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
+  def eta = 0.75; def df = 0.2;
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,df);
+  };
+  DCmotorJoint(u,K,R,L,n,eta,0.0,0.0,0.0,0.0,0.0,frictionFunction,flangeA,flangeB);  
+  
 }
 
 /*********************** FREE ROLLING JOINT ***********************/
@@ -292,7 +304,6 @@ def FreeJoint(JA : Real, JB : Real, m : Real, offset_A : Real, offset_B : Real, 
   JB*thB'' = - TB - Tf + fxB*offset_B*sin(thB) - fyB*offset_B*cos(thB);  
 }
 
-
 /*********************** SPRING JOINT ***********************/
 
 def SpringJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) -> Equations = {
@@ -312,6 +323,49 @@ def SpringJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical
   dx = 0.0;
   dy = 0.0;
   Mth = -K*dth - d*dth';  
+}
+
+/*********************** Pendulum End-Effector ***********************/
+def FurutaPendulum(flange : Mechanical2D) = {
+  def g = 9.81;
+  // Pendulum properties
+  def L = 0.4; def Lm = 0.5*L; // center of mass in the middle
+  def mp = 0.4*L; // mass 0.4kg/m
+  def J = mp*L*L/12.0;
+  
+  // X - Forces and positions
+  def fxA : Force;
+  def xA : Position;
+  // Y - Forces and positions
+  def fyA : Force;
+  def yA : Position;
+  // Torques and angles
+  def TA : Torque;
+  def thA : Angle;
+  // Local forces and angles/positions
+  def fxp, fzp : Force;
+  def alfa : Angle;	// Pendulum angle
+  def xp, zp : Position;// local coordinates
+  
+  // BRANCHES!!!!!!!!
+  MultiRefBranch([fxA,fyA,TA],[xA,yA,thA],flange);
+  
+  // Transform global coordinates to local ones
+  fxp = fxA*sin(thA) - fyA*cos(thA);
+  xp = xA*sin(thA) - yA*cos(thA) - Lm*sin(alfa);
+  
+  // Equations of motion for pendulum
+  mp*xp'' = fxp;
+  mp*zp'' = fzp - mp*g;
+  J*alfa'' = fzp*Lm*sin(alfa) + fxp*Lm*cos(alfa);
+  
+  // Conservative equations of motion
+  mp*xA'' = fxA;
+  mp*yA'' = fyA;
+  1.48e-5*thA'' = TA;
+  
+  // preliminary probe attachment
+  probe("alfa") = alfa;
 }
 
 /*********************** ARM FIXATION ***********************/
@@ -335,6 +389,8 @@ def ArmFixedY(flange : Mechanical2D) -> Equations = {
   MultiRefBranch([fx,fy,M],[x,y,th],flange);
   y = 0.0;
 }
+
+
 
 /*********************** SENSORS ***********************/
 
@@ -390,6 +446,26 @@ def RateSensor(flangeP : Mechanical2D, sth : Signal) -> Equations = {
   SpeedSensor(flangeP,sx,sy,sth);
 }
 
+/*********************** Automatic Plotters ***********************/
+def probeAngle(flange : Mechanical2D, id : Int) = {
+  def s : Signal;
+  RotSensor(flange,s);
+  probe("th_" ++ int2string(id)) = s;
+}
+def probeRate(flange : Mechanical2D, id : Int) = {
+  def s : Signal;
+  RateSensor(flange,s);
+  probe("th_" ++ int2string(id)) = s;
+}
+def probePositions(flange : Mechanical2D, id : Int) = {
+  // Note, doesn't work properly currently
+  def sx, sy, sth : Signal;
+  PositionSensor(flange,sx,sy,sth);
+  probe("x_" ++ int2string(id)) = sx;
+  probe("y_" ++ int2string(id)) = sy;
+  probe("th_" ++ int2string(id)) = sth;
+}
+
 /*********************** Voltage Generators ***********************/
 
 def SineVoltage(V : Real, f : Real, u : Signal) = {
@@ -430,17 +506,25 @@ def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out
   err = (ref - meas);  
   Ierr' = err;
   out = P*err + I*Ierr - D*meas';
+  // tau*out' + out = P*err + I*Ierr - D*meas'; // LP-filter
   
 }
 
-// Output feedback PD-controller
-def PDcontroller(s1 : Real, s0 : Real, p1 : Real, p0 : Real, r0 : Real, ref : Signal, meas : Signal, uout : Signal) -> Equations = {
+// Output feedback PD-controller with LP-filter
+def PDcontroller(s1 : Real, s0 : Real, t1 : Real, t0 : Real, r0 : Real, ref : Signal, meas : Signal, uout : Signal) -> Equations = {
   def ufb, uff : Signal;
   ufb' + r0*ufb = s1*meas' + s0*meas;
-  uff' + r0*uff = p1*ref' + s0*ref;  
+  uff' + r0*uff = t1*ref' + t0*ref;  
   uout = uff - ufb;
 }
 
+def PIcontroller(s1 : Real, s0 : Real, t2 : Real, t1 : Real, t0 : Real, r0 : Real, ref : Signal, meas : Signal, uout : Signal) -> Equations = {
+  // Output feedback PI controller with LP-filter
+  def ufb, uff : Signal;
+  ufb'' + r0*ufb' = s1*meas' + s0*meas;
+  uff'' + r0*uff' = t2*ref'' + t1*ref' + t0*ref;
+  uout = uff - ufb;
+}
 
 /*********************** RECURSION ***********************/
 
@@ -471,136 +555,4 @@ def SerializeArms(is : Int, imax : Int, flangeA : Mechanical2D, flangeB : Mechan
 
 def SerializeArms(imax : Int, flangeA : Mechanical2D, flangeB : Mechanical2D, elem : ArmElement) -> Equations = {
   SerializeArms(1, imax, flangeA, flangeB, elem);
-}
-
-/* 
- ------------------------------- OLD VERSIONS ----------------------------------------
- ------------------------------------==-----------------------------------------------
-*/
-def ConstantTorqueJointOld(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // PARAMETERS 
-  def I = 0.0;
-  
-  // X - Forces!
-  def fx : Force;
-  def dx : Position;
-  // Y - Forces!
-  def fy : Force;
-  def dy : Position;
-  // Torques and angles
-  def Mth : Torque;
-  def dth : Angle;
-  
-  // BRANCHES!!!!!!!!
-  MultiBranch([-fx,-fy,-Mth],[dx,dy,dth],flangeA,flangeB);
-  
-  // Equations:
-  dx = 0.0;
-  dy = 0.0;
-  I*dth'' = -M - df*dth' - Mth;
-}
-def DCmotorJointOld(u : Signal, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // PARAMETERS 
-  def K = 0.0229*238.0; def R = 1.83; def I = 0.0; def df = 0.1;
-  def i : Real;
-  
-  // X - Forces!
-  def fx : Force;
-  def dx : Position;
-  // Y - Forces!
-  def fy : Force;
-  def dy : Position;
-  // Torques and angles
-  def Mth : Torque;
-  def dth : Angle;
-  
-  // BRANCHES!!!!!!!!
-  MultiBranch([-fx,-fy,-Mth],[dx,dy,dth],flangeA,flangeB);
-  
-  // Equations
-  dx = 0.0;
-  dy = 0.0;
-  u - R*i + K*dth' = 0.0;
-  I*dth'' =  - K*i - df*dth' - Mth;  
-}
-
-def ArmLinkOld(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // A single arm link mounted parallel to the ground
-  
-  // Joint parameters
-  def Lm = L/2.0; 	// distance to center of mass
-  def m = L*2.0; 	// 2 kg per meter arm
-  def I = m*L*L/3.0;	// Moment of inertia @ endpoint
-  
-  // X - Forces and positions
-  def fxA, fxB : Force;
-  def xA, xB : Position;
-  // Y - Forces and positions
-  def fyA, fyB : Force;
-  def yA, yB : Position;
-  // Torques and angles
-  def MA, MB : Torque;
-  def thA, thB : Angle;
-  // Position of center of mass
-  def xm,ym : Position;
-  
-  // BRANCHES!!!!!!!!
-  MultiRefBranch([fxA,fyA,MA],[xA,yA,thA],flangeA);
-  MultiRefBranch([-fxB,-fyB,-MB],[xB,yB,thB],flangeB);
-  
-  // Positions of the center of mass
-  xm = xA + Lm*cos(thA);
-  ym = yA + Lm*sin(thA);
-  
-  // Position equations
-  thA = thB;
-  xB = xA + L*cos(thA);
-  yB = yA + L*sin(thA);
-  
-  // Force and torque equations
-  I*thA'' = MA - MB - yA''*Lm*cos(thA) + xA''*Lm*sin(thA) + fxB*L*sin(thA) - fyB*L*cos(thA);
-  fxA = m*xm'' + fxB;
-  fyA = m*ym'' + fyB;
-}
-
-def VerticalArmLinkOld(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  // An arm link mounted vertically so that the gravity affects
-  // the arm in the y-direction
-  
-  // Joint parameters
-  def Lm = L/2.0; 	// distance to center of mass
-  def m = L*2.0; 	// 2 kg per meter arm
-  def I = m*L*L/3.0;	// Moment of inertia @ flangeA
-  
-  def g = 9.81;
-  
-  // X - Forces and positions
-  def fxA, fxB : Force;
-  def xA, xB : Position;
-  // Y - Forces and positions
-  def fyA, fyB : Force;
-  def yA, yB : Position;
-  // Torques and angles
-  def MA, MB : Torque;
-  def thA, thB : Angle;
-  // Position of center of mass
-  def xm,ym : Position;
-  
-  // BRANCHES!!!!!!!!
-  MultiRefBranch([fxA,fyA,MA],[xA,yA,thA],flangeA);
-  MultiRefBranch([-fxB,-fyB,-MB],[xB,yB,thB],flangeB);
-  
-  // Positions of the center of mass
-  xm = xA + Lm*cos(thA);
-  ym = yA + Lm*sin(thA);
-  
-  // Position equations
-  thA = thB;
-  xB = xA + L*cos(thA);
-  yB = yA + L*sin(thA);
-  
-  // Force and torque equations
-  I*thA'' = MA - MB - yA''*Lm*cos(thA) + xA''*Lm*sin(thA) + fxB*L*sin(thA) - fyB*L*cos(thA) - g*m*Lm*cos(thA);
-  fxA = m*xm'' + fxB;
-  fyA = m*ym'' + fyB + g*m;
 }

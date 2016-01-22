@@ -1,8 +1,8 @@
-function d  = ExecuteModelyze( filepath,mozscript )
+function d  = execute_modelyze( filepath,mozscript )
 % Execute the modelyze script mozscript at the given filepath
 % Returns struct of result or empty if it failed.
 
-storefile = 'hej.txt'; % Storing result
+storefile = '_moz_result.txt'; % Storing result
 d = [];
 
 % Optimization: If storefile is newer than mozscript ignore running the
@@ -16,7 +16,7 @@ for i = 1:length(dr)
         scriptInd = i;
     end
 end
-runscript = 1;  % Should be zero if you don't wanna rerun the script
+runscript = 1;  % Set to zero if you just want to read the stor file
 if scriptInd == 0
     error('Couldn''t find the script file %s',mozscript);
 elseif storeInd == 0

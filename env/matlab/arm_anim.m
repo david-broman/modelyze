@@ -9,7 +9,7 @@ if useSaved
     load('QuintuplePendulum.mat');
 else
     % Perform simulation
-    d = ExecuteModelyze(filepath,filename);
+    d = execute_modelyze(filepath,filename);
     if isempty(d); return; end % ERROR
     % Arm lengths: TODO: make acquiring these automatic
     L(1) = 0.3; L(2) = 0.2;

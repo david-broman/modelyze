@@ -1,0 +1,234 @@
+/*
+ * Tests implementation of furuta pendulum attached to the end of an robotic arm
+ */
+include ModelyzeEOO
+
+def g = 9.81
+def PI = 3.1415
+
+
+
+def getArm1Params(Larm : Real) = {
+  // Provide the length of the link of the first arm and it will return modeling parameters
+  // assumes an DCX26L joint and Broman(tm) pendulum joint
+  def Lmot = 0.0455; def mmot = 0.853; def Jmot = 0.042;
+  def marm = 0.4167*Larm; def Jarm = 0.0368*Larm*Larm*Larm;
+  def Lcom = 0.028; def mconn = 0.175; def Jconn = 3e-5;
+  def l1 =((Lmot + 0.5*Larm)*marm + (Lmot + Larm + Lcom)*mconn)/(mmot+marm+mconn);
+  def l2 = Lmot + Larm/2.0 - l1;
+  def l3 = Lmot + Larm + Lcom - l1;
+  
+  def L1 = Lmot + Larm + Lcom;
+  def m1 = mmot + marm + mconn;
+  def L1m = l1;
+  def J1 = Jmot + mmot*l1*l1 + Jarm + marm*l2*l2 + mconn*l3*l3;
+  
+  //def _ = println("L1 = " ++ real2string(L1) ++ "; l1 = " ++ real2string(L1m) ++ "; m1 = " ++ real2string(m1) ++ "; J1zz = " ++ real2string(J1) ++ ";");
+  
+  (L1,m1,L1m,J1)  
+}
+
+
+def getPendParams(Lpend : Real) = {
+  // Provide the length of the link of the pendulum and it will calculate
+  // modeling parameters
+  def Lconn = 0.033; def mconn = 0.035; 
+  def Jcxx = 0.0; def Jcyy = 0.0; def Jczz = 0.0;
+  def mpend = 0.4167*Lpend; def Jpxx = 3.69e-5*Lpend; 
+  def Jpyy = 0.0368*Lpend*Lpend*Lpend; def Jpzz = Jpyy;
+  def Lw = 0.0; def mw = 0.0; // end-weights on pendulum
+  def Jwxx = 0.0; def Jwyy = 0.0; def Jwzz = 0.0;
+  def l1 = ((Lpend/2.0 + Lconn)*mpend + (Lconn+Lpend+Lw)*mw)/(mconn+mpend+mw);
+  def l2 = l1 - (Lpend/2.0 + Lconn);
+  def l3 = Lconn + Lpend + Lw - l1;
+  
+  def L2 = Lconn + Lpend + Lw;
+  def m2 = mconn + mpend + mw;
+  def L2m = l1;
+  def Jxx = Jcxx + Jpxx + Jwxx;
+  def Jyy = Jpyy + mpend*l2*l2 + Jcyy + mconn*l1*l1 + Jwyy + mw*l3*l3;
+  def Jzz = Jpzz + mpend*l2*l2 + Jczz + mconn*l1*l1 + Jwzz + mw*l3*l3;
+  
+  //def _ = println("L2 = " ++ real2string(L2) ++ "; l2 = " ++ real2string(L2m) ++ "; m2 = " ++ real2string(m2) ++ "; J2xx = " ++ real2string(Jxx) ++ "; J2yy = " ++ real2string(Jyy) ++ "; J2zz = " ++ real2string(Jzz) ++ ";");
+  
+  (L2,L2m,m2,Jxx,Jyy,Jzz)  
+}
+
+def PIspeedController(ref : Signal, meas : Signal, uout : Signal) -> Equations = {
+  // Output feedback PI controller with LP-filter
+  
+  // speed feedback control parameters
+  def s1 = 161.108; def s0 = 8316.540; def t2 = 3.121;
+  def t1 = 322.215; def t0 = 8316.540; def r0 = 101.621;
+//   def s1  = 0.0;  def s0 = 0.0; def t2 = 0.0;
+//   def t1 = 0.0; def t0 = 0.0; def r0 = 0.0;
+  
+  // eqs
+  def ufb, uff : Signal;
+  ufb'' + r0*ufb' = s1*meas' + s0*meas;
+  uff'' + r0*uff' = t2*ref'' + t1*ref' + t0*ref;
+  uout = uff - ufb;
+}
+
+def PIDangleController(ref : Signal, meas : Signal, uout : Signal) -> Equations = {
+  def s2 = -2.293; def s1 = -4.577; def s0 = -27.940;
+  def t2 = -0.279; def t1 = -5.588; def t0 = -27.940;
+  def r0 = -1.235;
+  
+  //eqs
+  def ufb, uff : Signal;
+  
+  //init ufb (s0*0.85*PI);
+  //init uff (r0*PI);
+  
+  ufb'' + r0*ufb' = s0*meas + s1*meas' + s2*meas'';
+  uff'' + r0*uff' = t0*ref + t1*ref' + t2*ref'';
+  uout = ufb - uff;
+}
+
+def furutaEquationsSpeedFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : Real) = {
+  // uses the equations found here:
+  // https://en.wikipedia.org/wiki/Furuta_pendulum
+  
+  // arm parameters
+  def Link1Length = 0.4;
+  def Link2Length = 0.4;
+  def (L1, L1m, m1, J1zz) = getArm1Params(Link1Length);
+  def (L2, L2m, m2, J2xx, J2yy, J2zz) = getPendParams(Link2Length);
+  def b1 = 0.1; def b2 = 0.05; // viscuous damping friction coeffs
+  
+  // dc-motor parameters (DCX26L 150)
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; 
+  def n = 150.0; def eta = 0.75;
+  
+  
+  // working variables
+  def u,i : Real;	// dc-motor voltage (main input)
+  def refVel : Real;   // Velocity reference
+  def refTh : Real; def errTh : Real; def IerrTh : Real;
+  def refS : Real; def errS : Real; // Speed control of arm1
+  def tau1 : Real; // main actuator torque
+  def tau2 : Real; // Arm disturbance torque
+  def th1 : Real; // Angle of first arm
+  def th2 : Real; // Angle of pendulum (0 = straight down)
+  def time : Real;
+  
+  def th2init = 0.95*PI;
+  def th2refinit = 1.0*PI;
+  
+  init th2 th2init; // init angle of pendulum
+  init refTh (th2refinit);
+  init errTh (th2refinit - th2init);
+  init refVel (Pth*(th2refinit - th2init));
+  
+  
+  // Time
+  time' = 1.0;
+  
+  // Disturbance torque
+  tau2 = 0.0;    
+  
+//   // angular speed control of arm1 using refTh as input
+//   refS = 0.0;
+//   errS = (th1-refS);
+//   refTh = Ps*errS + Ds*errS' + PI;
+  
+  // pendulum angle control using refVel as input
+  refTh = th2refinit;
+  errTh = (refTh - th2);
+  IerrTh' = errTh;
+  refVel = Pth*errTh + Ith*IerrTh + Dth*errTh';
+
+  // dc-motor input/controller
+  //refVel = refVelArm + refVelPend;
+  PIspeedController(refVel,th1',u);
+  
+  // dc-motor equations
+  u - R*i - L*i' - K*n*th1' = 0.0;
+  tau1 = eta*K*n*i;
+  
+  // Main pendulum equations
+  th1''*(J1zz + m1*L1m*L1m + m2*L1*L1 + (J2yy+m2*L2m*L2m)*sin(th2)*sin(th2) + J2xx*cos(th2)*cos(th2)) + th2''*m2*L1*L2m*cos(th2) - m2*L1*L2m*sin(th2)*th2'*th2' + th1'*th2'*sin(2.0*th2)*(m2*L2m*L2m+J2yy-J2xx) + b1*th1' = tau1;
+  th1''*m2*L1*L2m*cos(th2) + th2''*(m2*L2m*L2m+J2zz) + 0.5*th2'*th2'*sin(2.0*th2)*(-m2*L2m*L2m-J2yy+J2xx) + b2*th2' + g*m2*L2m*sin(th2) = tau2;
+  
+  // probes
+  //probe("L1") = L1;
+  //probe("L2") = L2;
+  probe("ref_th") = refTh;
+//   probe("errTh") = errTh;
+  //probe("i") = i;
+  //probe("u") = u;
+  probe("th_1") = th1;
+  //probe("w_1") = th1';
+  probe("ref_vel") = refVel;
+  probe("alfa") = th2;
+}
+
+
+def furutaEquationsTorqueFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : Real) = {
+  // uses the equations found here:
+  // https://en.wikipedia.org/wiki/Furuta_pendulum
+  
+  // arm parameters
+  def Link1Length = 0.4;
+  def Link2Length = 0.4;
+  def (L1, L1m, m1, J1zz) = getArm1Params(Link1Length);
+  def (L2, L2m, m2, J2xx, J2yy, J2zz) = getPendParams(Link2Length);
+  def b1 = 0.0; def b2 = 0.1; // viscuous damping friction coeffs
+  
+  // dc-motor parameters (DCX26L 150)
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; 
+  def n = 150.0; def eta = 0.75;
+  
+  
+  // working variables
+  def u,i : Real;	// dc-motor voltage (main input)
+//   def refVel : Real;   // Velocity reference
+  def refTh : Real; def errTh : Real; def IerrTh : Real;
+  def refS : Real; def errS : Real; // Speed control of arm1
+  def tau1 : Real; // main actuator torque
+  def tau2 : Real; // Arm disturbance torque
+  def th1 : Real; // Angle of first arm
+  def th2 : Real; // Angle of pendulum (0 = straight down)
+  def time : Real;
+  
+  def th2init = 0.85*PI;
+  def th2refinit = 1.0*PI;
+  
+  init th2 th2init; // init angle of pendulum
+  init refTh (th2refinit);
+  init errTh (th2refinit - th2init);
+  
+  
+  // Time
+  time' = 1.0;
+  
+  // Disturbance torque
+  tau2 = 0.0;    
+  
+//   // angular speed control of arm1 using refTh as input
+  refS = 0.0;
+  errS = (th1-refS);
+  refTh = Ps*errS + Ds*errS' + PI;
+  
+  // pendulum angle control using refVel as input
+//   refTh = th2refinit;
+  errTh = (refTh - th2);
+  IerrTh' = errTh;
+  tau1 = Pth*errTh + Ith*IerrTh + Dth*errTh';
+
+  // Main pendulum equations
+  th1''*(J1zz + m1*L1m*L1m + m2*L1*L1 + (J2yy+m2*L2m*L2m)*sin(th2)*sin(th2) + J2xx*cos(th2)*cos(th2)) + th2''*m2*L1*L2m*cos(th2) - m2*L1*L2m*sin(th2)*th2'*th2' + th1'*th2'*sin(2.0*th2)*(m2*L2m*L2m+J2yy-J2xx) + b1*th1' = tau1;
+  th1''*m2*L1*L2m*cos(th2) + th2''*(m2*L2m*L2m+J2zz) + 0.5*th2'*th2'*sin(2.0*th2)*(-m2*L2m*L2m-J2yy+J2xx) + b2*th2' + g*m2*L2m*sin(th2) = tau2;
+  
+  // probes
+  probe("ref_th") = refTh;
+  probe("errTh") = errTh;
+  probe("th_1") = th1;
+  probe("T") = tau1;
+  probe("alfa") = th2;
+}
+
+//def main = printsim(mainSys(),0.005,10.0)
+def main = printsim(furutaEquationsTorqueFeedback(8.0,0.0,2.0,0.0,0.12),0.001,6.0)
+//def main = printsim(furutaEquationsSpeedFeedback(15.0,4.0,4.0,0.0,0.0),0.001,4.0)

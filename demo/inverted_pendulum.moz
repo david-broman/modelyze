@@ -1,0 +1,85 @@
+/*
+* Test some simple force equations on a pendulum attached to 
+* a sliding mass. Also contains a controller
+* 
+* Can be animated in /env/matlab/sliding_mass_anim.m
+*/
+
+include ModelyzeDAE
+
+def g = 9.81
+def PI = 3.1415
+
+def InvertedPendulumFree(A : Real, freq : Real) = {
+  def x,th,f,xp : Real;
+  def L = 3.0; def ms = 10.0; def mp = 2.0; def I = mp*L*L/3.0;
+  def time : Real; 
+  
+  init x 0.0;
+  init xp 0.0;
+  init th 0.0;
+  init time 0.0;
+  
+  time' = 1.0;
+  
+  f = A*cos(2.0*PI*freq*time);
+  
+  xp = x + 0.5*L*sin(th);
+  ms*x'' = f - mp*xp'';
+  I*th'' = -mp*g*L*0.5*sin(th) - mp*x''*L*0.5*cos(th);
+  
+  probe("x") = x;
+  probe("th") = th;
+  
+}
+
+def InvertedPendulumControl(Pth : Real, Dth : Real, Pp : Real, Dp : Real) = {
+  // INVERTED PENDULUM balancing with a cascading pd controller
+  def L = 3.0; // length of pendulum
+  def mc = 4.0; // mass of cart
+  def mlink = 2.0; // mass of link
+  def mend = 1.0; // mas of weight strapped to end of link
+  def I = mlink*L*L/3.0 + mend*L*L; // moment of inertia for link
+  def mp = mlink+mend; // total mass of pendulum
+  def Lm = 0.5*L + mend/(mend+mlink)*0.5*L;
+  def dp = 1.0; def dc = 1.0; // friction coefficients
+  def time : Real;
+  def x,xp,th,F,errTh,errPos,refTh,refPos : Real;
+  
+  def thinit = 0.85*PI;
+  
+  init th thinit;
+  init refTh PI;
+  init errTh (PI - thinit);
+  //init F (Pth*(PI-thinit));
+  init refPos 0.0;
+  init errPos 0.0;
+  
+  time' = 1.0;
+  
+  // Equations:
+  
+  // First cascaded part, control the reference angle in order to keep the
+  // pendulum standing still
+  refPos = 0.0;	// Where to keep the cart!
+  errPos = (x - refPos); // Setpoint control for cart speed control
+  refTh = Pp*errPos + Dp*errPos' + PI;
+  
+  // Force control for pendulum balancing
+  errTh = (refTh  - th);
+  F = Pth*errTh + Dth*errTh';
+
+  // Pendulum equations
+  xp = x + Lm*sin(th);
+  mc*x'' = F - mp*xp'' - dc*x';
+  I*th'' = -mp*g*Lm*sin(th) - mp*x''*Lm*cos(th) - dp*th';
+  
+  probe("refTh") = refTh;
+  probe("errPos") = errPos;
+  //probe("F") = F;
+  probe("x") = x;
+  probe("th") = th;
+}
+
+//def main = printsim(InvertedPendulumFree(120.0,0.4),0.01,3.0)
+def main = printsim(InvertedPendulumControl(250.0,75.0,0.025,0.06),0.005,10.0)

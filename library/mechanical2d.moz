@@ -505,9 +505,7 @@ def PIDcontroller(P : Real, I : Real, D : Real, ref : Signal, meas : Signal, out
 
   err = (ref - meas);  
   Ierr' = err;
-  out = P*err + I*Ierr - D*meas';
-  // tau*out' + out = P*err + I*Ierr - D*meas'; // LP-filter
-  
+  out = P*err + I*Ierr - D*meas';  
 }
 
 // Output feedback PD-controller with LP-filter

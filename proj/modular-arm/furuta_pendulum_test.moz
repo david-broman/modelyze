@@ -91,8 +91,8 @@ def furutaEquationsSpeedFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, 
   // https://en.wikipedia.org/wiki/Furuta_pendulum
   
   // arm parameters
-  def Link1Length = 0.4;
-  def Link2Length = 0.4;
+  def Link1Length = 0.3;
+  def Link2Length = 0.3;
   def (L1, L1m, m1, J1zz) = getArm1Params(Link1Length);
   def (L2, L2m, m2, J2xx, J2yy, J2zz) = getPendParams(Link2Length);
   def b1 = 0.1; def b2 = 0.05; // viscuous damping friction coeffs
@@ -113,7 +113,7 @@ def furutaEquationsSpeedFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, 
   def th2 : Real; // Angle of pendulum (0 = straight down)
   def time : Real;
   
-  def th2init = 0.95*PI;
+  def th2init = 0.9*PI;
   def th2refinit = 1.0*PI;
   
   init th2 th2init; // init angle of pendulum
@@ -128,13 +128,13 @@ def furutaEquationsSpeedFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, 
   // Disturbance torque
   tau2 = 0.0;    
   
-//   // angular speed control of arm1 using refTh as input
-//   refS = 0.0;
-//   errS = (th1-refS);
-//   refTh = Ps*errS + Ds*errS' + PI;
+  // angular speed control of arm1 using refTh as input
+  refS = 0.0;
+  errS = (th1-refS);
+  refTh = Ps*errS + Ds*errS' + PI;
   
   // pendulum angle control using refVel as input
-  refTh = th2refinit;
+  //refTh = th2refinit;
   errTh = (refTh - th2);
   IerrTh' = errTh;
   refVel = Pth*errTh + Ith*IerrTh + Dth*errTh';
@@ -149,7 +149,7 @@ def furutaEquationsSpeedFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, 
   
   // Main pendulum equations
   th1''*(J1zz + m1*L1m*L1m + m2*L1*L1 + (J2yy+m2*L2m*L2m)*sin(th2)*sin(th2) + J2xx*cos(th2)*cos(th2)) + th2''*m2*L1*L2m*cos(th2) - m2*L1*L2m*sin(th2)*th2'*th2' + th1'*th2'*sin(2.0*th2)*(m2*L2m*L2m+J2yy-J2xx) + b1*th1' = tau1;
-  th1''*m2*L1*L2m*cos(th2) + th2''*(m2*L2m*L2m+J2zz) + 0.5*th2'*th2'*sin(2.0*th2)*(-m2*L2m*L2m-J2yy+J2xx) + b2*th2' + g*m2*L2m*sin(th2) = tau2;
+  th1''*m2*L1*L2m*cos(th2) + th2''*(m2*L2m*L2m+J2zz) + 0.5*th1'*th1'*sin(2.0*th2)*(-m2*L2m*L2m-J2yy+J2xx) + b2*th2' + g*m2*L2m*sin(th2) = tau2;
   
   // probes
   //probe("L1") = L1;
@@ -170,8 +170,8 @@ def furutaEquationsTorqueFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real,
   // https://en.wikipedia.org/wiki/Furuta_pendulum
   
   // arm parameters
-  def Link1Length = 0.4;
-  def Link2Length = 0.4;
+  def Link1Length = 0.3;
+  def Link2Length = 0.3;
   def (L1, L1m, m1, J1zz) = getArm1Params(Link1Length);
   def (L2, L2m, m2, J2xx, J2yy, J2zz) = getPendParams(Link2Length);
   def b1 = 0.0; def b2 = 0.1; // viscuous damping friction coeffs
@@ -192,7 +192,7 @@ def furutaEquationsTorqueFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real,
   def th2 : Real; // Angle of pendulum (0 = straight down)
   def time : Real;
   
-  def th2init = 0.85*PI;
+  def th2init = 0.9*PI;
   def th2refinit = 1.0*PI;
   
   init th2 th2init; // init angle of pendulum
@@ -219,7 +219,7 @@ def furutaEquationsTorqueFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real,
 
   // Main pendulum equations
   th1''*(J1zz + m1*L1m*L1m + m2*L1*L1 + (J2yy+m2*L2m*L2m)*sin(th2)*sin(th2) + J2xx*cos(th2)*cos(th2)) + th2''*m2*L1*L2m*cos(th2) - m2*L1*L2m*sin(th2)*th2'*th2' + th1'*th2'*sin(2.0*th2)*(m2*L2m*L2m+J2yy-J2xx) + b1*th1' = tau1;
-  th1''*m2*L1*L2m*cos(th2) + th2''*(m2*L2m*L2m+J2zz) + 0.5*th2'*th2'*sin(2.0*th2)*(-m2*L2m*L2m-J2yy+J2xx) + b2*th2' + g*m2*L2m*sin(th2) = tau2;
+  th1''*m2*L1*L2m*cos(th2) + th2''*(m2*L2m*L2m+J2zz) + 0.5*th1'*th1'*sin(2.0*th2)*(-m2*L2m*L2m-J2yy+J2xx) + b2*th2' + g*m2*L2m*sin(th2) = tau2;
   
   // probes
   probe("ref_th") = refTh;
@@ -230,5 +230,5 @@ def furutaEquationsTorqueFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real,
 }
 
 //def main = printsim(mainSys(),0.005,10.0)
-def main = printsim(furutaEquationsTorqueFeedback(8.0,0.0,2.0,0.0,0.12),0.001,6.0)
-//def main = printsim(furutaEquationsSpeedFeedback(15.0,4.0,4.0,0.0,0.0),0.001,4.0)
+def main = printsim(furutaEquationsTorqueFeedback(16.0,0.0,4.0,0.0,0.04),0.001,6.0)
+//def main = printsim(furutaEquationsSpeedFeedback(50.0,0.0,10.0,0.0,0.0),0.001,4.0)

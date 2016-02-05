@@ -3,3 +3,5 @@ _build
 _tags
 *.byte
 myocamlbuild.ml
+Viktor Testar/
+*_moz_result.txt

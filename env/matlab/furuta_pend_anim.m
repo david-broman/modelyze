@@ -7,8 +7,8 @@ filename = 'furuta_pendulum_test.moz';
 d = execute_modelyze(filepath,filename);
 if isempty(d); return; end % ERROR
 % Arm lengths: TODO: make acquiring these automatic
-L1 = 0.4735; % Length of main arm
-L2 = 0.433; % Length of pendulum
+L1 = 0.3735; % Length of main arm
+L2 = 0.333; % Length of pendulum
 
 N = size(d.data,2) - 1; % How many entries in addition to time
 if N == 0; error('MODELYZE DATA CONTAINS ONLY TIME'); end;
@@ -46,6 +46,15 @@ axis([-scaling*L1 scaling*L1 -scaling*L1 scaling*L1 -scaling*L2 scaling*L2]);
 hold on
 clear FIGURE_X FIGURE_Y scrz scaling
 xlabel('x'); ylabel('y'); zlabel('z');
+set(gca,'fontsize',24);
+
+
+% plot static base
+a = axis;
+p_base = plot3([0,0],[0,0],[a(5),0],'-k');
+set(p_base,'LineWidth',6);
+[x_sphere,y_sphere,z_sphere] = sphere;
+surf(0.02*x_sphere,0.02*y_sphere,0.02*z_sphere,zeros(21,21,3));
 
 % plot handles
 c1_base = [L1,0,0]';
@@ -61,11 +70,12 @@ set(p(3),'LineWidth',1);
 
 % Animate!
 pause(0.1);
-timescaling = 1.0;
+timescaling = 1;
 while ishandle(fig)
     tic;
-    while timescaling*toc < d.data(end,1)
-        i = find(timescaling*toc < d.data(:,1),1);
+    plot_time = 0;
+    while plot_time < d.data(end,1)
+        i = find(plot_time < d.data(:,1),1);
         th = d.data(i,th1ind)*180/pi; 
         alfa = d.data(i,alfaind)*180/pi;
         c1 = rotz(th)*c1_base;
@@ -92,12 +102,13 @@ while ishandle(fig)
             tit = strcat(tit,sprintf(', i = %0.2fA',d.data(i,iind)));
         end
         if tauind
-            tit = strcat(tit,sprintf(', i = %0.2fNm',d.data(i,tauind)));
+            tit = strcat(tit,sprintf(', tau = %0.2fNm',d.data(i,tauind)));
         end
 
         title(tit);
         drawnow;
         pause(0.01);
+        plot_time = timescaling*toc;
     end
     pause(0.5);
 end

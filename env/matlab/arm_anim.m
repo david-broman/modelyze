@@ -2,7 +2,7 @@
 clear all; close all; clc
 
 filepath = '../../proj/modular-arm';
-filename = 'sometest.moz';
+filename = '2d-arm-control.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved
@@ -12,7 +12,7 @@ else
     d = execute_modelyze(filepath,filename);
     if isempty(d); return; end % ERROR
     % Arm lengths: TODO: make acquiring these automatic
-    L(1) = 0.3; L(2) = 0.2;
+    L(1) = 0.3; L(2) = 0.3;
 end
 
 N = size(d.data,2) - 1; % How many entries in addition to time
@@ -55,9 +55,13 @@ clear FIGURE_X FIGURE_Y scrz
 
 axis equal
 axis manual
-axis([-1.2*sum(L(1:length(iAngles))) 1.2*sum(L(1:length(iAngles)))...
-    -1.2*sum(L(1:length(iAngles))) 1.2*sum(L(1:length(iAngles)))]);
+axis_scale = 1.05;
+axis([-axis_scale*sum(L(1:length(iAngles))) axis_scale*sum(L(1:length(iAngles)))...
+    -axis_scale*sum(L(1:length(iAngles))) axis_scale*sum(L(1:length(iAngles)))]);
 hold on
+clear axis_scale
+xlabel('x (m)'); ylabel('y (m)');
+set(gca,'fontsize',24); % Bigger font size
 
 % Sets up plot handles
 p = [];
@@ -70,23 +74,28 @@ end
 % Animates it
 pause(0.1);
 timescaling = 1;
-tic;
-while timescaling*toc < d.data(end,1) && ishandle(fig)
-    i = find(timescaling*toc < d.data(:,1),1);
-    
-    % Plots the links!
-    xl = 0; yl = 0;
-    for il = 1:length(p)
-        xn = xl + L(il)*cos(d.data(i,iAngles(il)));
-        yn = yl + L(il)*sin(d.data(i,iAngles(il)));
-        set(p(il),'XData',[xl xn],'YData',[yl yn]);
-        xl = xn; yl = yn;        
+while ishandle(fig)
+    tic;
+    plot_time = 0;
+    while plot_time < d.data(end,1) && ishandle(fig)
+        i = find(plot_time < d.data(:,1),1);
+
+        % Plots the links!
+        xl = 0; yl = 0;
+        for il = 1:length(p)
+            xn = xl + L(il)*cos(d.data(i,iAngles(il)));
+            yn = yl + L(il)*sin(d.data(i,iAngles(il)));
+            set(p(il),'XData',[xl xn],'YData',[yl yn]);
+            xl = xn; yl = yn;        
+        end
+
+        title(sprintf('t = %0.2f',d.data(i,1)));
+
+        drawnow;
+        pause(0.01);
+        plot_time = timescaling*toc;
     end
-    
-    title(sprintf('%0.2f',d.data(i,1)));
-    
-    drawnow;
-    pause(0.01);
+    pause(0.5);
 end
 
 

@@ -69,12 +69,33 @@ def TorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mecha
 // DCX26L with gear ratio 150
 def JointType1(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   
-  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; def n = 150.0;
-  def eta = 0.75;
+  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; 
+  def n = 328509.0/2197.0; def eta = 0.75;
   def m = 1.114; // Mass of the parts of the joint
   def JA = 0.035; // Moment of inertia around flangeA
   def JB = 0.041756; // Moment of inertia around flangeB
   def offset_A = 0.02; def offset_B = 0.057; // Lengths from end of link to middle of joint
+  
+  def Fn : Signal;
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    LinearFriction(Tf,w,0.041679 + 0.0*Fn);
+  }; // Friction function
+  
+  BuildNormalForce(m,flangeA,flangeB);  
+  ReadNormalForce(flangeB,Fn);
+  
+  DCmotorJoint(u,K,R,L,n,eta,JA,JB,m,offset_A,offset_B,frictionFunction,flangeA,flangeB);
+}
+
+// DCX22L with gear ratio 232
+def JointType2(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  
+  def K = 0.0229; def R = 1.83+0.33; def L = 0.192e-3; 
+  def n = 300564.0/1300.0; def eta = 0.74;
+  def m = 0.765; // Mass of the parts of the joint
+  def JA = 0.035; // Moment of inertia around flangeA
+  def JB = 0.05; // Moment of inertia around flangeB
+  def offset_A = 0.014; def offset_B = 0.026; // Lengths from end of link to middle of joint
   
   def Fn : Signal;
   def frictionFunction(Tf : Signal, w : Signal) -> Equations = {

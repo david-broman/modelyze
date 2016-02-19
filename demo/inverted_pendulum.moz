@@ -10,50 +10,57 @@ include ModelyzeDAE
 def g = 9.81
 def PI = 3.1415
 
-def InvertedPendulumFree(A : Real, freq : Real) = {
-  def x,th,f,xp : Real;
-  def L = 3.0; def ms = 10.0; def mp = 2.0; def I = mp*L*L/3.0;
-  def time : Real; 
+def InvertedPendulumEquations(F : Signal, x : Signal, th : Signal) = {
+  // Parameters taken from here
+  // http://ctms.engin.umich.edu/CTMS/index.php?example=InvertedPendulum&section=SystemModeling
+  // to evaluate simple control strategies
+  def L = 0.6; // length of pendulum
+  def mc = 0.5; // mass of cart
+  def mlink = 0.2; // mass of link
+  def mend = 0.0; // mas of weight strapped to end of link
+  def I = mlink*L*L/3.0 + mend*L*L; // moment of inertia for link around point of rotation
+  def mp = mlink+mend; // total mass of pendulum
+  def Lm = 0.5*L + mend/(mend+mlink)*0.5*L; // Length to CoM
+  def dp = 0.0; def dc = 0.1; // friction coefficients
   
-  init x 0.0;
-  init xp 0.0;
-  init th 0.0;
-  init time 0.0;
+  def xp : Real; // x-pos of pendulum
   
-  time' = 1.0;
-  
-  f = A*cos(2.0*PI*freq*time);
-  
-  xp = x + 0.5*L*sin(th);
-  ms*x'' = f - mp*xp'';
-  I*th'' = -mp*g*L*0.5*sin(th) - mp*x''*L*0.5*cos(th);
+//   // Pendulum equations
+  xp = x + Lm*sin(th);
+  mc*x'' = F - mp*xp'' - dc*x';
+  I*th'' = -mp*g*Lm*sin(th) - mp*x''*Lm*cos(th) - dp*th';
   
   probe("x") = x;
   probe("th") = th;
   
 }
 
-def InvertedPendulumControl(Pth : Real, Dth : Real, Pp : Real, Dp : Real) = {
-  // INVERTED PENDULUM balancing with a cascading pd controller
-  def L = 3.0; // length of pendulum
-  def mc = 4.0; // mass of cart
-  def mlink = 2.0; // mass of link
-  def mend = 1.0; // mas of weight strapped to end of link
-  def I = mlink*L*L/3.0 + mend*L*L; // moment of inertia for link
-  def mp = mlink+mend; // total mass of pendulum
-  def Lm = 0.5*L + mend/(mend+mlink)*0.5*L;
-  def dp = 1.0; def dc = 1.0; // friction coefficients
-  def time : Real;
-  def x,xp,th,F,errTh,errPos,refTh,refPos : Real;
+def InvertedPendulumFree(A : Real, freq : Real) = {
+  def x,th,F,time : Real;
   
-  def thinit = 0.85*PI;
+  time' = 1.0;
+  
+  F = A*cos(2.0*PI*freq*time);
+  
+  InvertedPendulumEquations(F,x,th);
+  
+}
+
+def InvertedPendulumCascadedControl(Pth : Real, Dth : Real, Pp : Real, Dp : Real) = {
+  // INVERTED PENDULUM balancing with a cascading pd controller
+  
+  def time : Real;
+  def x,th,F,errTh,errPos,refTh,refPos : Real;
+  
+  def thinit = 1.0*PI;
+  def refPosInit = 2.0;
   
   init th thinit;
-  init refTh PI;
-  init errTh (PI - thinit);
   //init F (Pth*(PI-thinit));
-  init refPos 0.0;
-  init errPos 0.0;
+  init refPos refPosInit;
+  init errPos (-refPosInit);
+  init refTh (Pp*(-refPosInit)+PI);
+  init errTh ((Pp*(-refPosInit)+PI) - thinit);
   
   time' = 1.0;
   
@@ -69,17 +76,39 @@ def InvertedPendulumControl(Pth : Real, Dth : Real, Pp : Real, Dp : Real) = {
   errTh = (refTh  - th);
   F = Pth*errTh + Dth*errTh';
 
-  // Pendulum equations
-  xp = x + Lm*sin(th);
-  mc*x'' = F - mp*xp'' - dc*x';
-  I*th'' = -mp*g*Lm*sin(th) - mp*x''*Lm*cos(th) - dp*th';
+  InvertedPendulumEquations(F,x,th);
   
-  probe("refTh") = refTh;
+  
   probe("errPos") = errPos;
-  //probe("F") = F;
-  probe("x") = x;
-  probe("th") = th;
+  probe("F") = F;
+  probe("refTh") = refTh;
 }
 
-//def main = printsim(InvertedPendulumFree(120.0,0.4),0.01,3.0)
-def main = printsim(InvertedPendulumControl(250.0,75.0,0.025,0.06),0.005,10.0)
+def InvertedPendulumStateControl(ref : Real) = {
+  // Uses a state-space controller to control the angulum and
+  // position of cart and pendulum
+  // http://ctms.engin.umich.edu/CTMS/index.php?example=InvertedPendulum&section=ControlStateSpace
+  
+  // states: x, x', th, th'
+  def L_1 = -1.0000; def L_2 = -1.6567; def L_3 = 18.6854; def L_4 = 3.4594;
+  def Nr = -1.0000;
+  //def L_1 = -70.7107; def L_2 = -37.8345; def L_3 = 105.5298; def L_4 = 20.9238;
+  //def Nr = -70.7107;
+  
+  def x,th,F : Real;
+  
+  def thinit = 1.0*PI;
+  
+  init th thinit;
+  
+  
+  F = -1.0*(L_1*x + L_2*x' + L_3*(th-PI) + L_4*th') + Nr*ref;
+  
+  // Equations
+  InvertedPendulumEquations(F,x,th);
+  probe("F") = F;
+}
+
+//def main = printsim(InvertedPendulumFree(3.0,0.8),0.01,3.0)
+//def main = printsim(InvertedPendulumCascadedControl(20.0,4.0,0.02,0.06),0.005,10.0)
+def main = printsim(InvertedPendulumStateControl(10.0),0.005,10.0)

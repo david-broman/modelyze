@@ -2,8 +2,7 @@
 % slidingmass.moz
 clear all; close all; clc
 
-filepath = '../../demo';
-d = execute_modelyze(filepath,'inverted_pendulum.moz');
+d = execute_modelyze('../../demo','inverted_pendulum.moz');
 if isempty(d); return; end % ERROR
 
 
@@ -13,10 +12,14 @@ Lp = 0.25;
 xind = 0;
 thind = 0;
 refthind = 0;
+Find = 0;
+rest_ind = zeros(size(d.colheaders));
 for i = 1:length(d.colheaders); 
-    if strcmp(d.colheaders{i},'x'); xind = i;  end;
-    if strcmp(d.colheaders{i},'th'); thind = i;  end;
-    if strcmp(d.colheaders{i},'refTh'); refthind = i;  end;
+    if strcmp(d.colheaders{i},'x'); xind = i;
+    elseif strcmp(d.colheaders{i},'th'); thind = i;
+    elseif strcmp(d.colheaders{i},'refTh'); refthind = i;
+    elseif strcmp(d.colheaders{i},'F'); Find = i;
+    elseif ~strcmp(d.colheaders{i},'time'); rest_ind(i) = 1; end;
 end;
 
 % Make main fig
@@ -45,28 +48,44 @@ set(p(2),'LineWidth',4);
 
 
 % Animate!
-pause(0.1);
-timescaling = 1.0;
-tic;
-while timescaling*toc < d.data(end,1)
-    i = find(timescaling*toc < d.data(:,1),1);
-    th = d.data(i,thind); x = d.data(i,xind);
-    link = [L*sin(th), -L*cos(th)]; %[x_end, y_end]
+while ishandle(fig)
+    pause(0.1);
+    timescaling = 1.0;
+    tic;
+    plot_time = 0;
+    while plot_time < d.data(end,1)
+        i = find(timescaling*toc < d.data(:,1),1);
+        th = d.data(i,thind); x = d.data(i,xind);
+        link = [L*sin(th), -L*cos(th)]; %[x_end, y_end]
+        
+        if ~ishandle(fig)
+            break;
+        end
 
-    set(p(1),'XData',[x link(1)+x],'YData',[0 link(2)]);
-    set(p(2),'XData',[x-Lp x+Lp]);
-    if ~isempty(pref)
-        thref = d.data(i,refthind);
-        ref = [L*sin(thref), -L*cos(thref)]; %[x_end, y_end]
-        set(pref,'XData',[x ref(1)+x],'YData',[0 ref(2)]);
-        title(sprintf('t = %0.2f, Theta_{ref} = %0.1f, Theta = %0.1f deg',...
-            d.data(i,1),180*d.data(i,refthind)/pi,180*d.data(i,thind)/pi));
-    else
-        title(sprintf('t = %0.2f, Theta = %0.1f deg',d.data(i,1),180*d.data(i,thind)/pi));
+        set(p(1),'XData',[x link(1)+x],'YData',[0 link(2)]);
+        set(p(2),'XData',[x-Lp x+Lp]);
+        if ~isempty(pref)
+            thref = d.data(i,refthind);
+            ref = [L*sin(thref), -L*cos(thref)]; %[x_end, y_end]
+            set(pref,'XData',[x ref(1)+x],'YData',[0 ref(2)]);
+        end
+        
+        tit = sprintf('t = %0.2f',d.data(i,1));
+        if thind
+            tit = strcat(tit,sprintf(', th = %0.2f',d.data(i,thind)));
+        end
+        if refthind
+            tit = strcat(tit,sprintf(', th_ref = %0.2f',d.data(i,refthind)));
+        end
+        if Find
+            tit = strcat(tit,sprintf(', F = %0.2fN',d.data(i,Find)));
+        end
+        title(tit);
+        
+        drawnow;
+        pause(0.01);
+        plot_time = timescaling*toc;
     end
-    drawnow;
-    pause(0.01);
-    
 end
 
 

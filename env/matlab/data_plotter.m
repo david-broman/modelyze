@@ -2,7 +2,7 @@
 clear all; close all; clc;
 %%
 filepath = '../../proj/modular-arm';
-filename = '2d-arm-control.moz';
+filename = 'furuta_pendulum_test.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved

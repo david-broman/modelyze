@@ -7,8 +7,8 @@ def g = 9.81
 def PI = 3.1415
 
 // arm parameters
-def Link1Length = 0.3
-def Link2Length = 0.4
+def Link1Length = 0.2
+def Link2Length = 0.5
 
 
 def getArm1Params(Larm : Real) = {
@@ -324,5 +324,5 @@ def furutaSpeedStateFeedback(ref : Real) = {
 // def main = printsim(furutaTorqueCascFeedback(16.0,0.0,4.0,0.0,0.04),0.001,6.0)
 // def main = printsim(furutaSpeedCascFeedback(50.0,0.0,10.0,0.0,0.0),0.001,4.0)
 // def main = printsim(furutaTorqueStateFeedback(0.0),0.001,4.0)
-//def main = printsim(furutaVoltageStateFeedback(0.0),0.001,10.0)
-def main = printsim(furutaSpeedStateFeedback(0.0),0.001,10.0)
+def main = printsim(furutaVoltageStateFeedback(0.0),0.001,10.0)
+//def main = printsim(furutaSpeedStateFeedback(0.0),0.001,10.0)

@@ -61,7 +61,7 @@ axis([-axis_scale*sum(L(1:length(iAngles))) axis_scale*sum(L(1:length(iAngles)))
 hold on
 clear axis_scale
 xlabel('x (m)'); ylabel('y (m)');
-set(gca,'fontsize',24); % Bigger font size
+%set(gca,'fontsize',24); % Bigger font size
 
 % Sets up plot handles
 p = [];

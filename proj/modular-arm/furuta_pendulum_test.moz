@@ -106,7 +106,6 @@ def PrintFurutaParams() = {
   probe("l1") = L1m;
   
 }
-
 def furutaFree(th2init : Real) = {
   def tau1 : Real; // main actuator torque
   def tau2 : Real; // Arm disturbance torque
@@ -118,7 +117,6 @@ def furutaFree(th2init : Real) = {
   // Equations
   FurutaEquations(tau1,tau2,th1,th2);
 }
-
 def furutaSpeedCascFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : Real) = {
   // dc-motor parameters (DCX26L 150)
   def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; 
@@ -175,7 +173,6 @@ def furutaSpeedCascFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : 
   probe("ref_th") = refTh;
   probe("ref_vel") = refVel;
 }
-
 def furutaTorqueCascFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : Real) = {  
   // working variables
   def refTh : Real; def errTh : Real; def IerrTh : Real;
@@ -218,7 +215,6 @@ def furutaTorqueCascFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds :
   probe("errTh") = errTh;
   probe("T") = tau1;
 }
-
 def furutaTorqueStateFeedback(ref : Real) = {
   def tau1 : Real; // main actuator torque
   def tau2 : Real; // Arm disturbance torque
@@ -243,7 +239,6 @@ def furutaTorqueStateFeedback(ref : Real) = {
   
   probe("T") = tau1;
 }
-
 def furutaVoltageStateFeedback(ref : Real) = {
   def tau1 : Real; // main actuator torque
   def tau2 : Real; // Arm disturbance torque
@@ -283,9 +278,9 @@ def furutaVoltageStateFeedback(ref : Real) = {
 def furutaSpeedStateFeedback(ref : Real) = {
   def tau1 : Real; // main actuator torque
   def tau2 : Real; // Arm disturbance torque
-  def th1 : Real; // Angle of first arm
-  def th2 : Real; // Angle of pendulum (0 = straight down)
-  def u,i,refVel : Signal; // Applied voltage and current in motor
+  def th1 : Signal; // Angle of first arm
+  def th2 : Signal; // Angle of pendulum (0 = straight down)
+  def u,i,refVel,test : Signal; // Applied voltage and current in motor
   
   // dc-motor parameters (DCX26L 150)
   def K = 0.0214; def R = 0.74+0.33; def L = 0.2e-3 + 0.129e-3; 
@@ -301,10 +296,10 @@ def furutaSpeedStateFeedback(ref : Real) = {
   
   init th2 th2init; // init angle of pendulum
   //init refVel (-1.0*L_2*(th2init-PI));
-  init u 0.0;
   
   // State feedback
   refVel = -1.0*(L_1*th1 + L_2*(th2-PI-th2_meas_offset) + L_3*th1' + L_4*th2') + Nr*ref;
+  //refVel = 0.01*th2'; // th2' fuks it up
   
   // Speed controller
   PIspeedController(refVel,th1',u);

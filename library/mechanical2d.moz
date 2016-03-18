@@ -329,6 +329,7 @@ def SpringJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical
 def FurutaPendulum(flange : Mechanical2D) = {
   def g = 9.81;
   // Pendulum properties
+  // DON'T USE, DOESN'T WORK
   def L = 0.4; def Lm = 0.5*L; // center of mass in the middle
   def mp = 0.4*L; // mass 0.4kg/m
   def J = mp*L*L/12.0;

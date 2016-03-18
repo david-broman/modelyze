@@ -42,16 +42,13 @@ def ReadNormalForce(flange : Mechanical2D, st : Signal) = {
 }
 
 
-/************************ LINK OBJECT ************************/
+/************************ LINK OBJECTS ************************/
 
 // A 20x20mm joint with specfic length
 def Link20x20mm(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  def m = 0.4*L;
+  def m = 0.4167*L;
   def Lm = L/2.0;
-  def J = m*L*L/12.0;	// Moment of inertia @ com
-  
-  // TODO: the holes remove some of the inertia/mass, alternatively
-  // include the screws parameters in here
+  def J = 0.0368*L*L*L;	// Moment of inertia @ com
   
   BuildNormalForce(m,flangeA, flangeB);
   ArmLink(L, Lm, J, m, flangeA, flangeB);
@@ -61,6 +58,28 @@ def Link20x20mm(L : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
 def TorqueJoint(M : <Real>, df : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   BuildNormalForce(0.0,flangeA, flangeB);
   MasslessConstantTorqueJoint(M,df,flangeA,flangeB);  
+}
+
+/************************ NON-MOTOR JOINT OBJECTS ************************/
+
+// Flexible spring joint, could be used to model flexes in the mechanical joint connections
+def FlexJoint(K : Real, d : Real, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  BuildNormalForce(0.0,flangeA,flangeB);
+  SpringJoint(K,d,flangeA,flangeB);
+}
+
+// Just two 20x20 links joined together by a screw
+def ScrewJoint(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def JA = 0.0; def JB = 0.0;	// No rotating inertias
+  def m = 0.0366;
+  def offset_A = -0.01; def offset_B = -0.01; // negative offsets
+  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
+    // 0.0046
+    LinearFriction(Tf,w,0.0046);
+  }; // F
+  
+  BuildNormalForce(m,flangeA,flangeB);
+  FreeJoint(JA, JB, m, offset_A, offset_B, frictionFunction, flangeA, flangeB);
 }
 
 /************************ MOTOR JOINT OBJECTS ************************/
@@ -74,7 +93,7 @@ def JointType1(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   def m = 1.114; // Mass of the parts of the joint
   def JA = 0.035; // Moment of inertia around flangeA
   def JB = 0.041756; // Moment of inertia around flangeB
-  def offset_A = 0.02; def offset_B = 0.057; // Lengths from end of link to middle of joint
+  def offset_A = 0.02; def offset_B = 0.045; // Lengths from end of link to middle of joint
   
   def Fn : Signal;
   def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
@@ -95,7 +114,7 @@ def JointType2(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   def m = 0.765; // Mass of the parts of the joint
   def JA = 0.035; // Moment of inertia around flangeA
   def JB = 0.05; // Moment of inertia around flangeB
-  def offset_A = 0.014; def offset_B = 0.026; // Lengths from end of link to middle of joint
+  def offset_A = 0.014; def offset_B = 0.036; // Lengths from end of link to middle of joint
   
   def Fn : Signal;
   def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
@@ -108,20 +127,71 @@ def JointType2(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
   DCmotorJoint(u,K,R,L,n,eta,JA,JB,m,offset_A,offset_B,frictionFunction,flangeA,flangeB);
 }
 
-/************************ NON-MOTOR JOINT OBJECTS ************************/
+/************************ FLEXING MOTOR JOINTS ************************/
 
-// Just two 20x20 links joined together by a screw
-def ScrewJoint(flangeA : Mechanical2D, flangeB : Mechanical2D) = {
-  def JA = 0.0; def JB = 0.0;	// No rotating inertias
-  def m = 0.0366;
-  def offset_A = -0.01; def offset_B = -0.01; // negative offsets
-  def frictionFunction(Tf : Signal, w : Signal) -> Equations = {
-    // 0.0046
-    LinearFriction(Tf,w,0.0046);
-  }; // F
+/* Attaches some extra flex at the end of the motor joints which produces a more realistic
+ * behavior (if the spring parameters are estimated sufficiently).
+ */
+def FlexJointType1(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeAmid, flangeBmid : Mechanical2D;
+  def K_flex = 100.0; def d_flex = 1.0; // TODO: better estimation
+  JointType1(u,flangeAmid,flangeBmid);
+  FlexJoint(K_flex,d_flex,flangeA,flangeAmid);
+  FlexJoint(K_flex,d_flex,flangeBmid,flangeB);  
+}
+
+def FlexJointType2(u : <Real>, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeAmid, flangeBmid : Mechanical2D;
+  def K_flex = 100.0; def d_flex = 1.0; // TODO: better estimation
+  JointType2(u,flangeAmid,flangeBmid);
+  FlexJoint(K_flex,d_flex,flangeA,flangeAmid);
+  FlexJoint(K_flex,d_flex,flangeBmid,flangeB);  
+}
+
+/************************ FEEDBACK CONTROLLED JOINTS ************************/
+/* Directly applies the desired feedback controller onto a joint.
+ * They will calculate indiviual relative angles and apply the 
+ * provided controller. These joints also includes flexing connections
+ * for additional fidelity.
+ */
+
+type FeedbackFunction = <?> -> <?> -> <?> -> Equations
+/* A feedback function should be on the form:
+ * Feedback_Function(reference, position_measurement, output)
+*/ 
+
+def FeedbackJointType1(ref : <Real>, fb_func : FeedbackFunction, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeAmid, flangeBmid : Mechanical2D;
+  def K_flex = 100.0; def d_flex = 1.0; // TODO: better estimation
+  def thA, thB, dth, u : Signal;
   
-  BuildNormalForce(m,flangeA,flangeB);
-  FreeJoint(JA, JB, m, offset_A, offset_B, frictionFunction, flangeA, flangeB);
+  JointType1(u,flangeAmid,flangeBmid);
+  FlexJoint(K_flex,d_flex,flangeA,flangeAmid);
+  FlexJoint(K_flex,d_flex,flangeBmid,flangeB);
+  RotSensor(flangeAmid,thA);
+  RotSensor(flangeBmid,thB);
+  
+  probe("u1") = u; // Extract applied voltages
+  
+  dth = thB - thA;
+  fb_func(ref,dth,u);
+}
+
+def FeedbackJointType2(ref : <Real>, fb_func : FeedbackFunction, flangeA : Mechanical2D, flangeB : Mechanical2D) = {
+  def flangeAmid, flangeBmid : Mechanical2D;
+  def K_flex = 100.0; def d_flex = 1.0; // TODO: better estimation
+  def thA, thB, dth, u : Signal;
+  
+  JointType2(u,flangeAmid,flangeBmid);
+  FlexJoint(K_flex,d_flex,flangeA,flangeAmid);
+  FlexJoint(K_flex,d_flex,flangeBmid,flangeB);
+  RotSensor(flangeAmid,thA);
+  RotSensor(flangeBmid,thB);
+  
+  probe("u2") = u; // Extract applied voltages
+  
+  dth = thB - thA;
+  fb_func(ref,dth,u);
 }
 
 

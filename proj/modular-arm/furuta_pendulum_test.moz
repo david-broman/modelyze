@@ -7,14 +7,16 @@ def g = 9.81
 def PI = 3.1415
 
 // arm parameters
-def Link1Length = 0.3
-def Link2Length = 0.4
+def Link1Length = 0.2
+def Link2Length = 0.5
 
 
 def getArm1Params(Larm : Real) = {
   // Provide the length of the link of the first arm and it will return modeling parameters
   // assumes an DCX26L joint and Broman(tm) pendulum joint
-  def Lmot = 0.0455; def mmot = 0.853; def Jmot = 0.042;
+  
+  //def Lmot = 0.0455; def mmot = 0.853; def Jmot = 0.042; // DCX26L
+  def Lmot = 0.036; def mmot = 0.5; def Jmot = 0.05; // DCX22L
   def marm = 0.4167*Larm; def Jarm = 0.0368*Larm*Larm*Larm;
   def Lconn = 0.028; def mconn = 0.175; def Jconn = 3e-5;
   def l1 =((Lmot + 0.5*Larm)*marm + (Lmot + Larm + Lconn)*mconn)/(mmot+marm+mconn);
@@ -58,6 +60,18 @@ def getPendParams(Lpend : Real) = {
   //def _ = println("L2 = " ++ real2string(L2) ++ "; l2 = " ++ real2string(L2m) ++ "; m2 = " ++ real2string(m2) ++ "; J2xx = " ++ real2string(Jxx) ++ "; J2yy = " ++ real2string(Jyy) ++ "; J2zz = " ++ real2string(Jzz) ++ ";");
   
   (L2,L2m,m2,Jxx,Jyy,Jzz)  
+}
+
+def getMotorParams() = {
+  // dc-motor parameters (DCX26L 150)
+//   def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; 
+//   def n = 150.0; def eta = 0.75;
+  
+  // dc-motor parameters (DCX22L 232)
+  def K = 0.0229; def R = 1.83+0.33; def L = 0.192e-3; 
+  def n = 300564.0/1300.0; def eta = 0.74;
+  
+  (K,R,L,n,eta)
 }
 
 def FurutaEquations(tau1 : Signal, tau2 : Signal, th1 : Signal, th2 : Signal) = {
@@ -117,10 +131,9 @@ def furutaFree(th2init : Real) = {
   // Equations
   FurutaEquations(tau1,tau2,th1,th2);
 }
-def furutaSpeedCascFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : Real) = {
-  // dc-motor parameters (DCX26L 150)
-  def K = 0.0214; def R = 0.74+0.33; def L = 0.129e-3; 
-  def n = 150.0; def eta = 0.75;
+def furutaSpeedCascFeedback(Pth : Real, Ith : Real, Dth : Real, Ps : Real, Ds : Real) = {  
+  
+  def (K,R,L,n,eta) = getMotorParams();
 
   // working variables
   def u,i : Real;	// dc-motor voltage (main input)
@@ -223,7 +236,7 @@ def furutaTorqueStateFeedback(ref : Real) = {
   //def th2_zeroed : Real;
   
   // state feedback parameters: states = [th1,th2,th1_dot,th2_dot]
-  def L_1 = -3.1623; def L_2 = 16.0006; def L_3 = -2.0066; def L_4 = 2.5945;
+  def L_1 = -3.1623; def L_2 = 24.4243; def L_3 = -1.9141; def L_4 = 4.5449;
   def Nr = -3.1623;
   
   def th2init = 0.9*PI;
@@ -246,13 +259,11 @@ def furutaVoltageStateFeedback(ref : Real) = {
   def th2 : Real; // Angle of pendulum (0 = straight down)
   def u,i : Real; // Applied voltage and current in motor
   
-  // dc-motor parameters (DCX26L 150)
-  def K = 0.0214; def R = 0.74+0.33; def L = 0.2e-3 + 0.129e-3; 
-  def n = 150.0; def eta = 0.75;
+  def (K,R,L,n,eta) = getMotorParams();
   
   // state feedback parameters: states = [th1,th2,th1_dot,th2_dot]
-  def L_1 = -1.0000; def L_2 = 31.3779; def L_3 = -6.8251; def L_4 = 6.1656;
-  def Nr = -1.0000;
+  def L_1 = -0.1; def L_2 = 20.0; def L_3 = -6.0; def L_4 = 5.0;
+  def Nr = -0.1;
   
   def th2init = 0.9*PI;
   def th2_meas_offset = 0.0*PI/180.0; // Error in measurement
@@ -282,14 +293,11 @@ def furutaSpeedStateFeedback(ref : Real) = {
   def th2 : Signal; // Angle of pendulum (0 = straight down)
   def u,i,refVel,test : Signal; // Applied voltage and current in motor
   
-  // dc-motor parameters (DCX26L 150)
-  def K = 0.0214; def R = 0.74+0.33; def L = 0.2e-3 + 0.129e-3; 
-  def n = 150.0; def eta = 0.75;
+  def (K,R,L,n,eta) = getMotorParams();
   
   // state feedback parameters: states = [th1,th2,th1_dot,th2_dot]
-  //def L_1 = -1.0000; def L_2 = 12.1353; def L_3 = -2.3726; def L_4 = 2.0608;
-  def L_1 = 0.0; def L_2 = 0.0; def L_3 = 0.0; def L_4 = 0.0;
-  def Nr = -1.0000;
+  def L_1 = -0.3162; def L_2 = 16.8470; def L_3 = -2.1288; def L_4 = 3.2023;
+  def Nr = -0.3162;
   
   def th2init = 2.9;//0.9*PI;
   def th2_meas_offset = 0.0*PI/180.0; // Error in measurement
@@ -324,5 +332,5 @@ def furutaSpeedStateFeedback(ref : Real) = {
 // def main = printsim(furutaTorqueCascFeedback(16.0,0.0,4.0,0.0,0.04),0.001,6.0)
 // def main = printsim(furutaSpeedCascFeedback(50.0,0.0,10.0,0.0,0.0),0.001,4.0)
 // def main = printsim(furutaTorqueStateFeedback(0.0),0.001,4.0)
-//def main = printsim(furutaVoltageStateFeedback(0.0),0.001,10.0)
-def main = printsim(furutaSpeedStateFeedback(0.0),0.001,10.0)
+def main = printsim(furutaVoltageStateFeedback(0.0),0.001,10.0)
+// def main = printsim(furutaSpeedStateFeedback(0.0),0.001,10.0)

@@ -1,7 +1,9 @@
 % Plots logged data from a control sequence
+% Data has to be on the form of 'comma seperated values'
+% and have column headers for naming
 clear all; close all; clc
 
-d = importdata('minicom3.cap');
+d = importdata('minicom.cap');
 Fs = 100;
 t = linspace(0,length(d.data)/Fs,length(d.data));
 

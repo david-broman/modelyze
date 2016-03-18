@@ -7,8 +7,8 @@ filename = 'furuta_pendulum_test.moz';
 d = execute_modelyze(filepath,filename);
 if isempty(d); return; end % ERROR
 % Arm lengths: TODO: make acquiring these automatic
-L1 = 0.3735; % Length of main arm
-L2 = 0.433; % Length of pendulum
+L1 = 0.264; % Length of main arm
+L2 = 0.533; % Length of pendulum
 
 N = size(d.data,2) - 1; % How many entries in addition to time
 if N == 0; error('MODELYZE DATA CONTAINS ONLY TIME'); end;

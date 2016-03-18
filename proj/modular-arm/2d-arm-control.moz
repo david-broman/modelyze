@@ -7,35 +7,38 @@ include modulararmslib
 def PI = 3.1415
 def ref1step = (-60.0*PI/180.0)
 def ref2step = (100.0*PI/180.0)
+def L1 = 0.3
+def L2 = 0.3
 
 def mainSys() = {
   def f1,f2,f3,f4,f5 : Mechanical2D;
   def sth1, sth2, sth2_rel : Signal;
-  def u1,u2,ref1,ref2 : Signal;
+  def ref1,ref2 : Signal;
+  
+  def fb_func_1(ref : Signal, sth : Signal, u : Signal) -> Equations = {
+    PDcontroller(0.825, 119.220, 0.825, 119.220, 12.0, ref1, sth, u);
+  }; // Feedback function 1
+  def fb_func_2(ref : Signal, sth : Signal, u : Signal) -> Equations = {
+    PDcontroller(1.020, 197.938, 1.020, 197.938, 12.0, ref, sth, u);
+  }; // Feedback function 2
   
   init ref1 ref1step;
   init ref2 ref2step;
   
   Fix(f1,f5);
-  JointType1(u1,f1,f2);
-  Link20x20mm(0.3,f2,f3);
-  JointType2(u2,f3,f4);
-  Link20x20mm(0.3,f4,f5);
+  FeedbackJointType1(ref1,fb_func_1,f1,f2);
+  Link20x20mm(L1,f2,f3);
+  FeedbackJointType2(ref2,fb_func_2,f3,f4);
+  Link20x20mm(L2,f4,f5);
   
-  PDcontroller(0.825, 119.220, 0.825, 119.220, 12.0, ref1, sth1, u1);
-  PDcontroller(1.020, 197.938, 1.020, 197.938, 12.0, ref2, sth2_rel, u2);
   ref1 = ref1step;
   ref2 = ref2step;
   
   RotSensor(f2,sth1);
   RotSensor(f4,sth2);
-  sth2_rel = sth2 - sth1;
   
   probe("th_2") = sth2; 
-  probe("th_1") = sth1;
-  probe("u1") = u1;
-  probe("u2") = u2;
-  
+  probe("th_1") = sth1;  
 }
 
 def main = printsim(mainSys(),0.01,3.0)

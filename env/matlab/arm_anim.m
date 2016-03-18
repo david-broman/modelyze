@@ -1,8 +1,10 @@
 % Animates a robotic arm in real time simulated by modelyze
 clear all; close all; clc
 
-filepath = '../../demo';
-filename = 'modular-pendulums.moz';
+%filepath = '../../demo';
+%filename = 'modular-pendulums.moz';
+filepath = '../../proj/modular-arm';
+filename = '2d-arm-control.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating
 if useSaved
@@ -97,10 +99,3 @@ while ishandle(fig)
     end
     pause(0.5);
 end
-
-
-
-
-
-
-

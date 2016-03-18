@@ -61,7 +61,6 @@ set(p(1),'LineWidth',4);
 set(p(2),'LineWidth',4);
 set(p(3),'LineWidth',1);
 
-
 % Animate!
 pause(0.1);
 timescaling = 1;

@@ -334,3 +334,4 @@ def furutaSpeedStateFeedback(ref : Real) = {
 // def main = printsim(furutaTorqueStateFeedback(0.0),0.001,4.0)
 def main = printsim(furutaVoltageStateFeedback(0.0),0.001,10.0)
 // def main = printsim(furutaSpeedStateFeedback(0.0),0.001,10.0)
+

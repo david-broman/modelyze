@@ -1,5 +1,12 @@
 # Modelyze Reference Manual
 
+## Features
+
+* **Function specialization**
+* **Gradual Dependent Types** 
+* **Extensible DSLs**
+* **Typed Symbols**
+
 ## Functions
 
 
@@ -21,8 +28,13 @@ All elements of a set must have the same type. The type of the element is given 
 `Map(Int,String)` is a map type from integers to strings. Such a map can be constructed using curly brackets:
 
 ```
-{7->"Anders", 88->"Sven", 324->"Olle"}
+def m = {7->"Anders", 88->"Sven", 324->"Olle"}
 ```
+If we write `m[88]` we get the string `"Sven"` back. 
+
+**TODO:** How shall we handle the case when the map does not contain a specific value? Exceptions? For instance `m[9]`. 
+ 
+ 
  
 ### Seq
 A sequence may be viewed as either a list, an immutable array, or a vector. It is an ordered sequence of elements  of the same type. 
@@ -39,5 +51,11 @@ A sequence may be viewed as either a list, an immutable array, or a vector. It i
 
 #Other
  
-* Define sequences of  
+
+```
+void foo(){
+
+}
+```
+ 
   

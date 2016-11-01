@@ -192,7 +192,8 @@ and pprint_app prec t =
 
 and pp prec t  =
   match t with
-    | TmClos(t,e,id) -> Symtbl.get id
+  | TmClos(t,e,id) ->  us"function " ^. Symtbl.get id ^. us"{" ^. pp 0 t ^. us"}" 
+    (* Symtbl.get id  *)
     | TmConst(Ast.ConstPrim(primop,_) as c) ->
           (try           
              Symtbl.get (Hashtbl.find primToId primop) 
@@ -241,7 +242,7 @@ and pp prec t  =
     | TmArrayOp(op,tms) -> us"TmArrayOp()"
     | TmMapOp(op,tms) -> us"TmMapOp()" 
     | TmApp(t1,t2,s) -> us"TmApp(" ^. pp 0 t1 ^. us"," ^. pp 0 t2 ^. 
-        us"," ^. (if s then us"true" else us"false") ^. us")"
+        (* us"," ^. (if s then us"true" else us"false")  ^. *) us")"
     | TmFix(t1) -> us"TmFix(" ^. pp 0 t1 ^. us")"
     | TmIf(t1,t2,t3) -> us"TmIf(" ^.
         pp 0 t1 ^. us"," ^. pp 0 t2 ^. us"," ^. pp 0 t3 ^. us")"

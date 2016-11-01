@@ -174,8 +174,8 @@ CAMLprim value ida_make_ext_c(value params, value init_y, value init_yder, value
   (*ctx).foundroots = malloc(sizeof(int) * (*ctx).roots);
 
   /* Return a pointer to the instance */
-  int64 tmp = (int64)ctx;
-  res = caml_copy_nativeint(tmp);
+  //int64 tmp = (int64)ctx;
+  res = caml_copy_nativeint(ctx);
   CAMLreturn(res);
 }
 

@@ -210,6 +210,14 @@ let rec readback syms d tm =
       | TmLam(t) -> TmLam(readback syms (d+1) t)
       | TmClos(t,e,id) -> TmLam(t)  (* Incorrect - must fix *)
       | TmByteCode(c,ext,ident,argc) -> tm
+      | TmApp(TmApp(TmConst(Ast.ConstPrim(Ast.PrimIntMul,[])),
+              TmConst(Ast.ConstInt(1)),_),t1,_) -> readback syms d t1
+      | TmApp(TmApp(TmConst(Ast.ConstPrim(Ast.PrimIntMul,[])),t1,_),
+              TmConst(Ast.ConstInt(1)),_) -> readback syms d t1 
+      | TmApp(TmApp(TmConst(Ast.ConstPrim(Ast.PrimIntAdd,[])),
+              TmConst(Ast.ConstInt(0)),_),t1,_) -> readback syms d t1
+      | TmApp(TmApp(TmConst(Ast.ConstPrim(Ast.PrimIntAdd,[])),t1,_),
+              TmConst(Ast.ConstInt(0)),_) -> readback syms d t1 
       | TmApp(t1,t2,specialize) -> 
           TmApp(readback syms d t1,readback syms d t2,specialize)
       | TmFix(t1) -> TmFix(readback syms d t1)

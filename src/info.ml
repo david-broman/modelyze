@@ -56,7 +56,7 @@ let mkinfo_lst fi_ls =
 let get_filename fi =
   match fi with
     | Info(name,_,_,_,_) -> 
-        name |> Ustring.to_latin1 |> String.lowercase |> us
+        name |> Ustring.to_latin1 |> String.lowercase_ascii |> us
     | NoInfo -> us""
 
 let info2str fi = 

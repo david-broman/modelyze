@@ -208,7 +208,7 @@ let rec readback syms d tm =
       | TmVar(i) -> tm
       | TmSpecSym(s) -> TmVar(getidx syms s d)
       | TmLam(t) -> TmLam(readback syms (d+1) t)
-      | TmClos(t,e,id) -> TmLam(t)  (* Incorrect - must fix *)
+      | TmClos(t,e,id) -> TmLam(readback syms (d+1) t) 
       | TmByteCode(c,ext,ident,argc) -> tm
       | TmApp(TmApp(TmConst(Ast.ConstPrim(Ast.PrimIntMul,[])),
               TmConst(Ast.ConstInt(1)),_),t1,_) -> readback syms d t1
@@ -286,7 +286,12 @@ let gensym() = incr symcount; !symcount
 let funtext = Symtbl.add (us"fun")
 type norec = bool
 
+let is_pe_value tm =
+    match tm with
+    | TmApp(_,_,_) -> false
+    | _ -> true
 
+  
 let rec specializeParams t venv syms norec =
     match t with
       | TmLam(t1) -> 
@@ -294,28 +299,36 @@ let rec specializeParams t venv syms norec =
           let ts = TmSpecSym(s) in
             TmLam(specializeParams t1 (ts::venv) (s::syms) norec)
       | _ -> 
-          let t' = eval venv norec t in
+          let t' = eval true syms venv norec t in
           readback syms 0 t' 
 
                       
-and eval venv norec t = 
+and eval pe syms venv norec t =
+  let eval2 = eval pe syms in
+  let eval3 = eval2 venv in
     match t with 
       | TmVar(i) -> 
           (match List.nth venv i with
              | TmFix(t) as tt -> 
-                   eval venv norec tt
+                   eval3 norec tt
              | t -> t) 
       | TmSpecSym(s) -> TmSpecSym(s)
       | TmLam(t) -> TmClos(t,venv,funtext)
       | TmClos(t,e,id) -> TmClos(t,e,id)
       | TmByteCode(code,extid,ident,args) -> t
       | TmApp(t1,t2,specialize) -> 
-          (match eval venv norec t1,eval venv norec t2 with
+          (match eval3 norec t1,eval3 norec t2 with
 	     | (TmClos(t3,venv2,ident),v2) -> 
                  if specialize then
                    let t3' = specializeParams t3 (v2::venv2) [] norec in
-                   (*Bytecode.generate ident *) (eval venv2 norec t3') 
-                 else eval (v2::venv2) norec t3
+                     (eval3 norec t3') 
+                 else if true (* if not pe || is_pe_value v2 *) then 
+                   eval2(v2::venv2) norec t3
+                 else (
+                   let s = gensym() in
+                   let ts = TmSpecSym(s) in
+                   let t' = eval pe (s::syms) (ts::venv2) norec t3 in
+                 TmApp(TmLam(t'),v2,specialize))  
 	     | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
              | (TmByteCode((co,rc,argc) as code ,extid,ident,args),v2) ->
                   if argc = (List.length args) + 1
@@ -325,79 +338,79 @@ and eval venv norec t =
       | TmFix(t1) -> 
           if norec then t 
           else 
-            (match eval venv norec t1 with
+            (match eval3 norec t1 with
                | TmClos(t2,venv2,_) as tt ->                  
-                   eval (TmFix(tt)::venv2) false t2 
+                   eval2(TmFix(tt)::venv2) false t2 
                | _ -> TmFix(t1))
       | TmIf(t1,t2,t3) -> 
-          (match eval venv norec t1 with
+          (match eval3 norec t1 with
 	     | TmConst(Ast.ConstBool(b)) -> 
-                   eval venv norec (if b then t2 else t3)
+                   eval3 norec (if b then t2 else t3)
 	     | t1' -> 
-                 TmIf(t1',eval venv true t2,eval venv true t3))
+                 TmIf(t1',eval3 true t2,eval3 true t3))
       | TmConst(b) -> TmConst(b)
       | TmSym(s,ty) -> TmSym(s,ty)
       | TmGenSym(ty) -> TmSym(gensym(),ty)
-      | TmSymApp(t1,t2) -> TmSymApp(eval venv norec t1,eval venv norec t2)
-      | TmLift(t,ty) -> TmLift(eval venv norec t,ty)
+      | TmSymApp(t1,t2) -> TmSymApp(eval3 norec t1,eval3 norec t2)
+      | TmLift(t,ty) -> TmLift(eval3 norec t,ty)
       | TmCase(t1,p,t2,t3) -> 
-          (match eval venv norec t1,p with
+          (match eval3 norec t1,p with
 	     | TmSym(id,ty1),MPatSym(ty2) 
 		 when ty1 = ty2  ->
-                 eval venv norec  t2                  
+                 eval3 norec  t2                  
 	     | TmSymApp(v1,v2),MPatSymApp -> 
-                 eval (v1::v2::venv) norec t2            
+                 eval2(v1::v2::venv) norec t2            
 	     | TmLift(v1,ty1),MPatLift(ty2) when consistent ty1 ty2 ->	
-                 eval (v1::venv) norec t2      
+                 eval2(v1::venv) norec t2      
 	     | TmLift(v1,ty1),MPatLift(TyDyn)  ->	
-                 eval (v1::venv) norec t2                          
+                 eval2(v1::venv) norec t2                          
              | TmLift(TmConst(Ast.ConstPrim(prim,arg::args)),ty1),MPatSymApp ->
                  let (v1,v2) = mk_primappvalues prim arg args in
-                   eval (v1::v2::venv) norec t2 
-             | _ -> eval venv norec t3)
+                   eval2(v1::v2::venv) norec t2 
+             | _ -> eval3 norec t3)
       | TmEqual(t1,t2) -> 
-          TmConst(Ast.ConstBool(tm_equiv (eval venv norec t1) 
-                                  (eval venv norec t2)))
+          TmConst(Ast.ConstBool(tm_equiv (eval3 norec t1) 
+                                  (eval3 norec t2)))
       | TmLcase(t,t1,t2) ->           
-          (match eval venv norec t with
+          (match eval3 norec t with
              | TmCons(v1,v2) -> 
-                   eval (v1::v2::venv) norec t1                  
-	     | TmNil -> eval venv norec t2
+                   eval2(v1::v2::venv) norec t1                  
+	     | TmNil -> eval3 norec t2
 	     | tt -> TmLcase(t,t1,t2))
-      | TmCons(t1,t2) -> TmCons(eval venv norec t1,eval venv norec t2) 
+      | TmCons(t1,t2) -> TmCons(eval3 norec t1,eval3 norec t2) 
       | TmNil -> TmNil
-      | TmTuple(tms) -> TmTuple(List.map (eval venv norec) tms)
+      | TmTuple(tms) -> TmTuple(List.map (eval3 norec) tms)
       | TmProj(i,t) -> 
-          (match eval venv norec t with
+          (match eval3 norec t with
 	       | TmTuple(tms) -> List.nth tms i
 	       | _ -> TmProj(i,t))
-      | TmArray(tms) -> TmArray(Array.map (eval venv norec) tms)     
-      | TmArrayOp(op,tms) -> eval_array_op op (List.map (eval venv norec) tms)
+      | TmArray(tms) -> TmArray(Array.map (eval3 norec) tms)     
+      | TmArrayOp(op,tms) -> eval_array_op op (List.map (eval3 norec) tms)
       | TmMap(size,tms) -> TmMap(size,tms)
-      | TmMapOp(op,tms) -> eval_map_op op (List.map (eval venv norec) tms)
+      | TmMapOp(op,tms) -> eval_map_op op (List.map (eval3 norec) tms)
       | TmSet(size,tms) -> TmSet(size,tms)
-      | TmSetOp(op,tms) -> eval_set_op op (List.map (eval venv norec) tms)
+      | TmSetOp(op,tms) -> eval_set_op op (List.map (eval3 norec) tms)
       | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
       | TmDAESolverOp(op,tms) -> 
-          eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
-      | TmDPrint(t) -> let t' = eval venv norec t  in 
+          eval_daesolver_op (eval3 norec) op (List.map (eval3 norec) tms)
+      | TmDPrint(t) -> let t' = eval3 norec t  in 
 	  pprint t' |> uprint_endline; t'
       | TmDPrintType(t) -> us"[Printing types is not supported]" 
-                           |> uprint_endline; eval venv norec t
-      | TmSymStr(t) -> let t' = eval venv norec t  in 
+                           |> uprint_endline; eval3 norec t
+      | TmSymStr(t) -> let t' = eval3 norec t  in 
             TmConst(Ast.ConstString(Debugprint.getDebugSymId t'))
       | TmError(fi,t) ->  
-	  (match eval venv norec t with
+	  (match eval3 norec t with
 	     | TmConst(Ast.ConstString(s)) ->
 		 raise (Ast.Mkl_runtime_error (Message.RUNTIME_ERROR,
 					       Message.ERROR, fi, [s])) 
 	     | _ -> assert false)
       | TmDebugId(id,t) -> 
-            let t'= eval venv norec t in
+            let t'= eval3 norec t in
               debugTagTm id t'
                 
                 
-let evaluate t = eval [] false t
+let evaluate t = eval false [] [] false t
     
 
 

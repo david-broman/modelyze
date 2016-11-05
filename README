@@ -40,7 +40,11 @@ other Mac OS versions as well.
 1. Install Macports (including X11 support)
    http://www.macports.org/
 2. Install Objective Caml compiler, Gnuplot, and Sundials via Macports.
+   Using Macports
    >> sudo port install ocaml gnuplot sundials
+   Using brew:
+   >> brew install ocaml sundials
+   >> brew install gnuplot --qt
 3. If you do not have Git installed, install it. 
    See for instance http://gitx.frim.nl/, or just install it via Macports.
 4. If you have not done it already, clone the Modelyze project from GitHub:

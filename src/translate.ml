@@ -124,5 +124,6 @@ let translate t =
       | Ast.TmDPrintType(t) -> TmDPrintType(trans t d denv )
       | Ast.TmSymStr(_,t) -> TmSymStr(trans t d denv)
       | Ast.TmError(fi,l,t) -> nl l d (TmError(fi,trans t l denv ))
+      | Ast.TmPEval(t) -> TmPEval(trans t d denv)
   in 
     trans t 0 []

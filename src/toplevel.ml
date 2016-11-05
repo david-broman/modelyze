@@ -161,6 +161,7 @@ and tm_typesubst typemap numap tm =
     | TmDPrintType(t) -> TmDPrintType(tmsub t)
     | TmSymStr(fi,t) -> TmSymStr(fi,tmsub t)
     | TmError(fi,l,t) -> TmError(fi,l,tmsub t)
+    | TmPEval(t) -> TmPEval(tmsub t)
 
 
 let desugar tlst =

@@ -129,6 +129,7 @@ and subst_var (x:int) (y:int) (tm:tm)  =
       | TmDPrintType(t) -> TmDPrintType(subst_var x y t)
       | TmSymStr(fi,t) -> TmSymStr(fi,subst_var x y t) 
       | TmError(fi,l,t) -> TmError(fi,l,subst_var x y t)
+      | TmPEval(t) -> TmPEval(subst_var x y t) 
 
 
 let rec partition f lst =
@@ -351,6 +352,7 @@ and desugar tm =
       | TmDPrintType(t) -> TmDPrintType(ds t)
       | TmSymStr(fi,t) -> TmSymStr(fi,ds t)
       | TmError(fi,l,t) -> TmError(fi,l,ds t)
+      | TmPEval(t) -> TmPEval(ds t)
   in 
     ds tm
 

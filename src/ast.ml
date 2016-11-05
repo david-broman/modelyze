@@ -244,6 +244,8 @@ and tm =
   | TmDPrintType  of tm
   | TmSymStr      of info * tm
   | TmError       of info * level * tm
+    (* Partial evaluation *)  
+  | TmPEval       of tm
 
 let rec metastr n = 
   if n == 0 then us"" else us"#" ^. metastr (n-1)      
@@ -495,6 +497,7 @@ and pprint tm =
   | TmDPrintType(t) -> pprint t
   | TmSymStr(fi,t) -> pprint t
   | TmError(fi,l,t) -> metastr l ^. us"error " ^. pprint t
+  | TmPEval(t) -> us"peval " ^. pprint t
 
 
 
@@ -871,6 +874,7 @@ let rec tm_info t =
     | TmDPrintType(t) -> tm_info t
     | TmSymStr(fi,t) -> fi
     | TmError(fi,_,_) -> fi
+    | TmPEval(t) -> tm_info t
 
 
 
@@ -906,6 +910,7 @@ let rec set_tm_info newfi tm =
     | TmDPrintType(t) -> TmDPrintType(set_tm_info newfi t)
     | TmSymStr(fi,t) -> TmSymStr(fi,set_tm_info newfi t)
     | TmError(_,l,t) -> TmError(newfi,l,t)
+    | TmPEval(t) -> TmPEval(set_tm_info newfi t)
 
 
 let pat_info p =
@@ -1096,6 +1101,7 @@ and fv_tm t =
     | TmDPrintType(t) -> fv_tm t
     | TmSymStr(fi,t) -> fv_tm t
     | TmError(fi,l,t) -> fv_tm t
+    | TmPEval(t) -> fv_tm t
 
 (** Function [free x t] returns true if [x] is free in term [x], else false *)
 let freein_tm x t = 

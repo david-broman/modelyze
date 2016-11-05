@@ -227,7 +227,7 @@ and pp prec t  =
         let lst = PMap.foldi (fun t1 _ ts -> (pp 0 t1)::ts) tmset [] in
           us"{" ^. (Ustring.concat (us", ") lst) ^. us"}" 
     | TmDAESolver(st,_,_) -> us"DAEsolver"
-    | TmDPrint(t) | TmDPrintType(t) | TmDebugId(_,t) -> pp prec t
+    | TmDPrint(t) | TmDPrintType(t) | TmDebugId(_,t) | TmPEval(t) -> pp prec t
     | TmError(fi,t) -> us"error " ^. pp 0 t
     | TmSpecSym(i) -> us"TmSpecSym(" ^. ustring_of_int i ^. us")"
     | TmVar(i) -> us"TmVar(" ^. ustring_of_int i ^. us")"

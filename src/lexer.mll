@@ -67,6 +67,7 @@ let reserved_strings = [
   ("begin",         fun(i,l) -> Parser.BEGIN{i=i;l=l;v=()}); 
   ("end",           fun(i,l) -> Parser.END{i=i;l=l;v=()}); 
   ("specialize",    fun(i,l) -> Parser.SPECIALIZE{i=i;l=l;v=()}); 
+  ("peval",         fun(i,l) -> Parser.PEVAL{i=i;l=l;v=()}); 
 
 
   (* v *)

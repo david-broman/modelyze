@@ -623,6 +623,7 @@ and typeof_pure env t =
 	    (match ty1 with
 	       | TyString(_,_)  -> (TyDyn(fi,0),TmError(fi,0,e1'))
 	       | _ -> raise (Mkl_type_error(TYPE_ERROR_TERM_NOT_STRING,ERROR,ty_info ty1,[pprint_ty ty1])))
+      | TmPEval(t) -> let (ty,t') = typeof_pure env  t in (ty,TmPEval(t'))
 	  
           
 let typeofterm t = fst (typeof_pure [] t)

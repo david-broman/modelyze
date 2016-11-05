@@ -87,6 +87,7 @@ and tm =
   | TmSymStr      of tm
   | TmError       of info * tm
   | TmDebugId     of Ast.ident * tm
+  | TmPEval       of tm
 
 
 

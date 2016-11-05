@@ -99,6 +99,7 @@ along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 %token <unit Ast.tokendata> BEGIN
 %token <unit Ast.tokendata> END
 %token <unit Ast.tokendata> SPECIALIZE
+%token <unit Ast.tokendata> PEVAL
 
 /* Operators */
 %token <unit Ast.tokendata> EQ            /* "="  */
@@ -740,6 +741,8 @@ atom:
       { TmDPrintType($3) }
   | SYMSTR LPAREN term RPAREN
       { TmSymStr(tm_info $3,$3) }
+  | PEVAL LPAREN term RPAREN
+      { TmPEval($3) }
 
 
 

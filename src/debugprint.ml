@@ -251,6 +251,7 @@ and pp prec t  =
     | TmSymStr(t) -> us"TmSetOp(" ^. pp 0 t ^. us")"
     | TmDAESolverOp(op,tms) -> us"TmDAESolverOp()"
     | TmByteCode(code,extid,ident,args) -> Symtbl.get ident
+    | TmTheta(t) -> us"thera(" ^. pp 0 t ^. us")"
 
 let pprint t = pp 0 t
 

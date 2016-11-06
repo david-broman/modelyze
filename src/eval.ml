@@ -249,8 +249,10 @@ let rec readback syms d tm =
       | TmDPrintType(t) -> TmDPrintType(readback syms d t)
       | TmSymStr(t) -> TmSymStr(readback syms d t)
       | TmError(fi,t) ->  TmError(fi,readback syms d t)
-      | TmDebugId(id,t) -> TmDebugId(id,readback syms d t)
+      | TmDebugId(id,t) -> TmDebugId(id,readback syms d t)  
       | TmPEval(t) -> TmPEval(readback syms d t)
+      | TmTheta(t) -> TmTheta(readback syms d t)
+    
 
 
 let rec consistent ty_a ty_b = 
@@ -292,6 +294,9 @@ let is_pe_value tm =
     | TmApp(_,_,_) -> false
     | _ -> true
 
+
+let add_index t i = t
+      
   
 let rec specializeParams t venv syms norec =
     match t with
@@ -307,11 +312,11 @@ let rec specializeParams t venv syms norec =
                       
 and eval venv norec t =
     match t with 
-      | TmVar(i) -> 
+      | TmVar(i) ->
           (match List.nth venv i with
              | TmFix(t) as tt -> 
-                   eval venv norec tt
-             | t -> t) 
+                   eval venv norec (add_index tt i) 
+             | t -> (add_index t i)) 
       | TmSpecSym(s) -> TmSpecSym(s)
       | TmLam(t) -> TmClos(t,venv,funtext)
       | TmClos(t,e,id) -> TmClos(t,e,id)
@@ -403,7 +408,18 @@ and eval venv norec t =
       | TmDebugId(id,t) -> 
             let t'= eval venv norec t in
               debugTagTm id t'
-      | TmPEval(t) -> failwith "TODO"
+      | TmPEval(t) -> 
+         (match eval venv norec t with
+           	 | TmClos(t2,venv2,ident) -> (
+                   let rec peval_thetas t venv =
+                     match t with
+                     | TmLam(t1) -> TmLam(peval_thetas t1 (TmVar(0)::venv2))
+                     | _ -> eval venv norec t
+                   in TmClos(peval_thetas t2 (TmVar(0)::venv2),venv2,ident))
+                 | t -> t 
+         )
+      | TmTheta(t) -> failwith "TODO Theta"
+          
                 
                 
 let evaluate t = eval [] false t

@@ -303,7 +303,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
     def ukmap = makeUkMap(model3);
    
     // Create the DAE residual 
-    def residual = (specialize (makeResidual ukmap) model3);
+    def residual = peval (makeResidual(ukmap,model3));
 
     // Create a map with all initial values for the current state
     def initvalmap = initValues(model3);

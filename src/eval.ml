@@ -208,7 +208,7 @@ let rec readback syms d tm =
       | TmVar(i) -> tm
       | TmSpecSym(s) -> TmVar(getidx syms s d)
       | TmLam(t) -> TmLam(readback syms (d+1) t)
-      | TmClos(t,e,id) -> TmLam(readback syms (d+1) t) 
+      | TmClos(t,e,id) -> TmLam(readback syms (d+1) t) (* TODO, update index *)
       | TmByteCode(c,ext,ident,argc) -> tm
       | TmApp(TmApp(TmConst(Ast.ConstPrim(Ast.PrimIntMul,[])),
               TmConst(Ast.ConstInt(1)),_),t1,_) -> readback syms d t1
@@ -295,8 +295,6 @@ let is_pe_value tm =
     | _ -> true
 
 
-let add_index t i = t
-      
   
 let rec specializeParams t venv syms norec =
     match t with
@@ -314,21 +312,21 @@ and eval venv norec t =
     match t with 
       | TmVar(i) ->
           (match List.nth venv i with
-             | TmFix(t) as tt -> 
-                   eval venv norec (add_index tt i) 
-             | t -> (add_index t i)) 
+             | TmFix(t) as tt -> eval venv norec tt 
+             | t -> t) 
       | TmSpecSym(s) -> TmSpecSym(s)
       | TmLam(t) -> TmClos(t,venv,funtext)
       | TmClos(t,e,id) -> TmClos(t,e,id)
       | TmByteCode(code,extid,ident,args) -> t
       | TmApp(t1,t2,specialize) -> 
           (match eval venv norec t1,eval venv norec t2 with
-	     | (TmClos(t3,venv2,ident),v2) -> 
+	     | (TmClos(t3,venv2,ident),v2)  -> 
                if specialize then (
                    let t3' = specializeParams t3 (v2::venv2) [] norec in
                      (eval venv norec t3') )
                  else
-                   eval(v2::venv2) norec t3
+                 eval(v2::venv2) norec t3
+             | (TmLam(t3),v2) -> eval(v2::venv) norec t3
 	     | (TmConst(c1),TmConst(c2)) -> TmConst(Ast.delta c1 c2)
              | (TmByteCode((co,rc,argc) as code ,extid,ident,args),v2) ->
                   if argc = (List.length args) + 1
@@ -346,8 +344,8 @@ and eval venv norec t =
           (match eval venv norec t1 with
 	     | TmConst(Ast.ConstBool(b)) -> 
                    eval venv norec (if b then t2 else t3)
-	     | t1' -> 
-                 TmIf(t1',eval venv true t2,eval venv true t3))
+	     | t1' -> t1')
+      (*  TmIf(t1',eval venv true t2,eval venv true t3)) *)
       | TmConst(b) -> TmConst(b)
       | TmSym(s,ty) -> TmSym(s,ty)
       | TmGenSym(ty) -> TmSym(gensym(),ty)
@@ -410,14 +408,9 @@ and eval venv norec t =
               debugTagTm id t'
       | TmPEval(t) -> 
          (match eval venv norec t with
-           	 | TmClos(t2,venv2,ident) -> (
-                   let rec peval_thetas t venv =
-                     match t with
-                     | TmLam(t1) -> TmLam(peval_thetas t1 (TmVar(0)::venv2))
-                     | _ -> eval venv norec t
-                   in TmClos(peval_thetas t2 (TmVar(0)::venv2),venv2,ident))
-                 | t -> t 
-         )
+           | TmClos(t2,venv2,ident) -> 
+              specializeParams (TmLam(t2)) venv2 [] norec 
+           | t -> t)
       | TmTheta(t) -> failwith "TODO Theta"
           
                 

@@ -344,7 +344,7 @@ and eval venv norec t =
           (match eval venv norec t1 with
 	     | TmConst(Ast.ConstBool(b)) -> 
                    eval venv norec (if b then t2 else t3)
-	     | t1' -> t1')
+	     | _ -> TmIf(t1,t2,t3))
       (*  TmIf(t1',eval venv true t2,eval venv true t3)) *)
       | TmConst(b) -> TmConst(b)
       | TmSym(s,ty) -> TmSym(s,ty)

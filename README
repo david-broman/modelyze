@@ -43,7 +43,7 @@ other Mac OS versions as well.
    Using Macports
    >> sudo port install ocaml gnuplot sundials
    Using brew:
-   >> brew install ocaml sundials
+   >> brew install ocaml opam homebrew/science/sundials
    >> brew install gnuplot --qt
 3. If you do not have Git installed, install it. 
    See for instance http://gitx.frim.nl/, or just install it via Macports.

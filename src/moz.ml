@@ -6,6 +6,7 @@ open Printf
 open Message
 
 
+  
 
 let mkleval libpath filename =   
   (try 
@@ -18,15 +19,15 @@ let mkleval libpath filename =
       |> ignore
   with
     | Ast.Mkl_runtime_error m -> fprintf stderr "%s\n" 
-	(Ustring.to_utf8 (Message.message2str m))
+	(Ustring.to_utf8 (Message.message2str m)); exit 1
     | Message.Mkl_static_error m -> fprintf stderr "%s\n" 
-	(Ustring.to_utf8 (Message.message2str m))
+	(Ustring.to_utf8 (Message.message2str m)); exit 1
     | Message.Mkl_lex_error m -> fprintf stderr "%s\n" 
-	(Ustring.to_utf8 (Message.message2str m))
+	(Ustring.to_utf8 (Message.message2str m)); exit 1
     | Parsing.Parse_error -> fprintf stderr "%s\n" 
-	(Ustring.to_utf8 (Message.message2str (Lexer.parse_error_message())))  
+	(Ustring.to_utf8 (Message.message2str (Lexer.parse_error_message()))); exit 1
     | Typesystem.Mkl_type_error m -> fprintf stderr "%s\n" 
-	(Ustring.to_utf8 (Message.message2str m))
+	(Ustring.to_utf8 (Message.message2str m)); exit 1
   )
   
 

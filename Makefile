@@ -26,6 +26,7 @@ export CPATH = /opt/local/include
 # Check if MacOS. If so, use the path to standard C libraries.
 else ifeq ($(OS), Darwin)
 C_LIBS = /usr/local/lib
+export CPATH = /usr/local/include
 # If Linux (Ubuntu), use the path to standard C libraries.
 else ifeq ($(OS), Linux)
 C_LIBS = /usr/lib
@@ -56,7 +57,6 @@ native: bytesfix comp_c_files
 # C-files. Ugly treatment of error that latest ocaml generates.  
 comp_c_files:
 	@ocamlbuild ext/sundials/ida_stubs.o  > /dev/null 2>&1
-
 
 # Handling subtree for ext/ucamlib
 UCAMLIB_GIT = https://github.com/david-broman/ucamlib.git

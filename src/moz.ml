@@ -54,10 +54,12 @@ let extract_libpaths str =
 
 let main =
   match Array.length Sys.argv with
-  | 2 -> mkleval [] (Sys.argv.(1))
+  | 2 -> (match extract_libpaths Sys.argv.(1) with
+         | Some(paths) -> menu()
+         | None -> mkleval [] (Sys.argv.(1)))
   | 3 -> (match extract_libpaths Sys.argv.(1) with 
-          | Some(paths) -> mkleval paths (Sys.argv.(2)) 
-          | None -> menu())
+         | Some(paths) -> mkleval paths (Sys.argv.(2)) 
+         | None -> menu())
   | _ -> menu()
 
 

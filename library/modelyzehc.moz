@@ -349,7 +349,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
       def _ = (DAESolver.close mode);
 
       // Perform another round of CT simulation?
-      if newtime > endtime || newtime - currtime < 1e-3 then 
+      if newtime > endtime then 
           acc2  
       else {
          def (yymap,ypmap) = makePreValMap yy yp ukmap;

@@ -40,4 +40,4 @@ def BounchingBall() = {
 
 
 def main = 
-  printsim (BounchingBall()) 0.01 6.0
+  printsim (BounchingBall()) 0.01 3.3

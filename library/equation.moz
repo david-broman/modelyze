@@ -41,7 +41,7 @@ type UkList = [(Signal,(Int,Bool))]
 
 type InitValMap = (<Real> => <Real>)
 type InitValList = [(<Real>,<Real>)]
-type UkSet = (Set <Real>)
+type UkSet = Set <Real>
 
 type Expr = <>
 
@@ -70,19 +70,16 @@ def initValues(eqs:Equations) -> InitValMap = {
 }
   
 
+def unknowns(e:<Dyn>,acc:UkSet) -> UkSet = {
+    match e with
+    | e1 e2 -> unknowns(e2, unknowns(e1,acc))
+    | sym:<Real> -> Set.add e acc
+    | _ -> acc
+} 
 
-def unknowns(eqs:Equations) -> UkSet = {
-  def get(e:<?>, acc:UkSet) ->  UkSet = {
-     match e with
-     | e1 e2 -> get e2 (get e1 acc)
-     | sym:<Real> -> Set.add e acc
-     | _ -> acc
-  }; 
-  get(eqs,Set.empty);
-}
 
 def noUnknowns(eqs:Equations) -> Int =
-  Set.size (unknowns(eqs))
+  Set.size (unknowns(eqs,Set.empty))
 
 def noEquations(eqs:Equations) -> Int = {
   match eqs with

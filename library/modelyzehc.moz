@@ -20,14 +20,17 @@ include HybridModeling
 include ModelyzeDAE
 include SimOutput
 
+// Transition ID. Used for safe zero-crossing detection
+type TransId
 
 // List definition of transistions
-type Transitions = [(Mode,Mode,Expr,Expr)]
+type Transitions = [(TransId,Mode,Mode,Expr,Expr)]
 
 type Modes = Set Mode
 
+
 // Internal transition for storing both source and target mode info
-def internalTrans : <Mode -> Mode -> Bool -> Equations -> Equations>
+def internalTrans : <TransId -> Mode -> Mode -> Bool -> Equations -> Equations>
 
 def epsilon = 1e-9 
 
@@ -48,8 +51,10 @@ def extractHMode(model:Equations, newModes:Modes, activeCharts:Modes, curr:Mode)
         if Set.mem s newModes 
         then extractHMode(e,newModes,activeCharts, s)
         else (NoEqn,newModes,activeCharts)
-    | transition nmode when g action i -> 
-          (internalTrans curr nmode g i,newModes,activeCharts) 
+    | transition nmode when g action i -> {
+          def newId:TransId;
+          (internalTrans newId curr nmode g i,newModes,activeCharts)
+          }
     | e1 ; e2 -> { 
          def (eqs1,new1,active1) = extractHMode(e1,newModes,activeCharts, curr);
          def (eqs2,new2,active2) = extractHMode(e2,new1,active1, curr);
@@ -62,7 +67,7 @@ def extractHMode(model:Equations, newModes:Modes, activeCharts:Modes, curr:Mode)
 def extractTransitions(model:Expr) -> Transitions = {
   def extract(e:Expr, acc:Transitions) -> Transitions = {
     match e with
-    | internalTrans s1 s2 g i -> (s1,s2,g,i)::acc
+    | internalTrans id s1 s2 g i -> (id,s1,s2,g,i)::acc
     | e1 e2 -> extract(e2,extract(e1,acc))
     | _ -> acc
   };
@@ -135,7 +140,7 @@ def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap) -> Bool = {
 // (detecting zero-crossings). The root function is created by
 // evaluating the transitions that are extracted from the original
 // equation system.
-def makeRootFun(ukmap:UkMap, trans:Transitions,ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = { 
+def makeRootFun(ukmap:UkMap, trans:Transitions, ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = { 
   def travGuard(e:Expr,acc:[Real]) -> [Real] = {
     match e with
     | e1 == e2 -> error "Operator == is not allowed in a transition guard."
@@ -152,7 +157,7 @@ def makeRootFun(ukmap:UkMap, trans:Transitions,ctime:Real, yy:{Real}, yp:{Real})
   };
   def travTrans(trans:Transitions, acc:[Real]) -> [Real] = { 
     match trans with
-     | (_,_,g,_)::ts -> travTrans ts (travGuard g acc)
+     | (_,_,_,g,_)::ts -> travTrans ts (travGuard g acc)
      | [] -> acc
   };
   travTrans(trans,[]);
@@ -195,7 +200,7 @@ def makeEventActions(daesolv:DAESolver, trans:Transitions, newModes:Modes,
   def roots = (DAESolver.roots daesolv);
   def travTrans(trans:Transitions, acc:[Expr], newModes:Modes, idx:Int) -> ([Expr],Modes) = {
     match trans with
-     | (s1,s2,g,i)::ts -> 
+     | (id,s1,s2,g,i)::ts -> 
           def (i2,fired) = isTransitionFired(g,roots,idx);
           if fired && evalBoolFromArray(g,yy,yp,ukmap)
             then travTrans(ts,i::acc,Set.add s2 (Set.remove s1 newModes),i2)

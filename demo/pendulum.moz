@@ -43,6 +43,9 @@ def main =
 //def _ = dprint (unknowns(Pendulum(5.0, 3.0, 0.785),Set.empty))
 
 
+//def main = 
+//   printsim(Pendulum(5.0, 3.0, 45.0*pi/180.0), 0.01, 0.01)
+
 
 
 

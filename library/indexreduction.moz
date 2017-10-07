@@ -105,7 +105,6 @@ def indexReducationPantelides(eqs:Equations,olddermap:DerivMap) :
     // Execute Pantelides algorithm
     def (_,eqmap) = pantelides(graph,varmap,makeVNode,makeENode);    
 
-
     // Wrap equations to be differentiated into der expressions
     def eqs2 = addDerEqs(augmentedEqs,eqmap);
 

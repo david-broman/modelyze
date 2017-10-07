@@ -20,16 +20,18 @@ include Base
 
 type Signal = <Real>
 
-def der : Real -> Real
+def der : <Real->Real>
 def (')  = der
+def init : <Real->Real->Equations>
+
 
 type Equations
-def (=) : Real -> Real -> Equations
-def (;) : Equations -> Equations -> Equations
+def (=) : <Real->Real->Equations>
+def (;) : <Equations->Equations->Equations>
+
+def (<-)  = init
 def NoEqn : Equations
 
-def init : Real -> Real -> Equations 
-def (<-)  = init
 
 
 // Ukmap maps an unknown (signal type) to an integer value

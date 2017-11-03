@@ -1,7 +1,7 @@
 include ModelyzeDAE
 include Elaboration
 
-def LOGLEVEL : String = "DEBUG"
+def LOGLEVEL : String = "NO_DEBUG"
 
 def logdebug(id: Int, msg: String, obj: ?) -> () = {
     match LOGLEVEL with
@@ -53,22 +53,30 @@ def continousTimeStep(state: HybridState, steptime: Real) -> HybridState = {
     newState
 }
 
-def simulate(model: Equations, starttime: Real, steptime: Real, endtime: Real) = {
-    def takeStep(state: HybridState) -> () = {
-        def (time, _, _, _, _) = state;
-        if (time >= endtime) then ()
+def makeSimResults(probelist: ProbeList, stepvals: [StepVal]) -> SimulationResult = {
+    ((reverse (makeProbeNames "" probelist)), (reverse stepvals))
+}
+
+def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: Real, endtime: Real) -> SimulationResult = {
+    def takeStep(state: HybridState, acc: [StepVal]) -> [StepVal] = {
+        def (time, _, yy, ukmap, _) = state;
+        def newacc = ((makeStepVal time yy probelist ukmap)::acc);
+        if (time >= endtime) then newacc
         else {
              def newState = continousTimeStep(state, steptime);
-             takeStep(newState)
+             takeStep(newState, newacc)
         }
     };
-    def (mode, _) = elaborateProbes(model);
-    def state = hybridInit mode starttime (Array.make 1 0.) (Array.make 1 0.) (Map.empty);
-    takeStep(state)
+    
+    def state = (hybridInit mode starttime (Array.make 1 0.) (Array.make 1 0.) (Map.empty));
+    def stepvals = takeStep(state, []);
+    (makeSimResults probelist stepvals)
 }
 
 def printsim(model: Equations, steptime: Real, endtime: Real) = {
-    simulate model 0. steptime endtime
+    def (modelep, probes) = elaborateProbes(model);
+    def results = (simulate modelep (Map.toList probes) 0. steptime endtime);
+    print (pprintSimulation results)
 }
 
 

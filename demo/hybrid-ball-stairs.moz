@@ -65,6 +65,6 @@ def HybridBallWithStairs(m:Real,l:Real,startAngle:Real) = {
 }  
 
 
-def main = 
+def main =
   def angle = 45.*3.14/180.0;
   printsim (HybridBallWithStairs 5.0 2.0 angle) 0.01 6.0

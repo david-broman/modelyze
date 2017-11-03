@@ -285,7 +285,9 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
   def dtloop(currtime:Real, acc:[StepVal], model1:Equations, yymap:InitValMap, 
              ypmap:InitValMap, olddmap:DerivMap, 
              newModes:Modes, activeCharts:Modes) -> [StepVal] = {
-       
+    def _ = dprint(newModes);
+    def _ = dprint(activeCharts);
+                
     // Extract all equations and correct inits for a partiuclar mode path. 
     // But, keep transitions, since these can contain equations in the action
     def (model2,newModes2,activeCharts2) = extractHMode(model1,newModes,activeCharts,topmode);
@@ -298,6 +300,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
 
     // Extract transitions
     def transitions = extractTransitions(model3);
+    def _ = dprint(transitions);
 
     // Create a map of unknowns to unique integer values
     def ukmap = makeUkMap(model3);
@@ -307,15 +310,20 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
 
     // Create a map with all initial values for the current state
     def initvalmap = initValues(model3);
+    def _ = dprint(initvalmap);
 
     // Create the actual value arrays used in simulation mode
     def (yy,yp) = makeInitModeArrays(initvalmap,yymap,ypmap,ukmap);
+    def _ = dprint(yy);
+    def _ = dprint(yp);
 
     // Auto correct initial conditions of the DAE
     def id = initConditionCorrection(ukmap);
 
     // Create the root function for detecting zero crossings
     def rootfun = (specialize (makeRootFun ukmap) transitions);
+    def _ = dprint("rootfind");
+    def _ = dprint(rootfun);
 
     // Create the simulation instance for continuous-time simulation using IDA
     def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
@@ -335,10 +343,16 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
             // Check if there are event actions
             def (transInits,newModes3) = 
                 makeEventActions(mode,transitions,newModes2,ukmap,yy,yp);
-                
+
+
             // End continuous-time loop?
             if newtime == 0. ||   !(transInits <==> []) 
-               then (stepval::acc,newtime,transInits,newModes3)
+               then
+                def _ = dprint("trans ====");
+                def _ = dprint(transInits);
+                def _ = dprint(newModes2);
+                def _ = dprint(newModes3);
+               (stepval::acc,newtime,transInits,newModes3)
                else ctloop(newtime + steptime, stepval::acc)
         };
     };

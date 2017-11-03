@@ -29,7 +29,7 @@ C_LIBS = /usr/local/lib
 export CPATH = /usr/local/include
 # If Linux (Fedora), use the path to standard C libraries.
 else ifeq ($(OS), Linux)
-C_LIBS = /usr/local/lib
+C_LIBS = /usr/lib
 endif
 
 # Directories where ocamlbuild can find source code.

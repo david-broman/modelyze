@@ -62,7 +62,9 @@ def BreakingPendulum(m:Real, l:Real, angle:Real) = {
 
 def main = {
     def angle = 120.*3.14/180.;
-    printsim (BreakingPendulum 0.13 2. angle) 0.02 20.;
+    def model = BreakingPendulum 0.13 2. angle;
+    //printsim (BreakingPendulum 0.13 2. angle) 0.02 20.;
+    dprint(model)
 }
 
 

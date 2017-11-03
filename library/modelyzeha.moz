@@ -1,0 +1,74 @@
+include ModelyzeDAE
+include Elaboration
+
+def LOGLEVEL : String = "DEBUG"
+
+def logdebug(id: Int, msg: String, obj: ?) -> () = {
+    match LOGLEVEL with
+    | "DEBUG" -> {
+        def prefix: String = LOGLEVEL ++ ": [" ++ (int2string id) ++ "] " ++ msg ++ ": ";
+        def _ = print(prefix);
+        dprint(obj)
+      }
+    | _ -> ()
+}
+
+type HybridState = (Real, ?, {Real}, UkMap, DerivMap)
+
+def elaborate(mode: Equations) -> Equations = {
+    elaborateConnections(mode)
+}
+
+def makeHybridInitvals(modeir: Equations, preyy: {Real}, preyp: {Real}, ukmap: UkMap) -> ({Real}, {Real}) = {
+    makeInitValues(modeir, ukmap)
+}
+
+def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddmap: DerivMap) -> HybridState = {
+    def _ = (logdebug 1 "mode before init" mode);
+    def (modeed, newdmap) = elaborateDerivatives(mode, olddmap);
+    def _ = (logdebug 1 "mode after elab deriv" modeed);
+    def (modeir, _) = indexReducationPantelides(modeed, Map.empty);
+    def _ = (logdebug 1 "mode after index red" modeir);
+    def ukmap = makeUkMap(modeir);
+    def residual = peval (makeResidual(ukmap, modeir));
+    def (yyinit, ypinit) = makeHybridInitvals(modeir, preyy, preyp, ukmap);
+    def _ = (logdebug 1 "yy and yp init before correction" (yyinit, ypinit));
+    def id = initConditionCorrection(ukmap);
+    //def rootfun = (specialize []);
+    //def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
+    def rc = (DAESolver.make yyinit ypinit id residual);
+    (prett, rc, yyinit, ukmap, newdmap)
+}
+
+//def extractCurrentMode(model: Equations, state: HybridState) -> Equations = {
+//    model
+//}
+
+def continousTimeStep(state: HybridState, steptime: Real) -> HybridState = {
+    def _ = (logdebug 2 "State before ct time step" state);
+    def (time, rc, yy, ukmap, dmap) = state;
+    def newtime = (DAESolver.step steptime rc);
+    def newState = (newtime, rc, yy, ukmap, dmap);
+    def _ = (logdebug 2 "State after ct time step" newState);
+    newState
+}
+
+def simulate(model: Equations, starttime: Real, steptime: Real, endtime: Real) = {
+    def takeStep(state: HybridState) -> () = {
+        def (time, _, _, _, _) = state;
+        if (time >= endtime) then ()
+        else {
+             def newState = continousTimeStep(state, steptime);
+             takeStep(newState)
+        }
+    };
+    def (mode, _) = elaborateProbes(model);
+    def state = hybridInit mode starttime (Array.make 1 0.) (Array.make 1 0.) (Map.empty);
+    takeStep(state)
+}
+
+def printsim(model: Equations, steptime: Real, endtime: Real) = {
+    simulate model 0. steptime endtime
+}
+
+

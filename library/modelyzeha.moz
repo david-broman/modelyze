@@ -1,7 +1,7 @@
 include ModelyzeDAE
 include Elaboration
 
-def LOGLEVEL : String = "NO_DEBUG"
+def LOGLEVEL : String = "DEBUG"
 
 def logdebug(id: Int, msg: String, obj: ?) -> () = {
     match LOGLEVEL with
@@ -13,11 +13,25 @@ def logdebug(id: Int, msg: String, obj: ?) -> () = {
     | _ -> ()
 }
 
+def predicate: Bool -> Equations
 type HybridState = (Real, ?, {Real}, UkMap, DerivMap)
 
 def elaborate(mode: Equations) -> Equations = {
     elaborateConnections(mode)
 }
+
+def makePredList(eqs: Equations) -> [?] = {
+    def makePredList(eqs: Equations, acc: [?]) -> [?] = {
+        match eqs with
+        | predicate p -> p::acc 
+        | e1 e2 -> {
+            def newacc = (makePredList e1 acc);
+            (makePredList e2 newacc)
+          }
+        |_ -> acc
+    };
+    (makePredList eqs [])
+} 
 
 def makeHybridInitvals(modeir: Equations, preyy: {Real}, preyp: {Real}, ukmap: UkMap) -> ({Real}, {Real}) = {
     makeInitValues(modeir, ukmap)
@@ -36,8 +50,8 @@ def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddm
     def id = initConditionCorrection(ukmap);
     //def rootfun = (specialize []);
     //def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
-    def rc = (DAESolver.make yyinit ypinit id residual);
-    (prett, rc, yyinit, ukmap, newdmap)
+    def solverState = (DAESolver.make yyinit ypinit id residual);
+    (prett, solverState, yyinit, ukmap, newdmap)
 }
 
 //def extractCurrentMode(model: Equations, state: HybridState) -> Equations = {
@@ -46,15 +60,15 @@ def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddm
 
 def continousTimeStep(state: HybridState, steptime: Real) -> HybridState = {
     def _ = (logdebug 2 "State before ct time step" state);
-    def (time, rc, yy, ukmap, dmap) = state;
-    def newtime = (DAESolver.step steptime rc);
-    def newState = (newtime, rc, yy, ukmap, dmap);
+    def (time, solverState, yy, ukmap, dmap) = state;
+    def newtime = (DAESolver.step steptime solverState);
+    def newState = (newtime, solverState, yy, ukmap, dmap);
     def _ = (logdebug 2 "State after ct time step" newState);
     newState
 }
 
 def makeSimResults(probelist: ProbeList, stepvals: [StepVal]) -> SimulationResult = {
-    ((reverse (makeProbeNames "" probelist)), (reverse stepvals))
+    ((reverse (makeProbeNames "" probelist)), reverse (stepvals))
 }
 
 def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: Real, endtime: Real) -> SimulationResult = {

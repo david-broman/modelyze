@@ -1,0 +1,15 @@
+include ModelyzeHA
+
+def test() = {
+    def x, y: Real;
+    predicate (x < 2.);
+    predicate (y > 2.);
+    predicate (x + y > 1.)
+}
+
+def main = {
+    def model = test();
+    def predicates = makePredList(model);
+    (logdebug 1 "test predicate" predicates) 
+}
+

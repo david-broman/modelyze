@@ -14,7 +14,7 @@ def logdebug(id: Int, msg: String, obj: ?) -> () = {
 }
 
 def predicate: Bool -> Equations
-type HybridState = (Real, ?, {Real}, UkMap, DerivMap)
+type HybridState = (Real, ?, {Real}, UkMap, DerivMap, [?])
 
 def elaborate(mode: Equations) -> Equations = {
     elaborateConnections(mode)
@@ -27,12 +27,55 @@ def elaboratePredicates(eqs: Equations) -> (Equations, [?]) = {
       | e1; e2 -> {
            def (eqs1, newacc) = elaboratePredicates(e1, acc);
            def (eqs2, neweracc) = elaboratePredicates(e2, newacc);
-           (eqs1 ; eqs2, neweracc)
+           (eqs1; eqs2, neweracc)
         }
       | e -> (e, acc)
   };
   def (dirty, preds) = (elaboratePredicates eqs []);
   ((cleanupEquations dirty), preds)
+}
+
+def zeroCrossings(preds: [?], roots: {Int}) -> [Bool] = {
+    def zeroCrossing(i: Int, p: ?) -> (Int, Bool) = {
+      def _ = (logdebug 4 "zc" i);
+      def _ = (logdebug 4 "zc" p);
+      def _ = (logdebug 4 "zc" roots);
+      match p with
+      | e1 >= e2 -> (i-1, (Array.get roots i) != 0)
+      | e1 > e2 -> (i-1, (Array.get roots i) != 0)
+      | e1 <= e2 -> (i-1, (Array.get roots i) != 0)
+      | e1 < e2 -> (i-1, (Array.get roots i) != 0)
+      | !e -> zeroCrossing i e
+      | e1 && e2 -> {
+           def (i1, lhs) = zeroCrossing(i, e1);
+           def (i2, rhs) = zeroCrossing(i1, e2);
+           (i2, lhs || rhs)
+        }
+      | e1 || e2 -> {
+           def (i1, lhs) = zeroCrossing(i, e1);
+           def (i2, rhs) = zeroCrossing(i1, e2);
+           (i2, lhs || rhs)
+        }
+      | lift b: Bool -> (i, false)
+      | _ -> error "Unrecognized predicate in zero crossing evaluation"
+    };
+
+    def work(i: Int, preds: [?], acc: [Bool]) -> [Bool] = {
+        def _ = (logdebug 4 "zc work" preds);
+        def _ = (logdebug 4 "zc work" i);
+        match preds with
+        | p::ps -> {
+                // If no zero crossings detected by DAESolver roots is an empty array
+                if (Array.length roots) == 0 then (work i ps (false::acc))
+                else {
+                     def (newi, zc) = (zeroCrossing i p);
+                     (work newi ps (zc::acc))
+                }
+          }
+       | [] -> acc
+    };
+
+    (work ((length preds) - 1) preds [])
 }
 
 def makeRootFuns(ukmap: UkMap, preds: [?], time: Real, yy: {Real}, yp: {Real}) -> [Real] = {
@@ -60,12 +103,12 @@ def makeRootFuns(ukmap: UkMap, preds: [?], time: Real, yy: {Real}, yp: {Real}) -
 }
 
 def makeHybridInitvals(modeir: Equations, preyy: {Real}, preyp: {Real}, ukmap: UkMap) -> ({Real}, {Real}) = {
-  makeInitValues(modeir, ukmap)
+  makeInitValues(modeir, ukmap) 
 }
 
 def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddmap: DerivMap) -> HybridState = {
   def _ = (logdebug 1 "mode before init" mode);
-  def (modeep, predicates) = elaboratePredicates(mode);
+  def (modeep, preds) = elaboratePredicates(mode);
   def _ = (logdebug 1 "mode after elab preds" modeep);
   def (modeed, newdmap) = elaborateDerivatives(modeep, olddmap);
   def _ = (logdebug 1 "mode after elab deriv" modeed);
@@ -76,10 +119,10 @@ def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddm
   def (yyinit, ypinit) = makeHybridInitvals(modeir, preyy, preyp, ukmap);
   def _ = (logdebug 1 "yy and yp init before correction" (yyinit, ypinit));
   def id = initConditionCorrection(ukmap);
-  def rootfuns = ( specialize (makeRootFuns ukmap) predicates);
-  //def _ = (logdebug 1 "root funcs" rootfuns);
+  def rootfuns = ( specialize (makeRootFuns ukmap) preds);
+  def _ = (logdebug 1 "root funcs" rootfuns);
   def solverState = (DAESolver.makehybrid prett yyinit ypinit id residual rootfuns);
-  (prett, solverState, yyinit, ukmap, newdmap)
+  (prett, solverState, yyinit, ukmap, newdmap, preds)
 }
 
 //def extractCurrentMode(model: Equations, state: HybridState) -> Equations = {
@@ -88,9 +131,9 @@ def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddm
 
 def continousTimeStep(state: HybridState, steptime: Real) -> HybridState = {
   def _ = (logdebug 2 "State before ct time step" state);
-  def (time, solverState, yy, ukmap, dmap) = state;
+  def (time, solverState, yy, ukmap, dmap, preds) = state;
   def newtime = (DAESolver.step steptime solverState);
-  def newState = (newtime, solverState, yy, ukmap, dmap);
+  def newState = (newtime, solverState, yy, ukmap, dmap, preds);
   def _ = (logdebug 2 "State after ct time step" newState);
   newState
 }
@@ -101,9 +144,9 @@ def makeSimResults(probelist: ProbeList, stepvals: [StepVal]) -> SimulationResul
 
 def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: Real, endtime: Real) -> SimulationResult = {
   def takeStep(state: HybridState, acc: [StepVal]) -> [StepVal] = {
-    def (time, solverState, yy, ukmap, _) = state;
-    def _ = (logdebug 3 "root funs vals time" time);
-    def _ = (logdebug 3 "root funs vals" (DAESolver.roots solverState));
+    def (time, solverState, yy, ukmap, _, preds) = state;
+    def zcs = (zeroCrossings preds (DAESolver.roots solverState));
+    def _ = (logdebug 4 "zero crossing bool array" zcs);
     def newacc = ((makeStepVal time yy probelist ukmap)::acc);
     if (time >= endtime) then newacc
     else {

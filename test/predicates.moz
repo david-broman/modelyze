@@ -3,7 +3,9 @@ include ModelyzeHA
 def test() = {
     def x, y: Real;
     predicate (x < 2.);
+    x = y + 2.;
     predicate (y > 2.);
+    y = 15.;
     predicate (x + y > 1.)
 }
 

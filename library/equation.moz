@@ -58,7 +58,6 @@ def cleanupEquations(eq:Equations) : Equations = {
     | _ -> eq
 }
 
-
 def initValues(eqs:Equations) -> InitValMap = {
   def get(eqs:Equations, acc:InitValMap) -> InitValMap = {
     match eqs with

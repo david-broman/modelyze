@@ -4,13 +4,13 @@ include Elaboration
 def LOGLEVEL : String = "DEBUG"
 
 def logdebug(id: Int, msg: String, obj: ?) -> () = {
-    match LOGLEVEL with
+  match LOGLEVEL with
     | "DEBUG" -> {
-        def prefix: String = LOGLEVEL ++ ": [" ++ (int2string id) ++ "] " ++ msg ++ ": ";
-        def _ = print(prefix);
-        dprint(obj)
-      }
-    | _ -> ()
+      def prefix: String = LOGLEVEL ++ ": [" ++ (int2string id) ++ "] " ++ msg ++ ": ";
+      def _ = print(prefix);
+      dprint(obj)
+    }
+  | _ -> ()
 }
 
 def predicate: Bool -> Equations
@@ -20,38 +20,40 @@ def elaborate(mode: Equations) -> Equations = {
     elaborateConnections(mode)
 }
 
-def makePredList(eqs: Equations) -> [?] = {
-    def makePredList(eqs: Equations, acc: [?]) -> [?] = {
-        match eqs with
-        | predicate p -> p::acc 
-        | e1 e2 -> {
-            def newacc = (makePredList e1 acc);
-            (makePredList e2 newacc)
-          }
-        |_ -> acc
-    };
-    (makePredList eqs [])
-} 
+def makePredList(eqs: Equations) -> (Equations, [?]) = {
+  def makePredList(eqs: Equations, acc: [?]) -> (Equations, [?]) = {
+    match eqs with
+      | predicate p -> (NoEqn, p::acc)
+      | e1; e2 -> {
+           def (eqs1, newacc) = makePredList(e1, acc);
+           def (eqs2, neweracc) = makePredList(e2, newacc);
+           (eqs1 ; eqs2, neweracc)
+        }
+      | e -> (e, acc)
+  };
+  def (dirty, preds) = (makePredList eqs []);
+  ((cleanupEquations dirty), preds)
+}
 
 def makeHybridInitvals(modeir: Equations, preyy: {Real}, preyp: {Real}, ukmap: UkMap) -> ({Real}, {Real}) = {
-    makeInitValues(modeir, ukmap)
+  makeInitValues(modeir, ukmap)
 }
 
 def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddmap: DerivMap) -> HybridState = {
-    def _ = (logdebug 1 "mode before init" mode);
-    def (modeed, newdmap) = elaborateDerivatives(mode, olddmap);
-    def _ = (logdebug 1 "mode after elab deriv" modeed);
-    def (modeir, _) = indexReducationPantelides(modeed, Map.empty);
-    def _ = (logdebug 1 "mode after index red" modeir);
-    def ukmap = makeUkMap(modeir);
-    def residual = peval (makeResidual(ukmap, modeir));
-    def (yyinit, ypinit) = makeHybridInitvals(modeir, preyy, preyp, ukmap);
-    def _ = (logdebug 1 "yy and yp init before correction" (yyinit, ypinit));
-    def id = initConditionCorrection(ukmap);
-    //def rootfun = (specialize []);
-    //def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
-    def solverState = (DAESolver.make yyinit ypinit id residual);
-    (prett, solverState, yyinit, ukmap, newdmap)
+  def _ = (logdebug 1 "mode before init" mode);
+  def (modeed, newdmap) = elaborateDerivatives(mode, olddmap);
+  def _ = (logdebug 1 "mode after elab deriv" modeed);
+  def (modeir, _) = indexReducationPantelides(modeed, Map.empty);
+  def _ = (logdebug 1 "mode after index red" modeir);
+  def ukmap = makeUkMap(modeir);
+  def residual = peval (makeResidual(ukmap, modeir));
+  def (yyinit, ypinit) = makeHybridInitvals(modeir, preyy, preyp, ukmap);
+  def _ = (logdebug 1 "yy and yp init before correction" (yyinit, ypinit));
+  def id = initConditionCorrection(ukmap);
+  //def rootfun = (specialize []);
+  //def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
+  def solverState = (DAESolver.make yyinit ypinit id residual);
+  (prett, solverState, yyinit, ukmap, newdmap)
 }
 
 //def extractCurrentMode(model: Equations, state: HybridState) -> Equations = {
@@ -59,38 +61,36 @@ def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddm
 //}
 
 def continousTimeStep(state: HybridState, steptime: Real) -> HybridState = {
-    def _ = (logdebug 2 "State before ct time step" state);
-    def (time, solverState, yy, ukmap, dmap) = state;
-    def newtime = (DAESolver.step steptime solverState);
-    def newState = (newtime, solverState, yy, ukmap, dmap);
-    def _ = (logdebug 2 "State after ct time step" newState);
-    newState
+  def _ = (logdebug 2 "State before ct time step" state);
+  def (time, solverState, yy, ukmap, dmap) = state;
+  def newtime = (DAESolver.step steptime solverState);
+  def newState = (newtime, solverState, yy, ukmap, dmap);
+  def _ = (logdebug 2 "State after ct time step" newState);
+  newState
 }
 
 def makeSimResults(probelist: ProbeList, stepvals: [StepVal]) -> SimulationResult = {
-    ((reverse (makeProbeNames "" probelist)), reverse (stepvals))
+  ((reverse (makeProbeNames "" probelist)), reverse (stepvals))
 }
 
 def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: Real, endtime: Real) -> SimulationResult = {
-    def takeStep(state: HybridState, acc: [StepVal]) -> [StepVal] = {
-        def (time, _, yy, ukmap, _) = state;
-        def newacc = ((makeStepVal time yy probelist ukmap)::acc);
-        if (time >= endtime) then newacc
-        else {
-             def newState = continousTimeStep(state, steptime);
-             takeStep(newState, newacc)
-        }
-    };
-    
-    def state = (hybridInit mode starttime (Array.make 1 0.) (Array.make 1 0.) (Map.empty));
-    def stepvals = takeStep(state, []);
-    (makeSimResults probelist stepvals)
+  def takeStep(state: HybridState, acc: [StepVal]) -> [StepVal] = {
+    def (time, _, yy, ukmap, _) = state;
+    def newacc = ((makeStepVal time yy probelist ukmap)::acc);
+    if (time >= endtime) then newacc
+    else {
+      def newState = continousTimeStep(state, steptime);
+      takeStep(newState, newacc)
+    }
+  };
+
+  def state = (hybridInit mode starttime (Array.make 1 0.) (Array.make 1 0.) (Map.empty));
+  def stepvals = takeStep(state, []);
+  (makeSimResults probelist stepvals)
 }
 
 def printsim(model: Equations, steptime: Real, endtime: Real) = {
-    def (modelep, probes) = elaborateProbes(model);
-    def results = (simulate modelep (Map.toList probes) 0. steptime endtime);
-    print (pprintSimulation results)
+  def (modelep, probes) = elaborateProbes(model);
+  def results = (simulate modelep (Map.toList probes) 0. steptime endtime);
+  print (pprintSimulation results)
 }
-
-

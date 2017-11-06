@@ -70,7 +70,7 @@ def zeroCrossings(preds: [?], roots: {Int}) -> [Bool] = {
        | [] -> acc
     };
 
-    (work ((length preds) - 1) preds [])
+    (reverse(work ((length preds) - 1) preds []))
 }
 
 def makeRootFuns(ukmap: UkMap, preds: [?], time: Real, yy: {Real}, yp: {Real}) -> [Real] = {
@@ -143,6 +143,7 @@ def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: R
     def zcs = (zeroCrossings preds (DAESolver.roots solverState));
     def _ = (logdebug 4 "zero crossing bool array" zcs);
     def newacc = ((makeStepVal time yy probelist ukmap)::acc);
+    def _ = (logdebug 4 "preds" preds);
     def _ = (logdebug 4 "stepval: " (nth newacc 0));
     if (time >= endtime) then newacc
     else {

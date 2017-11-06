@@ -37,9 +37,6 @@ def elaboratePredicates(eqs: Equations) -> (Equations, [?]) = {
 
 def zeroCrossings(preds: [?], roots: {Int}) -> [Bool] = {
     def zeroCrossing(i: Int, p: ?) -> (Int, Bool) = {
-      def _ = (logdebug 4 "zc" i);
-      def _ = (logdebug 4 "zc" p);
-      def _ = (logdebug 4 "zc" roots);
       match p with
       | e1 >= e2 -> (i-1, (Array.get roots i) != 0)
       | e1 > e2 -> (i-1, (Array.get roots i) != 0)
@@ -61,8 +58,6 @@ def zeroCrossings(preds: [?], roots: {Int}) -> [Bool] = {
     };
 
     def work(i: Int, preds: [?], acc: [Bool]) -> [Bool] = {
-        def _ = (logdebug 4 "zc work" preds);
-        def _ = (logdebug 4 "zc work" i);
         match preds with
         | p::ps -> {
                 // If no zero crossings detected by DAESolver roots is an empty array
@@ -148,6 +143,7 @@ def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: R
     def zcs = (zeroCrossings preds (DAESolver.roots solverState));
     def _ = (logdebug 4 "zero crossing bool array" zcs);
     def newacc = ((makeStepVal time yy probelist ukmap)::acc);
+    def _ = (logdebug 4 "stepval: " (nth newacc 0));
     if (time >= endtime) then newacc
     else {
       def newState = continousTimeStep(state, steptime);

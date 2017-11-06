@@ -20,19 +20,43 @@ def elaborate(mode: Equations) -> Equations = {
     elaborateConnections(mode)
 }
 
-def makePredList(eqs: Equations) -> (Equations, [?]) = {
-  def makePredList(eqs: Equations, acc: [?]) -> (Equations, [?]) = {
+def elaboratePredicates(eqs: Equations) -> (Equations, [?]) = {
+  def elaboratePredicates(eqs: Equations, acc: [?]) -> (Equations, [?]) = {
     match eqs with
       | predicate p -> (NoEqn, p::acc)
       | e1; e2 -> {
-           def (eqs1, newacc) = makePredList(e1, acc);
-           def (eqs2, neweracc) = makePredList(e2, newacc);
+           def (eqs1, newacc) = elaboratePredicates(e1, acc);
+           def (eqs2, neweracc) = elaboratePredicates(e2, newacc);
            (eqs1 ; eqs2, neweracc)
         }
       | e -> (e, acc)
   };
-  def (dirty, preds) = (makePredList eqs []);
+  def (dirty, preds) = (elaboratePredicates eqs []);
   ((cleanupEquations dirty), preds)
+}
+
+def makeRootFuns(ukmap: UkMap, preds: [?], time: Real, yy: {Real}, yp: {Real}) -> [Real] = {
+    def makeRootFun(pred: ?, acc: [Real]) -> [Real] = {
+        match pred with
+        | e1 == e2 -> error "Operator == is not allowed in guard."
+        | e1 != e2 -> error "Operator != is not allowed in guard."
+        | e1 >= e2 -> evalFromArray(e1-e2, ukmap, yy, yp)::acc
+        | e1 > e2 -> evalFromArray(e1-e2, ukmap, yy, yp)::acc
+        | e1 <= e2 -> evalFromArray(e1-e2, ukmap, yy, yp)::acc
+        | e1 < e2 -> evalFromArray(e1-e2, ukmap, yy, yp)::acc
+        | !e1 -> makeRootFun(e1, acc) 
+        | e1 && e2 -> makeRootFun(e2, makeRootFun(e1, acc))
+        | e1 || e2 -> makeRootFun(e2, makeRootFun(e1, acc))
+        | lift b:Bool -> acc
+        | _ -> error "Illegal expression in guard."
+    };
+    
+    def makeRootFuns(preds: [?], acc: [Real]) -> [Real] = {
+        match preds with
+        | p::ps -> makeRootFuns ps (makeRootFun p acc)
+        | [] -> acc
+    };
+    (makeRootFuns preds [])
 }
 
 def makeHybridInitvals(modeir: Equations, preyy: {Real}, preyp: {Real}, ukmap: UkMap) -> ({Real}, {Real}) = {
@@ -41,7 +65,9 @@ def makeHybridInitvals(modeir: Equations, preyy: {Real}, preyp: {Real}, ukmap: U
 
 def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddmap: DerivMap) -> HybridState = {
   def _ = (logdebug 1 "mode before init" mode);
-  def (modeed, newdmap) = elaborateDerivatives(mode, olddmap);
+  def (modeep, predicates) = elaboratePredicates(mode);
+  def _ = (logdebug 1 "mode after elab preds" modeep);
+  def (modeed, newdmap) = elaborateDerivatives(modeep, olddmap);
   def _ = (logdebug 1 "mode after elab deriv" modeed);
   def (modeir, _) = indexReducationPantelides(modeed, Map.empty);
   def _ = (logdebug 1 "mode after index red" modeir);
@@ -50,9 +76,9 @@ def hybridInit(mode: Equations, prett: Real, preyy: {Real}, preyp: {Real}, olddm
   def (yyinit, ypinit) = makeHybridInitvals(modeir, preyy, preyp, ukmap);
   def _ = (logdebug 1 "yy and yp init before correction" (yyinit, ypinit));
   def id = initConditionCorrection(ukmap);
-  //def rootfun = (specialize []);
-  //def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
-  def solverState = (DAESolver.make yyinit ypinit id residual);
+  def rootfuns = ( specialize (makeRootFuns ukmap) predicates);
+  //def _ = (logdebug 1 "root funcs" rootfuns);
+  def solverState = (DAESolver.makehybrid prett yyinit ypinit id residual rootfuns);
   (prett, solverState, yyinit, ukmap, newdmap)
 }
 
@@ -75,7 +101,9 @@ def makeSimResults(probelist: ProbeList, stepvals: [StepVal]) -> SimulationResul
 
 def simulate(mode: Equations, probelist: ProbeList, starttime: Real, steptime: Real, endtime: Real) -> SimulationResult = {
   def takeStep(state: HybridState, acc: [StepVal]) -> [StepVal] = {
-    def (time, _, yy, ukmap, _) = state;
+    def (time, solverState, yy, ukmap, _) = state;
+    def _ = (logdebug 3 "root funs vals time" time);
+    def _ = (logdebug 3 "root funs vals" (DAESolver.roots solverState));
     def newacc = ((makeStepVal time yy probelist ukmap)::acc);
     if (time >= endtime) then newacc
     else {

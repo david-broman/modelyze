@@ -1,17 +1,22 @@
 include ModelyzeHA
 
 def test() = {
-    def x, y: Real;
-    predicate (x < 2.);
-    x = y + 2.;
-    predicate (y > 2.);
-    y = 15.;
-    predicate (x + y > 1.)
+    def x, dx, y: Real;
+    init x 0.;
+    init y 5.;
+    init dx 2.;
+    predicate (x > 2.);
+    predicate (y < 0.);
+    y'' = -1.;
+    x'' = 0.;
+    x' = dx;
+    probe "x" = x;
+    probe "y" = y
 }
 
 def main = {
     def model = test();
-    def predicates = makePredList(model);
-    (logdebug 1 "test predicate" predicates) 
+    printsim model 0.1 10.
 }
+
 

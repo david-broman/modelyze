@@ -27,7 +27,7 @@ export CPATH = /opt/local/include
 else ifeq ($(OS), Darwin)
 C_LIBS = /usr/local/lib
 export CPATH = /usr/local/include
-# If Linux (Fedora), use the path to standard C libraries.
+# If Linux (Ubuntu), use the path to standard C libraries.
 else ifeq ($(OS), Linux)
 C_LIBS = /usr/lib
 endif

@@ -285,7 +285,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
   def dtloop(currtime:Real, acc:[StepVal], model1:Equations, yymap:InitValMap, 
              ypmap:InitValMap, olddmap:DerivMap, 
              newModes:Modes, activeCharts:Modes) -> [StepVal] = {
-                
+       
     // Extract all equations and correct inits for a partiuclar mode path. 
     // But, keep transitions, since these can contain equations in the action
     def (model2,newModes2,activeCharts2) = extractHMode(model1,newModes,activeCharts,topmode);
@@ -335,12 +335,10 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
             // Check if there are event actions
             def (transInits,newModes3) = 
                 makeEventActions(mode,transitions,newModes2,ukmap,yy,yp);
-
-
+                
             // End continuous-time loop?
             if newtime == 0. ||   !(transInits <==> []) 
-               then
-               (stepval::acc,newtime,transInits,newModes3)
+               then (stepval::acc,newtime,transInits,newModes3)
                else ctloop(newtime + steptime, stepval::acc)
         };
     };

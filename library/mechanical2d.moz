@@ -5,7 +5,8 @@
 */
 
 include physical
-include ModelyzeHEOO
+//include ModelyzeHEOO
+include ModelyzeEOO
 
 /*********************** FRICTION MODELS ***********************/
 

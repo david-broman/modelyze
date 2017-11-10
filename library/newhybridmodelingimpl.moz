@@ -1,0 +1,84 @@
+/*
+   Modeling Kernel Language (Modelyze) library
+   Copyright (C) 2010-2012 David Broman
+
+   Modelyze library is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Modelyze library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+Author: Oscar Eriksson, oerikss@kth.se
+ */
+
+include NewHybridModelingImpl
+include ModelyzeDAE
+include Elaboration
+
+type State = (Time, SolverState, VarArray, UkMap)
+type InitData = (Time, Equations, VarArray, UkMap, DerivMap)
+
+  def daeInit(initData: InitData) -> State = {
+    def (stime, model, yyinit, ukmapinit, dmap) = initData;
+    def (model2,_) = elaborateDerivatives(model,dmap);
+    def (model3,_) = indexReducationPantelides(model2, Map.empty);
+    def ukmap = makeUkMap(model3);
+    def residual = peval (makeResidual(ukmap,model3));
+    def (yy,yp) = makeInitValues(model3, ukmap);
+    def id = initConditionCorrection(ukmap);
+    def solverState = (DAESolver.make yy yp id residual);
+    (stime, solverState, yy, ukmap)
+  }
+
+def daeDoStep(state:State, comStepSize:Real) -> (State, Time) = {
+  def (currTime, solverState, yy, ukmap) = state;
+  def newtime = (DAESolver.step comStepSize solverState);
+  def newState = (newtime, solverState, yy, ukmap);
+  (newState, newtime);
+}
+
+def daeGet(state:State, var:<Real>) -> Real = {
+  def (currTime, solverState, yy, ukmap) = state;
+  if Map.mem var ukmap then
+    Array.get yy (fst(Map.find var ukmap))
+  else
+    INFINITE;
+}
+
+def daeSet(state:State, var:<Real>, value:Real) -> State = {
+  state;
+}
+
+def daeGetAsStr(state:State, var:<Real>) -> String = {
+  real2string(daeGet(state,var))
+}
+
+def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
+  def (model1,probes) = elaborateProbes(model);
+  def initData = (0., model1, (Array.make 0 0.), Map.empty, Map.empty);
+  def state = daeInit(initData);
+  def probelist = (Map.toList probes);
+  def stepval = (0., getProbeVals(probelist, daeGet(state)));
+
+  def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
+    if currtime >= endtime then acc
+    else {
+      def (state,newtime) = daeDoStep(state, steptime);
+      def stepval = (newtime, getProbeVals(probelist, daeGet(state)));
+      if newtime == 0. then acc
+      else simloop(newtime,stepval::acc);
+    }
+  };
+  (makeProbeNames("",probelist),reverse(simloop(0.,[stepval])))
+}
+
+  def printsim(model:Equations, steptime:Real, endtime:Real) =
+    print(pprintSimulation(ctSim(model,steptime,endtime)))
+

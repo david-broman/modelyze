@@ -1,0 +1,66 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+Author: Oscar Eriksson oerikss@kth.se
+*/
+
+include NewHybridModeling
+
+def particle(x: <Real>, x0: Real) -> Equations = {
+  init x x0;
+  x' = 1.
+}
+
+def teleportingParticle(x: <Real>, x0: Real) -> Equations = {
+  switch (particle x x0) (x) (fun z : Real -> (particle x z))
+}
+
+def teleportingParticleRec(x: <Real>, x0: Real) -> Equations = {
+  def tunnel(x: <Real>, x0: Real) -> Equations = {
+    teleportingParticle(x, x0 + 1.)
+  };
+  switch (particle x x0) (x) (teleportingParticleRec x)
+}
+
+def main = {
+  def x: Real;
+  def _ = dprint("non recursive test");
+  def tp = teleportingParticle(x, 0.);
+  def _ = dprint(tp);
+  def _ = {
+    match tp with
+      | switch eqnow zc (lift swfunc:?) -> {
+        def _ = dprint(eqnow);
+        def _ = dprint(zc);
+        dprint(swfunc 1.)
+      }
+    | _ -> error "Fail!"
+  };
+  def _ = dprint("Recursive test");
+  def tpr = teleportingParticleRec(x, 0.);
+  def _ = dprint(tpr);
+  def _ = {
+    match tpr with
+      | switch eqnow zc (lift swfunc:?) -> {
+        def _ = dprint(eqnow);
+        def _ = dprint(zc);
+        dprint(swfunc 1.)
+      }
+    | _ -> error "Fail!"
+  };
+  dprint("end")
+}

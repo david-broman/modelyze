@@ -1,0 +1,19 @@
+include ModelyzeEOO
+
+def container: (Real -> Real) -> Equations
+
+def f1(a: Real) -> Real = {
+    a + 1.
+}
+
+def main = {
+    def _ = dprint((f1 1.));
+    def c = container f1;
+    def _ = dprint(c);
+    def m = {
+        match c with
+        | container f -> (f 1.)
+        | _ -> 1.
+    };
+    dprint(m)
+}

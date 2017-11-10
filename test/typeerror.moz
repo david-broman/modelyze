@@ -1,0 +1,11 @@
+include Equation
+
+def somethingIsWrong: (Real -> Equations) -> Real
+def hereAsWell: (Real -> <Equations>) -> Real
+
+def main = {
+  def x, y: Real;
+  sdef _ = (somethingIsWrong (fun z: Real -> x = y));
+  def _ = (hereAsWell (fun z: Real -> x = y));
+  println("end")
+}

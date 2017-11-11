@@ -20,47 +20,41 @@ Author: Oscar Eriksson oerikss@kth.se
 
 include NewHybridModeling
 
-def particle(x: <Real>, x0: Real) -> Equations = {
+type Pos = (Real, Real)
+type Vel = (Real, Real)
+type Body = (Pos, Vel)
+type SymPos = (<Real>, <Real>)
+type SymVel = (<Real>, <Real>)
+type SymBody = (SymPos, SymVel)
+
+def g: Real = 9.8
+
+def freeFall(body: SymBody, body0: Body) -> Equations = {
+  def ((x, y), (dx, dy)) = body;
+  def ((x0, y0), (dx0, dy0)) = body0;
   init x x0;
-  x' = 1.
+  init y y0;
+  init dx dx0;
+  init dy dy0;
+  dx' = 0.;
+  dy' = -g;
+  x' = dx;
+  y' = dy
 }
 
-def teleportingParticle(x: <Real>, x0: Real) -> Equations = {
-  switch (particle x x0) (x) (fun z : Real -> (particle x z))
-}
-
-def teleportingParticleRec(x: <Real>, x0: Real) -> Equations = {
-  def tunnel(x: <Real>, x0: Real) -> Equations = {
-    teleportingParticle(x, x0 + 1.)
+def bouncingBall(body: SymBody, body0: Body) -> Equations = {
+  def ((x, y), (dx, dy)) = body;
+  def ((x0, y0), (dx0, dy0)) = body0;
+  def transFun(body0: Body) -> Equations = {
+    def ((x0, y0), (dx0, dy0)) = body0;
+    (bouncingBall body ((x0, y0), (dx0, -dy0)))
   };
-  switch (particle x x0) (x) (teleportingParticleRec x)
+  (switch (freeFall body body0) y (transFun))
 }
 
 def main = {
-  def x: Real;
-  def _ = dprint("non recursive test");
-  def tp = teleportingParticle(x, 0.);
-  def _ = dprint(tp);
-  def _ = {
-    match tp with
-      | switch eqnow zc (lift swfunc:?) -> {
-        def _ = dprint(eqnow);
-        def _ = dprint(zc);
-        dprint(swfunc 1.)
-      }
-    | _ -> error "Fail!"
-  };
-  def _ = dprint("Recursive test");
-  def tpr = teleportingParticleRec(x, 0.);
-  def _ = dprint(tpr);
-  def _ = {
-    match tpr with
-      | switch eqnow zc (lift swfunc:?) -> {
-        def _ = dprint(eqnow);
-        def _ = dprint(zc);
-        dprint(swfunc 1.)
-      }
-    | _ -> error "Fail!"
-  };
-  dprint("end")
+  def x, y, dx, dy: Real;
+  def bb = bouncingBall ((x, y), (dx, dy)) ((0., 10.), (0., 0.));
+  def _ = elaborateSwitches bb;
+  println("===== EOOP ======")
 }

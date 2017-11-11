@@ -60,7 +60,6 @@ def cleanupEquations(eq:Equations) : Equations = {
     | _ -> eq
 }
 
-
 def initValues(eqs:Equations) -> InitValMap = {
   def get(eqs:Equations, acc:InitValMap) -> InitValMap = {
     match eqs with
@@ -70,7 +69,6 @@ def initValues(eqs:Equations) -> InitValMap = {
   };
   get(eqs,Map.empty);
 }
-  
 
 def uk(e:<Dyn>,acc:UkSet) -> UkSet = {
   match e with
@@ -78,7 +76,6 @@ def uk(e:<Dyn>,acc:UkSet) -> UkSet = {
   | sym:<Real> -> Set.add e acc
   | _ -> acc
 } 
-
 
 def noUnknowns(eqs:Equations) -> Int =
   Set.size (uk(eqs,Set.empty))

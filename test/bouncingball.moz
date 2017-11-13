@@ -52,9 +52,26 @@ def bouncingBall(body: SymBody, body0: Body) -> Equations = {
   (switch (freeFall body body0) y (transFun))
 }
 
+def divide(body: SymBody, body0: Body) -> Equations = {
+  def ((x0, y0), (dx0, dy0)) = body0;
+  def xn, yn, dxn, dyn: Real;
+  bouncingBall body ((x0, y0), (dx0/2., -dy0/2.));
+  bouncingBall ((xn, yn), (dxn, dyn)) ((x0, y0), (-dx0/2., -dy0/2.))
+}
+
+def bouncingSplittingBall(body: SymBody, body0: Body) -> Equations = {
+  def ((x, y), (dx, dy)) = body;
+  def ((x0, y0), (dx0, dy0)) = body0;
+  (switch (freeFall body body0) y (divide))
+}
+
 def main = {
   def x, y, dx, dy: Real;
+  def _ = println("===== BBAL ======");
   def bb = bouncingBall ((x, y), (dx, dy)) ((0., 10.), (0., 0.));
   def _ = elaborateSwitches bb;
+  def _ = println("===== SBAL ======");
+  def bsb = bouncingSplittingBall ((x, y), (dx, dy)) ((0., 10.), (1., 0.));
+  def _ = elaborateSwitches bsb;
   println("===== EOOP ======")
 }

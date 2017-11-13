@@ -135,6 +135,14 @@ def nth(l:[Dyn], n:Int) -> Dyn = {
     work(l, 0)
 }
 
+def map(l: [Dyn], f: (Dyn -> Dyn)) -> [Dyn] = {
+  def work(l: [Dyn], acc: [Dyn]) -> [Dyn] = {
+    match l with
+    | e::es -> work es ((f e)::acc)
+    | [] -> acc
+  };
+  reverse (work l [])
+}
 
 
 

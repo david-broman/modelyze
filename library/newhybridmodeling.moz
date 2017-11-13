@@ -19,6 +19,8 @@ Author: Oscar Eriksson oerikss@kth.se
  */
 
 include Equation
+include Elaboration
+include ModelyzeDAE
 
 def LOGLEVEL: String = "DEBUG"
 // def LOGLEVEL: String = "NO_DEBUG"
@@ -41,13 +43,46 @@ type InitVals = Dyn
 type TransFun = InitVals -> Dyn
 type ZeroCrossing = Signal
 type Switch = Equations -> ZeroCrossing -> TransFun -> Equations
-def switch: Switch
+// Type to relate ZeroCrossing's with the root finding array returned from IDA
+type ZcMap = (ZeroCrossing => (Int, Bool))
+type ZcList = [(ZeroCrossing, (Int, Bool))]
+
+def _switch: Switch
+def switch(eqs: Equations, zc: ZeroCrossing, tf: TransFun) -> Equations = {
+  _switch eqs zc tf
+} 
+
+type State = (Time, SolverState, VarArray, UkMap, ZcMap)
+
+def labelZcs(zcm: ZcMap) -> (ZcMap, [ZeroCrossing]) = {
+  def work(zcl: ZcList, zcm: ZcMap, idx: Int) -> ZcMap = {  
+    match zcl with
+    | e::es -> {
+        def (zc, (i, b)) = e;
+        work es (Map.add zc (idx, b) zcm) (idx - 1)
+        }
+    | [] -> zcm
+  };
+
+  def f(e: (ZeroCrossing, (Int, Bool))) -> ZeroCrossing = {
+    def (zc, _) = e;
+    zc
+  };
+  
+  def zcl = (Map.toList zcm);
+  def zcm = work zcl zcm ((length zcl) - 1);
+  (zcm, reverse (map zcl f))
+}
+
+def makeRootFuns(zcl: [ZeroCrossing], ukm: UkMap, t: Time, yy: VarArray, yp: VarArray) -> [Real] = {
+  map zcl (fun zc: ZeroCrossing -> (evalFromArray zc ukm))      
+}
 
 def elaborateSwitches(eqs: Equations) -> Equations = {
   def _ = logdebug SW "Before sw elaboration" eqs;
   def elabSws(eqs: Equations, acc: Equations) -> Equations = {
     match eqs with
-    | switch es _ _ -> (elabSws es acc)
+    | _switch es _ _ -> (elabSws es acc)
     | e; es -> (elabSws es ((elabSws e acc)))
     | e -> e; acc
   };

@@ -78,6 +78,17 @@ def makeRootFuns(zcl: [ZeroCrossing], ukm: UkMap, t: Time, yy: VarArray, yp: Var
   map zcl (fun zc: ZeroCrossing -> (evalFromArray zc ukm))      
 }
 
+def zeroCrossing(zc: ZeroCrossing, zcm: ZcMap, roots: {Real}) -> Bool = {
+  if (Array.length roots) == 0 then false
+  else {
+    if !(Map.mem zc zcm) then error "zero crossing not found in zero crossing map"
+    else {
+      def i: Int = fst (Map.find zc zcm);
+      (Array.get roots i) != 0.
+    };
+  };
+}
+
 def elaborateSwitches(eqs: Equations) -> Equations = {
   def _ = logdebug SW "Before sw elaboration" eqs;
   def elabSws(eqs: Equations, acc: Equations) -> Equations = {

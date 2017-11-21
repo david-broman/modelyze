@@ -1,26 +1,4 @@
-include NewHybridModeling
+include Base
+def a(x: Int) -> Int = if x == 0 then 1 else a (x - 1)
 
-def a(eqn: Equations) -> (() -> Equations) = {
-  def thunk() = {
-    eqn
-   };
-  thunk
-}
-
-def b(x: Signal) -> Signal = {
-    x + 1.
-}
-
-def main = {
-  def x, y: Real;
-  def l = [1, 2];
-  def zcm: ZcMap = (Map.empty);
-  def zcm = (Map.add (x + 1.) (0, true) zcm);
-  def zcm = (Map.add (y + 2.) (1, false) zcm);
-  def _ = dprint(zcm);
-  def _ = dprint((Map.toList zcm));
-  def _ = dprint(map l (fun x: Int -> x+1));
-  def _ = dprint((a (x = 1.)));  
-  dprint((a (x = 2.)))
-}
-
+def main = println (a 0)

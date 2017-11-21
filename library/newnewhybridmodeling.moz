@@ -1,0 +1,44 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+Author: Oscar Eriksson oerikss@kth.se
+*/
+
+include Equation
+
+type UknownValueMap = (<Real> => Real)
+type ZeroCrossing = <Real>
+type ZeroCrossingMap = (ZeroCrossing => Bool)
+// We define equations here to not contain any inits as these are encoded in UknownValueMap
+type InitialValueProblems = (UknownValueMap, Equations)
+type HybridState = (InitialValueProblems, ZeroCrossingMap)
+
+
+def simulation(state: HybridState) -> HybridState = {
+  state
+}
+
+def superDenseTime(state: HybridState) -> HybridState = {
+  def (es, uvm, zcm) = state;
+  
+  def zeroCrossing = (fun boundry: <Real> -> ((Map.mem boundry zcm) && (Map.find boundry zcm)));
+
+  state
+}
+
+
+

@@ -1,22 +1,22 @@
 /*
-   Modeling Kernel Language (Modelyze) library
-   Copyright (C) 2010-2012 David Broman
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
 
-   Modelyze library is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-   Modelyze library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Lesser General Public License
-   along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 Author: Oscar Eriksson oerikss@kth.se
- */
+*/
 
 include Equation
 include Elaboration
@@ -91,14 +91,30 @@ def zeroCrossing(zc: ZeroCrossing, zcm: ZcMap, roots: {Real}) -> Bool = {
 
 def elaborateSwitches(eqs: Equations) -> Equations = {
   def _ = logdebug SW "Before sw elaboration" eqs;
-  def elabSws(eqs: Equations, acc: Equations) -> Equations = {
+  def work(eqs: Equations, acc: Equations) -> Equations = {
     match eqs with
-    | _switch es _ _ -> (elabSws es acc)
-    | e; es -> (elabSws es ((elabSws e acc)))
+    | _switch es _ _ -> (work es acc)
+    | e; es -> work es (work e acc)
     | e -> e; acc
   };
-  def res = (elabSws eqs NoEqn);
+  def res = (work eqs NoEqn);
   def _ = logdebug SW "After sw elaboration" res;
   res
 }
 
+def flip(eqs: Equations, zcm: ZcMap, roots: {Real}, ukm: UkMap, yy: VarArray, yp: VarArray) -> Equations = {
+  def zc(z: ZeroCrossing) = (zeroCrossing z zcm roots);
+  def v()
+  def work(eqs: Equations, acc: Equations) -> Equations = {
+    match eqs with
+    | _switch es z (lift f:?) -> {
+        if !(zeroCrossing z zcm roots) then work es acc
+        else {
+                    
+        };
+      }
+    | e; es -> work es (work e acc)
+    | e -> e; acc
+  };
+  (work eqs NoEqn)
+}

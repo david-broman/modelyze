@@ -1,4 +1,23 @@
-include Base
+include Equation
+
 def a(x: Int) -> Int = if x == 0 then 1 else a (x - 1)
 
-def main = println (a 0)
+def test() = {
+  def x: Real;
+  x = 2.
+}
+
+def test2() = {
+  def x: Real;
+  def x: Real;
+  x = 1.
+}
+
+def main = {
+  def b = [1, 2];
+  def _ = dprint(hd b);
+  def _ = dprint(toArray b);
+  def _ = dprint(test());
+  def _ = dprint(test2());
+  println "the end!"
+}

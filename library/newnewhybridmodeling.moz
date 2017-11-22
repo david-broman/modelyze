@@ -23,6 +23,7 @@ include Equation
 type Time = Real
 
 type UknownValueMap = (<Real> => (Real, Real))
+type UknownValueMapElem = (<Real>, (Real, Real))
 type ZeroCrossing = <Real>
 type ZeroCrossingMap = (ZeroCrossing => Bool)
 type Switch = Equations -> ZeroCrossing -> Equations -> Equations
@@ -34,8 +35,17 @@ type HybridState = (Equations, UknownValueMap, ZeroCrossingMap, Time)
 
 def convertToCT(eqs: Equations, uvm: UknownValueMap) -> (UkMap, VarArray, VarArray) = {
   def makeYYandYP (ukm: UkMap) -> (VarArray, VarArray) = {
-    def UkList ukl = (Map.toList ukm);
-    
+    def n = (Map.size ukm);
+    def yy = (Array.make n 0.);
+    def yp = (Array.make n 0.);
+    def f(e: UknownValueMapElem) -> () = {
+      def (x, yyv, ypv) = e;
+      def k = fst (Map.find x ukm);
+      def _ = (Array.set yy k yyv);
+      (Array.set yp k ypv)
+    };
+    def _ = iter (Map.toList uvm) f;
+    (yy, yp)
   };
   
   def ukm = makeUkMap eqs;
@@ -48,5 +58,3 @@ def enterTheEasyGoingLandOfContinousTime(hstate: HybtridState) -> HybtridState =
   def (ukm, yy, yp) = convertTo eqs uvm;
   hstate  
 }
-
-def 

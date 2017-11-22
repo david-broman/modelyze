@@ -13,10 +13,13 @@ def test2() = {
   x = 1.
 }
 
+def f(e: Int) -> () = def _ = println e; ()
+
 def main = {
   def b = [1, 2];
   def _ = dprint(hd b);
   def _ = dprint(toArray b);
+  def _ = iter b f;
   def _ = dprint(test());
   def _ = dprint(test2());
   println "the end!"

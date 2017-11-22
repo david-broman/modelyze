@@ -156,6 +156,18 @@ def tl(l: [Dyn]) -> [Dyn] = {
   | _ -> error "There is no tail of an empty list"
 }
 
+def iter(l: [Dyn], f: (Dyn -> ())) -> () = {
+  def work(l: [Dyn]) -> () = {
+    match l with
+    | e::es -> {
+        def _ = f e;
+        work es
+      }
+    | _ -> ()
+  };
+  work l
+}
+
 def toArray(l: [Dyn]) -> {Dyn} = {
   def work(l: [Dyn], a: {Dyn}, k: Int) -> () = {
     match l with

@@ -144,8 +144,31 @@ def map(l: [Dyn], f: (Dyn -> Dyn)) -> [Dyn] = {
   reverse (work l [])
 }
 
+def hd(l: [Dyn]) -> Dyn = {
+  match l with
+  | e::es -> e
+  | _ -> error "There is no head of an empty list"
+}
 
+def tl(l: [Dyn]) -> [Dyn] = {
+  match l with
+  | e::es -> es
+  | _ -> error "There is no tail of an empty list"
+}
 
-
-
-
+def toArray(l: [Dyn]) -> {Dyn} = {
+  def work(l: [Dyn], a: {Dyn}, k: Int) -> () = {
+    match l with
+    | e::es -> {
+        def _ = (Array.set a k e);
+        work es a (k + 1)
+      }
+    | _ -> ()
+  };
+    
+  def n = length l;
+  def h = hd l;
+  def a = (Array.make n l);
+  def _ = work l a 0;
+  a
+}

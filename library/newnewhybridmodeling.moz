@@ -20,25 +20,33 @@ Author: Oscar Eriksson oerikss@kth.se
 
 include Equation
 
-type UknownValueMap = (<Real> => Real)
+type Time = Real
+
+type UknownValueMap = (<Real> => (Real, Real))
 type ZeroCrossing = <Real>
 type ZeroCrossingMap = (ZeroCrossing => Bool)
-// We define equations here to not contain any inits as these are encoded in UknownValueMap
-type InitialValueProblems = (UknownValueMap, Equations)
-type HybridState = (InitialValueProblems, ZeroCrossingMap)
+type Switch = Equations -> ZeroCrossing -> Equations -> Equations
 
+def switch: Switch
+def value : Real -> Real
 
-def simulation(state: HybridState) -> HybridState = {
-  state
-}
+type HybridState = (Equations, UknownValueMap, ZeroCrossingMap, Time)
 
-def superDenseTime(state: HybridState) -> HybridState = {
-  def (es, uvm, zcm) = state;
+def convertToCT(eqs: Equations, uvm: UknownValueMap) -> (UkMap, VarArray, VarArray) = {
+  def makeYYandYP (ukm: UkMap) -> (VarArray, VarArray) = {
+    def UkList ukl = (Map.toList ukm);
+    
+  };
   
-  def zeroCrossing = (fun boundry: <Real> -> ((Map.mem boundry zcm) && (Map.find boundry zcm)));
-
-  state
+  def ukm = makeUkMap eqs;
+  def (yy, yp) = makeYYandYP ukm;
+  (ukm, yy, yp)
 }
 
+def enterTheEasyGoingLandOfContinousTime(hstate: HybtridState) -> HybtridState = {
+  def (eqs, uvm, zcm, t) = hstate;
+  def (ukm, yy, yp) = convertTo eqs uvm;
+  hstate  
+}
 
-
+def 

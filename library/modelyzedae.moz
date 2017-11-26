@@ -21,19 +21,19 @@ include IndexReduction
 include SimOutput
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
-type Varvals = <Real> -> <Real>
+type Vars = <Real> -> <Real>
 
 // General expression evaluation
-def eval(expr:<?>, yy:Varvals, yp:Varvals) -> ? = {
-    match expr with
+def eval(e:<Dyn>,yy:Vars,yp:Vars) -> Dyn = {
+    match e with
     | der x -> 
         (match x with 
-         | sym:Real -> eval(yp(x), yy, yp)  
+         | sym:Real -> eval(yp(x),yy,yp)  
          | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Real -> eval(yy(expr), yy, yp)
+    | sym:Real -> eval(yy(e),yy,yp)
     | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
-    | lift v:? -> v
-    | _ ->  error "Unsupported model construct" 
+    | sval v:Dyn -> v
+    | _ ->  error "Unsupported construct" 
 }
 
 // Evaluate an expression of real type. The unknowns in the

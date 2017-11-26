@@ -21,6 +21,7 @@ include Base
 type Signal = <Real>
 
 type Equations
+
 def (=) : <Real->Real->Equations>
 def (;) : <Equations->Equations->Equations>
 

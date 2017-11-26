@@ -26,8 +26,8 @@ type Unknown = <>
 type Branches = <>
 type NodeMap = (Node => Unknown)
 type NodeMapList = [(Node,Unknown)]
-type BranchSet = (Set Branches)
-type BranchList = [Branches]
+type BSet = (Set Branches)   //Set of branches
+type BList = [Branches]      //List of branches
 type ExprMap = (Node => Expr)
 type ExprList = [(Node, Expr)]
 
@@ -45,8 +45,8 @@ def addNode(node:Node, nodemap:NodeMap) -> NodeMap = {
     };
 }
 
-def sumexpr(branches:BranchSet) -> ExprMap = {
-  def worker(branches:BranchList, emap:ExprMap) -> ExprMap = {
+def sumexpr(branches:BSet) -> ExprMap = {
+  def worker(branches:BList, emap:ExprMap) -> ExprMap = {
     match branches with
     | (Branch i v p n)::bs -> {
         def emap1 = {
@@ -75,7 +75,7 @@ def sumexpr(branches:BranchSet) -> ExprMap = {
 }
 
 
-def sumzero(m:Equations, branches:BranchSet) -> Equations = {
+def sumzero(m:Equations, branches:BSet) -> Equations = {
   def worker(elist:ExprList) -> Equations = {
     match elist with
     | (_,e)::es -> e = 0.; worker es
@@ -85,8 +85,8 @@ def sumzero(m:Equations, branches:BranchSet) -> Equations = {
 }
 
 
-def potentials(model:Equations) -> (Equations,BranchSet) = {
-  def worker(m:Equations, nodemap:NodeMap, branchset:BranchSet) -> (<>,NodeMap,BranchSet) = {
+def potentials(m:Equations)->(Equations,BSet) = {
+  def worker(m:Equations, nodemap:NodeMap, branchset:BSet) -> (<>,NodeMap,BSet) = {
     match m with
     | Branch i v p n -> {
         def nodemap2 = addNode(n,addNode p nodemap);
@@ -105,7 +105,7 @@ def potentials(model:Equations) -> (Equations,BranchSet) = {
       }
     | _ ->  (m,nodemap,branchset) 
   };
-  def (model,_,branchset) = worker(model,Map.empty,Set.empty);
+  def (model,_,branchset) = worker(m,Map.empty,Set.empty);
   (model,branchset);
 }
 

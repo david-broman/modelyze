@@ -73,16 +73,16 @@ def initValues(eqs:Equations) -> InitValMap = {
 }
   
 
-def unknowns(e:<Dyn>,acc:UkSet) -> UkSet = {
-    match e with
-    | e1 e2 -> unknowns(e2, unknowns(e1,acc))
-    | sym:<Real> -> Set.add e acc
-    | _ -> acc
+def uk(e:<Dyn>,acc:UkSet) -> UkSet = {
+  match e with
+  | e1 e2 -> uk(e2,uk(e1,acc))
+  | sym:<Real> -> Set.add e acc
+  | _ -> acc
 } 
 
 
 def noUnknowns(eqs:Equations) -> Int =
-  Set.size (unknowns(eqs,Set.empty))
+  Set.size (uk(eqs,Set.empty))
 
 def noEquations(eqs:Equations) -> Int = {
   match eqs with

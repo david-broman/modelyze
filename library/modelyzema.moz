@@ -46,9 +46,9 @@ type Component = (Name,State,ProbeList,InputVars,OutputVars,InitTy,DoStepTy,GetT
 def initComponents(model:Model, acc:[Component]) -> [Component] = {
     match model with
     | e1 ; e2 -> initComponents(e2,initComponents(e1,acc))
-    | Comp (lift name:String) model (lift inp:InputVars) (lift outp:OutputVars) 
-                  (lift initf:InitTy) (lift dostepf:DoStepTy) 
-                  (lift getf:GetTy) (lift setf:SetTy) -> {
+    | Comp (sval name:String) model (sval inp:InputVars) (sval outp:OutputVars) 
+                  (sval initf:InitTy) (sval dostepf:DoStepTy) 
+                  (sval getf:GetTy) (sval setf:SetTy) -> {
          def (state,probes) = initf(model);
          (name,state,Map.toList probes,inp,outp,initf,dostepf,getf,setf)::acc;
       }

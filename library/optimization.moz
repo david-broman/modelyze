@@ -202,7 +202,7 @@ def pprintPythonCasadiExpr(expr:Expr, varNameMap:VarNameMap) : String = {
     | ~log10 e -> "log10(" ++ printExpr(e) ++ ")"
     | ~time -> "time"
     | sym:<Real> -> (Map.find expr varNameMap)
-    | lift r:Real -> real2string(r)
+    | sval r:Real -> real2string(r)
     };
     printExpr(expr)
 }
@@ -373,8 +373,8 @@ def getOCP(optProb:OptProblem) : OCP = {
         | _ -> (m,acc)
     };
     match optProb with 
-    | ~minimize ~integral cost ~interval (lift start:Real) 
-       (lift stop:Real) eqs -> {
+    | ~minimize ~integral cost ~interval (sval start:Real) 
+       (sval stop:Real) eqs -> {
          def (dae, initvals) = genInits(eqs, Map.empty);
          def vars = extractVariables(dae);
          def newDAE = cleanupEquations(removeInputEqs(dae));

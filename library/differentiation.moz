@@ -72,8 +72,8 @@ def differentiateModel(expr:Expr) -> Expr = {
   def sdiff(expr:Signal) -> Signal = {
     match expr with
     | sym:Signal -> hoDer expr 1
-    | ~hoDer x (lift k:Int) -> hoDer x (k + 1)
-    | ~der e -> sdiff(sdiff(e))
+    | hoDer x (sval k:Int) -> hoDer x (k + 1)
+    | der e -> sdiff(sdiff(e))
     | e1 + e2 -> sdiff(e1) + sdiff(e2)
     | e1 - e2 -> sdiff(e1) - sdiff(e2)
     | e1 * e2 -> sdiff(e1) * e2 + e1 * sdiff(e2)
@@ -90,13 +90,13 @@ def differentiateModel(expr:Expr) -> Expr = {
     | ~log e -> sdiff(e)/ e
     | ~log10 e -> sdiff(e)* log10(eulerNumber) / e 
     | ~sqrt e -> sdiff(e)/ (2.*(sqrt e))
-    | e1 ^ (lift k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
+    | e1 ^ (sval k:Real) -> (k * e1 ^ (k - 1.)) * sdiff(e1)
     | -e -> -(sdiff(e))
-    | lift x:Real -> 0. 
+    | sval x:Real -> 0. 
     | _ -> error "Cannot differentiate model"
   };
   match expr with
-  | ~der e -> sdiff e
+  | der e -> sdiff e
   | e1 e2 -> (differentiateModel e1)  (differentiateModel e2) 
   | _ -> expr
 }
@@ -111,7 +111,7 @@ def removeHOderivatives(expr:Expr, dmap:DerivMap) -> Expr = {
       else der x
   };
   match expr with
-  | ~hoDer x (lift k:Int) -> getDeriv x k
+  | hoDer x (sval k:Int) -> getDeriv x k
   | e1 e2 -> (removeHOderivatives e1 dmap) (removeHOderivatives e2 dmap) 
   | _ -> expr
 }

@@ -66,7 +66,7 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
     match initvals with
     | (u,e)::xs -> {
         def v = (match e with 
-                 | lift v:Real -> v 
+                 | sval v:Real -> v 
                  | _ -> error "Cannot initialize a variable with a variable.");
         def _ = (Array.set yy (fst (Map.find u ukmap)) v);      
         setvals xs;

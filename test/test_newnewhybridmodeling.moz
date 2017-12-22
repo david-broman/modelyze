@@ -32,8 +32,23 @@ def testThunk() = {
     println("end test: " ++ label ++ "\n");
 }
 
+def testGs2g() = {
+    def label = "Gs2g";     
+    def _ = println("test: " ++ label);
+    def _ = dprint(gs2g (false, 0.) (false, 1.));
+    def _ = dprint(gs2g (true, 1.) (false, e));
+    def _ = dprint(gs2g (false, 1.) (true, 2.));
+    def _ = dprint(gs2g (false, e) (false, 3.));
+    def _ = dprint(gs2g (false, 4.) (false, e));
+    def _ = dprint(gs2g (false, e) (false, e));
+    // errors
+    //def _ = dprint(gs2g (true, 1.) (true, 2.));
+    println("end test: " ++ label ++ "\n");
+}
+
 def main = {
     def _ = println("=== tests start ===");
     def _ = testThunk();
+    def _ = testGs2g();
     println("=== tests end ===")
 }

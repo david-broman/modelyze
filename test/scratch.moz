@@ -1,26 +1,21 @@
-include Equation
+include ModelyzeDAE
 
-def a(x: Int) -> Int = if x == 0 then 1 else a (x - 1)
-
-def test() = {
+def pendulum() = {
   def x: Real;
-  x = 2.
+  def y: Real;
+  def lambda: Real;
+  y'' = 10. - lambda*y;
+  x'' = lambda*x;
+  x^2. + y^2. = 0.;
 }
-
-def test2() = {
-  def x: Real;
-  def x: Real;
-  x = 1.
-}
-
-def f(e: Int) -> () = def _ = println e; ()
 
 def main = {
-  def b = [1, 2];
-  def _ = dprint(hd b);
-  def _ = dprint(toArray b);
-  def _ = iter b f;
-  def _ = dprint(test());
-  def _ = dprint(test2());
+  def model = pendulum();
+  def (rmodel, dmap) = (indexReducationPantelides(model, Map.empty));
+  def _ = println("== Before ==");
+  def _ = dprint(model);
+  def _ = println("== After ==");
+  def _ = dprint(rmodel);
+  def _ = dprint(dmap);
   println "the end!"
 }

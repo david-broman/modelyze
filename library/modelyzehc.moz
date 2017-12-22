@@ -299,7 +299,10 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
     def (model3,newdmap) = elaborateDerivatives(model2,olddmap);
 
     // Peforme index reduction
+    def _ = dprint(model3);
     def (model3,newdmap) = indexReducationPantelides(model3,Map.empty);
+    def _ = dprint(model3);
+    def _ = println("===");
 
     // Extract transitions
     def transitions = extractTransitions(model3);

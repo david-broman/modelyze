@@ -1,0 +1,10 @@
+//include daelang
+
+def main = {
+  def a: Bool = true;
+  def b: Bool = false;
+  if b then b else {
+    if a then error "first"
+    else a
+  }
+}

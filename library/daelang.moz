@@ -1,0 +1,67 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include Elaboration
+
+type Sigma = (Set Equations, <Real> -> ?)
+type Sigmapp = (Set Equations, <Real> -> ?, Set ?)
+
+def init_guess: <Real> -> Real -> Equations
+def nil = NoEqn
+def undefined: ?
+
+def is_equal(x: <Real>, y: <Real>) -> Bool = Set.mem y (Set.add x (Set.empty))
+def is_undefined(x: ?) -> Bool = {
+  match x with
+  | undefined -> true
+  | _ -> false
+}
+
+def set_value(f: (<Real> -> ?), x: <Real>, n: ?) -> (<Real> -> ?) =
+  fun y: <Real> -> if (is_equal x y) then n else (f y)
+
+def M_m(m: Equations, sigma: Sigmapp) -> Sigmapp = {
+  def (E, f, T) = sigma;
+  match m with
+  | d_1 = d_2 -> ((Set.add m E), f, T)
+  | init x (lift r: Real) -> {
+                  def n = (f x);
+                  if (is_undefined n) then (E, (set_value f x (true, r)), T)
+                  else {
+                         def (b, r_o) = n;
+                         if (b && r_o != r) then error "multiple inits for the same state variable"
+                         else (E, (set_value f x (true, r)), T)
+                       }
+                }
+  // | init_guess x r -> {
+  //                 def n = (f x);
+  //                 if (is_undefined n) then (E, (set_value f x (false, r)), T)
+  //                 else {
+  //                        def (b, r_o) = n;
+  //                        if (b || r_o != r) then error "multiple init guesses for the same state variable or trying to overide an init with a init guess"
+  //                        else (E, (set_value f x (false, r)), T)
+  //                      }
+  //               }
+  // | Branch f e p n -> (E, f, (Set.add m T))
+  // | RefBranch f e p -> (E, f, (Set.add m T))
+  // | m_1; m_2 -> M_m m_2 (M_m m_1 sigma)
+  // | nil -> sigma
+  | _ -> error "Unmatched pattern in M_m"
+}

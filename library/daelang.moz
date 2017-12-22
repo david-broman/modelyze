@@ -42,26 +42,26 @@ def M_m(m: Equations, sigma: Sigmapp) -> Sigmapp = {
   match m with
   | d_1 = d_2 -> ((Set.add m E), f, T)
   | init x (lift r: Real) -> {
-                  def n = (f x);
-                  if (is_undefined n) then (E, (set_value f x (true, r)), T)
-                  else {
-                         def (b, r_o) = n;
-                         if (b && r_o != r) then error "multiple inits for the same state variable"
-                         else (E, (set_value f x (true, r)), T)
-                       }
-                }
-  // | init_guess x r -> {
-  //                 def n = (f x);
-  //                 if (is_undefined n) then (E, (set_value f x (false, r)), T)
-  //                 else {
-  //                        def (b, r_o) = n;
-  //                        if (b || r_o != r) then error "multiple init guesses for the same state variable or trying to overide an init with a init guess"
-  //                        else (E, (set_value f x (false, r)), T)
-  //                      }
-  //               }
-  // | Branch f e p n -> (E, f, (Set.add m T))
-  // | RefBranch f e p -> (E, f, (Set.add m T))
-  // | m_1; m_2 -> M_m m_2 (M_m m_1 sigma)
-  // | nil -> sigma
+      def n = (f x);
+      if (is_undefined n) then (E, (set_value f x (true, r)), T)
+      else {
+        def (b, r_o) = n;
+        if (b && r_o != r) then error "multiple inits for the same state variable"
+        else (E, (set_value f x (true, r)), T)
+      }
+    }
+  | init_guess x (lift r: Real) -> {
+      def n = (f x);
+      if (is_undefined n) then (E, (set_value f x (false, r)), T)
+      else {
+        def (b, r_o) = n;
+        if (b || r_o != r) then error "multiple init guesses for the same state variable or trying to overide an init with a init guess"
+        else (E, (set_value f x (false, r)), T)
+      }
+    }
+  | Branch f e p n -> (E, f, (Set.add m T))
+  | RefBranch f e p -> (E, f, (Set.add m T))
+  | m_1; m_2 -> M_m m_2 (M_m m_1 sigma)
+  | nil -> sigma
   | _ -> error "Unmatched pattern in M_m"
 }

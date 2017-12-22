@@ -65,3 +65,33 @@ def test_M_m_init = {
   // def _ = M_m (init x 2.) sigma;
   println("==> End test case M_m_init")
 }
+
+def test_M_m_init_guess = {
+  def _ = println("==> Start test case M_m_init_guess");
+  def x: Real;
+  def sigma = M_m (init_guess x 1.) ((Set.empty), f, (Set.empty));
+  // test multiple init_guesss with the same value
+  def sigma = M_m (init_guess x 1.) sigma; 
+  def (_, fp, _) = sigma;
+  def (b, r) = fp x;
+  def _ = simple_assert (!b);
+  def _ = simple_assert (r == 1.);
+  // Calls below should throw errors
+  // def _ = M_m (init_guess x 2.) sigma;
+  println("==> End test case M_m_init_guess")
+}
+
+def test_M_m_init_over_guess = {
+  def _ = println("==> Start test case M_m_init_over_guess");
+  def x: Real;
+  def sigma = M_m (init_guess x 1.) ((Set.empty), f, (Set.empty));
+  // test multiple inits with the same value
+  def sigma = M_m (init x 2.) sigma; 
+  def (_, fp, _) = sigma;
+  def (b, r) = fp x;
+  def _ = simple_assert b;
+  def _ = simple_assert (r == 2.);
+  // Calls below should throw errors
+  // def _ = M_m (init x 2.) sigma;
+  println("==> End test case M_m_init_over_guess")
+}

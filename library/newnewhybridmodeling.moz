@@ -18,43 +18,43 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 Author: Oscar Eriksson oerikss@kth.se
 */
 
-include Equation
+include ModelyzeDAE
+include Elaboration
 
-type Time = Real
+type M
+type T
+type E = <Real>
+type VF = <Real> -> (Real, Real)
+type G = (Bool, ?)
+type GF = <Real> -> (G, G)
+type S = ([M], E, [M])
+type Empty
 
-type UknownValueMap = (<Real> => (Real, Real))
-type UknownValueMapElem = (<Real>, (Real, Real))
-type ZeroCrossing = <Real>
-type ZeroCrossingMap = (ZeroCrossing => Bool)
-type Switch = Equations -> ZeroCrossing -> Equations -> Equations
+def eqn: E -> M
+def sw: S -> M
+def e: Empty
 
-def switch: Switch
-def value : Real -> Real
+def value: <Real> -> Real
 
-type HybridState = (Equations, UknownValueMap, ZeroCrossingMap, Time)
-
-def convertToCT(eqs: Equations, uvm: UknownValueMap) -> (UkMap, VarArray, VarArray) = {
-  def makeYYandYP (ukm: UkMap) -> (VarArray, VarArray) = {
-    def n = (Map.size ukm);
-    def yy = (Array.make n 0.);
-    def yp = (Array.make n 0.);
-    def f(e: UknownValueMapElem) -> () = {
-      def (x, yyv, ypv) = e;
-      def k = fst (Map.find x ukm);
-      def _ = (Array.set yy k yyv);
-      (Array.set yp k ypv)
-    };
-    def _ = iter (Map.toList uvm) f;
-    (yy, yp)
-  };
-  
-  def ukm = makeUkMap eqs;
-  def (yy, yp) = makeYYandYP ukm;
-  (ukm, yy, yp)
+// Helper functions
+def gs2g(g1: G, g2: G) -> G = {
+  match (g1, g2) with
+  | ((true, _), (true, _)) -> error "Contradicting fixed values"
+  | ((true, _), _) -> g1
+  | (_, (true, _)) -> g2
+  | ((_, e), _) -> g2
+  | (_, (_, e)) -> g1
+  | ((_, v1), (_, v2)) -> (false, (v1+v2)/2.)
+  | _ -> error "Unmatched gs2g"
 }
 
-def enterTheEasyGoingLandOfContinousTime(hstate: HybtridState) -> HybtridState = {
-  def (eqs, uvm, zcm, t) = hstate;
-  def (ukm, yy, yp) = convertTo eqs uvm;
-  hstate  
+def vf2gf(vf: VF, v: <Real>) -> (G, G) = {
+  def (y, yp) = vf v;
+  ((false, y), (false, yp))
+}
+
+def f_sw(s: S, f_zc: E -> Bool, v: V, g: G) -> ([M], G) = {
+  def (m_cur, z, m_aft) = s;
+  
+  if (f_zc z) then 
 }

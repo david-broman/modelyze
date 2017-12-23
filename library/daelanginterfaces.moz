@@ -20,13 +20,13 @@ written by Oscar Eriksson oerikss@kth.se
 
 include Equation
 
-def cont_to_set(stuff: ?) -> Set(?) = {
-  def work(stuff: ?, acc: Set(?)) -> Set(?) = {
-    match stuff with
+def cont_to_set(cont: ?) -> Set(?) = {
+  def work(cont: ?, acc: Set(?)) -> Set(?) = {
+    match cont with
     | this ; that -> work that (Set.add this acc)
     | last -> (Set.add last acc)
   };
-  work stuff (Set.empty)
+  work cont (Set.empty)
 }
 
 def set_to_cont(set: Set(?)) -> ? = {

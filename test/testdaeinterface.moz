@@ -1,0 +1,38 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include daelanginterfaces
+include Equation
+
+def test_cont_to_set = {
+  def _ = println("==> Start test case cont_to_set");
+  def x, y, z: Real;
+  def eqs = (x = y; x = z; y = z);
+  def _ = dprint(cont_to_set eqs);
+  println("==> End test case cont_to_set")
+}
+
+def test_set_to_cont = {
+  def _ = println("==> Start test case set_to_cont");
+  def x, y, z: Real;
+  def set = (list_to_set [x = y, x = z, y = z]);
+  def _ = dprint(set_to_cont set);
+  println("==> End test case set_to_cont")
+}

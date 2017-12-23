@@ -184,3 +184,12 @@ def toArray(l: [Dyn]) -> {Dyn} = {
   def _ = work l a 0;
   a
 }
+
+def list_to_set(l : [Dyn]) -> Set(Dyn) = {
+  def work(l : [Dyn], acc: Set(Dyn)) -> Set(Dyn) = {
+    match l with
+    | e::es -> work es (Set.add e acc)
+    | _ -> acc
+  };
+  work l (Set.empty)
+}

@@ -95,3 +95,16 @@ def test_M_m_init_over_guess = {
   // def _ = M_m (init x 2.) sigma;
   println("==> End test case M_m_init_over_guess")
 }
+
+def test_M_m_nil = {
+  def _ = println("==> Start test case M_m_nil");
+  def x: Real;
+  def sigma = M_m (init x 1.) ((Set.empty), f, (Set.empty));
+  // test multiple inits with the same value
+  def sigma = M_m nil sigma; 
+  def (_, fp, _) = sigma;
+  def (b, r) = fp x;
+  def _ = simple_assert b;
+  def _ = simple_assert (r == 1.);
+  println("==> End test case M_m_nil")
+}

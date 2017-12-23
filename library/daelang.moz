@@ -19,6 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include Elaboration
+include DAELANGInterfaces
 
 type Sigma = (Set Equations, <Real> -> ?)
 type Sigmapp = (Set Equations, <Real> -> ?, Set ?)
@@ -59,9 +60,13 @@ def M_m(m: Equations, sigma: Sigmapp) -> Sigmapp = {
         else (E, (set_value f x (false, r)), T)
       }
     }
-  | Branch f e p n -> (E, f, (Set.add m T))
-  | RefBranch f e p -> (E, f, (Set.add m T))
+  | Branch _ _ _ _ -> (E, f, (Set.add m T))
+  | RefBranch _ _ _ -> (E, f, (Set.add m T))
   | m_1; m_2 -> M_m m_2 (M_m m_1 sigma)
   | nil -> sigma
   | _ -> error "Unmatched pattern in M_m"
+}
+
+def elabtopol(T: Set(?)) -> Set(Equations) = {
+  
 }

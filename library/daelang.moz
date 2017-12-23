@@ -68,5 +68,5 @@ def M_m(m: Equations, sigma: Sigmapp) -> Sigmapp = {
 }
 
 def elabtopol(T: Set(?)) -> Set(Equations) = {
-  
+  cont_to_set (elaborateConnections (set_to_cont T))
 }

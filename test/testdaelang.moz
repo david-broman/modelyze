@@ -108,3 +108,18 @@ def test_M_m_nil = {
   def _ = simple_assert (r == 1.);
   println("==> End test case M_m_nil")
 }
+
+def test_elabtopol = {
+  def _ = println("==> Start test case elabtopol");
+  def n1, n2, n3, n4: Real;
+  def f12, f23, f34, f41: Real;
+  def e12, e23, e34, e41: Real;
+  def circ = ((Branch f12 e12 n1 n2);
+    (Branch f23 e23 n2 n3);
+    (Branch f34 e34 n3 n4);
+    (Branch f41 e41 n4 n1);
+    (RefBranch f41 e41 n4));
+  def eqs = elabtopol (cont_to_set circ);
+  def _ = dprint(eqs);
+  println("==> End test case elabtopol")
+}

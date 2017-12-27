@@ -1,0 +1,64 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include DAELANGInterfaces
+include DAELANG
+
+def hinit: <Real> -> <Real> -> Equations
+def hinit_guess: <Real> -> <Real> -> Equations
+def reinit: <Real> -> <Real> -> Equations
+def reinit_guess: <Real> -> <Real> -> Equations
+def switch: Equations -> Equations -> <Real> -> Equations
+
+def getzcb(S: Equations) -> Set(<Real>) = {
+  def work(S: Equations, acc: Set(<Real>)) -> Set(<Real>) = {
+    match S with
+    | switch s_1 _ z -> work s_1 (Set.add z acc)
+    | s_1; s_2 -> work s_1 (work s_2 acc)
+    | _ -> acc
+  };
+  work S (Set.empty)
+}
+
+def M_ar(a: <?>, f: (<Real> -> Real)) -> ? = {
+  match a with
+  | der x -> error "Only algebraic expressions allowed in M_ar"
+  | sym: Real -> f a
+  | a_1 a_2 -> (M_ar a_1 f) (M_ar a_2 f)
+  | lift op: ? -> op
+  | _ ->  error "Unsupported model construct" 
+}
+
+def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
+  match S with
+  | a_1 = a_2 -> S
+  | hinit _ _ -> nil
+  | hinit_guess _ _ -> nil
+  | Branch _ _ _ _ -> S
+  | RefBranch _ _ _ -> S
+  | s_1; s_2 -> (T_s s_1 z); (T_s s_2 z)
+  | nil -> nil
+  | reinit _ _ -> S
+  | reinit_guess _ _ -> S
+  | switch s_1 s_2 zcb -> if (z zcb) then s_2
+       else switch (T_s s_1 z) s_2 zcb
+  | _ -> error "Unmatched pattern in T_s"
+}
+

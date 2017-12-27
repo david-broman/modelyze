@@ -1,10 +1,7 @@
-//include daelang
+include daelang
 
 def main = {
-  def a: Bool = true;
-  def b: Bool = false;
-  if b then b else {
-    if a then error "first"
-    else a
-  }
+  def s1 = list_to_set [1, 2, 3];
+  def s2 = list_to_set [1, 2, 3];
+  dprint(is_equal s1 s2);
 }

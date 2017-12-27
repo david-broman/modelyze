@@ -24,6 +24,13 @@ def simple_assert(pred: Bool) = {
   if pred then println("OK!") else println("Fail! ");
 }
 
+def print_expected_actual(expected: ?, actual: ?) -> () = {
+  def _ = println("== expected:");
+  def _ = dprint(expected);
+  def _ = println("== actual:");
+  dprint(actual)
+}
+
 def f = fun x: <Real> -> undefined
 
 def test_setvalue = {
@@ -119,7 +126,8 @@ def test_elabtopol = {
     (Branch f34 e34 n3 n4);
     (Branch f41 e41 n4 n1);
     (RefBranch f41 e41 n4));
-  def eqs = elabtopol (cont_to_set circ);
-  def _ = dprint(eqs);
+  def actual = elabtopol (cont_to_set circ);
+  def expected = "{e12_1 = u_1 - u_2;\ne23_1 = u_2 - u_3;\ne34_1 = u_3 - u_4;\ne41_1 = u_4 - u_1, f12_1 - f41_1 = 0, -f12_1 + f23_1 = 0, -f23_1 + f34_1 = 0, -f34_1 + f41_1 + f41_1 = 0, e41_1 = u_4}";
+  def _ = print_expected_actual expected actual;
   println("==> End test case elabtopol")
 }

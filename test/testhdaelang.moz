@@ -40,6 +40,15 @@ def test_M_ar = {
   println("==> End test case M_ar")
 }
 
+def test_M_ar_undefined = {
+  def _ = println("==> Start test case M_ar_undefined");
+  def x, y: Real;
+  def fp = (set_value f y 10.);
+  def expr = x + 1. + y;
+  def _ = simple_assert(is_undefined (M_ar expr fp));
+  println("==> End test case M_ar_undefined")
+}
+
 def test_T_s = {
   def _ = println("==> Start test case T_s");
   def x, y: Real;
@@ -53,4 +62,25 @@ def test_T_s = {
   def actual = cont_to_set (T_s model zcdf);
   def _ = simple_assert(is_equal expected actual);
   println("==> End test case T_s")
+}
+
+def test_R_s = {
+  def _ = println("==> Start test case R_s");
+  def x, y, z: Real;
+  def fp = (set_value f y 10.);
+  def model = (der y = 2.; hinit_guess z 1.; der x = 1.;
+              (switch (y = 2.;reinit x (y + 2.);reinit_guess y (y - 1.);
+                      (switch (Branch x x x x) (y = 4.) y))
+                                                  (z = 3.) x);
+              x = y);
+  def expected = cont_to_set (init x 12.;der y = 2.;init_guess z 1.;der x = 1.;y = 2.;init_guess y 9.;Branch x x x x;x = y);
+  def actual = cont_to_set (R_s model fp);
+  // def _ = dprint(init x 12.;der y = 2.;init_guess z 1.;der x = 1.;y = 2.;init_guess y 9.;Branch x x x x);
+  def _ = dprint(expected);
+  def _ = println("==");
+  // def _ = dprint(R_s model fp);
+  def _ = println("==");
+  def _ = dprint(actual);
+  def _ = simple_assert(is_equal expected actual);
+  println("==> End test case R_s")
 }

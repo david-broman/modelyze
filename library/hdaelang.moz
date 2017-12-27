@@ -37,27 +37,58 @@ def getzcb(S: Equations) -> Set(<Real>) = {
   work S (Set.empty)
 }
 
-def M_ar(a: <?>, f: (<Real> -> Real)) -> ? = {
+def M_ar(a: <?>, f: (<Real> -> ?)) -> ? = {
   match a with
   | der x -> error "Only algebraic expressions allowed in M_ar"
   | sym: Real -> f a
-  | a_1 a_2 -> (M_ar a_1 f) (M_ar a_2 f)
+  | a_1 a_2 -> {
+        def lhs = (M_ar a_1 f);
+        def rhs = (M_ar a_2 f);
+        if (is_undefined lhs) || (is_undefined rhs) then undefined
+        else lhs rhs    
+      }
   | lift op: ? -> op
   | _ ->  error "Unsupported model construct" 
 }
 
 def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
   match S with
-  | switch s_1 s_2 zcb -> if (z zcb) then s_2 else switch (T_s s_1 z) s_2 zcb
+  | s_1; s_2 -> (T_s s_1 z); (T_s s_2 z)
   | a_1 = a_2 -> S
   | hinit _ _ -> nil
   | hinit_guess _ _ -> nil
-  | Branch _ _ _ _ -> S
-  | RefBranch _ _ _ -> S
-  | s_1; s_2 -> (T_s s_1 z); (T_s s_2 z)
-  | nil -> nil
   | reinit _ _ -> S
   | reinit_guess _ _ -> S
+  | Branch _ _ _ _ -> S
+  | RefBranch _ _ _ -> S
+  | switch s_1 s_2 zcb -> if (z zcb) then s_2 else switch (T_s s_1 z) s_2 zcb
+  | nil -> nil
   | _ -> error "Unmatched pattern in T_s"
 }
 
+def R_s(S: Equations, f: (<Real> -> ?)) -> Equations = {
+  match S with
+  | s_1; s_2 -> (R_s s_1 f); (R_s s_2 f)
+  | hinit x a -> {
+        def r = M_ar a f;
+        if is_undefined r then error "Undefined init value" else init x r
+      }
+  | hinit_guess x a -> {
+        def r = M_ar a f;
+        if is_undefined r then error "Undefined init value" else init_guess x r
+      }
+  | reinit x a -> {
+        def r = M_ar a f;
+        if is_undefined r then error "Undefined init value" else init x r
+      }
+  | reinit_guess x a -> {
+        def r = M_ar a f;
+        if is_undefined r then error "Undefined init value" else init_guess x r
+      }
+  | switch s_1 _ _ -> R_s s_1 f
+  | a_1 = a_2 -> S
+  | Branch _ _ _ _ -> S
+  | RefBranch _ _ _ -> S
+  | nil -> nil
+  | _ -> error "Unmatched pattern in R_s"      
+}

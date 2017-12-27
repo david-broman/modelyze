@@ -23,7 +23,7 @@ include Equation
 def cont_to_set(cont: ?) -> Set(?) = {
   def work(cont: ?, acc: Set(?)) -> Set(?) = {
     match cont with
-    | this ; that -> work that (Set.add this acc)
+    | this ; that -> work that (work this acc)
     | last -> (Set.add last acc)
   };
   work cont (Set.empty)

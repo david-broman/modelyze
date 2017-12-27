@@ -1,0 +1,52 @@
+/*
+Modeling Kernel Language (Modelyze) library 
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include HDAELANG
+include TestDAELANG
+
+def test_getzcbds = {
+  def _ = println("==> Start test case getzcbds");
+  def x, y, z: Real;
+  def model = (switch
+                  (switch
+                          (x = 1.) (x = 2.) y) (switch (y = 1.) (y = 2.) z) x);
+  def _ = simple_assert(is_equal (getzcb model) (list_to_set [x, y]));
+  println("==> End test case getzcbds")
+}
+
+def test_M_ar = {
+  def _ = println("==> Start test case M_ar");
+  def x: Real;
+  def fp = (set_value f x 10.);
+  def expr = x + 1.;
+  def _ = simple_assert((M_ar expr fp) == 11.);
+  println("==> End test case M_ar")
+}
+
+// def test_T_s = {
+// def _ = println("==> Start test case T_s");
+// def x, y: Real;
+// def model = (der x = 1.;
+//             (switch (y = 2.;
+//                     (switch (Branch x x x x) (y = 4.) y))
+//                                                 (y = 3.) x));
+
+// println("==> End test case T_s")
+// }

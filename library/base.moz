@@ -197,7 +197,7 @@ def list_to_set(l : [Dyn]) -> Set(Dyn) = {
 def for_all(l: [Dyn], p: (Dyn -> Bool)) -> Bool = {
   def work(l: [Dyn]) -> Bool = {
     match l with
-    | e::es -> if (p e) then work es else false
+    | e::es -> if (p e) then work es else {def _ = dprint(e); false }
     | [] -> true
   };
   work l

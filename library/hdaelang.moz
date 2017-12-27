@@ -48,6 +48,7 @@ def M_ar(a: <?>, f: (<Real> -> Real)) -> ? = {
 
 def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
   match S with
+  | switch s_1 s_2 zcb -> if (z zcb) then s_2 else switch (T_s s_1 z) s_2 zcb
   | a_1 = a_2 -> S
   | hinit _ _ -> nil
   | hinit_guess _ _ -> nil
@@ -57,8 +58,6 @@ def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
   | nil -> nil
   | reinit _ _ -> S
   | reinit_guess _ _ -> S
-  | switch s_1 s_2 zcb -> if (z zcb) then s_2
-       else switch (T_s s_1 z) s_2 zcb
   | _ -> error "Unmatched pattern in T_s"
 }
 

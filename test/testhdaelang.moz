@@ -40,13 +40,17 @@ def test_M_ar = {
   println("==> End test case M_ar")
 }
 
-// def test_T_s = {
-// def _ = println("==> Start test case T_s");
-// def x, y: Real;
-// def model = (der x = 1.;
-//             (switch (y = 2.;
-//                     (switch (Branch x x x x) (y = 4.) y))
-//                                                 (y = 3.) x));
-
-// println("==> End test case T_s")
-// }
+def test_T_s = {
+  def _ = println("==> Start test case T_s");
+  def x, y: Real;
+  def zcdf = (fun z: <Real> -> (Set.mem z (list_to_set [y])));
+  def model = (hinit x 2.; der y = 2.; hinit_guess y 1.; der x = 1.;
+              (switch (y = 2.;
+                      (switch (Branch x x x x) (y = 4.) y))
+                                                  (y = 3.) x);
+              x = y);
+  def expected = cont_to_set (NoEqn;der y = 2.;NoEqn;der x = 1.;switch (y = 2.;y = 4.) (y = 3.) x;x = y);
+  def actual = cont_to_set (T_s model zcdf);
+  def _ = simple_assert(is_equal expected actual);
+  println("==> End test case T_s")
+}

@@ -58,6 +58,10 @@ def zcdf(fb: (<Real> -> ?), fa: (<Real> -> ?), zcb: <Real>) -> Bool = {
   else bef*aft < 0.
 }
 
+def haszc(zcb: Set(Equations), z: (<Real> -> Bool)) -> Bool = {
+  for_all (Set.toList zcb) z
+}
+
 def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
   match S with
   | s_1; s_2 -> (T_s s_1 z); (T_s s_2 z)

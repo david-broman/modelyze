@@ -84,3 +84,14 @@ def test_R_s = {
   def _ = simple_assert(is_equal expected actual);
   println("==> End test case R_s")
 }
+
+def test_zcdf = {
+  def _ = println("==> Start test case zcdf");
+  def x, y: Real;
+  def fb = set_value (set_value f x 10.) y 11.;
+  def fa = set_value (set_value f x 11.) y 10.;
+  def _ = simple_assert(zcdf fb fa (x - 10.5));
+  def _ = simple_assert((!zcdf fb fa (x - 11.)));
+  def _ = simple_assert(zcdf fb fa (x - y));
+  println("==> End test case zcdf")
+}

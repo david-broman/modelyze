@@ -20,6 +20,14 @@ written by Oscar Eriksson oerikss@kth.se
 
 include Equation
 
+def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
+
+def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
+  def subsetleft = for_all (Set.toList lhs) (fun e: ? -> (Set.mem e rhs));
+  def subsetright = for_all (Set.toList rhs) (fun e: ? -> (Set.mem e lhs));
+  subsetleft && subsetright
+}
+
 def cont_to_set(cont: ?) -> Set(?) = {
   def work(cont: ?, acc: Set(?)) -> Set(?) = {
     match cont with

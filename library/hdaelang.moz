@@ -27,6 +27,20 @@ def reinit: <Real> -> <Real> -> Equations
 def reinit_guess: <Real> -> <Real> -> Equations
 def switch: Equations -> Equations -> <Real> -> Equations
 
+def M_ar(a: <?>, f: (<Real> -> ?)) -> ? = {
+  match a with
+  | der x -> error "Only algebraic expressions allowed in M_ar"
+  | sym: Real -> f a
+  | a_1 a_2 -> {
+        def lhs = (M_ar a_1 f);
+        def rhs = (M_ar a_2 f);
+        if (is_undefined lhs) || (is_undefined rhs) then undefined
+        else lhs rhs
+      }
+  | lift op: ? -> op
+  | _ ->  error "Unsupported model construct" 
+}
+
 def getzcb(S: Equations) -> Set(<Real>) = {
   def work(S: Equations, acc: Set(<Real>)) -> Set(<Real>) = {
     match S with
@@ -37,18 +51,11 @@ def getzcb(S: Equations) -> Set(<Real>) = {
   work S (Set.empty)
 }
 
-def M_ar(a: <?>, f: (<Real> -> ?)) -> ? = {
-  match a with
-  | der x -> error "Only algebraic expressions allowed in M_ar"
-  | sym: Real -> f a
-  | a_1 a_2 -> {
-        def lhs = (M_ar a_1 f);
-        def rhs = (M_ar a_2 f);
-        if (is_undefined lhs) || (is_undefined rhs) then undefined
-        else lhs rhs    
-      }
-  | lift op: ? -> op
-  | _ ->  error "Unsupported model construct" 
+def zcdf(fb: (<Real> -> ?), fa: (<Real> -> ?), zcb: <Real>) -> Bool = {
+  def bef = (M_ar zcb fb);
+  def aft = (M_ar zcb fa);
+  if (is_undefined bef) || (is_undefined aft) then false
+  else bef*aft < 0.
 }
 
 def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
@@ -71,19 +78,23 @@ def R_s(S: Equations, f: (<Real> -> ?)) -> Equations = {
   | s_1; s_2 -> (R_s s_1 f); (R_s s_2 f)
   | hinit x a -> {
         def r = M_ar a f;
-        if is_undefined r then error "Undefined init value" else init x r
+        if is_undefined r then error "Undefined init value"
+        else init x r
       }
   | hinit_guess x a -> {
         def r = M_ar a f;
-        if is_undefined r then error "Undefined init value" else init_guess x r
+        if is_undefined r then error "Undefined init guess value"
+        else init_guess x r
       }
   | reinit x a -> {
         def r = M_ar a f;
-        if is_undefined r then error "Undefined init value" else init x r
+        if is_undefined r then error "Undefined reinit value"
+        else init x r
       }
   | reinit_guess x a -> {
         def r = M_ar a f;
-        if is_undefined r then error "Undefined init value" else init_guess x r
+        if is_undefined r then error "Undefined reinit guess value"
+        else init_guess x r
       }
   | switch s_1 _ _ -> R_s s_1 f
   | a_1 = a_2 -> S
@@ -92,3 +103,4 @@ def R_s(S: Equations, f: (<Real> -> ?)) -> Equations = {
   | nil -> nil
   | _ -> error "Unmatched pattern in R_s"      
 }
+

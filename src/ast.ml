@@ -341,27 +341,26 @@ let rec pprint_ty t =
         metastr l ^. us"->" ^. us" " ^. (pprint_ty false t2) ^.
         (if left then us")" else us"")
   | TyUnit(_,l) -> metastr l ^. us"()"
-        | TyList(_,l,t) -> metastr l ^. us"[" ^. (pprint_ty false t) ^. us"]"
-        | TyTuple(_,l,tylst) -> metastr l ^. us"(" ^. (tylst |>
+  | TyList(_,l,t) -> metastr l ^. us"[" ^. (pprint_ty false t) ^. us"]"
+  | TyTuple(_,l,tylst) -> metastr l ^. us"(" ^. (tylst |>
       List.map (pprint_ty false) |> Ustring.concat (us","))  ^. us")"
-        | TySym(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
+  | TySym(_,l,t) -> metastr l ^. us"<" ^. (pprint_ty false t) ^. us">"
   | TyDyn(_,l) -> metastr l ^. us"?"
-        | TySymData(_,l,tyid,id) -> metastr l ^. Symtbl.get id
-        | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^.
+  | TySymData(_,l,tyid,id) -> metastr l ^. Symtbl.get id
+  | TyIdent(_,l,id) -> metastr l ^. us"typeident(" ^.
             Symtbl.get id ^. us")"
-        | TyArray(_,l,t) -> metastr l ^. us"{" ^. (pprint_ty false t) ^. us"}"
+  | TyArray(_,l,t) -> metastr l ^. us"{" ^. (pprint_ty false t) ^. us"}"
   | TyMap(_,l,t1,t2) ->
       us"(" ^. (pprint_ty false t1) ^. us" " ^.
         metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")"
   | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
   | TyDAESolver(_,l) -> metastr l ^. us"SimInst"
-  | TyEQSolver(_,l) -> metastr l ^. us"EqSolveInst"                      
-        | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
+  | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
             (List.map (fun (k,(ty,tm)) ->
               us"(" ^. ustring_of_int k ^. us",(" ^.
                          pprint_ty false ty ^. us"," ^. pprint tm ^. us")")))
         |> Ustring.concat (us",")) ^. us")")
-
+  | TyEQSolver(_,l) -> metastr l ^. us"EqSolveInst"                      
         in pprint_ty false t
 
       and pprint_array_op op =

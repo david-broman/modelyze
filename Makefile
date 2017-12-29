@@ -48,6 +48,7 @@ all:    native
 
 # Compile native version
 native: bytesfix comp_c_files
+	# @ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS) moz.native -lflags $(C_FILES)
 	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
 	@rm -f bytes.ml
 	@rm -f moz.native

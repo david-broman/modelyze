@@ -95,8 +95,9 @@ let pprint_ty t =
 	    us"(" ^. (pprint_ty false t1) ^. us" " ^.  
 	      us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")" 
         | TySet(t) -> us"{" ^. (pprint_ty false t) ^. us"}"
-	| TyDAESolver ->  us"SimInst"  
+	| TyDAESolver ->  us"SimInst"
         | TyEnv -> us"TyEnv"
+        | TyEQSolver -> us"EqSolveInst"         
   in pprint_ty false t
 
 let pprint_pat p = 

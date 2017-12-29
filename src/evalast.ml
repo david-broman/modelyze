@@ -52,6 +52,7 @@ and ty =
   | TySet       of ty 
   | TyDAESolver
   | TyEnv
+  | TyEQSolver
 
 and tm =
   | TmVar         of index

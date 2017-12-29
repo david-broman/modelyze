@@ -44,7 +44,7 @@ and ty =
   | TyUnit      
   | TyList      of ty
   | TyTuple     of ty list
-  | TySym     of ty
+  | TySym       of ty
   | TyDyn  
   | TySymData   of typeid
   | TyArray     of ty
@@ -52,7 +52,7 @@ and ty =
   | TySet       of ty 
   | TyDAESolver
   | TyEnv
-  | TyEQSolver
+  (* | TyEQSolver *)
 
 and tm =
   | TmVar         of index
@@ -83,6 +83,8 @@ and tm =
   | TmSetOp       of Ast.setop * tm list
   | TmDAESolver   of Ida.st * tm array * tm array
   | TmDAESolverOp of Ast.daesolverop * tm list
+  (* | TmEQSolver    of Kingsol.session * tm array *)
+  (* | TmEQSolverOp  of Ast.eqsolverop * tm list                    *)
   | TmDPrint      of tm
   | TmDPrintType  of tm
   | TmSymStr      of tm

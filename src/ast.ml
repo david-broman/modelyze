@@ -64,7 +64,7 @@ type ty =
   | TySet       of info * level * ty
   | TyDAESolver of info * level
   | TyEnv       of info * ident * (int * (ty * tm)) list
-  | TyEQSolver  of info * level
+  (* | TyEQSolver  of info * level *)
 
   (** Primitive, built-in functions *)
 and primitive =
@@ -191,9 +191,9 @@ and daesolverop =
   | DAESolverOpClose
   | DAESolverOpRoots
 
-and eqsolverop =
-  | EQSolverOpMake
-  | EQSolverOpSolve
+(* and eqsolverop =
+ *   | EQSolverOpMake
+ *   | EQSolverOpSolve *)
 
   (** Top elements of a source code file *)
 and top =
@@ -244,6 +244,7 @@ and top =
   | TmSetOp       of info * level * setop * tm list
     (* Simulation *)
   | TmDAESolverOp of  info * level * daesolverop * tm list
+  (* | TmEQSolverOp  of  info * level * eqsolverop  * tm list                     *)
     (* Debugging and errors *)
   | TmDPrint      of tm
   | TmDPrintType  of tm
@@ -360,7 +361,7 @@ let rec pprint_ty t =
               us"(" ^. ustring_of_int k ^. us",(" ^.
                          pprint_ty false ty ^. us"," ^. pprint tm ^. us")")))
         |> Ustring.concat (us",")) ^. us")")
-  | TyEQSolver(_,l) -> metastr l ^. us"EqSolveInst"
+  (* | TyEQSolver(_,l) -> metastr l ^. us"EqSolveInst" *)
         in pprint_ty false t
 
       and pprint_array_op op =
@@ -398,6 +399,11 @@ and pprint_daesolver_op op =
   | DAESolverOpClose -> us"close"
   | DAESolverOpRoots -> us"roots"
 
+(* and pprint_eqsolver_op op =
+ *   match op with
+ *   | EQSolverOpMake -> us"make"
+ *   | EQSolverOpSolve -> us"solve" *)
+                      
 and pprint_mpat p =
   match p with
   | MPatSym(_,ty) -> us"sym:" ^. pprint_ty ty
@@ -498,6 +504,8 @@ and pprint tm =
       (tms |> List.map pprint |> Ustring.fast_concat (us" "))
   | TmDAESolverOp(_,l,op,tms) -> metastr l ^. pprint_daesolver_op op ^. us" " ^.
       (tms |> List.map pprint |> Ustring.fast_concat (us" "))
+  (* | TmEQSolverOp(_,l,op,tms) -> metastr l ^. pprint_eqsolver_op op ^. us" " ^.
+   *     (tms |> List.map pprint |> Ustring.fast_concat (us" ")) *)
   | TmDPrint(t) -> pprint t
   | TmDPrintType(t) -> pprint t
   | TmSymStr(fi,t) -> pprint t
@@ -875,6 +883,7 @@ let rec tm_info t =
     | TmMapOp(fi,_,_,_) -> fi
     | TmSetOp(fi,_,_,_) -> fi
     | TmDAESolverOp(fi,_,_,_) -> fi
+    (* | TmEQSolverOp(fi,_,_,_) -> fi                                *)
     | TmDPrint(t) -> tm_info t
     | TmDPrintType(t) -> tm_info t
     | TmSymStr(fi,t) -> fi
@@ -911,6 +920,7 @@ let rec set_tm_info newfi tm =
     | TmMapOp(_,l,op,tms) -> TmMapOp(newfi,l,op,tms)
     | TmSetOp(_,l,op,tms) -> TmSetOp(newfi,l,op,tms)
     | TmDAESolverOp(_,l,op,tms) -> TmDAESolverOp(newfi,l,op,tms)
+    (* | TmEQSolverOp(_,l,op,tms) -> TmEQSolverOp(newfi,l,op,tms) *)
     | TmDPrint(t) -> TmDPrint(set_tm_info newfi t)
     | TmDPrintType(t) -> TmDPrintType(set_tm_info newfi t)
     | TmSymStr(fi,t) -> TmSymStr(fi,set_tm_info newfi t)
@@ -949,7 +959,7 @@ let ty_info ty =
     | TySet(fi,_,_) -> fi
     | TyDAESolver(fi,_) -> fi
     | TyEnv(fi,_,_) -> fi
-    | TyEQSolver(fi,_) -> fi
+    (* | TyEQSolver(fi,_) -> fi *)
 
 let rec set_ty_info newfi ty =
   match ty with
@@ -972,7 +982,7 @@ let rec set_ty_info newfi ty =
     | TySet(_,l,ty) -> TySet(newfi,l,set_ty_info newfi ty)
     | TyDAESolver(_,l) -> TyDAESolver(newfi,l)
     | TyEnv(_,x,lst) -> TyEnv(newfi,x,lst)
-    | TyEQSolver(_,l) -> TyEQSolver(newfi,l)
+    (* | TyEQSolver(_,l) -> TyEQSolver(newfi,l) *)
 
 let ty_lev ty =
   match ty with
@@ -993,7 +1003,7 @@ let ty_lev ty =
     | TySet(_,l,_) -> l
     | TyDAESolver(_,l) -> l
     | TyEnv(_,_,_) -> 0
-    | TyEQSolver(_,l) -> l
+    (* | TyEQSolver(_,l) -> l *)
 
 
     (** Change so that pattern variables cannot automatically be escaped *)
@@ -1104,7 +1114,9 @@ and fv_patcases cases =
     | TmSetOp(fi,l,op,tms) ->
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmDAESolverOp(fi,l,op,tms) ->
-        tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
+       tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
+    (* | TmEQSolverOp(fi,l,op,tms) ->
+     *     tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty *)
     | TmDPrint(t) -> fv_tm t
     | TmDPrintType(t) -> fv_tm t
     | TmSymStr(fi,t) -> fv_tm t

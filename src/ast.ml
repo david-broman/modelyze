@@ -64,6 +64,7 @@ type ty =
   | TySet       of info * level * ty
   | TyDAESolver of info * level
   | TyEnv       of info * ident * (int * (ty * tm)) list
+  | TyEQSolver  of info * level                 
 
   (** Primitive, built-in functions *)
 and primitive =
@@ -190,6 +191,10 @@ and daesolverop =
   | DAESolverOpClose
   | DAESolverOpRoots
 
+and eqsolverop =
+  | EQSolverOpMake
+  | EQSolverOpSolve
+  
   (** Top elements of a source code file *)
 and top =
   | TopLet        of info * ident * ty option * (ident * ty) list *
@@ -350,6 +355,7 @@ let rec pprint_ty t =
         metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")"
   | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
   | TyDAESolver(_,l) -> metastr l ^. us"SimInst"
+  | TyEQSolver(_,l) -> metastr l ^. us"EqSolveInst"                      
         | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
             (List.map (fun (k,(ty,tm)) ->
               us"(" ^. ustring_of_int k ^. us",(" ^.
@@ -944,6 +950,7 @@ let ty_info ty =
     | TySet(fi,_,_) -> fi
     | TyDAESolver(fi,_) -> fi
     | TyEnv(fi,_,_) -> fi
+    | TyEQSolver(fi,_) -> fi                     
 
 let rec set_ty_info newfi ty =
   match ty with
@@ -966,6 +973,7 @@ let rec set_ty_info newfi ty =
     | TySet(_,l,ty) -> TySet(newfi,l,set_ty_info newfi ty)
     | TyDAESolver(_,l) -> TyDAESolver(newfi,l)
     | TyEnv(_,x,lst) -> TyEnv(newfi,x,lst)
+    | TyEQSolver(_,l) -> TyEQSolver(newfi,l)                      
 
 let ty_lev ty =
   match ty with
@@ -986,6 +994,7 @@ let ty_lev ty =
     | TySet(_,l,_) -> l
     | TyDAESolver(_,l) -> l
     | TyEnv(_,_,_) -> 0
+    | TyEQSolver(_,l) -> l                    
 
 
     (** Change so that pattern variables cannot automatically be escaped *)

@@ -49,6 +49,7 @@ let ty_normalize ty =
       | TySet(fi,l,ty1) -> TySet(fi,l, norm isSym ty1)
       | TyDAESolver(_,_) -> ty
       | TyEnv(_,_,_) -> ty
+      | TyEQSolver(_,_) -> ty                      
   in
     norm false ty
 
@@ -77,6 +78,7 @@ let ty_typesubst typemap numap ty =
       | TySet(fi,l,ty) -> TySet(fi,l,subst ty)
       | TyDAESolver(_,_) as tt -> tt
       | TyEnv(_,_,_) -> ty
+      | TyEQSolver(_,_) as tt -> tt                         
   in
     ty_normalize (subst ty)
 

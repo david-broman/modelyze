@@ -18,7 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include Equation
+include ModelyzeDAE
 
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
 
@@ -47,3 +47,4 @@ def set_to_cont(set: Set(?)) -> ? = {
    if (length l) == 0 then error "Empty set" else
    if (length l) == 1 then (hd l) else work (tl l) (hd l)
 }
+

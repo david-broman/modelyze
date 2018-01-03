@@ -1,0 +1,94 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include Equation
+include DAESolver
+
+type Residual = Real -> {Real} -> {Real} -> [Real]
+type Varvals = <Real> -> <Real>
+
+// General expression evaluation
+def eval(expr:<?>, yy:Varvals, yp:Varvals) -> ? = {
+    match expr with
+    | der x ->
+        (match x with
+         | sym:Real -> eval(yp(x), yy, yp)
+         | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Real -> eval(yy(expr), yy, yp)
+    | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
+    | lift v:? -> v
+    | _ ->  error "Unsupported model construct"
+}
+
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up in yy and yp arrays.
+def evalFromArray(expr:Expr, ukmap:UkMap, yy:{Real}, yp:{Real}) -> Real = {
+  def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
+  def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
+  eval(expr,yyfun,ypfun);
+}
+
+// Create the residual function of the DAE. Used by IDA/Sundials.
+def makeResidual(ukmap:UkMap, model:Equations, ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = {
+  def realExpr(expr:Expr) = evalFromArray(expr,ukmap,yy,yp);
+  def traverseEq(m:Equations,acc:[Real]) -> [Real] = {
+    match m with
+    | e1 ; e2 -> traverseEq(e2,traverseEq(e1,acc))
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2))::acc
+    | _ -> acc
+  };
+  traverseEq(model,[]);
+}
+
+//Generate arrays of initial values
+def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
+  def initvalmap = initValues(model);
+  def size = (Map.size ukmap);
+  def yy = (Array.make size 0.);
+  def yp = (Array.make size 0.);
+  def setvals(initvals:[(Signal,Signal)]) -> {Real} = {
+    match initvals with
+    | (u,e)::xs -> {
+        def v = (match e with
+                 | lift v:Real -> v
+                 | _ -> error "Cannot initialize a variable with a variable.");
+        def _ = (Array.set yy (fst (Map.find u ukmap)) v);
+        setvals xs;
+      }
+    | [] -> yy
+  };
+  (setvals(Map.toList initvalmap), yp)
+}
+
+def model = {
+  def x,y: Real;
+  init x 1.;
+  der x = y;
+  x + y = 1.
+}
+
+def main = {
+  def ukm = makeUkMap(model);
+  def (yy, yp) = makeInitValues(model, ukm);
+  def resf = makeResidual(ukm,model);
+  def t0 = 0.0;
+  def s = (DAESolver.init resf t0 yy yp);
+  dprint(yy)
+}

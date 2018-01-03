@@ -20,7 +20,6 @@ open Ustring.Op
 open Utils
 open Printf
 open Info
-(* open Sundials *)
 open Evalast
 open Debugprint
 
@@ -119,23 +118,13 @@ let eval_set_op op arg_lst =
       PMap.foldi (fun k _ a -> TmCons(k,a)) m TmNil
   | _ -> TmSetOp(op,arg_lst)
 
-let array_update ar artm =
-  Array.iteri (fun i r -> artm.(i) <- TmConst(Ast.ConstReal(r))) ar
-
-let array_to_tm ar  =
-  Array.map (fun r -> TmConst(Ast.ConstReal(r))) ar
-
-let array_from_tm ar =
-  Array.map (fun t -> match t with TmConst(Ast.ConstReal(r)) -> r
-                                 | _ -> assert false) ar
-
-let realArray_from_tm ar =
+let from_tm ar =
   let ar' = Array.map (fun t -> match t with TmConst(Ast.ConstReal(r)) -> r
                                            | _ -> assert false) ar in
-  Nvector_serial.wrap (Sundials.RealArray.of_array ar')
+  Sundials.RealArray.of_array ar'
 
-let tm_from_realArray ar =
-  let ar' = Sundials.RealArray.to_array (Nvector_serial.unwrap ar) in
+let from_realArray ar =
+  let ar' = Sundials.RealArray.to_array ar in
   Array.map (fun r -> TmConst(Ast.ConstReal(r))) ar'
 
 let bigarray_from_tmlist tm rr =
@@ -150,8 +139,8 @@ let eval_daesolver_op eval op arg_lst =
     (* Residual and root finder functions *)
     let resrootfun tmres time yy yp rr =
       let tmtime = TmConst(Ast.ConstReal(time)) in
-      let tmyy = TmArray(tm_from_realArray yy) in
-      let tmyp = TmArray(tm_from_realArray yp) in
+      let tmyy = TmArray(from_realArray yy) in
+      let tmyp = TmArray(from_realArray yp) in
       let lst =
         eval (TmApp(TmApp(TmApp(tmres,tmtime,false),tmyy,false),tmyp,false)) in
         bigarray_from_tmlist lst rr
@@ -163,10 +152,14 @@ let eval_daesolver_op eval op arg_lst =
          *                (array_from_tm tm_id) (resrootfun tmres) in
          * array_update (Ida.y st) tm_yy;
          * TmDAESolver(st,tm_yy,tm_yp) *)
-    (* | Ast.DAESolverOpInit,
-     *   [tmres;TmConst(Ast.ConstReal(t0));TmArray(tm_yy0);TmArray(tm_yp0)] ->
-     *    let resf = resrootfun tmres in
-     *    let *)
+    | Ast.DAESolverOpInit,
+      [tmres;TmConst(Ast.ConstReal(t0));TmArray(tm_yy0);TmArray(tm_yp0)] ->
+       let resf = resrootfun tmres in
+       let yy = Nvector_serial.wrap (from_tm tm_yy0) in
+       let yp = Nvector_serial.wrap (from_tm tm_yp0) in
+       let st = Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9)) resf t0 yy yp) in
+       TmDAESolver(st,yy,yp)
+
     (* | Ast.DAESolverOpMakeHybrid, (\* The problem with executing byte code is here. *\) *)
         (* [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp); *)
          (* TmArray(tm_id);tmres;tmrootfinder] -> *)

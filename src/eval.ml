@@ -129,7 +129,16 @@ let array_from_tm ar =
   Array.map (fun t -> match t with TmConst(Ast.ConstReal(r)) -> r
                                  | _ -> assert false) ar
 
-let array_from_tmlist tm rr =
+let realArray_from_tm ar =
+  let ar' = Array.map (fun t -> match t with TmConst(Ast.ConstReal(r)) -> r
+                                           | _ -> assert false) ar in
+  Nvector_serial.wrap (Sundials.RealArray.of_array ar')
+
+let tm_from_realArray ar =
+  let ar' = Sundials.RealArray.to_array (Nvector_serial.unwrap ar) in
+  Array.map (fun r -> TmConst(Ast.ConstReal(r))) ar'
+
+let bigarray_from_tmlist tm rr =
   let rec worker tm =
     match tm with
       | TmCons(TmConst(Ast.ConstReal(r)),ts) -> r::(worker ts)
@@ -141,11 +150,11 @@ let eval_daesolver_op eval op arg_lst =
     (* Residual and root finder functions *)
     let resrootfun tmres time yy yp rr =
       let tmtime = TmConst(Ast.ConstReal(time)) in
-      let tmyy = TmArray(array_to_tm yy) in
-      let tmyp = TmArray(array_to_tm yp) in
+      let tmyy = TmArray(tm_from_realArray yy) in
+      let tmyp = TmArray(tm_from_realArray yp) in
       let lst =
         eval (TmApp(TmApp(TmApp(tmres,tmtime,false),tmyy,false),tmyp,false)) in
-        array_from_tmlist lst rr
+        bigarray_from_tmlist lst rr
     in
     match op,arg_lst with
     (* | Ast.DAESolverOpMake, *)
@@ -154,6 +163,10 @@ let eval_daesolver_op eval op arg_lst =
          *                (array_from_tm tm_id) (resrootfun tmres) in
          * array_update (Ida.y st) tm_yy;
          * TmDAESolver(st,tm_yy,tm_yp) *)
+    (* | Ast.DAESolverOpInit,
+     *   [tmres;TmConst(Ast.ConstReal(t0));TmArray(tm_yy0);TmArray(tm_yp0)] ->
+     *    let resf = resrootfun tmres in
+     *    let *)
     (* | Ast.DAESolverOpMakeHybrid, (\* The problem with executing byte code is here. *\) *)
         (* [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp); *)
          (* TmArray(tm_id);tmres;tmrootfinder] -> *)
@@ -240,7 +253,7 @@ let rec readback syms d tm =
       | TmMapOp(op,tms) -> TmMapOp(op,List.map (readback syms d) tms)
       | TmSet(size,tms) -> tm
       | TmSetOp(op,tms) -> TmSetOp(op,List.map (readback syms d) tms)
-      | TmDAESolver(st) -> tm
+      | TmDAESolver(st,_,_) -> tm
       | TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (readback syms d) tms)
       | TmDPrint(t) -> TmDPrint(readback syms d t)
       | TmDPrintType(t) -> TmDPrintType(readback syms d t)
@@ -384,7 +397,7 @@ and eval venv norec t =
       | TmMapOp(op,tms) -> eval_map_op op (List.map (eval venv norec) tms)
       | TmSet(size,tms) -> TmSet(size,tms)
       | TmSetOp(op,tms) -> eval_set_op op (List.map (eval venv norec) tms)
-      | TmDAESolver(st) -> TmDAESolver(st)
+      | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
       | TmDAESolverOp(op,tms) ->
           eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
       | TmDPrint(t) -> let t' = eval venv norec t  in

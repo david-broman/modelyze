@@ -396,7 +396,7 @@ and pprint_daesolver_op op =
   | DAESolverOpInitWithRootf -> us"init_with_rootf"
   | DAESolverCalcICYYYP -> us"calc_ic_ya_ydp"
   | DAESolverOpStep -> us"solve_one_step"
-  | DAESolverOpReinit -> us"reinit"
+  (* | DAESolverOpReinit -> us"reinit" *)
   | DAESolverOpRootInfo -> us"get_root_info"
 
 
@@ -1175,7 +1175,7 @@ let mk_daesolverop fi sid =
   | "init_with_rootf" -> DAESolverOpInitWithRootf
   | "calc_ic_ya_ydp" -> DAESolverCalcICYYYP
   | "solve_one_step" -> DAESolverOpStep
-  | "reinit" -> DAESolverOpReinit
+  (* | "reinit" -> DAESolverOpReinit *)
   | "get_root_info" -> DAESolverOpRootInfo
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 

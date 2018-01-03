@@ -36,29 +36,19 @@ endif
 # DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
 DIRS = src,ext/ucamlib/src,ext/extlib
 
-# These are the files and libraries of C code that should be linked.
-C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsundials_nvecserial.a
-
-
 .PHONY: all clean
 
-# Init submodules if needed and make native version. 
+# Init submodules if needed and make native version.
 # The resulting executable can be found under /bin and /library (symlinks)
 all:    native
 
 
 # Compile native version
-native: bytesfix comp_c_files
-	@ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS) moz.native -lflags $(C_FILES)
-	# @ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
+native: bytesfix #comp_c_files
+	@ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS) moz.native
 	@rm -f bytes.ml
 	@rm -f moz.native
 	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz
-
-
-# C-files. Ugly treatment of error that latest ocaml generates.  
-comp_c_files:
-	@ocamlbuild ext/sundials/ida_stubs.o  > /dev/null 2>&1
 
 # Handling subtree for ext/ucamlib
 UCAMLIB_GIT = https://github.com/david-broman/ucamlib.git

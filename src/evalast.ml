@@ -81,7 +81,7 @@ and tm =
   | TmMapOp       of Ast.mapop * tm list
   | TmSet         of int * (tm,unit) PMap.t
   | TmSetOp       of Ast.setop * tm list
-  | TmDAESolver   of Nvector_serial.kind Ida.serial_session
+  | TmDAESolver   of Nvector_serial.kind Ida.serial_session * Nvector_serial.t * Nvector_serial.t
   | TmDAESolverOp of Ast.daesolverop * tm list
   (* | TmEQSolver    of Kingsol.session * tm array *)
   (* | TmEQSolverOp  of Ast.eqsolverop * tm list                    *)

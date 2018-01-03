@@ -186,7 +186,7 @@ and setop =
 and daesolverop =
   | DAESolverOpInit
   | DAESolverOpInitWithRootf
-  | DAESolverCalcICYYYP
+  | DAESolverOpCalcICYYYP
   | DAESolverOpStep
   (* | DAESolverOpReinit *)
   | DAESolverOpRootInfo
@@ -394,7 +394,7 @@ and pprint_daesolver_op op =
   match op with
   | DAESolverOpInit -> us"init"
   | DAESolverOpInitWithRootf -> us"init_with_rootf"
-  | DAESolverCalcICYYYP -> us"calc_ic_ya_ydp"
+  | DAESolverOpCalcICYYYP -> us"calc_ic_ya_ydp"
   | DAESolverOpStep -> us"solve_one_step"
   (* | DAESolverOpReinit -> us"reinit" *)
   | DAESolverOpRootInfo -> us"get_root_info"
@@ -1173,7 +1173,7 @@ let mk_daesolverop fi sid =
   match Ustring.to_latin1 s with
   | "init" -> DAESolverOpInit
   | "init_with_rootf" -> DAESolverOpInitWithRootf
-  | "calc_ic_ya_ydp" -> DAESolverCalcICYYYP
+  | "calc_ic_ya_ydp" -> DAESolverOpCalcICYYYP
   | "solve_one_step" -> DAESolverOpStep
   (* | "reinit" -> DAESolverOpReinit *)
   | "get_root_info" -> DAESolverOpRootInfo

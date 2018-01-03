@@ -127,6 +127,9 @@ let from_realArray ar =
   let ar' = Sundials.RealArray.to_array ar in
   Array.map (fun r -> TmConst(Ast.ConstReal(r))) ar'
 
+let into_tm ar artm =
+  Sundials.RealArray.iteri (fun i r -> artm.(i) <- TmConst(Ast.ConstReal(r))) ar
+
 let bigarray_from_tmlist tm rr =
   let rec worker tm =
     match tm with
@@ -159,6 +162,16 @@ let eval_daesolver_op eval op arg_lst =
        let yp = Nvector_serial.wrap (from_tm tm_yp0) in
        let st = Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9)) resf t0 yy yp) in
        TmDAESolver(st,yy,yp)
+
+    | Ast.DAESolverOpCalcICYYYP,
+      [TmDAESolver(st,yy,yp);TmArray(tm_varids);TmArray(tm_yyout);TmArray(tm_ypout);
+       TmConst(Ast.ConstReal(t0))] ->
+       let vids = Nvector_serial.wrap (from_tm tm_varids) in
+       Ida.set_suppress_alg st ~varid:vids true;
+       Ida.calc_ic_ya_yd' st ~y:yy ~y':yp t0;
+       into_tm (Nvector_serial.unwrap yy) tm_yyout;
+       into_tm (Nvector_serial.unwrap yp) tm_ypout;
+       TmConst(Ast.ConstUnit)
 
     (* | Ast.DAESolverOpMakeHybrid, (\* The problem with executing byte code is here. *\) *)
         (* [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp); *)

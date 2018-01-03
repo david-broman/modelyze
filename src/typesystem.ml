@@ -330,21 +330,21 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_resroot (tm_info tmres) l ty_tmres;
      (TyDAESolver(fi,l),[tmres';tmroot';t0';ar_yy0';ar_yp0'])
 
-  | DAESolverCalcICYYYP,[sun;ar_varid;ar_yyout;ar_ypout;t0] ->
+  | DAESolverOpCalcICYYYP,[sun;ar_varids;ar_yyout;ar_ypout;t0] ->
      let (ty_sun,sun') = typeof_pure env  sun in
      let (ty_ar_yyout, ar_yyout') = typeof_pure env ar_yyout in
      let (ty_ar_ypout, ar_ypout') = typeof_pure env ar_ypout in
-     let (ty_ar_varid, ar_varid') = typeof_pure env ar_varid in
+     let (ty_ar_varids, ar_varids') = typeof_pure env ar_varids in
      let (ty_t0,t0') = typeof_pure env t0 in
      let ty_yyout' = check_istype_array (tm_info ar_yyout) l ty_ar_yyout in
      let ty_ypout' = check_istype_array (tm_info ar_ypout) l ty_ar_ypout in
-     let ty_varid' = check_istype_array (tm_info ar_varid) l ty_ar_varid in
+     let ty_varids' = check_istype_array (tm_info ar_varids) l ty_ar_varids in
      check_istype_daesolver (tm_info sun) l ty_sun;
      check_istype_real (tm_info ar_yyout) l ty_yyout';
      check_istype_real (tm_info ar_ypout) l ty_ypout';
-     check_istype_real (tm_info ar_varid) l ty_varid';
+     check_istype_real (tm_info ar_varids) l ty_varids';
      check_istype_real (tm_info t0) l ty_t0;
-     (TyUnit(NoInfo,l),[sun';ar_varid';ar_yyout';ar_ypout';t0'])
+     (TyUnit(NoInfo,l),[sun';ar_varids';ar_yyout';ar_ypout';t0'])
 
   | DAESolverOpStep,[sun;tout;ar_yyout;ar_ypout] ->
      let (ty_sun,sun') = typeof_pure env  sun in

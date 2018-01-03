@@ -33,7 +33,8 @@ C_LIBS = /usr/lib
 endif
 
 # Directories where ocamlbuild can find source code.
-DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
+# DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
+DIRS = src,ext/ucamlib/src,ext/extlib
 
 # These are the files and libraries of C code that should be linked.
 C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsundials_nvecserial.a
@@ -48,8 +49,8 @@ all:    native
 
 # Compile native version
 native: bytesfix comp_c_files
-	# @ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS) moz.native -lflags $(C_FILES)
-	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
+	@ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS) moz.native -lflags $(C_FILES)
+	# @ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
 	@rm -f bytes.ml
 	@rm -f moz.native
 	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz

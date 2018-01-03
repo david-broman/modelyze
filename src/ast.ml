@@ -19,7 +19,7 @@ open Ustring.Op
 open Utils
 open Message
 open Info
-open Sundials
+(* open Sundials *)
 
 (** Modeling Kernel Language Abstract Syntax Trees (ASTs) *)
 
@@ -184,12 +184,12 @@ and setop =
   | SetOpToList
 
 and daesolverop =
-  | DAESolverOpMake
-  | DAESolverOpMakeHybrid
+  | DAESolverOpInit
+  | DAESolverOpInitWithRootf
+  | DAESolverCalcICYYYP
   | DAESolverOpStep
-  | DAESolverOpReinit
-  | DAESolverOpClose
-  | DAESolverOpRoots
+  (* | DAESolverOpReinit *)
+  | DAESolverOpRootInfo
 
 (* and eqsolverop =
  *   | EQSolverOpMake
@@ -392,18 +392,19 @@ and pprint_set_op op =
 
 and pprint_daesolver_op op =
   match op with
-  | DAESolverOpMake -> us"make"
-  | DAESolverOpMakeHybrid -> us"makehybrid"
-  | DAESolverOpStep -> us"step"
+  | DAESolverOpInit -> us"init"
+  | DAESolverOpInitWithRootf -> us"init_with_rootf"
+  | DAESolverCalcICYYYP -> us"calc_ic_ya_ydp"
+  | DAESolverOpStep -> us"solve_one_step"
   | DAESolverOpReinit -> us"reinit"
-  | DAESolverOpClose -> us"close"
-  | DAESolverOpRoots -> us"roots"
+  | DAESolverOpRootInfo -> us"get_root_info"
+
 
 (* and pprint_eqsolver_op op =
  *   match op with
  *   | EQSolverOpMake -> us"make"
  *   | EQSolverOpSolve -> us"solve" *)
-                      
+
 and pprint_mpat p =
   match p with
   | MPatSym(_,ty) -> us"sym:" ^. pprint_ty ty
@@ -1170,12 +1171,12 @@ let mk_setop fi sid =
 let mk_daesolverop fi sid =
   let s = Symtbl.get sid in
   match Ustring.to_latin1 s with
-  | "make" -> DAESolverOpMake
-  | "makehybrid" -> DAESolverOpMakeHybrid
-  | "step" -> DAESolverOpStep
+  | "init" -> DAESolverOpInit
+  | "init_with_rootf" -> DAESolverOpInitWithRootf
+  | "calc_ic_ya_ydp" -> DAESolverCalcICYYYP
+  | "solve_one_step" -> DAESolverOpStep
   | "reinit" -> DAESolverOpReinit
-  | "close" -> DAESolverOpClose
-  | "roots" -> DAESolverOpRoots
+  | "get_root_info" -> DAESolverOpRootInfo
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
 

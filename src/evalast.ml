@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 *)
 
-open Sundials
+(* open Sundials *)
 open Info
 
 
@@ -36,20 +36,20 @@ type env = tm list
 
 
 and ty =
-  | TyBool      
-  | TyInt       
-  | TyReal      
-  | TyString    
-  | TyArrow     of ty * ty 
-  | TyUnit      
+  | TyBool
+  | TyInt
+  | TyReal
+  | TyString
+  | TyArrow     of ty * ty
+  | TyUnit
   | TyList      of ty
   | TyTuple     of ty list
   | TySym       of ty
-  | TyDyn  
+  | TyDyn
   | TySymData   of typeid
   | TyArray     of ty
   | TyMap       of ty * ty
-  | TySet       of ty 
+  | TySet       of ty
   | TyDAESolver
   | TyEnv
   (* | TyEQSolver *)
@@ -57,22 +57,22 @@ and ty =
 and tm =
   | TmVar         of index
   | TmSpecSym     of sym
-  | TmLam         of tm 
+  | TmLam         of tm
   | TmClos        of tm * env * Ast.ident
   | TmByteCode    of bcode * apiid * Ast.ident * tm list
   | TmApp         of tm * tm * specialize
   | TmFix         of tm
   | TmIf          of tm * tm * tm
   | TmConst       of Ast.const
-  | TmSym         of sym * ty 
+  | TmSym         of sym * ty
   | TmGenSym      of ty
-  | TmSymApp      of tm * tm 
+  | TmSymApp      of tm * tm
   | TmLift        of tm * ty
   | TmCase        of tm * mpat * tm * tm
   | TmEqual       of tm * tm
   | TmLcase       of tm * tm * tm
   | TmCons        of tm * tm
-  | TmNil         
+  | TmNil
   | TmTuple       of tm list
   | TmProj        of int * tm
   | TmArray       of tm array
@@ -81,7 +81,7 @@ and tm =
   | TmMapOp       of Ast.mapop * tm list
   | TmSet         of int * (tm,unit) PMap.t
   | TmSetOp       of Ast.setop * tm list
-  | TmDAESolver   of Ida.st * tm array * tm array
+  | TmDAESolver   of Nvector_serial.kind Ida.serial_session
   | TmDAESolverOp of Ast.daesolverop * tm list
   (* | TmEQSolver    of Kingsol.session * tm array *)
   (* | TmEQSolverOp  of Ast.eqsolverop * tm list                    *)
@@ -95,8 +95,7 @@ and tm =
 
 
 
-and mpat = 
+and mpat =
   | MPatSym         of ty
-  | MPatSymApp     
+  | MPatSymApp
   | MPatLift        of ty
-

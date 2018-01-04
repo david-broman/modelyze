@@ -346,7 +346,7 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_real (tm_info t0) l ty_t0;
      (TyUnit(NoInfo,l),[sun';ar_varids';ar_yyout';ar_ypout';t0'])
 
-  | DAESolverOpStep,[sun;tout;ar_yyout;ar_ypout] ->
+  | DAESolverOpSolveNormal,[sun;tout;ar_yyout;ar_ypout] ->
      let (ty_sun,sun') = typeof_pure env  sun in
      let (ty_tout,tout') = typeof_pure env  tout in
      let (ty_ar_yyout, ar_yyout') = typeof_pure env ar_yyout in

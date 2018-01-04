@@ -24,7 +24,7 @@ open Evalast
 open Debugprint
 
 exception Cannot_eval
-
+exception Unknown_solver_result
 
 
 (* State when two terms are equal using operator <==>.
@@ -148,6 +148,12 @@ let eval_daesolver_op eval op arg_lst =
         eval (TmApp(TmApp(TmApp(tmres,tmtime,false),tmyy,false),tmyp,false)) in
         bigarray_from_tmlist lst rr
     in
+    let solver_result_to_rccode sr =
+      match sr with
+      | Ida.Success -> 0
+      | Ida.RootsFound -> 1
+      | Ida.StopTimeReached -> 2
+    in
     match op,arg_lst with
     (* | Ast.DAESolverOpMake, *)
         (* [TmArray(tm_yy);TmArray(tm_yp);TmArray(tm_id);tmres] -> *)
@@ -173,6 +179,15 @@ let eval_daesolver_op eval op arg_lst =
        into_tm (Nvector_serial.unwrap yp) tm_ypout;
        TmConst(Ast.ConstUnit)
 
+    | Ast.DAESolverOpSolveNormal,
+      [TmDAESolver(st,yy,yp);TmConst(Ast.ConstReal(tout));TmArray(tm_yyout);
+       TmArray(tm_ypout)] ->
+       let tret, r = Ida.solve_normal st tout yy yp in
+       let rc = solver_result_to_rccode r in
+       into_tm (Nvector_serial.unwrap yy) tm_yyout;
+       into_tm (Nvector_serial.unwrap yp) tm_ypout;
+       TmTuple([TmConst(Ast.ConstReal(tret));TmConst(Ast.ConstInt(rc))])
+
     (* | Ast.DAESolverOpMakeHybrid, (\* The problem with executing byte code is here. *\) *)
         (* [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp); *)
          (* TmArray(tm_id);tmres;tmrootfinder] -> *)
@@ -184,7 +199,7 @@ let eval_daesolver_op eval op arg_lst =
          * array_update (Ida.y st) tm_yy;
          * array_update (Ida.yp st) tm_yp;
          * TmDAESolver(st,tm_yy,tm_yp) *)
-    (* | Ast.DAESolverOpStep,[TmConst(Ast.ConstReal(time)); *)
+    (* | Ast.DAESolverOpSolveNormal,[TmConst(Ast.ConstReal(time)); *)
                               (* TmDAESolver(st,tm_yy,tm_yp)] -> *)
         (* let time' = Ida.step st time in
          * array_update (Ida.y st) tm_yy;

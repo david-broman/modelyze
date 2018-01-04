@@ -108,5 +108,8 @@ def main = {
   def s = (DAESolver.init resf t0 yy yp);
   def _ = dprint(yy);
   def _ = (DAESolver.calc_ic_ya_ydp s ic yy yp 0.1);
+  def _ = dprint(yy);
+  def res = (DAESolver.solve_normal s (t0 + 2.) yy yp);
+  def _ = dprint(res);
   dprint(yy)
 }

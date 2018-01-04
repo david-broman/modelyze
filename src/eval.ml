@@ -24,8 +24,6 @@ open Evalast
 open Debugprint
 
 exception Cannot_eval
-exception Unknown_solver_result
-
 
 (* State when two terms are equal using operator <==>.
    Note that comparing variables, closures and fix terms always return false *)
@@ -198,6 +196,13 @@ let eval_daesolver_op eval op arg_lst =
        into_tm (Nvector_serial.unwrap yy) tm_yyout;
        into_tm (Nvector_serial.unwrap yp) tm_ypout;
        TmTuple([TmConst(Ast.ConstReal(tret));TmConst(Ast.ConstInt(rc))])
+
+    | Ast.DAESolverOpRootInfo, [TmDAESolver(st,yy,yp)] ->
+       let nroots = Ida.get_num_roots st in
+       let roots = Sundials.Roots.create nroots in
+       Ida.get_root_info st roots;
+       let a = Array.map Sundials.Roots.int_of_root (Sundials.Roots.to_array roots) in
+       TmArray(Array.map (fun e -> TmConst(Ast.ConstInt(e))) a)
 
     (* | Ast.DAESolverOpMakeHybrid, (\* The problem with executing byte code is here. *\) *)
         (* [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp); *)

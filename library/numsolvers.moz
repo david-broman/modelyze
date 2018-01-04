@@ -20,8 +20,15 @@ written by Oscar Eriksson oerikss@kth.se
 
 include Base
 
+type Varid = Real
+type SolverResult = Int
+type Roots = Int
+
 def varidAlgebraic = 0.
 def varidDifferential = 1.
 def SolverResultsSuccess = 0
 def SolverResultRootsFound = 1
 def SolverResultStopTimeReached = 2
+def RootsNoRoot = 0
+def RootsRising = 1
+def RootsFalling = -1

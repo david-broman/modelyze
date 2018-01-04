@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 include Equation
 include IndexReduction
 include SimOutput
+include Numsolvers
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 type Varvals = <Real> -> <Real>
@@ -26,14 +27,14 @@ type Varvals = <Real> -> <Real>
 // General expression evaluation
 def eval(expr:<?>, yy:Varvals, yp:Varvals) -> ? = {
     match expr with
-    | der x -> 
-        (match x with 
-         | sym:Real -> eval(yp(x), yy, yp)  
+    | der x ->
+        (match x with
+         | sym:Real -> eval(yp(x), yy, yp)
          | _ -> error "Derivatives only allowed on unknowns")
     | sym:Real -> eval(yy(expr), yy, yp)
     | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
     | lift v:? -> v
-    | _ ->  error "Unsupported model construct" 
+    | _ ->  error "Unsupported model construct"
 }
 
 // Evaluate an expression of real type. The unknowns in the
@@ -65,10 +66,10 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
   def setvals(initvals:[(Signal,Signal)]) -> {Real} = {
     match initvals with
     | (u,e)::xs -> {
-        def v = (match e with 
-                 | lift v:Real -> v 
+        def v = (match e with
+                 | lift v:Real -> v
                  | _ -> error "Cannot initialize a variable with a variable.");
-        def _ = (Array.set yy (fst (Map.find u ukmap)) v);      
+        def _ = (Array.set yy (fst (Map.find u ukmap)) v);
         setvals xs;
       }
     | [] -> yy
@@ -77,12 +78,12 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
 }
 
 
-def initConditionCorrection(ukmap:UkMap) -> {Real} = {
-  def id = {Array.make (Map.size ukmap) 0.};
-  def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
+def initConditionCorrection(ukmap:UkMap) -> {Varid} = {
+  def id = {Array.make (Map.size ukmap) varidAlgebraic};
+  def worker(uklist:[(Signal,(Int,Bool))]) -> {Varid} = {
     match uklist with
     | (u,(i,true))::us -> {
-         def _ = (Array.set id i 1.0); 
+         def _ = (Array.set id i varidDifferential);
          worker us;
       }
     | _::us -> worker us
@@ -96,40 +97,41 @@ type Time = Real
 type SolverState = ?
 type VarArray = {Real}
 
-type State = (Time, SolverState, VarArray, UkMap) 
+type State = (SolverState, VarArray, VarArray, UkMap)
 
 def daeInit(model:Equations) -> (State,ProbeMap) = {
     def (model1,probes) = elaborateProbes(model);
     def (model2,_) = elaborateDerivatives(model1,Map.empty);
     def (model3,_) = indexReducationPantelides(model2, Map.empty);
     def ukmap = makeUkMap(model3);
-    def residual = peval (makeResidual(ukmap,model3)); 
+    def residual = peval (makeResidual(ukmap,model3));
     def (yy,yp) = makeInitValues(model3, ukmap);
     def id = initConditionCorrection(ukmap);
-    def solverState = (DAESolver.make yy yp id residual);
-    ((0.,solverState, yy, ukmap), probes);
+    def solverState = (DAESolver.init residual 0. yy yp);
+    def _ = (DAESolver.calc_ic_ya_ydp solverState id yy yp 0.00000001);
+    ((solverState, yy, yp, ukmap), probes);
 }
 
 
-def daeDoStep(state:State, comStepSize:Real) -> (State, Time) = {
-    def (currTime, solverState, yy, ukmap) = state;
-    def newtime = (DAESolver.step comStepSize solverState);
-    def newState = (newtime, solverState, yy, ukmap);
-    (newState, newtime);
+def daeDoStep(state: State, tnext: Time) -> (Time, SolverResult) = {
+    def (solverState, yy, yp, _) = state;
+    def (newtime,res) =
+      (DAESolver.solve_normal solverState tnext yy yp);
+    (newtime, res)
 }
 
 
 def daeGet(state:State, var:<Real>) -> Real = {
-    def (currTime, solverState, yy, ukmap) = state;
-    if Map.mem var ukmap then 
+    def (_, yy, _, ukmap) = state;
+    if Map.mem var ukmap then
        Array.get yy (fst(Map.find var ukmap))
-    else 
+    else
        INFINITE;
 }
 
 def daeSet(state:State, var:<Real>, value:Real) -> State = {
-    state;    
-}   
+    state;
+}
 
 def daeGetAsStr(state:State, var:<Real>) -> String = {
     real2string(daeGet(state,var))
@@ -137,27 +139,21 @@ def daeGetAsStr(state:State, var:<Real>) -> String = {
 
 
 def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
-  def (state,probes) = daeInit(model);
+  def (state, probes) = daeInit(model);
+  def (solverState, yy, yp, ukmap) = state;
+  def _ = (DAESolver.set_stop_time solverState endtime);
   def probelist = (Map.toList probes);
   def stepval = (0., getProbeVals(probelist, daeGet(state)));
 
-  def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
-    if currtime >= endtime then acc
-    else {
-        def (state,newtime) = daeDoStep(state, steptime);
-        def stepval = (newtime, getProbeVals(probelist, daeGet(state)));     
-        if newtime == 0. then acc
-        else simloop(newtime,stepval::acc);
-    }
-  };  
-  (makeProbeNames("",probelist),reverse(simloop(0.,[stepval]))) 
+  def simloop(t: Time, acc: [StepVal]) -> [StepVal] = {
+    def (tnew, res) = daeDoStep(state, t + steptime);
+    def stepval = (tnew, getProbeVals(probelist, daeGet(state)));
+    if res == SolverResultStopTimeReached then acc
+    else simloop(tnew, stepval::acc)
+  };
+  (makeProbeNames("",probelist), reverse(simloop(0.,[stepval])))
 }
 
 
 def printsim(model:Equations, steptime:Real, endtime:Real) =
     print(pprintSimulation(ctSim(model,steptime,endtime)))
-
-
-
-
-

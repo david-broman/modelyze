@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include Equation
-//include DAESolver
+include Numsolvers
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 type Varvals = <Real> -> <Real>
@@ -112,9 +112,9 @@ def main = {
   def resf = makeResidual(ukm,m);
   def rootf = makeRootFun [x - 2.] ukm;
   def t0 = 0.0;
-  // def s = (DAESolver.init resf t0 yy yp);
+  def s = (DAESolver.init resf t0 yy yp);
   def s = (DAESolver.init_with_rootf resf 1 rootf t0 yy yp);
-  def _ = (DAESolver.set_stop_time s (t0 + 3.));
+  // def _ = (DAESolver.set_stop_time s (t0 + 3.));
   def _ = dprint(yy);
   def _ = (DAESolver.calc_ic_ya_ydp s ic yy yp 0.1);
   def _ = dprint(yy);

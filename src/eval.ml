@@ -153,12 +153,6 @@ let eval_daesolver_op eval op arg_lst =
       | Ida.StopTimeReached -> 2
     in
     match op,arg_lst with
-    (* | Ast.DAESolverOpMake, *)
-        (* [TmArray(tm_yy);TmArray(tm_yp);TmArray(tm_id);tmres] -> *)
-        (* let st = Ida.make (array_from_tm tm_yy) (array_from_tm tm_yp)
-         *                (array_from_tm tm_id) (resrootfun tmres) in
-         * array_update (Ida.y st) tm_yy;
-         * TmDAESolver(st,tm_yy,tm_yp) *)
     | Ast.DAESolverOpInit,
       [tmres;TmConst(Ast.ConstReal(t0));TmArray(tm_yy0);TmArray(tm_yp0)] ->
        let resf = resrootfun tmres in
@@ -204,31 +198,6 @@ let eval_daesolver_op eval op arg_lst =
        let a = Array.map Sundials.Roots.int_of_root (Sundials.Roots.to_array roots) in
        TmArray(Array.map (fun e -> TmConst(Ast.ConstInt(e))) a)
 
-    (* | Ast.DAESolverOpMakeHybrid, (\* The problem with executing byte code is here. *\) *)
-        (* [TmConst(Ast.ConstReal(time));TmArray(tm_yy);TmArray(tm_yp); *)
-         (* TmArray(tm_id);tmres;tmrootfinder] -> *)
-        (* let rootfun = resrootfun tmrootfinder in
-         * let (yy,yp) = (array_from_tm tm_yy,array_from_tm tm_yp) in
-         * let roots = Array.length (rootfun 0. yy yp) in
-         * let st = Ida.make ~start_time:time ~roots:roots ~rootfun:rootfun yy yp
-         *          (array_from_tm tm_id) (resrootfun tmres)  in
-         * array_update (Ida.y st) tm_yy;
-         * array_update (Ida.yp st) tm_yp;
-         * TmDAESolver(st,tm_yy,tm_yp) *)
-    (* | Ast.DAESolverOpSolveNormal,[TmConst(Ast.ConstReal(time)); *)
-                              (* TmDAESolver(st,tm_yy,tm_yp)] -> *)
-        (* let time' = Ida.step st time in
-         * array_update (Ida.y st) tm_yy;
-         * array_update (Ida.yp st) tm_yp;
-         * TmConst(Ast.ConstReal(time')) *)
-    (* | Ast.DAESolverOpReinit,[TmDAESolver(st,tm_yy,tm_yp)] -> *)
-        (* Ida.reinit st;
-         * TmConst(Ast.ConstUnit) *)
-    (* | Ast.DAESolverOpClose,[TmDAESolver(st,tm_yy,tm_yp)] -> *)
-        (* Ida.close st;
-         * TmConst(Ast.ConstUnit) *)
-    (* | Ast.DAESolverOpRoots,[TmDAESolver(st,tm_yy,tm_yp)] -> *)
-        (* TmArray(Array.map (fun x -> TmConst(Ast.ConstInt(x)))(Ida.roots st)) *)
   | _ -> TmDAESolverOp(op,arg_lst)
 
 

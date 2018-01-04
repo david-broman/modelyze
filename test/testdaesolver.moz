@@ -114,14 +114,19 @@ def main = {
   def t0 = 0.0;
   // def s = (DAESolver.init resf t0 yy yp);
   def s = (DAESolver.init_with_rootf resf 1 rootf t0 yy yp);
+  def _ = (DAESolver.set_stop_time s (t0 + 3.));
   def _ = dprint(yy);
   def _ = (DAESolver.calc_ic_ya_ydp s ic yy yp 0.1);
   def _ = dprint(yy);
   def res = (DAESolver.solve_normal s (t0 + 2.) yy yp);
+  def (tout,_) = res;
   def _ = dprint(res);
   def _ = dprint(DAESolver.get_root_info s);
-  def _ = (DAESolver.reinit s (t0 + 2.) yy yp);
+  def _ = (DAESolver.reinit s tout yy yp);
   def res = (DAESolver.solve_normal s (t0 + 2.) yy yp);
+  def _ = dprint(res);
+  def _ = dprint(yy);
+  def res = (DAESolver.solve_normal s (t0 + 4.) yy yp);
   def _ = dprint(res);
   dprint(yy)
 }

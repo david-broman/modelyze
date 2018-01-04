@@ -190,6 +190,7 @@ and daesolverop =
   | DAESolverOpSolveNormal
   | DAESolverOpReinit
   | DAESolverOpRootInfo
+  | DAESolverOpSetStopTime
 
 (* and eqsolverop =
  *   | EQSolverOpMake
@@ -398,6 +399,7 @@ and pprint_daesolver_op op =
   | DAESolverOpSolveNormal -> us"solve_normal"
   | DAESolverOpReinit -> us"reinit"
   | DAESolverOpRootInfo -> us"get_root_info"
+  | DAESolverOpSetStopTime -> us"set_stop_time"
 
 
 (* and pprint_eqsolver_op op =
@@ -1177,6 +1179,7 @@ let mk_daesolverop fi sid =
   | "solve_normal" -> DAESolverOpSolveNormal
   | "reinit" -> DAESolverOpReinit
   | "get_root_info" -> DAESolverOpRootInfo
+  | "set_stop_time" -> DAESolverOpSetStopTime
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
 

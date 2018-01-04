@@ -379,6 +379,13 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_daesolver (tm_info sun) l ty_sun;
      (TyArray(NoInfo,l,TyInt(NoInfo,l)),[sun'])
 
+  | DAESolverOpSetStopTime,[sun;tend] ->
+     let (ty_sun,sun') = typeof_pure env  sun in
+     let (ty_tend,tend') = typeof_pure env tend in
+     check_istype_daesolver (tm_info sun) l ty_sun;
+     check_istype_real (tm_info tend) l ty_tend;
+     (TyUnit(NoInfo,l),[sun';tend'])
+
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                    [ustring_of_int (List.length ts)]))

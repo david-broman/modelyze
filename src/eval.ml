@@ -206,6 +206,12 @@ let eval_daesolver_op eval op arg_lst =
        let a = Array.map Sundials.Roots.int_of_root (Sundials.Roots.to_array roots) in
        TmArray(Array.map (fun e -> TmConst(Ast.ConstInt(e))) a)
 
+    | Ast.DAESolverOpSetStopTime,
+      [TmDAESolver(st,yy,yp);TmConst(Ast.ConstReal(tend))] ->
+       Ida.set_stop_time st tend;
+       TmConst(Ast.ConstUnit)
+
+
   | _ -> TmDAESolverOp(op,arg_lst)
 
 

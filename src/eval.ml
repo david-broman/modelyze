@@ -191,6 +191,14 @@ let eval_daesolver_op eval op arg_lst =
        into_tm (Nvector_serial.unwrap yp) tm_ypout;
        TmTuple([TmConst(Ast.ConstReal(tret));TmConst(Ast.ConstInt(rc))])
 
+    | Ast.DAESolverOpReinit,
+      [TmDAESolver(st,yy,yp);TmConst(Ast.ConstReal(t0));
+       TmArray(tm_yy0);TmArray(tm_yp0)] ->
+       let yy = Nvector_serial.wrap (from_tm tm_yy0) in
+       let yp = Nvector_serial.wrap (from_tm tm_yp0) in
+       Ida.reinit st t0 yy yp;
+       TmConst(Ast.ConstUnit)
+
     | Ast.DAESolverOpRootInfo, [TmDAESolver(st,yy,yp)] ->
        let nroots = Ida.get_num_roots st in
        let roots = Sundials.Roots.create nroots in

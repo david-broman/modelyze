@@ -120,5 +120,8 @@ def main = {
   def res = (DAESolver.solve_normal s (t0 + 2.) yy yp);
   def _ = dprint(res);
   def _ = dprint(DAESolver.get_root_info s);
+  def _ = (DAESolver.reinit s (t0 + 2.) yy yp);
+  def res = (DAESolver.solve_normal s (t0 + 2.) yy yp);
+  def _ = dprint(res);
   dprint(yy)
 }

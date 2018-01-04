@@ -361,10 +361,18 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_real (tm_info ar_ypout) l ty_ypout';
      (TyTuple(NoInfo,l,[ty_tout;TyInt(NoInfo,l)]),[sun';tout';ar_yyout';ar_ypout'])
 
-    (* | DAESolverOpReinit,[sun] ->
-     *     let (ty_sun,sun') = typeof_pure env  sun in
-     *       check_istype_daesolver (tm_info sun) l ty_sun;
-     *       (TyUnit(NoInfo,l),[sun']) *)
+  | DAESolverOpReinit,[sun;t0;ar_yy0;ar_yp0] ->
+     let (ty_sun,sun') = typeof_pure env  sun in
+     let (ty_t0,t0') = typeof_pure env t0 in
+     let (ty_ar_yy0, ar_yy0') = typeof_pure env ar_yy0 in
+     let (ty_ar_yp0, ar_yp0') = typeof_pure env ar_yp0 in
+     let ty_yy0' = check_istype_array (tm_info ar_yy0) l ty_ar_yy0 in
+     let ty_yp0' = check_istype_array (tm_info ar_yp0) l ty_ar_yp0 in
+     check_istype_daesolver (tm_info sun) l ty_sun;
+     check_istype_real (tm_info t0) l ty_t0;
+     check_istype_real (tm_info ar_yy0) l ty_yy0';
+     check_istype_real (tm_info ar_yp0) l ty_yp0';
+     (TyUnit(NoInfo,l),[sun';t0';ar_yy0';ar_yp0'])
 
   | DAESolverOpRootInfo,[sun] ->
      let (ty_sun,sun') = typeof_pure env  sun in

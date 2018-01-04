@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include Equation
-include DAESolver
+//include DAESolver
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
 type Varvals = <Real> -> <Real>
@@ -77,18 +77,36 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
   (setvals(Map.toList initvalmap), yp)
 }
 
+def initConditionCorrection(ukmap:UkMap) -> {Real} = {
+  def id = {Array.make (Map.size ukmap) 0.};
+  def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
+    match uklist with
+    | (u,(i,true))::us -> {
+         def _ = (Array.set id i 1.0);
+         worker us;
+      }
+    | _::us -> worker us
+    | [] -> id
+  };
+  worker (Map.toList ukmap);
+}
+
 def model = {
   def x,y: Real;
   init x 1.;
-  der x = y;
+  init y 1.;
+  der x = x;
   x + y = 1.
 }
 
 def main = {
   def ukm = makeUkMap(model);
   def (yy, yp) = makeInitValues(model, ukm);
+  def ic = initConditionCorrection(ukm);
   def resf = makeResidual(ukm,model);
   def t0 = 0.0;
   def s = (DAESolver.init resf t0 yy yp);
+  def _ = dprint(yy);
+  def _ = (DAESolver.calc_ic_ya_ydp s ic yy yp 0.1);
   dprint(yy)
 }

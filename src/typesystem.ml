@@ -316,19 +316,21 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_resroot (tm_info tmres) l ty_tmres;
      (TyDAESolver(fi,l),[tmres';t0';ar_yy0';ar_yp0'])
 
-  | DAESolverOpInitWithRootf,[tmres;tmroot;t0;ar_yy0;ar_yp0] ->
+  | DAESolverOpInitWithRootf,[tmres;nroots;tmroot;t0;ar_yy0;ar_yp0] ->
      let (ty_tmres,tmres') = typeof_pure env tmres in
+     let (ty_nroots,nroots') = typeof_pure env nroots in
      let (ty_tmroot,tmroot') = typeof_pure env  tmroot in
      let (ty_t0,t0') = typeof_pure env t0 in
      let (ty_ar_yy0, ar_yy0') = typeof_pure env ar_yy0 in
      let (ty_ar_yp0, ar_yp0') = typeof_pure env ar_yp0 in
      let ty_yy0' = check_istype_array (tm_info ar_yy0) l ty_ar_yy0 in
      let ty_yp0' = check_istype_array (tm_info ar_yp0) l ty_ar_yp0 in
+     check_istype_int (tm_info nroots) l ty_nroots;
      check_istype_real (tm_info t0) l ty_t0;
      check_istype_real (tm_info ar_yy0) l ty_yy0';
      check_istype_real (tm_info ar_yp0) l ty_yp0';
      check_istype_resroot (tm_info tmres) l ty_tmres;
-     (TyDAESolver(fi,l),[tmres';tmroot';t0';ar_yy0';ar_yp0'])
+     (TyDAESolver(fi,l),[tmres';nroots';tmroot';t0';ar_yy0';ar_yp0'])
 
   | DAESolverOpCalcICYYYP,[sun;ar_varids;ar_yyout;ar_ypout;t0] ->
      let (ty_sun,sun') = typeof_pure env  sun in

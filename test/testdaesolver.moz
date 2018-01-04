@@ -91,8 +91,12 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
   worker (Map.toList ukmap);
 }
 
-def model = {
-  def x,y: Real;
+def makeRootFun(expr: [Expr], ukm: UkMap, t: Real, yy: {Real}, yp: {Real}) -> [Real] = {
+  def f = (fun e: Expr -> evalFromArray e ukm yy yp);
+  map expr f
+}
+
+def modelp(x: <Real>, y: <Real>) -> Equations = {
   init x 1.;
   init y 1.;
   der x = x;
@@ -100,12 +104,16 @@ def model = {
 }
 
 def main = {
-  def ukm = makeUkMap(model);
-  def (yy, yp) = makeInitValues(model, ukm);
+  def x,y: Real;
+  def m = modelp(x, y);
+  def ukm = makeUkMap(m);
+  def (yy, yp) = makeInitValues(m, ukm);
   def ic = initConditionCorrection(ukm);
-  def resf = makeResidual(ukm,model);
+  def resf = makeResidual(ukm,m);
+  def rootf = makeRootFun [x - 2.] ukm;
   def t0 = 0.0;
-  def s = (DAESolver.init resf t0 yy yp);
+  // def s = (DAESolver.init resf t0 yy yp);
+  def s = (DAESolver.init_with_rootf resf 1 rootf t0 yy yp);
   def _ = dprint(yy);
   def _ = (DAESolver.calc_ic_ya_ydp s ic yy yp 0.1);
   def _ = dprint(yy);

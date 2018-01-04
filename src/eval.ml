@@ -169,6 +169,17 @@ let eval_daesolver_op eval op arg_lst =
        let st = Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9)) resf t0 yy yp) in
        TmDAESolver(st,yy,yp)
 
+    | Ast.DAESolverOpInitWithRootf,
+      [tmres;TmConst(Ast.ConstInt(nroots));tmroot;TmConst(Ast.ConstReal(t0));
+       TmArray(tm_yy0);TmArray(tm_yp0)] ->
+       let resf = resrootfun tmres in
+       let rootf = resrootfun tmroot in
+       let yy = Nvector_serial.wrap (from_tm tm_yy0) in
+       let yp = Nvector_serial.wrap (from_tm tm_yp0) in
+       let st = Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9))
+                       resf ~roots:(nroots, rootf) t0 yy yp) in
+       TmDAESolver(st,yy,yp)
+
     | Ast.DAESolverOpCalcICYYYP,
       [TmDAESolver(st,yy,yp);TmArray(tm_varids);TmArray(tm_yyout);TmArray(tm_ypout);
        TmConst(Ast.ConstReal(t0))] ->

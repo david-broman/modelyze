@@ -386,6 +386,23 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_real (tm_info tend) l ty_tend;
      (TyUnit(NoInfo,l),[sun';tend'])
 
+  | DAESolverOpCalcICWithFixed,[ar_yy;ar_yyfix;ar_yp;ar_ypfix;t0] ->
+     let (ty_ar_yy, ar_yy') = typeof_pure env ar_yy in
+     let (ty_ar_yyfix, ar_yyfix') = typeof_pure env ar_yyfix in
+     let (ty_ar_yp, ar_yp') = typeof_pure env ar_yp in
+     let (ty_ar_ypfix, ar_ypfix') = typeof_pure env ar_ypfix in
+     let (ty_t0,t0') = typeof_pure env t0 in
+     let ty_yy' = check_istype_array (tm_info ar_yy) l ty_ar_yy in
+     let ty_yp' = check_istype_array (tm_info ar_yp) l ty_ar_yp in
+     let ty_yyfix' = check_istype_array (tm_info ar_yyfix) l ty_ar_yyfix in
+     let ty_ypfix' = check_istype_array (tm_info ar_ypfix) l ty_ar_ypfix in
+     check_istype_real (tm_info ar_yy) l ty_yy';
+     check_istype_real (tm_info ar_yp) l ty_yp';
+     check_istype_int (tm_info ar_yyfix) l ty_yyfix';
+     check_istype_int (tm_info ar_ypfix) l ty_ypfix';
+     check_istype_real (tm_info t0) l ty_t0;
+     (TyTuple(NoInfo,l,[ty_t0;TyInt(NoInfo,l)]),[ar_yy';ar_yyfix';ar_yp';ar_ypfix';t0'])
+
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                    [ustring_of_int (List.length ts)]))

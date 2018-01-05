@@ -22,7 +22,7 @@ include Base
 
 type Varid = Real
 type SolverResult = Int
-type Roots = Int
+type Root = Int
 
 def varidAlgebraic = 0.
 def varidDifferential = 1.

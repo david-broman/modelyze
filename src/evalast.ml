@@ -51,8 +51,9 @@ and ty =
   | TyMap       of ty * ty
   | TySet       of ty
   | TyDAESolver
+  | TyEQSolver
   | TyEnv
-  (* | TyEQSolver *)
+(* | TyEQSolver *)
 
 and tm =
   | TmVar         of index
@@ -83,8 +84,8 @@ and tm =
   | TmSetOp       of Ast.setop * tm list
   | TmDAESolver   of Nvector_serial.kind Ida.serial_session * Nvector_serial.t * Nvector_serial.t
   | TmDAESolverOp of Ast.daesolverop * tm list
-  (* | TmEQSolver    of Kingsol.session * tm array *)
-  (* | TmEQSolverOp  of Ast.eqsolverop * tm list                    *)
+  | TmEQSolver    of Nvector_serial.kind Kinsol.serial_session * Nvector_serial.t
+  | TmEQSolverOp  of Ast.eqsolverop * tm list
   | TmDPrint      of tm
   | TmDPrintType  of tm
   | TmSymStr      of tm

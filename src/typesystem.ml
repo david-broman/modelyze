@@ -150,6 +150,12 @@ let check_istype_daesolver fi l ty_daesolver =
     | TyDyn(_,_) -> ()
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_DAESOLVER_TYPE,ERROR,fi,[pprint_ty ty_daesolver]))
 
+let check_istype_eqsolver fi l ty_eqsolver =
+  match ty_eqsolver with
+    | TyEQSolver(_,l') when l = l' -> ()
+    | TyDyn(_,_) -> ()
+    | _ -> raise (Mkl_type_error(TYPE_EXPECTED_DAESOLVER_TYPE,ERROR,fi,[pprint_ty ty_eqsolver]))
+
 let check_istype_int fi l ty_int =
   match ty_int with
     | TyInt(_,l') when l = l' -> ()
@@ -390,6 +396,27 @@ and typeof_daesolver_op fi l op ts env  =
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                    [ustring_of_int (List.length ts)]))
 
+and typeof_eqsolver_op fi l op ts env  =
+  match op,ts with
+  | EQSolverOpInit,[tmres;ar_yyg] ->
+     let (ty_tmres,tmres') = typeof_pure env tmres in
+     let (ty_ar_yyg, ar_yyg') = typeof_pure env ar_yyg in
+     let ty_yyg' = check_istype_array (tm_info ar_yyg) l ty_ar_yyg in
+     check_istype_resroot (tm_info tmres) l ty_tmres;
+     check_istype_real (tm_info ar_yyg) l ty_yyg';
+     (TyEQSolver(fi,l),[tmres';ar_yyg'])
+
+  | EQSolverOpSolve,[sun;ar_yyout] ->
+     let (ty_ar_yyout, ar_yyout') = typeof_pure env ar_yyout in
+     let ty_yyout' = check_istype_array (tm_info ar_yyout) l ty_ar_yyout in
+     let (ty_sun,sun') = typeof_pure env  sun in
+     check_istype_real (tm_info ar_yyout) l ty_yyout';
+     check_istype_eqsolver (tm_info sun) l ty_sun;
+     (TyInt(NoInfo,l),[sun';ar_yyout'])
+
+  | _ -> raise (Mkl_type_error
+	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
+                   [ustring_of_int (List.length ts)]))
 
 (* Type of function that picks the top element if we have a type environment.
    Basically used everywhere, except for function application *)
@@ -635,11 +662,14 @@ and typeof_pure env t =
           let (ty',ts') = typeof_map_op fi l op ts env  in
             (ty',TmMapOp(fi,l,op,ts'))
       | TmSetOp(fi,l,op,ts) ->
-          let (ty',ts') = typeof_set_op fi l op ts env  in
-            (ty',TmSetOp(fi,l,op,ts'))
+         let (ty',ts') = typeof_set_op fi l op ts env  in
+         (ty',TmSetOp(fi,l,op,ts'))
       | TmDAESolverOp(fi,l,op,ts) ->
           let (ty',ts') = typeof_daesolver_op fi l op ts env  in
-            (ty',TmDAESolverOp(fi,l,op,ts'))
+          (ty',TmDAESolverOp(fi,l,op,ts'))
+      | TmEQSolverOp(fi,l,op,ts) ->
+         let (ty',ts') = typeof_eqsolver_op fi l op ts env  in
+         (ty',TmEQSolverOp(fi,l,op,ts'))
       | TmDPrint(t) -> let (ty,t') = typeof_pure env  t in (ty,TmDPrint(t'))
       | TmDPrintType(t) -> let (ty,t') = typeof_pure env  t in (ty,TmDPrintType(t'))
       | TmSymStr(fi,t) -> let (ty,t') = typeof_pure env  t in

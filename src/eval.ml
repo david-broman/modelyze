@@ -211,7 +211,6 @@ let eval_daesolver_op eval op arg_lst =
     Ida.set_stop_time st tend;
     TmConst(Ast.ConstUnit)
 
-
   | _ -> TmDAESolverOp(op,arg_lst)
 
 
@@ -430,7 +429,7 @@ and eval venv norec t =
     (match eval venv norec t with
      | TmConst(Ast.ConstString(s)) ->
        raise (Ast.Mkl_runtime_error (Message.RUNTIME_ERROR,
-				     Message.ERROR, fi, [s]))
+                                     Message.ERROR, fi, [s]))
      | _ -> assert false)
   | TmDebugId(id,t) ->
     let t'= eval venv norec t in

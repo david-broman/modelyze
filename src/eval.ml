@@ -213,9 +213,6 @@ let eval_daesolver_op eval op arg_lst =
 
   | _ -> TmDAESolverOp(op,arg_lst)
 
-let eval_eqsolver_op eval op arg_lst =
-  match op,arg_lst with
-  | _ -> TmEQSolverOp(op,arg_lst)
 
 (* Creates two model values from a primitive function constant. Used when
    for example build in +. operator is partially applied with one argument
@@ -277,8 +274,6 @@ let rec readback syms d tm =
   | TmSetOp(op,tms) -> TmSetOp(op,List.map (readback syms d) tms)
   | TmDAESolver(st,_,_) -> tm
   | TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (readback syms d) tms)
-  | TmEQSolver(st,_) -> tm
-  | TmEQSolverOp(op,tms) -> TmEQSolverOp(op,List.map (readback syms d) tms)
   | TmDPrint(t) -> TmDPrint(readback syms d t)
   | TmDPrintType(t) -> TmDPrintType(readback syms d t)
   | TmSymStr(t) -> TmSymStr(readback syms d t)
@@ -315,7 +310,6 @@ let rec consistent ty_a ty_b =
   | TySet(ty1),TySet(ty2) ->
     consistent ty1 ty2
   | TyDAESolver,TyDAESolver -> true
-  | TyEQSolver,TyEQSolver -> true
   | _ , _ ->  false
 
 
@@ -424,10 +418,7 @@ and eval venv norec t =
   | TmSetOp(op,tms) -> eval_set_op op (List.map (eval venv norec) tms)
   | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
   | TmDAESolverOp(op,tms) ->
-     eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
-  | TmEQSolver(st,yy) -> TmEQSolver(st,yy)
-  | TmEQSolverOp(op,tms) ->
-     eval_eqsolver_op (eval venv norec) op (List.map (eval venv norec) tms)
+    eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
   | TmDPrint(t) -> let t' = eval venv norec t  in
     pprint t' |> uprint_endline; t'
   | TmDPrintType(t) -> us"[Printing types is not supported]"

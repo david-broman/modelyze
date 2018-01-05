@@ -190,6 +190,7 @@ and daesolverop =
   | DAESolverOpReinit
   | DAESolverOpRootInfo
   | DAESolverOpSetStopTime
+  | DAESolverOpCalcICWithFixed
 
   (** Top elements of a source code file *)
 and top =
@@ -393,6 +394,7 @@ and pprint_daesolver_op op =
   | DAESolverOpReinit -> us"reinit"
   | DAESolverOpRootInfo -> us"get_root_info"
   | DAESolverOpSetStopTime -> us"set_stop_time"
+  | DAESolverOpCalcICWithFixed -> us"calc_ic_with_fixed"
 
 and pprint_mpat p =
   match p with
@@ -1158,6 +1160,7 @@ let mk_daesolverop fi sid =
   | "reinit" -> DAESolverOpReinit
   | "get_root_info" -> DAESolverOpRootInfo
   | "set_stop_time" -> DAESolverOpSetStopTime
+  | "calc_ic_with_fixed" -> DAESolverOpCalcICWithFixed
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
 

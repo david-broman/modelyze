@@ -18,6 +18,15 @@ end
 module Data = struct
   type t = Sundials.RealArray.t
   type tdapprox = t -> t
+  let to_DAE_data dapprox u y yp =
+    let n = Sundials.RealArray.length y in
+    let n' = Sundials.RealArray.length yp in
+    let m = Sundials.RealArray.length u in
+    if n != n' || m < n then
+      raise (Failure "Vector dimensions does not match");
+    Sundials.RealArray.mapi (fun i _ -> u.{i}) y;
+    Sundials.RealArray.mapi (fun i _ -> (dapprox y).{i}) yp
+
   let of_DAE_data epsilon resf dapprox t y0 fixy0 u0 cu0 =
 
     (* We need two new variables for each fixed varaible *)
@@ -31,6 +40,13 @@ module Data = struct
     in
     let n = Sundials.RealArray.length y0 in
     let m = Array.length idx_arr in
+    let lu = Sundials.RealArray.length u0 in
+    let luc = Sundials.RealArray.length cu0 in
+    let lfy = Sundials.RealArray.length fixy0 in
+
+    (* Make sure vector dimensions are correct *)
+    if n != lfy || lu != luc || n + m != luc then
+      raise (Failure "Vector dimensions does not match");
 
     (* build a system of equations from the residual function and the new variables
      * governing fixed guesses *)

@@ -28,6 +28,18 @@ let test_of_DAE_data = (fun _ ->
     assert_equal cu0exp cu0
   )
 
+let test_to_DAE_data = (fun _ ->
+    let u = Sundials.RealArray.of_list [1.; 2.; 3.; 4.; 5.] in
+    let dapprox y = y in
+    let y = Sundials.RealArray.create 4 in
+    let yp = Sundials.RealArray.create 4 in
+    let yexp = Sundials.RealArray.of_list [1.; 2.; 3.; 4.] in
+    let ypexp = dapprox yexp in
+    Data.to_DAE_data dapprox u y yp;
+    assert_equal yexp y;
+    assert_equal ypexp yp;
+  )
+
 let tests = "test suite for Constraints" >::: [
       "Free to float" >:: (fun _ ->
         assert_equal (Constraint.to_float Constraint.Free) 0.);
@@ -37,7 +49,8 @@ let tests = "test suite for Constraints" >::: [
         assert_equal (Constraint.of_float 0.) Constraint.Free);
       "Fixed of float" >:: (fun _ ->
         assert_equal (Constraint.of_float 1.) Constraint.Fixed);
-      "Well" >:: test_of_DAE_data;
+      "test of DAE data" >:: test_of_DAE_data;
+      "test to DAE data" >:: test_to_DAE_data;
     ]
 
 let _ = run_test_tt_main tests

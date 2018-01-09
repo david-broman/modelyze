@@ -211,6 +211,11 @@ let eval_daesolver_op eval op arg_lst =
     Ida.set_stop_time st tend;
     TmConst(Ast.ConstUnit)
 
+  (* | Ast.DAESolverOpCalcICWithFixed,
+   *   [tmres;TmArray(tm_yy);TmArray(tm_yyfix);TmConst(Ast.ConstReal(t0));
+   *    TmConst(Ast.ConstReal(dt))] -> *)
+
+
   | _ -> TmDAESolverOp(op,arg_lst)
 
 

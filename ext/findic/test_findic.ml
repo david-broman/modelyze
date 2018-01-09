@@ -5,42 +5,49 @@ let resf t y yp r =
   r.{0} <- y.{0} +. yp.{0};
   r.{1} <- y.{1} +. yp.{1}
 
-let dapprox y = y
-
+let t0 = 0.
 let y0 = Sundials.RealArray.of_list [1.; 2.]
-let fixy0 = Sundials.RealArray.of_list [Constraint.fixed; Constraint.free]
+let y0fix = Sundials.RealArray.of_list [Constraint.fixed; Constraint.free]
+let yp0 = Sundials.RealArray.of_list [3.; 4.]
+let yvarvid = Sundials.RealArray.of_list [Ida.VarId.differential; Ida.VarId.differential]
 let u0 = Sundials.RealArray.create 4
-let cu0 = Sundials.RealArray.create 4
+let up0 = Sundials.RealArray.create 4
+let uvarvid = Sundials.RealArray.create 4
+let u0c = Sundials.RealArray.create 4
 let r = Sundials.RealArray.create 4
 let epsilon = 1.0e-5
 
-let test_of_DAE_data = (fun _ ->
-    let sysf = Data.of_DAE_data epsilon resf dapprox 0. y0 fixy0 u0 cu0 in
+let test_to_fixed_DAE_IC_Data = (fun _ ->
     let u0exp = Sundials.RealArray.of_list [1.; 2.; 1.; 1.] in
-    let cu0exp = Sundials.RealArray.of_list [0.; 0.; 1.; -1.] in
+    let up0exp = Sundials.RealArray.of_list [3.; 4.; 3.; 3.] in
+    let uvarvidexp = Sundials.RealArray.of_list [Ida.VarId.differential;
+                                                 Ida.VarId.differential;
+                                                 Ida.VarId.algebraic;
+                                                 Ida.VarId.algebraic] in
+    let u0cexp = Sundials.RealArray.of_list [Sundials.Constraint.unconstrained;
+                                             Sundials.Constraint.unconstrained;
+                                             Sundials.Constraint.geq_zero;
+                                             Sundials.Constraint.leq_zero] in
     let rexp = Sundials.RealArray.of_list [2.;
                                            4.;
                                            3. -. 1. +. 1. -. epsilon;
                                            4. -. 1. +. 1. +. epsilon] in
-    sysf (Sundials.RealArray.of_list [1.; 2.; 3.; 4.]) r;
-    assert_equal rexp r;
+    let newresf = Data.to_fixed_DAE_IC_Data
+                    epsilon resf t0 y0 y0fix yp0 yvarvid u0 up0 uvarvid u0c
+    in
+    newresf
+      0.
+      (Sundials.RealArray.of_list [1.; 2.; 3.; 4.])
+      (Sundials.RealArray.of_list [1.; 2.; 3.; 4.])
+      r;
     assert_equal u0exp u0;
-    assert_equal cu0exp cu0
+    assert_equal up0exp up0;
+    assert_equal uvarvidexp uvarvid;
+    assert_equal u0cexp u0c;
+    assert_equal rexp r;
   )
 
-let test_to_DAE_data = (fun _ ->
-    let u = Sundials.RealArray.of_list [1.; 2.; 3.; 4.; 5.] in
-    let dapprox y = y in
-    let y = Sundials.RealArray.create 4 in
-    let yp = Sundials.RealArray.create 4 in
-    let yexp = Sundials.RealArray.of_list [1.; 2.; 3.; 4.] in
-    let ypexp = dapprox yexp in
-    Data.to_DAE_data dapprox u y yp;
-    assert_equal yexp y;
-    assert_equal ypexp yp;
-  )
-
-let tests = "test suite for Constraints" >::: [
+let tests = "test suite for Findic" >::: [
       "Free to float" >:: (fun _ ->
         assert_equal (Constraint.to_float Constraint.Free) 0.);
       "Fixed to float" >:: (fun _ ->
@@ -49,8 +56,7 @@ let tests = "test suite for Constraints" >::: [
         assert_equal (Constraint.of_float 0.) Constraint.Free);
       "Fixed of float" >:: (fun _ ->
         assert_equal (Constraint.of_float 1.) Constraint.Fixed);
-      "test of DAE data" >:: test_of_DAE_data;
-      "test to DAE data" >:: test_to_DAE_data;
+      "test of DAE data" >:: test_to_fixed_DAE_IC_Data;
     ]
 
 let _ = run_test_tt_main tests

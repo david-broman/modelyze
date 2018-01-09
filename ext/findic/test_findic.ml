@@ -47,6 +47,18 @@ let test_to_fixed_DAE_IC_Data = (fun _ ->
     assert_equal rexp r;
   )
 
+let test_of_fixed_DAE_IC_Res = (fun _ ->
+    let u0in = Sundials.RealArray.of_list [1.; 2.; 3.; 4.;] in
+    let up0in = Sundials.RealArray.of_list [5.; 6.; 7.; 8.] in
+    let y0act = Sundials.RealArray.create 2 in
+    let yp0act = Sundials.RealArray.create 2 in
+    let y0exp = Sundials.RealArray.of_list [1.; 2.] in
+    let yp0exp = Sundials.RealArray.of_list [5.; 6.] in
+    Data.of_fixed_DAE_IC_Res u0in up0in y0act yp0act;
+    assert_equal y0act y0exp;
+    assert_equal yp0act yp0exp;
+  )
+
 let tests = "test suite for Findic" >::: [
       "Free to float" >:: (fun _ ->
         assert_equal (Constraint.to_float Constraint.Free) 0.);
@@ -56,7 +68,8 @@ let tests = "test suite for Findic" >::: [
         assert_equal (Constraint.of_float 0.) Constraint.Free);
       "Fixed of float" >:: (fun _ ->
         assert_equal (Constraint.of_float 1.) Constraint.Fixed);
-      "test of DAE data" >:: test_to_fixed_DAE_IC_Data;
+      "test to DAE data" >:: test_to_fixed_DAE_IC_Data;
+      "test of DAE res data" >:: test_of_fixed_DAE_IC_Res;
     ]
 
 let _ = run_test_tt_main tests

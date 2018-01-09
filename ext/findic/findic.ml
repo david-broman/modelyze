@@ -18,6 +18,17 @@ end
 module Data = struct
   type t = Sundials.RealArray.t
 
+  let of_fixed_DAE_IC_Res u0 up0 y0 yp0 =
+    let ly0 = Sundials.RealArray.length y0 in
+    let lyp0 = Sundials.RealArray.length yp0 in
+    let lu0 = Sundials.RealArray.length u0 in
+    let lup0 = Sundials.RealArray.length up0 in
+    if ly0 != lyp0 || lu0 != lup0 || ly0 > lu0 then
+      raise (Failure "Vector dimensions does not match");
+
+    Sundials.RealArray.mapi (fun i _ -> u0.{i}) y0;
+    Sundials.RealArray.mapi (fun i _ -> up0.{i}) yp0
+
   let to_fixed_DAE_IC_Data epsilon resf t0 y0 y0fix yp0 yvarid u0 up0 uvarid u0c =
     let ly0 = Sundials.RealArray.length y0 in
     let ly0fix = Sundials.RealArray.length y0fix in

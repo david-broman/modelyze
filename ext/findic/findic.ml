@@ -17,40 +17,40 @@ end
 
 module Data = struct
   type t = Sundials.RealArray.t
-  type tdapprox = t -> t
-  let to_DAE_data dapprox u y yp =
-    let n = Sundials.RealArray.length y in
-    let n' = Sundials.RealArray.length yp in
-    let m = Sundials.RealArray.length u in
-    if n != n' || m < n then
-      raise (Failure "Vector dimensions does not match");
-    Sundials.RealArray.mapi (fun i _ -> u.{i}) y;
-    Sundials.RealArray.mapi (fun i _ -> (dapprox y).{i}) yp
 
-  let of_DAE_data epsilon resf dapprox t y0 fixy0 u0 cu0 =
+  let to_fixed_DAE_IC_Data epsilon resf t0 y0 y0fix yp0 yvarid u0 up0 uvarid u0c =
+    let ly0 = Sundials.RealArray.length y0 in
+    let ly0fix = Sundials.RealArray.length y0fix in
+    let lyp0 = Sundials.RealArray.length yp0 in
+    let lyvarvid = Sundials.RealArray.length yvarid in
+    let lu0 = Sundials.RealArray.length u0 in
+    let lup0 = Sundials.RealArray.length up0 in
+    let luvarvid = Sundials.RealArray.length uvarid in
+    let lu0c = Sundials.RealArray.length u0c in
 
     (* We need two new variables for each fixed varaible *)
     let idx_arr =
-      fixy0
+      y0fix
       |> Sundials.RealArray.to_array
       |> Array.mapi (fun i e -> (i, e))
-      |> Array.fold_left
-           (fun l (i, e) -> if e = Constraint.fixed then i::i::l else l) []
+      |> Array.fold_left (fun l (i, e) ->
+             if e = Constraint.fixed then i::i::l else l) []
       |> Array.of_list
     in
-    let n = Sundials.RealArray.length y0 in
+
+    (* number of original variables *)
+    let n = ly0 in
+
+    (* number of new variables to account for fixed guesses *)
     let m = Array.length idx_arr in
-    let lu = Sundials.RealArray.length u0 in
-    let luc = Sundials.RealArray.length cu0 in
-    let lfy = Sundials.RealArray.length fixy0 in
 
-    (* Make sure vector dimensions are correct *)
-    if n != lfy || lu != luc || n + m != luc then
-      raise (Failure "Vector dimensions does not match");
+    (* Input validation *)
+    if
+      ly0 != lyp0 || ly0 != ly0fix || ly0 != lyvarvid || lu0 != lup0 ||
+        lu0 != luvarvid || lu0 != lu0c || (ly0 + n) != lu0
+    then raise (Failure "Vector dimensions does not match");
 
-    (* build a system of equations from the residual function and the new variables
-     * governing fixed guesses *)
-    let sysf u r =
+    let newrestf t u up r =
 
       (* Represents the state variables from the original problem *)
       let upper_arr a = Sundials.RealArray.sub a 0 n in
@@ -58,7 +58,7 @@ module Data = struct
       (* Represents the added variables to handle constraints *)
       let lower_arr a = Sundials.RealArray.sub a n m in
 
-      (* For each fixed guess a for variable v, we add the functions
+      (* For each fixed guess a for variable v, we add the equations
        * v_1 = v - a + epsilon and v_2 = v - a - epsilon in addition to
        * the constraints v_1 >= 0 and v_2 <= 0 *)
       let f i u =
@@ -67,24 +67,32 @@ module Data = struct
       in
 
       (* update r *)
-      resf t (upper_arr u) (dapprox (upper_arr u)) (upper_arr r);
+      resf t (upper_arr u) (upper_arr up) (upper_arr r);
       Sundials.RealArray.mapi (fun i _ -> f i u) (lower_arr r)
     in
 
-    (* Fill u0 with values from y0 *)
-    Sundials.RealArray.mapi
-      (fun i _ ->
-        if i < n then y0.{i}
-        else y0.{idx_arr.(i - n)}) u0;
+    let mapi_u_l mapi_u mapi_l a =
+      Sundials.RealArray.mapi (fun i e ->
+        if i < n then mapi_u i e else mapi_l i e) a
+    in
 
-    (* Fill cu0 with constraints bounding variables associated with
+    (* Fill u0 with values from y0 *)
+    mapi_u_l (fun i _ -> y0.{i}) (fun i _ -> y0.{idx_arr.(i - n)}) u0;
+
+    (* Fill up0 with values from yp0 *)
+    mapi_u_l (fun i _ -> yp0.{i}) (fun i _ -> yp0.{idx_arr.(i - n)}) up0;
+
+    (* Fill uvarid with values from yvarvid *)
+    mapi_u_l (fun i _ -> yvarid.{i}) (fun i _ -> Ida.VarId.algebraic) uvarid;
+
+    (* Fill u0c with constraints bounding variables associated with
      * fixed guesses *)
-    Sundials.RealArray.mapi
+    mapi_u_l
+      (fun i _ -> Sundials.Constraint.unconstrained)
       (fun i _ ->
-        if i >= n then
-          if i mod 2 = 0 then Sundials.Constraint.geq_zero
-          else Sundials.Constraint.leq_zero
-        else
-          Sundials.Constraint.unconstrained) cu0;
-    sysf
+        if i mod 2 = 0 then Sundials.Constraint.geq_zero
+        else Sundials.Constraint.leq_zero)
+      u0c;
+
+    newrestf
 end

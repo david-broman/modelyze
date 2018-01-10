@@ -5,7 +5,6 @@ let resf t y yp r =
   r.{0} <- y.{0} +. yp.{0};
   r.{1} <- y.{1} +. yp.{1}
 
-let t0 = 0.
 let y0 = Sundials.RealArray.of_list [1.; 2.]
 let y0fix = Sundials.RealArray.of_list [Constraint.fixed; Constraint.free]
 let yp0 = Sundials.RealArray.of_list [3.; 4.]
@@ -18,7 +17,7 @@ let r = Sundials.RealArray.create 4
 let epsilon = 1.0e-5
 
 let test_to_fixed_DAE_IC_Data = (fun _ ->
-    let u0exp = Sundials.RealArray.of_list [1.; 2.; 1.; 1.] in
+    let u0exp = Sundials.RealArray.of_list [1.; 2.; epsilon; -.epsilon] in
     let up0exp = Sundials.RealArray.of_list [3.; 4.; 3.; 3.] in
     let uvarvidexp = Sundials.RealArray.of_list [Ida.VarId.differential;
                                                  Ida.VarId.differential;
@@ -33,7 +32,7 @@ let test_to_fixed_DAE_IC_Data = (fun _ ->
                                            3. -. 1. +. 1. -. epsilon;
                                            4. -. 1. +. 1. +. epsilon] in
     let newresf = Data.to_fixed_DAE_IC_Data
-                    epsilon resf t0 y0 y0fix yp0 yvarvid u0 up0 uvarvid u0c
+                    epsilon resf y0 y0fix yp0 yvarvid u0 up0 uvarvid u0c
     in
     newresf
       0.
@@ -59,6 +58,17 @@ let test_of_fixed_DAE_IC_Res = (fun _ ->
     assert_equal yp0act yp0exp;
   )
 
+let test_nfixed = (fun _ ->
+    let fixed = Sundials.RealArray.of_list [Constraint.fixed;
+                                            Constraint.free;
+                                            Constraint.free;
+                                            Constraint.fixed]
+    in
+    let nexp = 2 in
+    let neact = Data.nfixed fixed in
+    assert_equal neact nexp;
+  )
+
 let tests = "test suite for Findic" >::: [
       "Free to float" >:: (fun _ ->
         assert_equal (Constraint.to_float Constraint.Free) 0.);
@@ -70,6 +80,37 @@ let tests = "test suite for Findic" >::: [
         assert_equal (Constraint.of_float 1.) Constraint.Fixed);
       "test to DAE data" >:: test_to_fixed_DAE_IC_Data;
       "test of DAE res data" >:: test_of_fixed_DAE_IC_Res;
+      "test nfixed" >:: test_nfixed;
     ]
 
+let test_findic = (fun _ ->
+    let resf t v v' r =
+      r.{0} <- v.{2}  -. v'.{0};
+      r.{1} <- v.{3}  -. v'.{1};
+      r.{2} <- v'.{2} -. v.{4} *. v.{0};
+      r.{3} <- v'.{3} -. v.{4} *. v.{1} +. 9.81;
+      r.{4} <- v.{2}*.v.{2} +. v'.{2}*.v.{0} +. v.{3}*.v'.{1} +. v'.{3}*.v.{1}
+    in
+
+    let v  = Sundials.RealArray.of_list [ 1.; 2.; 3.; 4.; 5. ] in
+    let vfix = Sundials.RealArray.make 5 Constraint.free in
+    let v' = Sundials.RealArray.make 5 1. in
+    vfix.{1} <- Constraint.fixed;
+    print_string "Before correction \n";
+    Sundials.RealArray.pp Format.std_formatter v;
+    Sundials.RealArray.pp Format.std_formatter v';
+
+    let vids = Sundials.RealArray.make 5 Ida.VarId.differential in
+
+    vids.{4} <- Ida.VarId.algebraic;
+
+    findic epsilon resf 0.01 0. v vfix v' vids v v';
+
+    print_string "\nAfter correction \n";
+    Sundials.RealArray.pp Format.std_formatter v;
+    Sundials.RealArray.pp Format.std_formatter v'
+  )
+
 let _ = run_test_tt_main tests
+
+let _ = test_findic()

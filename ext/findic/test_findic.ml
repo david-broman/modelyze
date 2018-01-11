@@ -95,7 +95,7 @@ let test_findic = (fun _ ->
     let v  = Sundials.RealArray.of_list [ 1.; 2.; 3.; 4.; 5. ] in
     let vfix = Sundials.RealArray.make 5 Constraint.free in
     let v' = Sundials.RealArray.make 5 1. in
-    vfix.{1} <- Constraint.fixed;
+    (* vfix.{1} <- Constraint.fixed; *)
     print_string "Before correction \n";
     Sundials.RealArray.pp Format.std_formatter v;
     Sundials.RealArray.pp Format.std_formatter v';

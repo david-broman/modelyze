@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -47,4 +47,3 @@ def set_to_cont(set: Set(?)) -> ? = {
    if (length l) == 0 then error "Empty set" else
    if (length l) == 1 then (hd l) else work (tl l) (hd l)
 }
-

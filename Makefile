@@ -34,7 +34,7 @@ endif
 
 # Directories where ocamlbuild can find source code.
 # DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
-DIRS = src,ext/ucamlib/src,ext/extlib
+DIRS = src,ext/ucamlib/src,ext/extlib,ext/findic
 
 .PHONY: all clean
 

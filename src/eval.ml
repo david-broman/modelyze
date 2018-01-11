@@ -212,31 +212,22 @@ let eval_daesolver_op eval op arg_lst =
     TmConst(Ast.ConstUnit)
 
   | Ast.DAESolverOpCalcICWithFixed,
-    [tmres;TmConst(Ast.ConstReal(t0));TmArray(tm_yy0);TmArray(tm_yyfix);TmArray(tm_yp0);
-     TmArray(tm_yvarid);TmConst(Ast.ConstReal(t0))] ->
-    let resf = resrootfun tmres in
-    let yy = from_tm tm_yy0 in
-    let yyfix = from_tm tm_yyfix in
-    let yp =  from_tm tm_yp0 in
-    let yvarid = from_tm tm_yvarid in
-    let n = Sundials.RealArray.length yy in
-    let m = Findic.Data.nfixed yyfix in
-    let yynew = Sundials.RealArray.create n in
-    let ypnew = Sundials.RealArray.create n in
-    let uu = Sundials.RealArray.create (n+m) in
-    let up = Sundials.RealArray.create (n+m) in
-    let uc = Sundials.RealArray.create (n+m) in
-    let uvarid = Sundials.RealArray.create (n+m) in
-    let epsilon = 1.0e-5 in
-    let newresf = Findic.Data.to_fixed_DAE_IC_Data
-                    epsilon resf yy yyfix yp yvarid uu up uc uvarid
-    in
-    let c =
-    let s = Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9))
-                   newresf t0 uu up)
-    in
-    Ida.set_suppress_alg s ~varid:uvarid true;
-    Ida.calc_ic_ya_yd' s ~y:uu ~y':up tend;
+    [tmres;TmConst(Ast.ConstReal(tstep));TmConst(Ast.ConstReal(t0));
+     TmArray(tm_yy0);TmArray(tm_yy0fix);TmArray(tm_yp0);TmArray(tm_vids);
+     TmArray(tm_yy0new);TmArray(tm_yp0new)] ->
+     let epsilon = 1.0e-5
+     and resf = resrootfun tmres
+     and yy0 = from_tm tm_yy0
+     and yy0fix = from_tm tm_yy0fix
+     and yp0 = from_tm tm_yp0
+     and vids = from_tm tm_vids
+     and yy0new = from_tm tm_yy0new
+     and yp0new = from_tm tm_yp0new
+     in
+     Findic.findic epsilon resf tstep t0 yy0 yy0fix yp0 vids yy0new yp0new;
+     into_tm yy0new tm_yy0new;
+     into_tm yp0new tm_yp0new;
+     TmConst(Ast.ConstUnit)
 
   | _ -> TmDAESolverOp(op,arg_lst)
 

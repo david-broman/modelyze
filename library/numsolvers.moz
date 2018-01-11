@@ -23,6 +23,7 @@ include Base
 type Varid = Real
 type SolverResult = Int
 type Root = Int
+type Constr = Real
 
 def varidAlgebraic = 0.
 def varidDifferential = 1.
@@ -32,3 +33,5 @@ def SolverResultStopTimeReached = 2
 def RootsNoRoot = 0
 def RootsRising = 1
 def RootsFalling = -1
+def ConstrFree = 0.
+def ConstrFixed = 1.

@@ -23,10 +23,11 @@ module Data = struct
       (fun c e -> if e = Constraint.fixed then c + 1 else c) 0 a
 
   let of_fixed_DAE_IC_Res u0 up0 y0 yp0 =
-    let ly0 = Sundials.RealArray.length y0 in
-    let lyp0 = Sundials.RealArray.length yp0 in
-    let lu0 = Sundials.RealArray.length u0 in
-    let lup0 = Sundials.RealArray.length up0 in
+    let ly0 = Sundials.RealArray.length y0
+    and lyp0 = Sundials.RealArray.length yp0
+    and lu0 = Sundials.RealArray.length u0
+    and lup0 = Sundials.RealArray.length up0
+    in
     if ly0 != lyp0 || lu0 != lup0 || ly0 > lu0 then
       raise (Failure "Vector dimensions does not match");
 
@@ -35,14 +36,15 @@ module Data = struct
 
   let to_fixed_DAE_IC_Data epsilon resf y0 y0fix yp0 yvarid u0 up0 uvarid u0c =
 
-    let ly0 = Sundials.RealArray.length y0 in
-    let ly0fix = Sundials.RealArray.length y0fix in
-    let lyp0 = Sundials.RealArray.length yp0 in
-    let lyvarvid = Sundials.RealArray.length yvarid in
-    let lu0 = Sundials.RealArray.length u0 in
-    let lup0 = Sundials.RealArray.length up0 in
-    let luvarvid = Sundials.RealArray.length uvarid in
-    let lu0c = Sundials.RealArray.length u0c in
+    let ly0 = Sundials.RealArray.length y0
+    and ly0fix = Sundials.RealArray.length y0fix
+    and lyp0 = Sundials.RealArray.length yp0
+    and lyvarvid = Sundials.RealArray.length yvarid
+    and lu0 = Sundials.RealArray.length u0
+    and lup0 = Sundials.RealArray.length up0
+    and luvarvid = Sundials.RealArray.length uvarid
+    and lu0c = Sundials.RealArray.length u0c
+    in
 
     (* We need two new variables for each fixed varaible *)
     let idx_arr =
@@ -115,28 +117,37 @@ module Data = struct
     newrestf
 end
 
-let findic epsilon resf tend t0 y0 y0fix yp0 vids y0new yp0new =
-  let n = Sundials.RealArray.length y0 in
-  let m = 2*(Data.nfixed y0fix) in
-  let u0 = Sundials.RealArray.create (n + m) in
-  let up0 = Sundials.RealArray.create (n + m) in
-  let uvids = Sundials.RealArray.create (n + m) in
-  let u0c = Sundials.RealArray.create (n + m) in
+let findic epsilon resf tstep t0 y0 y0fix yp0 vids y0new yp0new =
+
+  let n = Sundials.RealArray.length y0
+  and m = 2*(Data.nfixed y0fix)
+  in
+
+  let u0 = Sundials.RealArray.create (n + m)
+  and up0 = Sundials.RealArray.create (n + m)
+  and uvids = Sundials.RealArray.create (n + m)
+  and u0c = Sundials.RealArray.create (n + m)
+  in
+
   let uresf = Data.to_fixed_DAE_IC_Data
                 epsilon resf y0 y0fix yp0 vids u0 up0 uvids u0c
   in
-  let nu0 = Nvector_serial.wrap u0 in
-  let nup0 = Nvector_serial.wrap up0 in
-  let nuvids = Nvector_serial.wrap uvids in
-  let nu0c = Nvector_serial.wrap u0c in
+
+  let nu0 = Nvector_serial.wrap u0
+  and nup0 = Nvector_serial.wrap up0
+  and nuvids = Nvector_serial.wrap uvids
+  and nu0c = Nvector_serial.wrap u0c
+  in
+
   let s = Ida.(init (Dls.dense ())
                  (SStolerances (1e-9, 1e-9))
                  uresf t0 nu0 nup0)
   in
-  Ida.set_constraints s nu0c;
+
+  if m != 0 then Ida.set_constraints s nu0c;
   Ida.set_suppress_alg s ~varid:nuvids true;
   Sundials.RealArray.pp Format.std_formatter u0;
-  Ida.calc_ic_ya_yd' s ~y:nu0 ~y':nup0 tend;
+  Ida.calc_ic_ya_yd' s ~y:nu0 ~y':nup0 (t0 +.tstep);
   Sundials.RealArray.pp Format.std_formatter u0;
   Data.of_fixed_DAE_IC_Res
     (Nvector_serial.unwrap nu0) (Nvector_serial.unwrap nu0) y0new yp0new

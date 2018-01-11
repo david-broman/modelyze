@@ -1,7 +1,8 @@
 include daelang
 
 def main = {
-  def s1 = list_to_set [1, 2, 3];
-  def s2 = list_to_set [1, 2, 3];
-  dprint(is_equal s1 s2);
+  def x: Real;
+  def m = (Map.add (der x) 2. (Map.add x 1. (Map.empty)));
+  def _ = dprint(Map.find x m);
+  dprint(Map.find (der x) m);
 }

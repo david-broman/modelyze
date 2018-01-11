@@ -79,3 +79,16 @@ def test_gvmap_ukmap_to_yyconstrarr = {
   def _ = dprint(c);
   println("==> End test case " ++ name)
 }
+
+def test_get_dae_find_ic_input = {
+def name = "get_dae_find_ic_input";
+def _ = println("==> Start test case " ++ name);
+def x, y: Real;
+def E = (list_to_set [x = y, der x = 2.]);
+def gvmap = (list_to_map [(der x, (true, 3.)), (y, (false, 2.)), (x, (true, 1.))]);
+def icinp = get_dae_find_ic_input (E, gvmap) 0.;
+def _ = dprint(E);
+def _ = dprint(gvmap);
+def _ = dprint(icinp);
+println("==> End test case " ++ name)
+}

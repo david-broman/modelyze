@@ -22,6 +22,9 @@ include ModelyzeDAE
 type VMap = (<Real> => Real)
 type GVMap = (<Real> => (Bool, Real))
 type VList = [(<Real>, Real)]
+type Sigma = (Set(Equations), VMap)
+type Sigmap = (Set(Equations), GVMap)
+type Sigmapp = (Set(Equations), GVMap, Set ?)
 
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
 
@@ -98,8 +101,12 @@ def gvmap_ukmap_to_yyconstrarr(gvmap: GVMap, ukm: UkMap) -> {Constr} = {
   a
 }
 
-// def get_dae_find_ic_input(sigma: Sigmap) ->
-//   (Residual, VarArray, VarArray, VarArray, VarArray, VarArray) = {
-//   def (E, gvmap) = sigma;
-
-// }
+def get_dae_find_ic_input(sigma: Sigmap, undefval: Real) ->
+  (Residual, VarArray, VarArray, VarArray, VarArray) = {
+  def (E, gvmap) = sigma;
+  def (ukm, yy, yp) = E_gvmap_to_ukmap_yy_yp E gvmap undefval;
+  def cnstrs = gvmap_ukmap_to_yyconstrarr gvmap ukm;
+  def vids = initConditionCorrection ukm;
+  def resf = makeResidual ukm (set_to_cont E);
+  (resf, yy, cnstrs, yp, vids)
+}

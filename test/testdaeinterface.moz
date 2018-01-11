@@ -51,3 +51,18 @@ def test_E_vmap_to_ukmap_yy_yp = {
   def _ = dprint(yp);
   println("==> End test case " ++ name)
 }
+
+def test_ukmap_yy_yp_to_vmap = {
+  def name = "ukmap_yy_yp_to_vmap";
+  def _ = println("==> Start test case " ++ name);
+  def x, y: Real;
+  def ukm = (Map.add x (0, true) (Map.add y (1, false) (Map.empty)));
+  def yy = (toArray [1., 2.]);
+  def yp = (toArray [3., 4.]);
+  def vmap = ukmap_yy_yp_to_vmap ukm yy yp;
+  def _ = dprint(ukm);
+  def _ = dprint(yy);
+  def _ = dprint(yp);
+  def _ = dprint(vmap);
+  println("==> End test case " ++ name)
+}

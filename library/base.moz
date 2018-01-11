@@ -135,7 +135,7 @@ def nth(l:[Dyn], n:Int) -> Dyn = {
     work(l, 0)
 }
 
-def map(l: [Dyn], f: (Dyn -> Dyn)) -> [Dyn] = {
+def map(f: (Dyn -> Dyn), l: [Dyn]) -> [Dyn] = {
   def work(l: [Dyn], acc: [Dyn]) -> [Dyn] = {
     match l with
     | e::es -> work es ((f e)::acc)
@@ -156,7 +156,7 @@ def tl(l: [Dyn]) -> [Dyn] = {
   | _ -> error "There is no tail of an empty list"
 }
 
-def iter(l: [Dyn], f: (Dyn -> ())) -> () = {
+def iter(f: (Dyn -> ()), l: [Dyn]) -> () = {
   def work(l: [Dyn]) -> () = {
     match l with
     | e::es -> {
@@ -168,7 +168,7 @@ def iter(l: [Dyn], f: (Dyn -> ())) -> () = {
   work l
 }
 
-def toArray(l: [Dyn]) -> {Dyn} = {
+def list_to_array(l: [Dyn]) -> {Dyn} = {
   def work(l: [Dyn], a: {Dyn}, k: Int) -> () = {
     match l with
     | e::es -> {
@@ -192,6 +192,15 @@ def list_to_set(l : [Dyn]) -> Set(Dyn) = {
     | _ -> acc
   };
   work l (Set.empty)
+}
+
+def list_to_map(l: [(Dyn, Dyn)]) -> (Dyn => Dyn) = {
+  def work(l: [Dyn], acc: (Dyn => Dyn)) -> (Dyn => Dyn) = {
+    match l with
+    | (k, v)::es -> work es (Map.add k v acc)
+    | [] -> acc
+  };
+  work l (Map.empty)
 }
 
 def for_all(l: [Dyn], p: (Dyn -> Bool)) -> Bool = {

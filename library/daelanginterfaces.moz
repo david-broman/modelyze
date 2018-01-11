@@ -50,30 +50,33 @@ def set_to_cont(set: Set(?)) -> ? = {
    if (length l) == 1 then (hd l) else work (tl l) (hd l)
 }
 
-def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
+def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap) ->
   (UkMap, VarArray, VarArray) = {
   def (n, ukm) = realUnknowns (set_to_cont E);
-  def yy = (Array.make n undefval);
-  def yp = (Array.make n undefval);
-  def work(vlist: VList) -> () = {
-    def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
-      match e with
-      | der x -> (x, yp)
-      | x -> (x, yy)
-      | _ -> error "expected variables and derivatives"
+  if 2*(Map.size ukm) != (Map.size vmap) then error "vmap not a total function"
+  else {
+    def yy = (Array.make n 0.);
+    def yp = (Array.make n 0.);
+    def work(vlist: VList) -> () = {
+      def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
+        match e with
+        | der x -> (x, yp)
+        | x -> (x, yy)
+        | _ -> error "expected variables and derivatives"
+      };
+      match vlist with
+      | e::es -> {
+          def (ee, v) = e;
+          def (x, a) = get_uk_and_arr ee;
+          def (i, _) = (Map.find x ukm);
+          def _ = (Array.set a i v);
+          work es
+        }
+      | [] -> ()
     };
-    match vlist with
-    | e::es -> {
-        def (ee, v) = e;
-        def (x, a) = get_uk_and_arr ee;
-        def (i, _) = (Map.find x ukm);
-        def _ = (Array.set a i v);
-        work es
-      }
-    | [] -> ()
-  };
-  def _ = work (Map.toList vmap);
-  (ukm, yy, yp)
+    def _ = work (Map.toList vmap);
+    (ukm, yy, yp)
+  }
 }
 
 def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {

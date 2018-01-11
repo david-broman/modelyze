@@ -211,3 +211,12 @@ def for_all(l: [Dyn], p: (Dyn -> Bool)) -> Bool = {
   };
   work l
 }
+
+def fold_left(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
+  def work(a : Dyn, l: [Dyn]) -> Dyn = {
+    match l with
+    | e::es -> work (f a e) es
+    | [] -> a
+  };
+  work a l
+}

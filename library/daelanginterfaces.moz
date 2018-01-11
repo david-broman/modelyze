@@ -80,13 +80,9 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap) ->
 }
 
 def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
-  def work(ukl: UkList, acc: VMap) -> VMap = {
-    match ukl with
-    | u::us -> {
-        def (x, (i, _)) = u;
-        work us (Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc))
-      }
-    | [] -> acc
+  def f(acc: VMap,  e: (<Real>, (Int, Bool))) -> VMap = {
+    def (x, (i, _)) = e;
+    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
   };
-  work (Map.toList ukm) (Map.empty)
+  fold_left f (Map.empty) (Map.toList ukm)
 }

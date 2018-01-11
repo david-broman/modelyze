@@ -31,15 +31,6 @@ def init_guess: <Real> -> Real -> Equations
 def nil = NoEqn
 def undefined: ?
 
-// def is_undefined(x: ?) -> Bool = {
-//   match x with
-//   | undefined -> true
-//   | _ -> false
-// }
-
-// def set_value(f: (<Real> -> ?), x: <Real>, n: ?) -> (<Real> -> ?) =
-//   fun y: <Real> -> if (is_equal x y) then n else (f y)
-
 def M_m(m: Equations, sigma: Sigmapp) -> Sigmapp = {
   def (E, f, T) = sigma;
   match m with

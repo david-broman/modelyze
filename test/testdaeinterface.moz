@@ -37,15 +37,15 @@ def test_set_to_cont = {
   println("==> End test case set_to_cont")
 }
 
-def test_E_vmap_to_ukmap_yy_yp = {
-  def name = "E_vmap_to_ukmap_yy_yp";
+def test_E_gvmap_to_ukmap_yy_yp = {
+  def name = "E_gvmap_to_ukmap_yy_yp";
   def _ = println("==> Start test case " ++ name);
   def x, y: Real;
   def E = (list_to_set [x = y, der x = 2.]);
-  def vmap = (list_to_map [(der x, 3.), (y, 2.), (x, 1.)]);
-  def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap 0.;
+  def gvmap = (list_to_map [(der x, (true, 3.)), (y, (false, 2.)), (x, (true, 1.))]);
+  def (ukm, yy, yp) = E_gvmap_to_ukmap_yy_yp E gvmap 0.;
   def _ = dprint(E);
-  def _ = dprint(vmap);
+  def _ = dprint(gvmap);
   def _ = dprint(ukm);
   def _ = dprint(yy);
   def _ = dprint(yp);
@@ -68,14 +68,14 @@ def test_ukmap_yy_yp_to_vmap = {
 }
 
 def test_gvmap_ukmap_to_yyconstrarr = {
-def name = "gvmap_ukmap_to_constrarr";
-def _ = println("==> Start test case " ++ name);
-def x, y, z: Real;
-def gvmap = (list_to_map [(x,(true, 1.)), (der x, (false, 10.)), (y, (false, 2.))]);
-def ukm = (list_to_map [(x, (0, true)), (y, (1, true)), (z, (2, false))]);
-def c = gvmap_ukmap_to_yyconstrarr gvmap ukm;
-def _ = dprint(gvmap);
-def _ = dprint(ukm);
-def _ = dprint(c);
-println("==> End test case " ++ name)
+  def name = "gvmap_ukmap_to_constrarr";
+  def _ = println("==> Start test case " ++ name);
+  def x, y, z: Real;
+  def gvmap = (list_to_map [(x,(true, 1.)), (der x, (false, 10.)), (y, (false, 2.))]);
+  def ukm = (list_to_map [(x, (0, true)), (y, (1, true)), (z, (2, false))]);
+  def c = gvmap_ukmap_to_yyconstrarr gvmap ukm;
+  def _ = dprint(gvmap);
+  def _ = dprint(ukm);
+  def _ = dprint(c);
+  println("==> End test case " ++ name)
 }

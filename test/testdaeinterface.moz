@@ -42,7 +42,7 @@ def test_E_vmap_to_ukmap_yy_yp = {
   def _ = println("==> Start test case " ++ name);
   def x, y: Real;
   def E = (list_to_set [x = y, der x = 2.]);
-  def vmap = (Map.add (der x) 3. (Map.add y 2. (Map.add x 1. (Map.add (der y) 4. (Map.empty)))));
+  def vmap = (list_to_map [(der x, 3.), (y, 2.), (x, 1.), (der y, 4.)]);
   def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap;
   def _ = dprint(E);
   def _ = dprint(vmap);
@@ -56,7 +56,6 @@ def test_ukmap_yy_yp_to_vmap = {
   def name = "ukmap_yy_yp_to_vmap";
   def _ = println("==> Start test case " ++ name);
   def x, y: Real;
-  // def ukm = (Map.add x (0, true) (Map.add y (1, false) (Map.empty)));
   def ukm = list_to_map [(x, (0, true)), (y, (1, false))];
   def yy = (list_to_array [1., 2.]);
   def yp = (list_to_array [3., 4.]);

@@ -67,5 +67,7 @@ def indexred(E: Set(Equations)) -> Set(Equations) = {
 }
 
 // def findiv(sigma: Sigmapp) -> Sigma = {
-//   def gvmap_to_vmap_fixarr()
+//   // def gvmap_to_vmap(gvmap: GVMap, undefval: Real) -> VMap = {
+//   //   work()
+//   // };
 // }

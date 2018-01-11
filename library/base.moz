@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -43,7 +43,7 @@ def (||) : Bool -> Bool -> Bool = @@bool_or
 def (--) : Int -> Int = @@int_neg
 def (--) : Real -> Real = @@real_neg
 def bool2string : Bool -> String = @@bool2string
-def int2string : Int -> String = @@int2string 
+def int2string : Int -> String = @@int2string
 def real2string : Real -> String = @@real2string
 def int2real : Int -> Real = @@int2real
 def real2int : Real -> Int = @@real2int
@@ -105,7 +105,7 @@ def println(i:Real) -> () = println(real2string(i))
 def reverse(lst:[Dyn]) -> [Dyn] = {
     def work(lst:[Dyn],acc:[Dyn]) -> [Dyn] = {
         match lst with
-        | l::ls -> work(ls,l::acc) 
+        | l::ls -> work(ls,l::acc)
         | [] -> acc
     };
     work(lst,[])
@@ -117,12 +117,12 @@ def append(l1:[Dyn], l2:[Dyn]) -> [Dyn] = {
         | l::ls -> l::(work(ls))
         | [] -> l2
     };
-    work(l1)        
+    work(l1)
 }
 
 def length(l:[Dyn]) -> Int = {
     match l with
-    | _::ls -> length(ls) + 1 
+    | _::ls -> length(ls) + 1
     | [] -> 0
 }
 
@@ -177,7 +177,7 @@ def toArray(l: [Dyn]) -> {Dyn} = {
       }
     | _ -> ()
   };
-    
+
   def n = length l;
   def h = hd l;
   def a = (Array.make n l);

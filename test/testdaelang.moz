@@ -31,6 +31,8 @@ def print_expected_actual(expected: ?, actual: ?) -> () = {
   dprint(actual)
 }
 
+def f = Map.empty
+
 // def f = fun x: <Real> -> undefined
 
 // def test_setvalue = {

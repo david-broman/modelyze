@@ -47,3 +47,5 @@ def set_to_cont(set: Set(?)) -> ? = {
    if (length l) == 0 then error "Empty set" else
    if (length l) == 1 then (hd l) else work (tl l) (hd l)
 }
+
+// def vmap_eqs_to_ukmap_yy_yp

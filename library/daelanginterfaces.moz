@@ -20,6 +20,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 include ModelyzeDAE
 type VMap = (<Real> => Real)
+type GVMap = (<Real> => (Bool, Real))
 type VList = [(<Real>, Real)]
 
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
@@ -50,33 +51,30 @@ def set_to_cont(set: Set(?)) -> ? = {
    if (length l) == 1 then (hd l) else work (tl l) (hd l)
 }
 
-def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap) ->
+def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   (UkMap, VarArray, VarArray) = {
   def (n, ukm) = realUnknowns (set_to_cont E);
-  if 2*(Map.size ukm) != (Map.size vmap) then error "vmap not a total function"
-  else {
-    def yy = (Array.make n 0.);
-    def yp = (Array.make n 0.);
-    def work(vlist: VList) -> () = {
-      def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
-        match e with
-        | der x -> (x, yp)
-        | x -> (x, yy)
-        | _ -> error "expected variables and derivatives"
-      };
-      match vlist with
-      | e::es -> {
-          def (ee, v) = e;
-          def (x, a) = get_uk_and_arr ee;
-          def (i, _) = (Map.find x ukm);
-          def _ = (Array.set a i v);
-          work es
-        }
-      | [] -> ()
+  def yy = (Array.make n undefval);
+  def yp = (Array.make n undefval);
+  def work(vlist: VList) -> () = {
+    def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
+      match e with
+      | der x -> (x, yp)
+      | x -> (x, yy)
+      | _ -> error "expected variables and derivatives"
     };
-    def _ = work (Map.toList vmap);
-    (ukm, yy, yp)
-  }
+    match vlist with
+    | e::es -> {
+        def (ee, v) = e;
+        def (x, a) = get_uk_and_arr ee;
+        def (i, _) = (Map.find x ukm);
+        def _ = (Array.set a i v);
+        work es
+      }
+    | [] -> ()
+  };
+  def _ = work (Map.toList vmap);
+  (ukm, yy, yp)
 }
 
 def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
@@ -85,4 +83,17 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
     Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
   };
   fold_left f (Map.empty) (Map.toList ukm)
+}
+
+def gvmap_ukmap_to_yyconstrarr(gvmap: GVMap, ukm: UkMap) -> {Constr} = {
+  def a = (Array.make (Map.size ukm) ConstrFree);
+  def f(e: (<Real>, (Int, Bool))) = {
+    def (x, (i, _)) = e;
+    if (Map.mem x gvmap) then {
+      def (b, _) = (Map.find x gvmap);
+      Array.set a i (if b then ConstrFixed else ConstrFree)
+    } else ()
+  };
+  def _ = iter f (Map.toList ukm);
+  a
 }

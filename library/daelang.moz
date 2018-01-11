@@ -24,8 +24,9 @@ include Indexreduction
 
 type VMap = (<Real> => Real)
 type GVMap = (<Real> => (Bool, Real))
-type Sigma = (Set Equations, VMap)
-type Sigmapp = (Set Equations, GVMap, Set ?)
+type Sigma = (Set(Equations), VMap)
+type Sigmap = (Set(Equations), GVMap)
+type Sigmapp = (Set(Equations), GVMap, Set ?)
 
 def init_guess: <Real> -> Real -> Equations
 def nil = NoEqn
@@ -66,8 +67,16 @@ def indexred(E: Set(Equations)) -> Set(Equations) = {
   cont_to_set eqs;
 }
 
-// def findiv(sigma: Sigmapp) -> Sigma = {
-//   // def gvmap_to_vmap(gvmap: GVMap, undefval: Real) -> VMap = {
-//   //   work()
-//   // };
-// }
+def findiv(sigma: Sigmap) -> Sigma = {
+  def gvmap_to_vmap(gvmap: GVMap) -> VMap = {
+    def f(a: VMap, e: (<Real> => (Bool, Real))) -> VMap = {
+      def (x, (_, v)) = e;
+      Map.add x v a
+    };
+    fold_left f (Map.empty) (Map.toList gvmap)
+  };
+  def (E, gvmap) = sigma;
+  def vmap = gvmap_to_vmap gvmap;
+  def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap 0.;
+
+}

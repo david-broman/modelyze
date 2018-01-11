@@ -67,30 +67,5 @@ def indexred(E: Set(Equations)) -> Set(Equations) = {
 }
 
 // def findiv(sigma: Sigmapp) -> Sigma = {
-//   def work(yy: {Real}, fixar: {Constr}, ukl: UkList) -> () = {
-//     def setval(u: (<Real>, (Int, Bool))) -> () = {
-//        def (x, (i, _)) = u;
-//        def v = f x;
-//        if is_undefined v then {
-//          def _ = (Array.set yy i 0.);
-//          (Array.set fixar i ConstrFree)
-//        } else {
-//          def (v, fix) = v;
-//          def _ = (Array.set yy i v);
-//          if fix then (Array.set fixar i ConstrFix)
-//          else (Array.set fixar i ConstrFree)
-//        }
-//     };
-//     match ukl with
-//     | u::us -> {
-//          def _ = setval u;
-//          work yy fix us
-//       }
-//     | [] -> ()
-//   };
-//   def (E, f) = sigma;
-//   def eqs = set_to_cont E;
-//   def ukm = (makeUkMap eqs);
-
-//   (E, f)
+//   def gvmap_to_vmap_fixarr()
 // }

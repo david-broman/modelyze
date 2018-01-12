@@ -54,7 +54,7 @@ def test_T_s = {
   def _ = println("==> Start test case T_s");
   def x, y: Real;
   def zcdf = (fun z: <Real> -> (Set.mem z (list_to_set [y])));
-  def model = (hinit x 2.; der y = 2.; hinit_guess y 1.; der x = 1.;
+  def model = (init x 2.; der y = 2.; der x = 1.;
               (switch (y = 2.;
                       (switch (Branch x x x x) (y = 4.) y))
                                                   (y = 3.) x);
@@ -69,12 +69,12 @@ def test_R_s = {
   def _ = println("==> Start test case R_s");
   def x, y, z: Real;
   def fp = (Map.add y 10. f);
-  def model = (der y = 2.; hinit_guess z 1.; der x = 1.;
-              (switch (y = 2.;reinit x (y + 2.);reinit_guess y (y - 1.);
+  def model = (der y = 2.; der x = 1.;
+              (switch (y = 2.;reinit x (y + 2.);reinit y (y - 1.);
                       (switch (Branch x x x x) (y = 4.) y))
                                                   (z = 3.) x);
               x = y);
-  def expected = cont_to_set (init x 12.;der y = 2.;init_guess z 1.;der x = 1.;y = 2.;init_guess y 9.;Branch x x x x;x = y);
+  def expected = cont_to_set (init x 12.;der y = 2.;init z 1.;der x = 1.;y = 2.;init y 9.;Branch x x x x;x = y);
   def actual = cont_to_set (R_s model fp);
   // def _ = dprint(init x 12.;der y = 2.;init_guess z 1.;der x = 1.;y = 2.;init_guess y 9.;Branch x x x x);
   def _ = dprint(expected);

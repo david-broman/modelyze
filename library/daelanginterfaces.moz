@@ -21,8 +21,8 @@ written by Oscar Eriksson oerikss@kth.se
 include ModelyzeDAE
 type VMap = (<Real> => Real)
 type VMapElm = (<Real>, Real)
-type Sigma = (Real, Set Equations, VMap)
-type SigmaT = (Real, Set Equations, VMap)
+type Sigma = (Real, Set(Equations), VMap)
+type SigmaT = (Real, Set(Equations), VMap, Set(?))
 
 
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))

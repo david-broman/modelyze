@@ -33,24 +33,6 @@ def print_expected_actual(expected: ?, actual: ?) -> () = {
 
 def f = Map.empty
 
-// def f = fun x: <Real> -> undefined
-
-// def test_setvalue = {
-//   def _ = println("==> Start test case setvalue");
-//   def x, y: Real;
-//   def fp = (set_value f x 10.);
-//   def _ = simple_assert((fp x) == 10.);
-//   println("==> End test case setvalue")
-// }
-
-// def test_is_undefined = {
-//   def _ = println("==> Start test case is_undefined");
-//   def x, y: Real;
-//   def fp = (set_value f x 10.);
-//   def _ = simple_assert(is_undefined (fp y));
-//   println("==> End test case is_undefined")
-// }
-
 def test_M_m_eq = {
   def _ = println("==> Start test case M_m_eq");
   def x, y: Real;
@@ -67,42 +49,11 @@ def test_M_m_init = {
   // test multiple inits with the same value
   def sigma = M_m (init x 1.) sigma;
   def (_, _, fp, _) = sigma;
-  def (b, r) = (Map.find x fp);
-  def _ = simple_assert b;
+  def r = (Map.find x fp);
   def _ = simple_assert (r == 1.);
   // Calls below should throw errors
   // def _ = M_m (init x 2.) sigma;
   println("==> End test case M_m_init")
-}
-
-def test_M_m_init_guess = {
-  def _ = println("==> Start test case M_m_init_guess");
-  def x: Real;
-  def sigma = M_m (init_guess x 1.) (0., (Set.empty), (Map.empty), (Set.empty));
-  // test multiple init_guesss with the same value
-  def sigma = M_m (init_guess x 1.) sigma;
-  def (_, _, fp, _) = sigma;
-  def (b, r) = (Map.find x fp);
-  def _ = simple_assert (!b);
-  def _ = simple_assert (r == 1.);
-  // Calls below should throw errors
-  // def _ = M_m (init_guess x 2.) sigma;
-  println("==> End test case M_m_init_guess")
-}
-
-def test_M_m_init_over_guess = {
-  def _ = println("==> Start test case M_m_init_over_guess");
-  def x: Real;
-  def sigma = M_m (init_guess x 1.) (0., (Set.empty), (Map.empty), (Set.empty));
-  // test multiple inits with the same value
-  def sigma = M_m (init x 2.) sigma;
-  def (_, _, fp, _) = sigma;
-  def (b, r) = (Map.find x fp);
-  def _ = simple_assert b;
-  def _ = simple_assert (r == 2.);
-  // Calls below should throw errors
-  // def _ = M_m (init x 2.) sigma;
-  println("==> End test case M_m_init_over_guess")
 }
 
 def test_M_m_nil = {
@@ -112,8 +63,7 @@ def test_M_m_nil = {
   // test multiple inits with the same value
   def sigma = M_m nil sigma;
   def (_, _, fp, _) = sigma;
-  def (b, r) = (Map.find x fp);
-  def _ = simple_assert b;
+  def r = (Map.find x fp);
   def _ = simple_assert (r == 1.);
   println("==> End test case M_m_nil")
 }

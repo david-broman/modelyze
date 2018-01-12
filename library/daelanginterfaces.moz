@@ -23,7 +23,7 @@ type VMap = (<Real> => Real)
 type VMapElm = (<Real>, Real)
 type Sigma = (Real, Set(Equations), VMap)
 type SigmaT = (Real, Set(Equations), VMap, Set(?))
-
+type Omega = (Equations, Real, Set(Equations), VMap, Set(<Real>))
 
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
 

@@ -33,14 +33,14 @@ def M_ar(a: <?>, f: VMap) -> ? = {
   | _ ->  error "Unsupported model construct"
 }
 
-def getzcb(S: Equations) -> Set(<Real>) = {
-  def work(S: Equations, acc: Set(<Real>)) -> Set(<Real>) = {
-    match S with
+def getzcb(s: Equations) -> Set(<Real>) = {
+  def work(s: Equations, acc: Set(<Real>)) -> Set(<Real>) = {
+    match s with
     | switch s_1 _ z -> work s_1 (Set.add z acc)
     | s_1; s_2 -> work s_1 (work s_2 acc)
     | _ -> acc
   };
-  work S (Set.empty)
+  work s (Set.empty)
 }
 
 def zcdf(fb: VMap, fa: VMap, zcb: <Real>) -> Bool = {
@@ -49,25 +49,25 @@ def zcdf(fb: VMap, fa: VMap, zcb: <Real>) -> Bool = {
   bef*aft < 0.
 }
 
-def haszc(zcb: Set(Equations), z: (<Real> -> Bool)) -> Bool = {
+def haszc(zcb: Set(<Real>), z: (<Real> -> Bool)) -> Bool = {
   for_all (Set.toList zcb) z
 }
 
-def T_s(S: Equations, z: (<Real> -> Bool)) -> Equations = {
-  match S with
+def T_s(s: Equations, z: (<Real> -> Bool)) -> Equations = {
+  match s with
   | s_1; s_2 -> (T_s s_1 z); (T_s s_2 z)
-  | a_1 = a_2 -> S
+  | a_1 = a_2 -> s
   | init _ _ -> nil
-  | reinit _ _ -> S
-  | Branch _ _ _ _ -> S
-  | RefBranch _ _ _ -> S
+  | reinit _ _ -> s
+  | Branch _ _ _ _ -> s
+  | RefBranch _ _ _ -> s
   | switch s_1 s_2 zcb -> if (z zcb) then s_2 else switch (T_s s_1 z) s_2 zcb
   | nil -> nil
   | _ -> error "Unmatched pattern in T_s"
 }
 
-def R_s(S: Equations, f: VMap) -> Equations = {
-  match S with
+def R_s(s: Equations, f: VMap) -> Equations = {
+  match s with
   | s_1; s_2 -> (R_s s_1 f); (R_s s_2 f)
   | init x a -> {
         def r = M_ar a f;
@@ -78,9 +78,18 @@ def R_s(S: Equations, f: VMap) -> Equations = {
         init x r
       }
   | switch s_1 _ _ -> R_s s_1 f
-  | a_1 = a_2 -> S
-  | Branch _ _ _ _ -> S
-  | RefBranch _ _ _ -> S
+  | a_1 = a_2 -> s
+  | Branch _ _ _ _ -> s
+  | RefBranch _ _ _ -> s
   | nil -> nil
   | _ -> error "Unmatched pattern in R_s"
+}
+
+def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
+  def s_new = T_s s z;
+  def Z = getzcb s_new;
+  def (t_new, E, f_new) =  M_d (R_s s_new f) t;
+  def z_new = zcdf f f_new;
+  if haszc Z z_new then M_h s_new f_new z_new t_new
+  else (s_new, t_new, E, f_new, Z)
 }

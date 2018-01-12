@@ -55,7 +55,7 @@ def test_M_m_eq = {
   def _ = println("==> Start test case M_m_eq");
   def x, y: Real;
   def m = x = y;
-  def (E, _, _) = M_m m ((Set.empty), (Map.empty), (Set.empty));
+  def (_, E, _, _) = M_m m (0., (Set.empty), (Map.empty), (Set.empty));
   def _ = simple_assert (Set.mem m E);
   println("==> End test case M_m_eq")
 }
@@ -63,10 +63,10 @@ def test_M_m_eq = {
 def test_M_m_init = {
   def _ = println("==> Start test case M_m_init");
   def x: Real;
-  def sigma = M_m (init x 1.) ((Set.empty), (Map.empty), (Set.empty));
+  def sigma = M_m (init x 1.) (0., (Set.empty), (Map.empty), (Set.empty));
   // test multiple inits with the same value
   def sigma = M_m (init x 1.) sigma;
-  def (_, fp, _) = sigma;
+  def (_, _, fp, _) = sigma;
   def (b, r) = (Map.find x fp);
   def _ = simple_assert b;
   def _ = simple_assert (r == 1.);
@@ -78,10 +78,10 @@ def test_M_m_init = {
 def test_M_m_init_guess = {
   def _ = println("==> Start test case M_m_init_guess");
   def x: Real;
-  def sigma = M_m (init_guess x 1.) ((Set.empty), (Map.empty), (Set.empty));
+  def sigma = M_m (init_guess x 1.) (0., (Set.empty), (Map.empty), (Set.empty));
   // test multiple init_guesss with the same value
   def sigma = M_m (init_guess x 1.) sigma;
-  def (_, fp, _) = sigma;
+  def (_, _, fp, _) = sigma;
   def (b, r) = (Map.find x fp);
   def _ = simple_assert (!b);
   def _ = simple_assert (r == 1.);
@@ -93,10 +93,10 @@ def test_M_m_init_guess = {
 def test_M_m_init_over_guess = {
   def _ = println("==> Start test case M_m_init_over_guess");
   def x: Real;
-  def sigma = M_m (init_guess x 1.) ((Set.empty), (Map.empty), (Set.empty));
+  def sigma = M_m (init_guess x 1.) (0., (Set.empty), (Map.empty), (Set.empty));
   // test multiple inits with the same value
   def sigma = M_m (init x 2.) sigma;
-  def (_, fp, _) = sigma;
+  def (_, _, fp, _) = sigma;
   def (b, r) = (Map.find x fp);
   def _ = simple_assert b;
   def _ = simple_assert (r == 2.);
@@ -108,10 +108,10 @@ def test_M_m_init_over_guess = {
 def test_M_m_nil = {
   def _ = println("==> Start test case M_m_nil");
   def x: Real;
-  def sigma = M_m (init x 1.) ((Set.empty), (Map.empty), (Set.empty));
+  def sigma = M_m (init x 1.) (0., (Set.empty), (Map.empty), (Set.empty));
   // test multiple inits with the same value
   def sigma = M_m nil sigma;
-  def (_, fp, _) = sigma;
+  def (_, _, fp, _) = sigma;
   def (b, r) = (Map.find x fp);
   def _ = simple_assert b;
   def _ = simple_assert (r == 1.);

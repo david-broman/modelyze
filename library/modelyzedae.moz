@@ -103,6 +103,9 @@ def daeInit(model:Equations) -> (State,ProbeMap) = {
     def (model1,probes) = elaborateProbes(model);
     def (model2,_) = elaborateDerivatives(model1,Map.empty);
     def (model3,_) = indexReducationPantelides(model2, Map.empty);
+    def _ = dprint(model2);
+    def _ = println("================");
+    def _ = dprint(model3);
     def ukmap = makeUkMap(model3);
     def residual = peval (makeResidual(ukmap,model3));
     def (yy,yp) = makeInitValues(model3, ukmap);
@@ -156,4 +159,5 @@ def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
 
 
 def printsim(model:Equations, steptime:Real, endtime:Real) =
-    print(pprintSimulation(ctSim(model,steptime,endtime)))
+    ctSim(model,steptime,endtime)
+    // print(pprintSimulation(ctSim(model,steptime,endtime)))

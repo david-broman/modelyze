@@ -67,7 +67,10 @@ def indexred(E: Set(Equations)) -> Set(Equations) = {
   cont_to_set eqs;
 }
 
-// def findiv(sigma: Sigmap) -> VMap = {
-//   def (resf, yy, _, yp, vids) = get_dae_find_ic_input sigma 0.;
-//   def s = DAESolver.init
+// def findiv(sigma: Sigmap) -> (Real, VMap) = {
+//   def dt = 0.1;
+//   def (t0, resf, yy0, _, yp0, vids) = get_dae_find_ic_input sigma 0.;
+//   def s = DAESolver.init resf t0 yy0 yp0;
+//   def _ = DAESolver.calc_ic_ya_ydp s vids yy0 yp0 (t0 + dt);
+
 // }

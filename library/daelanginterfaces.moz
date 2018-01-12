@@ -88,10 +88,10 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
 }
 
 def get_dae_find_ic_input(sigma: Sigma, undefval: Real) ->
-  (Residual, VarArray, VarArray, VarArray) = {
+  (Residual, VarArray, VarArray, VarArray, UkMap) = {
   def (t, E, vmap) = sigma;
   def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap undefval;
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (set_to_cont E);
-  (resf, yy, yp, vids)
+  (resf, yy, yp, vids, ukm)
 }

@@ -25,37 +25,54 @@ include Indexreduction
 def nil = NoEqn
 
 def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
-  def (t, E, f, T) = sigma;
+  def (t0, E, f, T) = sigma;
   match m with
-  | d_1 = d_2 -> (t, (Set.add m E), f, T)
+  | d_1 = d_2 -> (t0, (Set.add m E), f, T)
   | init x (lift r: Real) -> {
-      if !(Map.mem x f) then (t, E, (Map.add x r f), T)
+      if !(Map.mem x f) then (t0, E, (Map.add x r f), T)
       else {
         def r_o = (Map.find x f);
         if r_o != r then error "multiple inits for the same state variable"
-        else (t, E, (Map.add x r f), T)
+        else (t0, E, (Map.add x r f), T)
       }
     }
-  | Branch _ _ _ _ -> (t, E, f, (Set.add m T))
-  | RefBranch _ _ _ -> (t, E, f, (Set.add m T))
+  | Branch _ _ _ _ -> (t0, E, f, (Set.add m T))
+  | RefBranch _ _ _ -> (t0, E, f, (Set.add m T))
   | m_1; m_2 -> M_m m_2 (M_m m_1 sigma)
   | nil -> sigma
   | _ -> error "Unmatched pattern in M_m"
 ps}
 
 def elabtopol(T: Set(?)) -> Set(Equations) = {
-  cont_to_set (elaborateConnections (set_to_cont T))
+  if (Set.size T) == 0 then Set.empty else
+    cont_to_set (elaborateConnections (set_to_cont T))
 }
 
-def indexred(E: Set(Equations)) -> Set(Equations) = {
-  def (eqs, _) = indexReducationPantelides (set_to_cont E) (Map.empty);
-  cont_to_set eqs;
+def indexred(sigma: Sigma) -> Sigma = {
+  def f(vmap: VMap, e: (<Real>, <Real>)) -> VMap = {
+    def (x, xx) = e;
+    if (Map.mem (der x) vmap) then
+      Map.add xx (Map.find (der x) vmap) vmap
+    else vmap
+  };
+  def (t0, E, vmap) = sigma;
+  def (eqs, dmap) = indexReducationPantelides (set_to_cont E) (Map.empty);
+  (t0, cont_to_set eqs, fold_left f (vmap) (Map.toList dmap))
 }
 
-// def findiv(sigma: Sigmap) -> (Real, VMap) = {
-//   def dt = 0.1;
-//   def (t0, resf, yy0, _, yp0, vids) = get_dae_find_ic_input sigma 0.;
-//   def s = DAESolver.init resf t0 yy0 yp0;
-//   def _ = DAESolver.calc_ic_ya_ydp s vids yy0 yp0 (t0 + dt);
+def findiv(sigma: Sigma) -> (Real, VMap) = {
+  def dt = 0.1;
+  def (t0, _, _) = sigma;
+  def (resf, yy0, yp0, vids, ukm) = get_dae_find_ic_input sigma 0.;
+  def s = (DAESolver.init resf t0 yy0 yp0);
+  def _ = (DAESolver.calc_ic_ya_ydp s vids yy0 yp0 (t0 + dt));
+  (t0 + dt, ukmap_yy_yp_to_vmap ukm yy0 yp0)
+}
 
-// }
+def M_m_dot(m: Equations, t0: Real) -> Sigma = {
+  def (t, E, f, T) = M_m m (t0, Set.empty, Map.empty, Set.empty);
+  def E_t = elabtopol T;
+  def (_, E_r, f_r) = indexred (t, union E_t E, f);
+  def (it, iv) = findiv (t, E_r, f_r);
+  (it, E_r, iv)
+}

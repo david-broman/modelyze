@@ -22,33 +22,18 @@ include Elaboration
 include DAELANGInterfaces
 include Indexreduction
 
-type VMap = (<Real> => Real)
-type GVMap = (<Real> => (Bool, Real))
-type Sigma = (Real, Set(Equations), VMap)
-type Sigmap = (Real, Set(Equations), GVMap)
-type Sigmapp = (Real, Set(Equations), GVMap, Set ?)
-
-def init_guess: <Real> -> Real -> Equations
 def nil = NoEqn
 
-def M_m(m: Equations, sigma: Sigmapp) -> Sigmapp = {
+def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
   def (t, E, f, T) = sigma;
   match m with
   | d_1 = d_2 -> (t, (Set.add m E), f, T)
   | init x (lift r: Real) -> {
-      if !(Map.mem x f) then (t, E, (Map.add x (true, r) f), T)
+      if !(Map.mem x f) then (t, E, (Map.add x r f), T)
       else {
-        def (b, r_o) = (Map.find x f);
-        if (b && r_o != r) then error "multiple inits for the same state variable"
-        else (t, E, (Map.add x (true, r) f), T)
-      }
-    }
-  | init_guess x (lift r: Real) -> {
-      if !(Map.mem x f) then (t, E, (Map.add x (false, r) f), T)
-      else {
-        def (b, r_o) = (Map.find x f);
-        if (b || r_o != r) then error "multiple init guesses for the same state variable or trying to overide an init with a init guess"
-        else (t, E, (Map.add x (false, r) f), T)
+        def r_o = (Map.find x f);
+        if r_o != r then error "multiple inits for the same state variable"
+        else (t, E, (Map.add x r f), T)
       }
     }
   | Branch _ _ _ _ -> (t, E, f, (Set.add m T))

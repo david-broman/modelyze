@@ -220,3 +220,8 @@ def fold_left(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
   };
   work a l
 }
+
+def union(lhs: Set(?), rhs: Set(?)) -> Set(?) = {
+  def f(res: Set(?), e: ?) -> Set(?) = { Set.add e res };
+  fold_left f lhs (Set.toList rhs)
+}

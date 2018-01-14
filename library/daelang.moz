@@ -26,7 +26,6 @@ def nil = NoEqn
 
 def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
   def (t0, E, f, T) = sigma;
-  // def _ = dprint(E);
   match m with
   | d_1 = d_2 -> (t0, (Set.add m E), f, T)
   | init x (lift r: Real) -> {

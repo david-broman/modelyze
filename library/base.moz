@@ -203,11 +203,20 @@ def list_to_map(l: [(Dyn, Dyn)]) -> (Dyn => Dyn) = {
   work l (Map.empty)
 }
 
-def for_all(l: [Dyn], p: (Dyn -> Bool)) -> Bool = {
+def for_all(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
   def work(l: [Dyn]) -> Bool = {
     match l with
-    | e::es -> if (p e) then work es else {def _ = dprint(e); false }
+    | e::es -> if (p e) then work es else false
     | [] -> true
+  };
+  work l
+}
+
+def exists(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
+  def work(l: [Dyn]) -> Bool = {
+    match l with
+    | e::es -> if (p e) then true else work es
+    | [] -> false
   };
   work l
 }

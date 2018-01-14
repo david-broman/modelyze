@@ -179,7 +179,7 @@ let check_and_lift_arg_type_consistency fi e1 elem_ty container_ty =
   if consistent elem_ty container_ty then (meet elem_ty container_ty, e1)
   else if consistent (TySym(NoInfo,0,elem_ty)) container_ty
   then (meet (TySym(NoInfo,0,elem_ty)) container_ty, TmLift(NoInfo,0,e1,elem_ty))
-  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,[us""; pprint_ty elem_ty; pprint_ty container_ty]))
+  else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,[us""; pprint_ty container_ty; pprint_ty elem_ty]))
 
 
 

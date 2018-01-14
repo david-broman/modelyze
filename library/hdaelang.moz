@@ -24,13 +24,16 @@ include DAELANG
 def reinit: <Real> -> <Real> -> Equations
 def switch: Equations -> Equations -> <Real> -> Equations
 
-def M_ar(a: <?>, f: VMap) -> ? = {
-  match a with
-  | der x -> error "Only algebraic expressions allowed in M_ar"
-  | sym: Real -> if (Map.mem a f) then (Map.find a f) else error "Undefined in M_ar"
-  | a_1 a_2 ->  (M_ar a_1 f) (M_ar a_2 f)
-  | lift op: ? -> op
-  | _ ->  error "Unsupported model construct"
+def M_ar(a: <Real>, f: VMap) -> Real = {
+  def work(a: <?>) -> ? = {
+    match a with
+    | der x -> error "Only algebraic expressions allowed in M_ar"
+    | sym: Real -> if (Map.mem a f) then (Map.find a f) else error "Undefined in M_ar"
+    | a_1 a_2 ->  (work a_1 f) (work a_2 f)
+    | lift op: ? -> op
+    | _ ->  error "Unsupported model construct"
+  };
+  work a
 }
 
 def getzcb(s: Equations) -> Set(<Real>) = {
@@ -86,10 +89,19 @@ def R_s(s: Equations, f: VMap) -> Equations = {
 }
 
 def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
-  def s_new = T_s s z;
-  def Z = getzcb s_new;
-  def (t_new, E, f_new) =  M_d (R_s s_new f) t;
-  def z_new = zcdf f f_new;
-  if haszc Z z_new then M_h s_new f_new z_new t_new
-  else (s_new, t_new, E, f_new, Z)
+  if (Map.size f) == 0 then {
+    def m = R_s s f;
+    def _ = dprint(m);
+    def (t_new, E, f_new) =  M_d m t;
+    def Z = getzcb s;
+    (s, t_new, E, f_new, Z)
+  }
+  else {
+    def s_new = T_s s z;
+    def Z = getzcb s_new;
+    def (t_new, E, f_new) =  M_d (R_s s_new f) t;
+    def z_new = zcdf f f_new;
+    if haszc Z z_new then M_h s_new f_new z_new t_new
+    else (s_new, t_new, E, f_new, Z)
+  }
 }

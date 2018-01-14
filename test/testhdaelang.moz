@@ -91,8 +91,10 @@ def test_zcdf = {
   def x, y: Real;
   def fb = (Map.add y 11. (Map.add x 10. f));
   def fa = (Map.add y 10. (Map.add x 11. f));
-  def _ = simple_assert(zcdf fb fa (x - 10.5));
-  def _ = simple_assert((!zcdf fb fa (x - 11.)));
-  def _ = simple_assert(zcdf fb fa (x - y));
+  def Z = list_to_set [(x - 10.5), (x - y)];
+  def _ = simple_assert(zcdf Z fb fa (x - 10.5));
+  def _ = simple_assert(!(zcdf Z fb fa (x - 11.)));
+  def _ = simple_assert(zcdf Z fb fa (x - y));
+  def _ = simple_assert(!(zcdf Z fb fa (x - 10.3)));
   println("==> End test case zcdf")
 }

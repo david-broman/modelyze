@@ -33,6 +33,18 @@ def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
+def eval_from_vmap(a: <?>, f: VMap) -> ? = {
+  def eval(a: <Real>) -> Real = {
+    if (Map.mem a f) then (Map.find a f) else error "Undefined in eval from vmap"
+  };
+  match a with
+  | der x -> eval a
+  | sym: Real -> eval a
+  | a_1 a_2 ->  (eval_from_vmap a_1 f) (eval_from_vmap a_2 f)
+  | lift op: ? -> op
+  | _ ->  error "Unsupported model construct"
+}
+
 def cont_to_set(cont: ?) -> Set(?) = {
   def work(cont: ?, acc: Set(?)) -> Set(?) = {
     match cont with

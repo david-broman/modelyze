@@ -26,6 +26,7 @@ def nil = NoEqn
 
 def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
   def (t0, E, f, T) = sigma;
+  // def _ = dprint(E);
   match m with
   | d_1 = d_2 -> (t0, (Set.add m E), f, T)
   | init x (lift r: Real) -> {
@@ -33,7 +34,8 @@ def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
       else {
         def r_o = (Map.find x f);
         if r_o != r then error "multiple inits for the same state variable"
-        else (t0, E, (Map.add x r f), T)
+        else
+          (t0, E, (Map.add x r f), T)
       }
     }
   | Branch _ _ _ _ -> (t0, E, f, (Set.add m T))
@@ -41,7 +43,7 @@ def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
   | m_1; m_2 -> M_m m_2 (M_m m_1 sigma)
   | nil -> sigma
   | _ -> error "Unmatched pattern in M_m"
-ps}
+}
 
 def elabtopol(T: Set(?)) -> Set(Equations) = {
   if (Set.size T) == 0 then Set.empty else
@@ -73,6 +75,8 @@ def M_d(m: Equations, t0: Real) -> Sigma = {
   def (t, E, f, T) = M_m m (t0, Set.empty, Map.empty, Set.empty);
   def E_t = elabtopol T;
   def (_, E_r, f_r) = indexred (t, union E_t E, f);
+  def _ = dprint(E_r);
+  def _ = dprint(f_r);
   def (it, iv) = findiv (t, E_r, f_r);
   (it, E_r, iv)
 }

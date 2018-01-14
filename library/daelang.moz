@@ -74,8 +74,6 @@ def M_d(m: Equations, t0: Real) -> Sigma = {
   def (t, E, f, T) = M_m m (t0, Set.empty, Map.empty, Set.empty);
   def E_t = elabtopol T;
   def (_, E_r, f_r) = indexred (t, union E_t E, f);
-  def _ = dprint(E_r);
-  def _ = dprint(f_r);
   def (it, iv) = findiv (t, E_r, f_r);
   (it, E_r, iv)
 }

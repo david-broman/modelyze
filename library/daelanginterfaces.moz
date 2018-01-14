@@ -28,8 +28,8 @@ type Omega = (Equations, Real, Set(Equations), VMap, Set(<Real>))
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
 
 def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
-  def subsetleft = for_all (Set.toList lhs) (fun e: ? -> (Set.mem e rhs));
-  def subsetright = for_all (Set.toList rhs) (fun e: ? -> (Set.mem e lhs));
+  def subsetleft = for_all (fun e: ? -> (Set.mem e rhs)) (Set.toList lhs);
+  def subsetright = for_all (fun e: ? -> (Set.mem e lhs)) (Set.toList rhs);
   subsetleft && subsetright
 }
 

@@ -50,12 +50,17 @@ def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
     der y = 1.;
     der x = 0.)
 
-    (T - 10.);
+    (T - 1.);
 }
 
 def main = {
+  def f_b = list_to_map [(x, 0.), (y, 1.), (vx, 1.), (vy, 0.), (T, 0.9)];
+  def f_a = list_to_map [(x, 0.), (y, 1.), (vx, 1.), (vy, 0.), (T, 1.1)];
+  def Z = list_to_set [(T - 1.)];
   dprint(M_h (bpendulum x y vx vy T)
-             (Map.empty)
-             (fun z: <Real> -> false)
-             0.)
+             (f_a)
+             (zcdf Z f_b f_a)
+             // (Map.empty)
+             // (fun z: <Real> -> false)
+             1.)
 }

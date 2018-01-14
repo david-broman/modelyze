@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -32,8 +32,6 @@ def init : <Real->Real->Equations>
 def (<-)  = init
 def NoEqn : Equations
 
-
-
 // Ukmap maps an unknown (signal type) to an integer value
 // representing a unique integer number for the unknown in
 // the equation system. The boolean is true if the unknown
@@ -49,7 +47,7 @@ type Expr = <>
 
 def cleanupEquations(eq:Equations) : Equations = {
     match eq with
-    | e1; e2 -> 
+    | e1; e2 ->
        {
           match (cleanupEquations e1, cleanupEquations e2) with
           | (NoEqn,NoEqn) -> NoEqn
@@ -91,23 +89,23 @@ def noEquations(eqs:Equations) -> Int = {
 //an equations system. The resulting tuple is the number
 //of unique unknowns and a UkMap mapping unknowns to unique
 //integer values. This function is usually used via function
-//makeUkMap. 
+//makeUkMap.
 def realUnknowns(eqs:Equations) -> (Int,UkMap) = {
   def get(e:<?>, acc:(Int,UkMap)) -> (Int,UkMap) = {
      match e with
-     | der x -> 
-        (match x with 
+     | der x ->
+        (match x with
          | sym:<Real> -> {
              def (k,ukmap) = acc;
-             if Map.mem x ukmap 
+             if Map.mem x ukmap
              then (k,Map.add x (fst (Map.find x ukmap),true) ukmap)
              else ((k + 1,Map.add x (k,true) ukmap))
            }
-         | _ -> error "Illegal diffrentiation of expression") 
+         | _ -> error "Illegal diffrentiation of expression")
      | e1 e2 -> get(e2,get(e1,acc))
      | sym:<Real> -> if Map.mem e (snd acc) then acc
                     else ((fst acc) + 1,Map.add e (fst acc,false) (snd acc))
-     | e1 -> acc 
+     | e1 -> acc
   };
   get(eqs,(0,(Map.empty)));
 }
@@ -116,12 +114,3 @@ def realUnknowns(eqs:Equations) -> (Int,UkMap) = {
 //in an equation system. See definition of UkMap.
 def makeUkMap(eqs:Equations) -> UkMap =
     snd (realUnknowns(eqs))
-
-
-
-
-
-
-
-
-

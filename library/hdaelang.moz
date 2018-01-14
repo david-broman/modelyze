@@ -38,14 +38,16 @@ def getzcb(s: Equations) -> Set(<Real>) = {
   work s (Set.empty)
 }
 
-def zcdf(fb: VMap, fa: VMap, zcb: <Real>) -> Bool = {
-  def bef = (eval_from_vmap zcb fb);
-  def aft = (eval_from_vmap zcb fa);
-  bef*aft < 0.
+def zcdf(Z: Set(<Real>), fb: VMap, fa: VMap, zcb: <Real>) -> Bool = {
+  if (Set.mem zcb Z) then {
+    def bef = (eval_from_vmap zcb fb);
+    def aft = (eval_from_vmap zcb fa);
+    bef*aft < 0.
+  } else false
 }
 
-def haszc(zcb: Set(<Real>), z: (<Real> -> Bool)) -> Bool = {
-  for_all (Set.toList zcb) z
+def haszc(Z: Set(<Real>), z: (<Real> -> Bool)) -> Bool = {
+  exists z (Set.toList Z)
 }
 
 def T_s(s: Equations, z: (<Real> -> Bool)) -> Equations = {
@@ -89,12 +91,10 @@ def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
   }
   else {
     def s_new = T_s s z;
-    def _ = println("==");
-    def _ = dprint(s_new);
-    def _ = println("==");
     def Z = getzcb s_new;
-    def (t_new, E, f_new) =  M_d (R_s s_new f) t;
-    def z_new = zcdf f f_new;
+    def m = R_s s_new f;
+    def (t_new, E, f_new) =  M_d m t;
+    def z_new = zcdf Z f f_new;
     if haszc Z z_new then M_h s_new f_new z_new t_new
     else (s_new, t_new, E, f_new, Z)
   }

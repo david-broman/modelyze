@@ -1,0 +1,61 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include HDAELANG
+
+def pi = 3.1415
+def x, y, vx, vy, T: Real
+
+def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
+  -> Equations = {
+  init x (cos(135.*pi/180.));
+  init y (sin(135.*pi/180.));
+  init vx 0.;
+  init vy 0.;
+  der vx = T*x;
+  der vy = 1. - T*y;
+  der x = vx;
+  der y = vy;
+  x^2. + y^2. = 1.
+}
+
+def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
+  -> Equations = {
+  switch
+    (pendulum x y vx vy T)
+
+    (reinit x x;
+    reinit y y;
+    reinit vx vx;
+    reinit vy vy;
+    der x = vx;
+    der y = vy;
+    der y = 1.;
+    der x = 0.)
+
+    (T - 10.);
+}
+
+def main = {
+  dprint(M_h (bpendulum x y vx vy T)
+             (Map.empty)
+             (fun z: <Real> -> false)
+             0.)
+}

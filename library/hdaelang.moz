@@ -91,7 +91,6 @@ def R_s(s: Equations, f: VMap) -> Equations = {
 def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
   if (Map.size f) == 0 then {
     def m = R_s s f;
-    def _ = dprint(m);
     def (t_new, E, f_new) =  M_d m t;
     def Z = getzcb s;
     (s, t_new, E, f_new, Z)

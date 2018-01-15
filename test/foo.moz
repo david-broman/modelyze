@@ -1,8 +1,7 @@
 include daelang
 
 def main = {
-  def x: Real;
-  def m = (Map.add (der x) 2. (Map.add x 1. (Map.empty)));
-  def _ = dprint(Map.find x m);
-  dprint(Map.find (der x) m);
+  def a = [1,2];
+  def b = [3,4];
+  dprint(concat a b)
 }

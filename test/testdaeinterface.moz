@@ -79,3 +79,19 @@ def test_get_dae_find_ic_input = {
   def _ = dprint(icinp);
   println("==> End test case " ++ name)
 }
+
+def test_eval_from_arrays_with_default_val = {
+  def name = "eval_from_arrays_with_default_val";
+  def _ = println("==> Start test case " ++ name);
+  def x, y, z: Real;
+  def ukm = list_to_map [(x, (0, true)), (y, (1, true))];
+  def yy = list_to_array [1., 2.];
+  def yp = list_to_array [3., 4.];
+  def default = 100.;
+  def f = (fun e: <Real> -> eval_from_arrays_with_defualt_val e ukm yy yp default);
+  def _ = simple_assert ((f (x + 2.)) == 3.);
+  def _ = simple_assert ((f (der x + 2.)) == 5.);
+  def _ = simple_assert ((f (der x + y + 2.)) == 7.);
+  def _ = simple_assert ((f (z + 2.)) == 100.);
+  println("==> End test case " ++ name)
+}

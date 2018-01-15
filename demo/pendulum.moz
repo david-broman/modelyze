@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -25,26 +25,15 @@ def Pendulum(m:Real,l:Real,angle:Real) = {
     def x,y,T:Real;
     init x (l*sin(angle));
     init y (-l*cos(angle));
-     
+
     -T*x/l = m*x'';
-    -T*y/l - m*g = m*y'';     
+    -T*y/l - m*g = m*y'';
     x^2. + y^2. = l^2.;
-    probe "x" = x;
-    probe "y" = y;
 }
 
 
 
 def pi = 3.1415
 
-def main = 
+def main =
    printsim(Pendulum(5.0, 3.0, 45.0*pi/180.0), 0.01, 10.0)
-   
-
-
-
-
-
-
-
-

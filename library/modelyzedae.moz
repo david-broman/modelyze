@@ -102,13 +102,16 @@ type State = (SolverState, VarArray, VarArray, UkMap)
 def daeInit(model:Equations) -> (State,ProbeMap) = {
     def (model1,probes) = elaborateProbes(model);
     def (model2,_) = elaborateDerivatives(model1,Map.empty);
-    def (model3,_) = indexReducationPantelides(model2, Map.empty);
-    def _ = dprint(model2);
-    def _ = println("================");
-    def _ = dprint(model3);
+    def (model3,dmap) = indexReducationPantelides(model2, Map.empty);
+    // def _ = dprint(model2);
+    // def _ = println("================");
+    // def _ = dprint(dmap);
+    // def _ = dprint(model3);
     def ukmap = makeUkMap(model3);
     def residual = peval (makeResidual(ukmap,model3));
     def (yy,yp) = makeInitValues(model3, ukmap);
+    def _ = dprint(ukmap);
+    def _ = dprint(yy);
     def id = initConditionCorrection(ukmap);
     def solverState = (DAESolver.init residual 0. yy yp);
     def _ = (DAESolver.calc_ic_ya_ydp solverState id yy yp 0.00000001);

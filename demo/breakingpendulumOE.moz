@@ -22,19 +22,22 @@ include HDAELANG
 include Simulate
 
 def pi = 3.1415
+def g = 9.81
+def l = 3.
+def m = 5.
+def angle = 45.0*pi/180.0
 def x, y, vx, vy, T: Real
 
 def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
   -> Equations = {
-  init x (cos(135.*pi/180.));
-  init y (sin(135.*pi/180.));
-  init vx 0.;
-  init vy 0.;
-  der vx = T*x;
-  der vy = 1. - T*y;
-  der x = vx;
-  der y = vy;
-  x^2. + y^2. = 1.
+    init x (l*sin(angle));
+    init y (-l*cos(angle));
+
+    -T*x/l = m*(der vx);
+    -T*y/l - m*g = m*(der vy);
+    vy = der y;
+    vx = der x;
+    x^2. + y^2. = l^2.;
 }
 
 def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
@@ -48,20 +51,12 @@ def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
     reinit vy vy;
     der x = vx;
     der y = vy;
-    der y = 1.;
-    der x = 0.)
+    der vy = g;
+    der vx = 0.)
 
-    (T - 1.);
+    (T - 40.);
 }
 
-// def main = {
-//   def f_b = list_to_map [(x, 0.), (y, 1.), (vx, 1.), (vy, 0.), (T, 0.9)];
-//   def f_a = list_to_map [(x, 0.), (y, 1.), (vx, 1.), (vy, 0.), (T, 1.1)];
-//   def Z = list_to_set [(T - 1.)];
-//   dprint(M_h (bpendulum x y vx vy T)
-//              (f_a)
-//              (zcdf Z f_b f_a)
-//              // (Map.empty)
-//              // (fun z: <Real> -> false)
-//              1.)
-// }
+// def monitored = [(x, "x"), (y, "y"), (T, "T")]
+def monitored = [(x, "x"), (y, "y")]
+def main = print(pprintSimulation (simulatehdae (bpendulum x y vx vy T) 0. 0.1 3. monitored))

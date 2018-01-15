@@ -51,8 +51,8 @@ native: bytesfix #comp_c_files
 	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz
 
 # Compile debuggable byte version
-debug: bytesfix #comp_c_files
-       @ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS)  moz.d.byte
+# debug: bytesfix #comp_c_files
+       # @ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS)  moz.d.byte
 
 # Handling subtree for ext/ucamlib
 UCAMLIB_GIT = https://github.com/david-broman/ucamlib.git

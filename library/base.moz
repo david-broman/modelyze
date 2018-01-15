@@ -245,7 +245,7 @@ def union(lhs: Set(?), rhs: Set(?)) -> Set(?) = {
 }
 
 def concat(lhs: [Dyn], rhs: [Dyn]) -> [Dyn] = {
-  def h = reverse lhs;
+  def rlhs = reverse lhs;
   def f(l: [Dyn], e: Dyn) -> [Dyn] = { e::l };
-  fold_left f rhs h
+  fold_left f rhs rlhs
 }

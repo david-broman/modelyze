@@ -29,7 +29,8 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;
   def labels = map (fun e: (<Real>, String) -> snd e) monitored;
 
-  def ctsim(sigma: Sigma, Z: Set(<Real>)) -> ([StepVal], Real, VMap, SolverResult, (<Real> -> Bool)) = {
+  def ctsim(sigma: Sigma, Z: Set(<Real>))
+    -> ([StepVal], Real, VMap, SolverResult, (<Real> -> Bool)) = {
 
     def (t0, _, _) = sigma;
     def (resf, nroots, rootf, yy, yp, vids, ukm, zcbm) =
@@ -41,10 +42,12 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
     // def dtt = 0.00001;
     // def _ = (DAESolver.calc_ic_ya_ydp ss vids yy yp (t0 + dtt));
 
-    def go(t: Real, sr: SolverResult, acc: [StepVal]) -> (Real, SolverResult, [StepVal]) = {
+    def go(t: Real, sr: SolverResult, acc: [StepVal])
+      -> (Real, SolverResult, [StepVal]) = {
 
       def eval(t: Real) -> StepVal = {
-        (t, map (fun e: <Real> -> eval_from_arrays_with_default_val e ukm yy yp INFINITE) probes)
+        (t, map (fun e: <Real> ->
+          eval_from_arrays_with_default_val e ukm yy yp INFINITE) probes)
       };
 
       def newacc = (eval(t))::acc;
@@ -56,17 +59,21 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
 
     def (newt, sr, svs) = go(t0 + dtt, SolverResultsSuccess, []);
     def f = ukmap_yy_yp_to_vmap ukm yy yp;
-    if sr == SolverResultStopTimeReached then (svs, newt, f, sr, fun x: <Real> -> false)
+    if sr == SolverResultStopTimeReached then
+      (svs, newt, f, sr, fun x: <Real> -> false)
     else {
         def zcarr = (DAESolver.get_root_info ss);
         def zf = (fun e: <Real> ->
-          if (Map.mem e zcbm) then (Array.get zcarr (Map.find e zcbm)) != RootsNoRoot
+          if (Map.mem e zcbm) then
+            (Array.get zcarr (Map.find e zcbm)) != RootsNoRoot
           else false);
         (svs, newt, f, sr, zf)
     }
   };
 
-  def sim(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real, acc: [StepVal]) -> [StepVal] = {
+  def sim(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real, acc: [StepVal])
+    -> [StepVal] = {
+
     def (s_new, t_new, E, f_new, Z) = M_h s f z t;
     def sigma = (t_new, E, f_new);
     def (svs, t_newer, f_newer, sr, z_newer) = ctsim sigma Z;

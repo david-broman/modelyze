@@ -35,10 +35,11 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
     def (resf, nroots, rootf, yy, yp, vids, ukm, zcbm) =
       get_dae_solver_input sigma Z 0.;
 
-    def st = (DAESolver.init_with_rootf resf nroots rootf t0 yy yp);
-    def _ = (DAESolver.set_stop_time st tend);
-    def dtt = 0.00001;
-    def _ = (DAESolver.calc_ic_ya_ydp st vids yy yp (t0 + dtt));
+    def ss = (DAESolver.init_with_rootf resf nroots rootf t0 yy yp);
+    def _ = (DAESolver.set_stop_time ss tend);
+    def dtt = 0.;
+    // def dtt = 0.00001;
+    // def _ = (DAESolver.calc_ic_ya_ydp ss vids yy yp (t0 + dtt));
 
     def go(t: Real, sr: SolverResult, acc: [StepVal]) -> (Real, SolverResult, [StepVal]) = {
 
@@ -48,7 +49,7 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
 
       def newacc = (eval(t))::acc;
       if sr == SolverResultsSuccess then {
-          def (newt, newsr) = (DAESolver.solve_normal st (t + dt) yy yp);
+          def (newt, newsr) = (DAESolver.solve_normal ss (t + dt) yy yp);
           go(newt, newsr, newacc)
       } else (t, sr, newacc)
     };
@@ -57,7 +58,7 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
     def f = ukmap_yy_yp_to_vmap ukm yy yp;
     if sr == SolverResultStopTimeReached then (svs, newt, f, sr, fun x: <Real> -> false)
     else {
-        def zcarr = (DAESolver.get_root_info st);
+        def zcarr = (DAESolver.get_root_info ss);
         def zf = (fun e: <Real> ->
           if (Map.mem e zcbm) then (Array.get zcarr (Map.find e zcbm)) != RootsNoRoot
           else false);

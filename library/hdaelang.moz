@@ -93,7 +93,7 @@ def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
     def s_new = T_s s z;
     def Z = getzcb s_new;
     def m = R_s s_new f;
-    def (t_new, E, f_new) =  M_d m t;
+    def (t_new, E, f_new) = M_d m t;
     def z_new = zcdf Z f f_new;
     if haszc Z z_new then M_h s_new f_new z_new t_new
     else (s_new, t_new, E, f_new, Z)

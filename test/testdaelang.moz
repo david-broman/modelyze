@@ -20,10 +20,6 @@ written by Oscar Eriksson oerikss@kth.se
 
 include daelang
 
-def simple_assert(pred: Bool) = {
-  if pred then println("OK!") else println("Fail! ");
-}
-
 def print_expected_actual(expected: ?, actual: ?) -> () = {
   def _ = println("== expected:");
   def _ = dprint(expected);

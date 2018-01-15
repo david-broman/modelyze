@@ -144,6 +144,15 @@ def map(f: (Dyn -> Dyn), l: [Dyn]) -> [Dyn] = {
   reverse (work l [])
 }
 
+def mapi(f: (Int -> Dyn -> Dyn), l: [Dyn]) -> [Dyn] = {
+  def work(l: [Dyn], i: Int, acc: [Dyn]) -> [Dyn] = {
+    match l with
+    | e::es -> work es (i+1) ((f i e)::acc)
+    | [] -> acc
+  };
+  reverse (work l 0 [])
+}
+
 def hd(l: [Dyn]) -> Dyn = {
   match l with
   | e::es -> e
@@ -233,4 +242,10 @@ def fold_left(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
 def union(lhs: Set(?), rhs: Set(?)) -> Set(?) = {
   def f(res: Set(?), e: ?) -> Set(?) = { Set.add e res };
   fold_left f lhs (Set.toList rhs)
+}
+
+def concat(lhs: [Dyn], rhs: [Dyn]) -> [Dyn] = {
+  def h = reverse lhs;
+  def f(l: [Dyn], e: Dyn) -> [Dyn] = { e::l };
+  fold_left f rhs h
 }

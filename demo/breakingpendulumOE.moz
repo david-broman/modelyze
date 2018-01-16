@@ -1,22 +1,22 @@
 /*
-Modeling Kernel Language (Modelyze) library
-Copyright (C) 2010-2012 David Broman
+   Modeling Kernel Language (Modelyze) library
+   Copyright (C) 2010-2012 David Broman
 
-Modelyze library is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+   Modelyze library is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-Modelyze library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+   Modelyze library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public License
+   along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
-written by Oscar Eriksson oerikss@kth.se
-*/
+   written by Oscar Eriksson oerikss@kth.se
+ */
 
 include HDAELANG
 include Simulate
@@ -25,38 +25,38 @@ def pi = 3.1415
 def g = 9.81
 def l = 3.
 def m = 5.
-def angle = 45.0*pi/180.0
+def angle = (-135.0)*pi/180.0
 def x, y, vx, vy, T: Real
 
-def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
-  -> Equations = {
-    init x (l*sin(angle));
-    init y (-l*cos(angle));
-
-    -T*x/l = m*(der vx);
-    -T*y/l - m*g = m*(der vy);
-    vy = der y;
-    vx = der x;
-    x^2. + y^2. = l^2.;
+def pendulum = {
+  init x (l*cos(angle));
+  init y (l*sin(angle));
+  -T*x/l = m*(der vx);
+  -T*y/l - m*g = m*(der vy);
+  vy = der y;
+  vx = der x;
+  x^2. + y^2. = l^2.;
 }
 
-def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
-  -> Equations = {
-  switch
-    (pendulum x y vx vy T)
+def freefall(y0: <Real>, vy0: <Real>) -> Equations = {
+  reinit x x;
+  reinit y y0;
+  reinit vx vx;
+  reinit vy vy0;
+  der x = vx;
+  der y = vy;
+  der vx = 0.;
+  der vy = (-g);
+}
 
-    (reinit x x;
-    reinit y y;
-    reinit vx vx;
-    reinit vy vy;
-    der x = vx;
-    der y = vy;
-    der vy = g;
-    der vx = 0.)
+def bounce(y0: <Real>, vy0: <Real>) -> Equations = {
+  switch (freefall y0 vy0) (fun x: () -> bounce (-10.) (-0.7*vy)) (y + 10.)
+}
 
-    (T - 40.);
+def bpendulum = {
+  switch pendulum (fun x: () -> bounce y vy) (T - 70.);
 }
 
 // def monitored = [(x, "x"), (y, "y"), (T, "T")]
 def monitored = [(x, "x"), (y, "y")]
-def main = print(pprintSimulation (simulatehdae (bpendulum x y vx vy T) 0. 0.1 3. monitored))
+def main = print(pprintSimulation (simulatehdae bpendulum 0. 0.1 6.0 monitored))

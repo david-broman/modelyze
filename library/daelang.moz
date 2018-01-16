@@ -62,7 +62,7 @@ def indexred(sigma: Sigma) -> Sigma = {
 }
 
 def findiv(sigma: Sigma) -> (Real, VMap) = {
-  def dt = 0.1;
+  def dt = 0.00001;
   def (t0, _, _) = sigma;
   def (resf, yy0, yp0, vids, ukm) = get_dae_find_ic_input sigma 0.;
   def s = (DAESolver.init resf t0 yy0 yp0);

@@ -32,13 +32,14 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
   def ctsim(sigma: Sigma, Z: Set(<Real>))
     -> ([StepVal], Real, VMap, SolverResult, (<Real> -> Bool)) = {
 
-    def (t0, _, _) = sigma;
+    def (t0, _, fff) = sigma;
     def (resf, nroots, rootf, yy, yp, vids, ukm, zcbm) =
       get_dae_solver_input sigma Z 0.;
 
     def ss = (DAESolver.init_with_rootf resf nroots rootf t0 yy yp);
     def _ = (DAESolver.set_stop_time ss tend);
     def dtt = 0.;
+
     // def dtt = 0.00001;
     // def _ = (DAESolver.calc_ic_ya_ydp ss vids yy yp (t0 + dtt));
 

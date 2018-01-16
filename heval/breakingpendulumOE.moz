@@ -26,6 +26,7 @@ def g = 9.81
 def l = 3.
 def m = 5.
 def angle = (-135.0)*pi/180.0
+def ground = -10.
 def x, y, vx, vy, T: Real
 
 def pendulum = {
@@ -61,7 +62,7 @@ def still(x0: <Real>, y0: <Real>) -> Equations = {
 }
 
 def bounce(y0: <Real>, vy0: <Real>) -> Equations = {
-  switch (freefall y0 vy0) (fun t: () -> bounce (-10.) (-0.7*vy)) (y + 10.)
+  switch (freefall y0 vy0) (fun t: () -> bounce (ground) (-0.7*vy)) (y - ground)
 }
 
 def bpendulum = {
@@ -69,7 +70,7 @@ def bpendulum = {
 }
 
 /* def monitored = [(x, "x"), (y, "y"), ((abs vy) - abs(y) + 9.998, "lim")] */
-// def monitored = [(x, "x"), (y, "y"), (T, "T")]
-def monitored = [(x, "x"), (y, "y")]
+/* def monitored = [(x, "x"), (y, "y")] */
+def monitored = [(x, "x"), (y, "y"), (T, "T")]
 def main =
-print(pprintSimulation (simulatehdae bpendulum 0. 0.1 10.0 monitored))
+  print(pprintSimulation (simulatehdae bpendulum 0. 0.1 10.0 monitored))

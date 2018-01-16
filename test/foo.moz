@@ -1,7 +1,14 @@
 include daelang
 
+def a: Int -> Int
+
+def b(x: Int) = {
+  a(x) + 1
+}
+def a(x: Int) -> Int = {
+  1
+}
+
 def main = {
-  def a = [1,2];
-  def b = [3,4];
-  dprint(concat a b)
+  dprint(b(1))
 }

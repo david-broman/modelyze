@@ -46,17 +46,30 @@ def freefall(y0: <Real>, vy0: <Real>) -> Equations = {
   der x = vx;
   der y = vy;
   der vx = 0.;
-  der vy = (-g);
+  switch (der vy = (-g)) (fun t: () -> der vy = 0.) (abs(vy) - abs(y) + 9.998);
+}
+
+def still(x0: <Real>, y0: <Real>) -> Equations = {
+  reinit x x0;
+  reinit y y0;
+  reinit vx 0.;
+  reinit vy 0.;
+  der x = vx;
+  der y = vy;
+  der vx = 0.;
+  der vy = 0.;
 }
 
 def bounce(y0: <Real>, vy0: <Real>) -> Equations = {
-  switch (freefall y0 vy0) (fun x: () -> bounce (-10.) (-0.7*vy)) (y + 10.)
+  switch (freefall y0 vy0) (fun t: () -> bounce (-10.) (-0.7*vy)) (y + 10.)
 }
 
 def bpendulum = {
-  switch pendulum (fun x: () -> bounce y vy) (T - 70.);
+  switch pendulum (fun t: () -> bounce y vy) (T - 70.);
 }
 
+/* def monitored = [(x, "x"), (y, "y"), ((abs vy) - abs(y) + 9.998, "lim")] */
 // def monitored = [(x, "x"), (y, "y"), (T, "T")]
-def monitored = [(x, "x"), (y, "y")]
-def main = print(pprintSimulation (simulatehdae bpendulum 0. 0.1 6.0 monitored))
+ def monitored = [(x, "x"), (y, "y")]
+def main = 
+  print(pprintSimulation (simulatehdae bpendulum 0. 0.1 10.0 monitored))

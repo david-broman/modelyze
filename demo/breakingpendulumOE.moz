@@ -70,6 +70,6 @@ def bpendulum = {
 
 /* def monitored = [(x, "x"), (y, "y"), ((abs vy) - abs(y) + 9.998, "lim")] */
 // def monitored = [(x, "x"), (y, "y"), (T, "T")]
- def monitored = [(x, "x"), (y, "y")]
-def main = 
-  print(pprintSimulation (simulatehdae bpendulum 0. 0.1 10.0 monitored))
+def monitored = [(x, "x"), (y, "y")]
+def main =
+print(pprintSimulation (simulatehdae bpendulum 0. 0.1 10.0 monitored))

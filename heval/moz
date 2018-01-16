@@ -1,0 +1,3 @@
+#!/bin/bash
+BASEDIR=$(dirname "$BASH_SOURCE")
+$BASEDIR/../bin/moz --libpaths=$BASEDIR/../library/ $1 

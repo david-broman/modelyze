@@ -1,0 +1,11 @@
+
+
+#!/bin/bash
+../_build/src/moz.native --libpaths=../library/ $1 > mozplot.dat 
+gnuplot mozplotps.cfg > /dev/null 2>&1
+rm -f mozplot.dat
+ps2pdf mozplot.ps
+rm -f mozplot.ps
+mv -f mozplot.pdf $1.pdf
+
+

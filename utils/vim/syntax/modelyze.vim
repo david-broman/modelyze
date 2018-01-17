@@ -7,7 +7,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syn keyword modelyzeKeywords else error false fst fun if in sym initmode include let def match snd then true type val with begin end specialize hybridchart mode init probe action when transition lift reinit der switch pre
+syn keyword modelyzeKeywords else error false fst fun if in sym initmode include let def match snd then true type val with begin end specialize hybridchart mode init probe action when transition lift reinit der switch
 
 syn keyword modelyzeTypes Real Int Bool ?
 

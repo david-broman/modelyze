@@ -19,12 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include ModelyzeDAE
-type VMap = (<Real> => Real)
-type VMapElm = (<Real>, Real)
-type Sigma = (Real, Set(Equations), VMap)
-type SigmaT = (Real, Set(Equations), VMap, Set(?))
-type Omega = (Equations, Real, Set(Equations), VMap, Set(<Real>))
-type ZCMap = (<Real> => Int)
+include DAELANGTYPES
 
 def makeZMapList(Z: Set(<Real>)) -> (ZCMap, [<Real>]) = {
   def f(i: Int, z: <Real>) -> (<Real>, Int) = { (z, i) };
@@ -45,10 +40,30 @@ def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
+def eval_from_vmaps(a: <?>, f: VMap, pf: VMap) -> ? = {
+  def eval(a: <Real>, f: VMap) -> Real = {
+    if (Map.mem a f) then (Map.find a f) else error "Undefined in eval from vmap"
+  };
+
+  def eval_fmm(a: <Real>) -> Real = {
+    match a with
+    | pre x -> eval x pf
+    | _ -> eval a f
+  };
+
+  match a with
+  | der x -> eval_fmm a
+  | sym: Real -> eval_fmm a
+  | a_1 a_2 ->  (eval_from_vmaps a_1 f pf) (eval_from_vmaps a_2 f pf)
+  | lift op: ? -> op
+  | _ ->  error "Unsupported model construct"
+}
+
 def eval_from_vmap(a: <?>, f: VMap) -> ? = {
   def eval(a: <Real>) -> Real = {
     if (Map.mem a f) then (Map.find a f) else error "Undefined in eval from vmap"
   };
+
   match a with
   | der x -> eval a
   | sym: Real -> eval a
@@ -60,7 +75,6 @@ def eval_from_vmap(a: <?>, f: VMap) -> ? = {
 def eval_from_arrays_with_default_val(expr: <Real>, ukm: UkMap, yy: VarArray,
   yp: VarArray, default: Real) -> Real = {
   def undefined_vars_in(expr: <?>) -> Bool = {
-    // def _ = dprint(expr);
     match expr with
     | sym: Real -> !(Map.mem expr ukm)
     | der x -> undefined_vars_in x
@@ -105,7 +119,7 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   def (n, ukm) = realUnknowns (set_to_cont E);
   def yy = (Array.make n undefval);
   def yp = (Array.make n undefval);
-  def work(gvlist: [VMapElm]) -> () = {
+  def work(gvlist: [(<Real>, Real)]) -> () = {
     def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
       match e with
       | der x -> (x, yp)

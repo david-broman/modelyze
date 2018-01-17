@@ -20,12 +20,10 @@ written by Oscar Eriksson oerikss@kth.se
 
 include DAELANGInterfaces
 include DAELANG
+include DAELANGTYPES
 
-def reinit: <Real> -> <Real> -> Equations
-def switch: Equations -> (() -> ?) -> <Real> -> Equations
-
-def M_ar(a: <Real>, f: VMap) -> Real = {
-  eval_from_vmap a f
+def M_ar(a: <Real>, f: VMap, pf: VMap) -> Real = {
+  eval_from_vmaps a f pf
 }
 
 def getzcb(s: Equations) -> Set(<Real>) = {
@@ -67,11 +65,11 @@ def R_s(s: Equations, f: VMap) -> Equations = {
   match s with
   | s_1; s_2 -> (R_s s_1 f); (R_s s_2 f)
   | init x a -> {
-        def r = M_ar a f;
+        def r = M_ar a f (Map.empty);
         init x r
       }
   | reinit x a -> {
-        def r = M_ar a f;
+        def r = M_ar a f (Map.empty);
         init x r
       }
   | switch s_1 _ _ -> R_s s_1 f

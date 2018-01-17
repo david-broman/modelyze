@@ -82,9 +82,17 @@ def R_s(s: Equations, f: VMap) -> Equations = {
   | _ -> error "Unmatched pattern in R_s"
 }
 
+def R_s_i(s: Equations) -> Equations = {
+  match s with
+  | reinit x a -> nil
+  | s_1; s_2 -> (R_s_i s_1); (R_s_i s_2)
+  | switch s_1 _ _ -> R_s_i s_1
+  | _ -> s
+}
+
 def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
   if (Map.size f) == 0 then {
-    def m = R_s s f;
+    def m = R_s (R_s_i s) f;
     def (t_new, E, f_new) =  M_d m t;
     def Z = getzcb s;
     (s, t_new, E, f_new, Z)

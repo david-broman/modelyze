@@ -1,11 +1,4 @@
-include Equation
-
 type VMap = (<Real> => Real)
-type Sigma = (Real, Set(Equations), VMap)
-type SigmaT = (Real, Set(Equations), VMap, Set(?))
-type Omega = (Equations, Real, Set(Equations), VMap, Set(<Real>))
-type ZCMap = (<Real> => Int)
-
-def reinit: <Real> -> <Real> -> Equations
-def pre: <Real> -> <Real>
-def switch: Equations -> (() -> ?) -> <Real> -> Equations
+type VMapElm = (<Real>, Real)
+type Sigma = (Real, Set Equations, VMap)
+type SigmaT = (Real, Set Equation, VMap)

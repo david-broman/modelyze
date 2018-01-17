@@ -1,0 +1,72 @@
+/*
+   Modeling Kernel Language (Modelyze) library
+   Copyright (C) 2010-2012 David Broman
+
+   Modelyze library is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Modelyze library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+   written by Oscar Eriksson oerikss@kth.se
+ */
+
+include HDAELANG
+include Simulate
+
+def omega_1, omega_2, tau_1, tau_2, t: Real
+def alpha_1 = -0.1
+def alpha_2 = -0.2
+def beta_1 = 0.3
+def beta_2 = 0.4
+def close = 2.
+def open = 4.
+
+def clutch(omega_1_0: <Real>, omega_2_0: <Real>) -> Equations = {
+  reinit omega_1 omega_1_0;
+  reinit omega_2 omega_2_0;
+  reinit t t;
+  der omega_1 = alpha_1*omega_1 + beta_1*tau_1;
+  der omega_2 = alpha_2*omega_2 + beta_2*tau_2;
+  der t = 1.;
+}
+
+def free(omega_1_0: <Real>, omega_2_0: <Real>) -> Equations = {
+  (clutch omega_1_0 omega_2_0);
+  tau_1 = 0.;
+  tau_2 = 0.;
+}
+
+def closed(omega_1_0: <Real>, omega_2_0: <Real>) -> Equations = {
+  (clutch omega_1_0 omega_2_0);
+  omega_1 = omega_2;
+  tau_1 = (- tau_2);
+}
+
+def fromclosedtofree(omega_1_0: <Real>, omega_2_0: <Real>) -> Equations = {
+  switch (closed omega_1_0 omega_2_0) (fun j : () -> free omega_1 omega_2)
+    (t - open)
+}
+
+def fromfreetoclosed = {
+  switch ((free omega_1 omega_2); init omega_1 1.; init omega_2 2.; init t 0.)
+    (fun j: () -> fromclosedtofree
+      ((beta_2*omega_1 + beta_1*omega_2)/(beta_1 + beta_2))
+      ((beta_1*omega_2 + beta_2*omega_1)/(beta_1 + beta_2))
+    )
+    (t - close)
+}
+
+def monitored =
+  [(omega_1, "o_1"), (omega_2, "o_2"), (tau_1, "t_1"), (tau_2, "t_2")]
+
+def main =
+  print(pprintSimulation (simulatehdae fromfreetoclosed 0. 0.1 6.0 monitored))
+

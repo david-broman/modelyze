@@ -1,0 +1,69 @@
+/*
+   Modeling Kernel Language (Modelyze) library
+   Copyright (C) 2010-2012 David Broman
+
+   Modelyze library is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   Modelyze library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+   written by Oscar Eriksson oerikss@kth.se
+ */
+
+include HDAELANG
+include Simulate
+
+def x, y, vx, vy, dvx, dvy: Real
+def g = 9.81
+def mu_s = 0.5
+def mu_d = 0.3
+def vx0 = 10.
+def y0 =  20.
+
+def stuck = { reinit vx 0.; der vx = 0. }
+
+def slide = {
+  switch (reinit vx vx; der vx = (-mu_d)*g) (fun t: () -> stuck) (vx)
+}
+
+def slideorstop = {
+  switch
+    (reinit dvx vx; reinit dvy (-vy); slide)
+    (fun t: () -> stuck)
+    (dvx - mu_s*dvy )
+}
+
+def body = {
+  init x 0.;
+  init y y0;
+  init vx vx0;
+  init vy 0.;
+  init dvx 9999.;
+  init dvy 0.;
+  reinit x x;
+  der x = vx;
+  der y = vy;
+  der dvx = 0.;
+  der dvy = 0.;
+  switch
+    (der vy = (-g); der vx = 0.)
+    (fun t: () ->
+      reinit y 0.; reinit vy 0.; der vy = 0.; slideorstop)
+    (y);
+}
+
+def monitored =
+  [(x, "x"), (y, "y")]
+  /* [(x, "x"), (y, "y"), (vx, "vx"), (dvx, "dvx"), (dvy, "dvy")] */
+
+def main =
+  print(pprintSimulation (simulatehdae body 0. 0.1 6.0 monitored))
+

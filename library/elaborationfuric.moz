@@ -33,21 +33,22 @@ def emptyIMatrix(n: Int, m: Int) -> IMatrix = {
   else (Map.empty, n, m)
 }
 
-def checkDim(i: Int, j: Int, n: Int, m: Int) -> () = {
-  if (i >= n || j >= m) then error "Indices's outside of matrix"
+def checkDim(IM: IMatrix, i: Int, j: Int) -> () = {
+  def (M, n, m) = IM;
+  if (i >= n || j >= m) then error "Index out of range"
   else ()
 }
 
-def get(TM: IMatrix, i: Int, j: Int) -> Int = {
-  def (M, n, m) = TM;
-  def _ = checkDim i j n m;
+def get(IM: IMatrix, i: Int, j: Int) -> Int = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i j;
   if (Map.mem i M) && (Map.mem j (Map.find i M))
   then (Map.find j (Map.find i M)) else no_edge
 }
 
-def set(TM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
-  def (M, n, m) = TM;
-  def _ = checkDim i j n m;
+def set(IM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i j;
   if v != no_edge && v != in_edge && v != out_edge then
     error "Valid element values are 0, -1, 1"
   else {
@@ -112,6 +113,27 @@ def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))
 
  def (IM, _) = fold_left f (emptyIMatrix n m, 0) el;
   IM
+}
+
+def addrow(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
+    def (j, v) = e;
+    set IM i2 j ((get IM i2 j) + v)
+  };
+  def _ = checkDim IM i1 0;
+  def _ = checkDim IM i2 0;
+  fold_left f IM (Map.toList (Map.find i1 M))
+}
+
+def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i 0;
+  def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
+    def (j, v) = e;
+    set IM i j ((get IM i j) * (-1))
+  };
+  fold_left f IM (Map.toList (Map.find i M))
 }
 
 /* def elaboratetopology(T: Set(Equations)) -> Set(Equations) = { */

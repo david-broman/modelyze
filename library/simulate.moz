@@ -32,7 +32,7 @@ def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
   def ctsim(sigma: Sigma, Z: Set(<Real>))
     -> ([StepVal], Real, VMap, SolverResult, (<Real> -> Bool)) = {
 
-    def (t0, _, fff) = sigma;
+    def (t0, _, _) = sigma;
     def (resf, nroots, rootf, yy, yp, vids, ukm, zcbm) =
       get_dae_solver_input sigma Z 0.;
 

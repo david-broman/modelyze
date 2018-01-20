@@ -81,6 +81,10 @@ def cont_to_set(cont: ?) -> Set(?) = {
   work cont (Set.empty)
 }
 
+def cont_to_list(cont: ?) -> [?] = {
+  reverse (Set.toList (cont_to_set cont))
+}
+
 def set_to_cont_impl(set: Set(?)) -> ? = {
    def work(l: [?], acc: ?) -> ? = {
       match l with

@@ -53,6 +53,18 @@ def set(IM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
   else (Map.add i (Map.add j v (Map.find i M)) M, n, m)
 }
 
+def iterij(f: (Int -> Int -> IMatrix -> IMatrix), IM: IMatrix) -> IMatrix = {
+  def (M, n, m) = IM;
+  def work(i: Int, j: Int, IM: IMatrix) -> IMatrix = {
+    if i >= n then IM
+    else {
+      if j >= m then work (i + 1) 0 (f i j IM)
+      else work i (j + 1) (f i j IM)
+    }
+  };
+  work 0 0 IM
+}
+
 def pp(IM: IMatrix) -> String = {
   def (_, n, m) = IM;
   def work(i: Int, j: Int) -> String = {
@@ -142,10 +154,12 @@ def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
 }
 
 def swrows(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
-  def (M, n, m) = IM;
-  def _ = checkDim IM i1 0;
-  def _ = checkDim IM i2 0;
-  (Map.add i1 (Map.find i2 M) (Map.add i2 (Map.find i1 M) M), n, m)
+  if i1 == i2 then IM else {
+    def (M, n, m) = IM;
+    def _ = checkDim IM i1 0;
+    def _ = checkDim IM i2 0;
+    (Map.add i1 (Map.find i2 M) (Map.add i2 (Map.find i1 M) M), n, m)
+  }
 }
 
 def leadingcol(IM: IMatrix, i: Int) -> Int = {
@@ -197,8 +211,18 @@ def rowreduce(IM: IMatrix) -> IMatrix = {
     }
   };
 
+  def s(i: Int, IM: IMatrix) - > IMatrix = {
+    def (_, n, m) = IM;
+    def lc = leadingcol IM i;
+
+  };
+
   rowiter f IM
 }
+
+/* ref rowreduce2(IM: IMatrix) -> IMatrix = { */
+/*  def */
+/* } */
 
 /* def elaboratetopology(T: Set(Equations)) -> Set(Equations) = { */
 

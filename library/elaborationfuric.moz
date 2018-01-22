@@ -115,15 +115,24 @@ def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))
   IM
 }
 
-def addrow(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
+def addsubrow(IM: IMatrix, fi: Int, ti: Int, add: Bool) -> IMatrix = {
   def (M, n, m) = IM;
   def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
     def (j, v) = e;
-    set IM i2 j ((get IM i2 j) + v)
+    if add then set IM ti j ((get IM ti j) + v)
+    else set IM ti j ((get IM ti j) - v)
   };
-  def _ = checkDim IM i1 0;
-  def _ = checkDim IM i2 0;
-  fold_left f IM (Map.toList (Map.find i1 M))
+  def _ = checkDim IM fi 0;
+  def _ = checkDim IM ti 0;
+  fold_left f IM (Map.toList (Map.find fi M))
+}
+
+def addrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
+  addsubrow IM fi ti true
+}
+
+def subrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
+  addsubrow IM fi ti false
 }
 
 def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
@@ -179,17 +188,19 @@ def rowreduce(IM: IMatrix) -> IMatrix = {
         def vo = get IM i j;
         if vo == no_edge then IM
         else {
-          if vo == out_edge then addrow (chsignrow IM i) ip i
+          if vo == out_edge then subrow IM ip i
           else addrow IM ip i
         }
       }
     };
+
     if j == (-1) then IM
     else {
       if v == in_edge then rowiter ff (chsignrow IM ip)
       else rowiter ff IM
     }
   };
+
   rowiter f IM
 }
 

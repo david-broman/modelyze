@@ -136,6 +136,63 @@ def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
   fold_left f IM (Map.toList (Map.find i M))
 }
 
+def swrows(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i1 0;
+  def _ = checkDim IM i2 0;
+  (Map.add i1 (Map.find i2 M) (Map.add i2 (Map.find i1 M) M), n, m)
+}
+
+def leadingcol(IM: IMatrix, i: Int) -> Int = {
+  def f(leadc: Int, e: (Int, Int)) -> Int = {
+    def (j,_) = e;
+    if leadc > j then j else leadc
+  };
+
+  def _ = checkDim IM i 0;
+  def (M, n, m) = IM;
+  if !(Map.mem i M) then (-1)
+  else {
+    def l = (Map.toList (Map.find i M));
+    match l with
+    | [] -> (-1)
+    | _ -> fold_left f m l
+  }
+}
+
+def rowiter(f: (Int -> IMatrix -> IMatrix), IM: IMatrix) -> IMatrix = {
+  def (_, n, m) = IM;
+  def work(i: Int, IM: IMatrix) -> IMatrix = {
+    if i >= n then IM
+    else work (i + 1) (f i IM)
+  };
+  work 0 IM
+}
+
+def rowreduce(IM: IMatrix) -> IMatrix = {
+  def f(ip: Int, IM: IMatrix) -> IMatrix = {
+    def j = leadingcol IM ip;
+    def v = get IM ip j;
+    def ff(i: Int, IM: IMatrix) -> IMatrix = {
+      if i == ip then IM
+      else {
+        def vo = get IM i j;
+        if vo == no_edge then IM
+        else {
+          if vo == out_edge then addrow (chsignrow IM i) ip i
+          else addrow IM ip i
+        }
+      }
+    };
+    if j == (-1) then IM
+    else {
+      if v == in_edge then rowiter ff (chsignrow IM ip)
+      else rowiter ff IM
+    }
+  };
+  rowiter f IM
+}
+
 /* def elaboratetopology(T: Set(Equations)) -> Set(Equations) = { */
 
 /* } */

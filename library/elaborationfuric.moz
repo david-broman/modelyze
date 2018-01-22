@@ -22,16 +22,68 @@ include Equation
 include Physical
 
 type Node = ?
+type IMatrix = ((Int => (Int => Int)), Int, Int)
 
-def outgoing = 1
-def incomming = -1
+def in_edge = -1
+def out_edge = 1
+def no_edge = 0
 
-def buildEdgeList(Tl: [Equations]) -> [(Node, Node, <Real>, <Real>)] = {
+def emptyIMatrix(n: Int, m: Int) -> IMatrix = {
+  if n < 0 || m < 0 then error "n and m needs to be positive integers"
+  else (Map.empty, n, m)
+}
 
-  def f(em: [(Node, Node, <Real>, <Real>)], ed: Equations)
+def checkDim(IM: IMatrix, i: Int, j: Int) -> () = {
+  def (M, n, m) = IM;
+  if (i >= n || j >= m) then error "Index out of range"
+  else ()
+}
+
+def get(IM: IMatrix, i: Int, j: Int) -> Int = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i j;
+  if (Map.mem i M) && (Map.mem j (Map.find i M))
+  then (Map.find j (Map.find i M)) else no_edge
+}
+
+def set(IM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i j;
+  if !(Map.mem i M) then (Map.add i (Map.add j v (Map.empty)) M, n, m)
+  else (Map.add i (Map.add j v (Map.find i M)) M, n, m)
+}
+
+def iterij(f: (Int -> Int -> IMatrix -> IMatrix), IM: IMatrix) -> IMatrix = {
+  def (M, n, m) = IM;
+  def work(i: Int, j: Int, IM: IMatrix) -> IMatrix = {
+    if i >= n then IM
+    else {
+      if j >= m then work (i + 1) 0 (f i j IM)
+      else work i (j + 1) (f i j IM)
+    }
+  };
+  work 0 0 IM
+}
+
+def pp(IM: IMatrix) -> String = {
+  def (_, n, m) = IM;
+  def work(i: Int, j: Int) -> String = {
+    if i >= n then ""
+    else {
+      if j >= m then "\n" ++ (work (i+1) 0)
+      else int2string (get IM i j) ++ ", " ++ (work i (j+1))
+    }
+  };
+  "---\n" ++ (work 0 0) ++ "---\n"
+}
+
+def enumerateEdges(Tl: [Equations])
+  -> [(Node, Node, <Real>, <Real>)] = {
+
+  def f(em: [(Node, Node, <Real>, <Real>)], e: Equations)
     -> [(Node, Node, <Real>, <Real>)] = {
 
-    match ed with
+    match e with
     | Branch f e p n -> (p, n, f, e)::em
     | _ -> error "Unrecognized element type in topological description"
   };
@@ -39,24 +91,138 @@ def buildEdgeList(Tl: [Equations]) -> [(Node, Node, <Real>, <Real>)] = {
   fold_left f [] Tl
 }
 
-def buildAdjList(el: [(Node, Node, <Real>, <Real>)])
-  -> (Node => [(Node, Int)]) = {
+def enumerateNodes(el: [(Node, Node, <Real>, <Real>)])
+  -> (Node => Int) = {
 
-  def ff(al: (Node => [(Node, Int, <Real>, <Real>)]), ed: (Node, Node, <Real>, <Real>))
-    -> (Node => [(Node, Int, <Real>, <Real>)]) = {
+  def f(mi: ((Node => Int), Int), e: (Node, Node, <Real>, <Real>))
+    -> ((Node => Int), Int) = {
 
-    def (p, n, f, e) = ed;
-    if !(Map.mem p al) then ff (Map.add p [] al) ed
-    else
-      if !(Map.mem n al) then ff (Map.add n [] al) ed
-      else {
-        def alnew = (Map.add n ((p, outgoing, f, e)::(Map.find n al)) al);
-        Map.add p ((n, incomming, f, e)::(Map.find p alnew)) alnew
-      }
+    def (m, i) = mi;
+    def (n, _, _, _) = e;
+    (Map.add n i m, i + 1)
   };
 
-  fold_left ff (Map.empty) el
+  def (m, _) = fold_left f (Map.empty, 0) el;
+  m
 }
+
+def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int)) -> IMatrix = {
+ def n = (Map.size nm);
+ def m = length el;
+ def f(IMj: (IMatrix, Int), e: (Node, Node, <Real>, <Real>))
+    -> (IMatrix, Int) = {
+
+    def (IM, j) = IMj;
+    def (n_in, n_out, _, _) = e;
+    def i_in = (Map.find n_in nm);
+    def i_out = (Map.find n_out nm);
+    (set (set IM i_in j in_edge) i_out j out_edge, j + 1)
+ };
+
+ def (IM, _) = fold_left f (emptyIMatrix n m, 0) el;
+  IM
+}
+
+def addsubrow(IM: IMatrix, fi: Int, ti: Int, add: Bool) -> IMatrix = {
+  def (M, n, m) = IM;
+  def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
+    def (j, v) = e;
+    if add then set IM ti j ((get IM ti j) + v)
+    else set IM ti j ((get IM ti j) - v)
+  };
+  def _ = checkDim IM fi 0;
+  def _ = checkDim IM ti 0;
+  fold_left f IM (Map.toList (Map.find fi M))
+}
+
+def addrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
+  addsubrow IM fi ti true
+}
+
+def subrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
+  addsubrow IM fi ti false
+}
+
+def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i 0;
+  def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
+    def (j, v) = e;
+    set IM i j ((get IM i j) * (-1))
+  };
+  fold_left f IM (Map.toList (Map.find i M))
+}
+
+def swrows(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
+  if i1 == i2 then IM else {
+    def (M, n, m) = IM;
+    def _ = checkDim IM i1 0;
+    def _ = checkDim IM i2 0;
+    (Map.add i1 (Map.find i2 M) (Map.add i2 (Map.find i1 M) M), n, m)
+  }
+}
+
+def leadingcol(IM: IMatrix, i: Int) -> Int = {
+  def f(leadc: Int, e: (Int, Int)) -> Int = {
+    def (j,_) = e;
+    if leadc > j then j else leadc
+  };
+
+  def _ = checkDim IM i 0;
+  def (M, n, m) = IM;
+  if !(Map.mem i M) then (-1)
+  else {
+    def l = (Map.toList (Map.find i M));
+    match l with
+    | [] -> (-1)
+    | _ -> fold_left f m l
+  }
+}
+
+def rowiter(f: (Int -> IMatrix -> IMatrix), IM: IMatrix) -> IMatrix = {
+  def (_, n, m) = IM;
+  def work(i: Int, IM: IMatrix) -> IMatrix = {
+    if i >= n then IM
+    else work (i + 1) (f i IM)
+  };
+  work 0 IM
+}
+
+def rowreduce(IM: IMatrix) -> IMatrix = {
+  def f(ip: Int, IM: IMatrix) -> IMatrix = {
+    def j = leadingcol IM ip;
+    def v = get IM ip j;
+    def ff(i: Int, IM: IMatrix) -> IMatrix = {
+      if i == ip then IM
+      else {
+        def vo = get IM i j;
+        if vo == no_edge then IM
+        else {
+          if vo == out_edge then subrow IM ip i
+          else addrow IM ip i
+        }
+      }
+    };
+
+    if j == (-1) then IM
+    else {
+      if v == in_edge then rowiter ff (chsignrow IM ip)
+      else rowiter ff IM
+    }
+  };
+
+  def s(i: Int, IM: IMatrix) - > IMatrix = {
+    def (_, n, m) = IM;
+    def lc = leadingcol IM i;
+
+  };
+
+  rowiter f IM
+}
+
+/* ref rowreduce2(IM: IMatrix) -> IMatrix = { */
+/*  def */
+/* } */
 
 /* def elaboratetopology(T: Set(Equations)) -> Set(Equations) = { */
 

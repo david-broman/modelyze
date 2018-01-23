@@ -83,3 +83,17 @@ def test_transpose = {
   def _ = simple_assert(is_equal (transpose fixt) exp);
   println("==> End test case " ++ name)
 }
+
+def test_swcols = {
+  def name = "swcols";
+  def _ = println("==> Start test case " ++ name);
+  def x, y, z: Real;
+  def fixt = list_to_IMatrix [[1, 0, -1],
+                              [0, 1, 1]];
+  def fixtvm = list_to_map [(0, x), (1, y), (2, z)];
+  def exp = list_to_IMatrix [[0, 1, -1],
+                              [1, 0, 1]];
+  def (IM, avm) = swcols fixt fixtvm 0 1;
+  def _ = simple_assert(is_equal IM exp);
+  println("==> End test case " ++ name)
+}

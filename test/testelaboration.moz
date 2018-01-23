@@ -1,0 +1,42 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include ElaborationFuric
+include DAELANGinterfaces
+
+def test_rowred1 = {
+  def name = "rowred1";
+  def _ = println("==> Start test case " ++ name);
+  def fixt = list_to_IMatrix [[1, 0, -1], [0, 1, 1], [-1, -1, 0]];
+  def exp = list_to_IMatrix [[1, 0, -1], [0, 1, 1], [0, 0, 0]];
+  def _ = simple_assert(is_equal (rowreduce fixt) exp);
+  println("==> End test case " ++ name)
+}
+
+def test_rowred2 = {
+  def name = "rowred2";
+  def _ = println("==> Start test case " ++ name);
+  def fixt = list_to_IMatrix
+      [[1, 0, -1, 1, 0], [0, 1, 1, 0, -1], [-1, -1, 0, 0,0], [0, 0, 0, -1, 1]];
+  def exp = list_to_IMatrix
+      [[1, 0, -1, 0, 1], [0, 1, 1, 0, -1], [0, 0, 0, 1,-1], [0, 0, 0, 0, 0]];
+  def _ = simple_assert(is_equal (rowreduce fixt) exp);
+  println("==> End test case " ++ name)
+}

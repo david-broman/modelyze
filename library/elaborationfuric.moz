@@ -247,9 +247,9 @@ def rowreduce2(IM: IMatrix) -> IMatrix = {
     if jp < m then {
       def pv = get IM ip jp;
       def work(IM: IMatrix, i: Int) -> IMatrix = {
-        if i < n && i != ip then {
+        if i < n then {
           def v = get IM i jp;
-          if v == no_edge then work IM (i + 1)
+          if v == no_edge || i == ip then work IM (i + 1)
           else
             if v == out_edge then work (subrow IM ip i) (i + 1)
             else work (addrow IM ip i) (i + 1)
@@ -265,7 +265,9 @@ def rowreduce2(IM: IMatrix) -> IMatrix = {
     def _ = dprint(pp IM);
     if imin < n then {
       def (pr, pc) = findpivotrowcol IM imin;
-      work (zerocolumn (swrows IM imin pr) imin pc) (imin + 1)
+      if pc < m then
+        work (zerocolumn (swrows IM imin pr) imin pc) (imin + 1)
+      else work IM (imin + 1)
     } else IM
   };
 

@@ -191,6 +191,18 @@ def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
   fold_left f IM (Map.toList (Map.find i M))
 }
 
+def transpose(IM: IMatrix) -> IMatrix = {
+  def (M, n, m) = IM;
+  def IMt = emptyIMatrix m n;
+  def work(IMt: IMatrix, i: Int, j: Int) -> IMatrix = {
+    if i >= n then IMt
+    else
+      if j >= m then work IMt (i + 1) 0
+      else work (set IMt j i (get IM i j)) i (j + 1)
+  };
+  work IMt 0 0
+}
+
 def swrows(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
   if i1 == i2 then IM else {
     def (M, n, m) = IM;
@@ -198,6 +210,13 @@ def swrows(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
     def _ = checkDim IM i2 0;
     (Map.add i1 (Map.find i2 M) (Map.add i2 (Map.find i1 M) M), n, m)
   }
+}
+
+def swcols(IM: IMatrix, vm: (Int => (<Real>, <Real>)), j1: Int, j2: Int)
+  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+
+  def nvm = (Map.add j1 (Map.find j2 vm) (Map.add j2 (Map.find j1 vm) vm));
+  (transpose (swrows (transpose IM) j1 j2), nvm)
 }
 
 def leadingcol(IM: IMatrix, i: Int) -> Int = {

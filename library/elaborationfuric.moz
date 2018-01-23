@@ -143,24 +143,22 @@ def enumerateNodes(el: [(Node, Node, <Real>, <Real>)])
   m
 }
 
-def buildIndcidenceMatrix(
-                          el: [(Node, Node, <Real>, <Real>)],
-                          nm: (Node => Int)
-                          ) -> IMatrix = {
- def n = (Map.size nm);
- def m = length el;
- def f(IMj: (IMatrix, Int), e: (Node, Node, <Real>, <Real>))
-    -> (IMatrix, Int) = {
+def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+  def n = (Map.size nm);
+  def m = length el;
+  def f(IMj: (IMatrix, (Int => (<Real>, <Real>)), Int),
+        ee: (Node, Node, <Real>, <Real>))
+     -> (IMatrix, (Int => (<Real>, <Real>)), Int) = {
 
-    def (IM, j) = IMj;
-    def (n_in, n_out, _, _) = e;
-    def i_in = (Map.find n_in nm);
-    def i_out = (Map.find n_out nm);
-    (set (set IM i_in j in_edge) i_out j out_edge, j + 1)
- };
+     def (IM, vm, j) = IMj;
+     def (n_in, n_out, f, e) = ee;
+     def i_in = (Map.find n_in nm);
+     def i_out = (Map.find n_out nm);
+     (set (set IM i_in j in_edge) i_out j out_edge, Map.add j (f, e) vm, j + 1)
+   };
 
- def (IM, _) = fold_left f (emptyIMatrix n m, 0) el;
-  IM
+  def (IM, vm, _) = fold_left f (emptyIMatrix n m, Map.empty, 0) el;
+  (IM, vm)
 }
 
 def addsubrow(IM: IMatrix, fi: Int, ti: Int, add: Bool) -> IMatrix = {
@@ -265,6 +263,6 @@ def rowreduce(IM: IMatrix) -> IMatrix = {
   work IM 0
 }
 
-/* def elaboratetopology(T: Set(Equations)) -> Set(Equations) = { */
+// def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
 
-/* } */
+// }

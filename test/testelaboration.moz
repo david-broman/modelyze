@@ -71,3 +71,15 @@ def test_rowred3 = {
   def _ = simple_assert(is_equal (rowreduce fixt) exp);
   println("==> End test case " ++ name)
 }
+
+def test_transpose = {
+  def name = "transpose";
+  def _ = println("==> Start test case " ++ name);
+  def fixt = list_to_IMatrix [[1, 0, -1],
+                              [0, 1, 1]];
+  def exp = list_to_IMatrix [[1, 0],
+                             [0, 1],
+                             [-1, 1]];
+  def _ = simple_assert(is_equal (transpose fixt) exp);
+  println("==> End test case " ++ name)
+}

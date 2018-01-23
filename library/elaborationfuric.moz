@@ -42,32 +42,39 @@ def checkDim(IM: IMatrix, i: Int, j: Int) -> () = {
 def get(IM: IMatrix, i: Int, j: Int) -> Int = {
   def (M, n, m) = IM;
   def _ = checkDim IM i j;
-  if (Map.mem i M) && (Map.mem j (Map.find i M))
-  then (Map.find j (Map.find i M)) else no_edge
+  if (Map.mem i M) then
+    if (Map.mem j (Map.find i M)) then (Map.find j (Map.find i M))
+    else no_edge
+  else no_edge
 }
 
 def set(IM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
   def (M, n, m) = IM;
   def _ = checkDim IM i j;
   if v == no_edge then
-    if (Map.mem i M) && (Map.mem j (Map.find i M)) then
-      (Map.add i (Map.remove j (Map.find i M)) M, n, m)
+    if (Map.mem i M) then
+      if (Map.mem j (Map.find i M)) then
+        (Map.add i (Map.remove j (Map.find i M)) M, n, m)
+      else (M, n, m)
     else (M, n, m)
   else
     if !(Map.mem i M) then (Map.add i (Map.add j v (Map.empty)) M, n, m)
     else (Map.add i (Map.add j v (Map.find i M)) M, n, m)
 }
 
-def iterij(f: (Int -> Int -> IMatrix -> IMatrix), IM: IMatrix) -> IMatrix = {
-  def (M, n, m) = IM;
-  def work(i: Int, j: Int, IM: IMatrix) -> IMatrix = {
-    if i >= n then IM
-    else {
-      if j >= m then work (i + 1) 0 (f i j IM)
-      else work i (j + 1) (f i j IM)
-    }
-  };
-  work 0 0 IM
+def is_equal(lhs: IMatrix, rhs: IMatrix) -> Bool = {
+  def (lM, ln, lm) = lhs;
+  def (rH, rn, rm) = rhs;
+  if ln != rn || lm != rm then false
+  else {
+    def work(i: Int, j: Int) -> Bool = {
+      if i >= ln then true
+      else
+        if j >= lm then work (i + 1) 0
+        else (get lhs i j) == (get rhs i j) && work i (j + 1)
+    };
+    work 0 0
+  }
 }
 
 def pp(IM: IMatrix) -> String = {
@@ -75,11 +82,32 @@ def pp(IM: IMatrix) -> String = {
   def work(i: Int, j: Int) -> String = {
     if i >= n then ""
     else {
-      if j >= m then "\n" ++ (work (i+1) 0)
-      else int2string (get IM i j) ++ ", " ++ (work i (j+1))
+      if j >= m then "\n" ++ (work (i + 1) 0)
+      else int2string (get IM i j) ++ ", " ++ (work i (j + 1))
     }
   };
   "---\n" ++ (work 0 0) ++ "---\n"
+}
+
+def list_to_IMatrix(l: [[Int]]) -> IMatrix = {
+  def m = length l;
+  def n = length (nth l 0);
+
+  def f(IMij: (IMatrix, Int, Int), e: Int) -> (IMatrix, Int, Int) = {
+    def (IM, i, j) = IMij;
+    if j >= m then error "Invalid row length"
+    else (set IM i j e, i, j + 1)
+  };
+
+  def ff(IMi: (IMatrix, Int), e: [Int]) -> (IMatrix, Int) = {
+    def (IM, i) = IMi;
+    def (IM, _, _) = fold_left f (IM, i, 0) e;
+    (IM, i + 1)
+  };
+
+  def eIM = emptyIMatrix n m;
+  def (IM, _) = fold_left ff (emptyIMatrix n m, 0) l;
+  IM
 }
 
 def enumerateEdges(Tl: [Equations])
@@ -192,42 +220,7 @@ def leadingcol(IM: IMatrix, i: Int) -> Int = {
   }
 }
 
-def rowiter(f: (Int -> IMatrix -> IMatrix), IM: IMatrix) -> IMatrix = {
-  def (_, n, m) = IM;
-  def work(i: Int, IM: IMatrix) -> IMatrix = {
-    if i >= n then IM
-    else work (i + 1) (f i IM)
-  };
-  work 0 IM
-}
-
 def rowreduce(IM: IMatrix) -> IMatrix = {
-  def f(ip: Int, IM: IMatrix) -> IMatrix = {
-    def j = leadingcol IM ip;
-    def v = get IM ip j;
-    def ff(i: Int, IM: IMatrix) -> IMatrix = {
-      if i == ip then IM
-      else {
-        def vo = get IM i j;
-        if vo == no_edge then IM
-        else {
-          if vo == out_edge then subrow IM ip i
-          else addrow IM ip i
-        }
-      }
-    };
-
-    if j == (-1) then IM
-    else {
-      if v == in_edge then rowiter ff (chsignrow IM ip)
-      else rowiter ff IM
-    }
-  };
-
-  rowiter f IM
-}
-
-def rowreduce2(IM: IMatrix) -> IMatrix = {
   def (_, n, m) = IM;
 
   def findpivotrowcol(IM: IMatrix, imin: Int) -> (Int, Int) = {
@@ -262,7 +255,6 @@ def rowreduce2(IM: IMatrix) -> IMatrix = {
   };
 
   def work(IM: IMatrix, imin: Int) -> IMatrix = {
-    def _ = dprint(pp IM);
     if imin < n then {
       def (pr, pc) = findpivotrowcol IM imin;
       if pc < m then

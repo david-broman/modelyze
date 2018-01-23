@@ -282,6 +282,23 @@ def rowreduce(IM: IMatrix) -> IMatrix = {
   work IM 0
 }
 
+def massage(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
+  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+
+  def (_, n, m) = IM;
+  def work(IMvm: (IMatrix, (Int => (<Real>, <Real>))), i: Int)
+    -> (IMatrix, (Int => (<Real>, <Real>))) = {
+      def (IM, vm) = IMvm;
+      if i >= n then (IM, vm)
+      else {
+        def lc = leadingcol IM i;
+        if lc >= m then (IM, vm)
+        else work (swcols IM vm i lc) (i + 1)
+      }
+    };
+  work (IM, vm) 0
+}
+
 // def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
 
 // }

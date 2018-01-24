@@ -297,7 +297,7 @@ def trim(IM: IMatrix, si: Int, ei: Int, sj: Int, ej: Int) -> IMatrix = {
   work (emptyIMatrix (ei - si + 1) (ej - sj + 1)) si sj
 }
 
-def massage(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
+def getThroughMatrix(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
   -> (IMatrix, (Int => (<Real>, <Real>))) = {
 
   def (_, n, m) = IM;

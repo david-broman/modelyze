@@ -114,8 +114,8 @@ def test_trim = {
   println("==> End test case " ++ name)
 }
 
-def test_massage = {
-  def name = "massage";
+def test_getThroughMatrix = {
+  def name = "getThroughMatrix";
   def _ = println("==> Start test case " ++ name);
   def x, y, z, u, v: Real;
   def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
@@ -128,7 +128,7 @@ def test_massage = {
       [[1, 0, 0, -1, 1],
        [0, 1, 0, 1, -1],
        [0, 0, 1, 0,-1]];
-  def (IM, nvm) = massage fixt vm;
+  def (IM, nvm) = getThroughMatrix fixt vm;
   def _ = simple_assert(is_equal IM exp);
   println("==> End test case " ++ name)
 }

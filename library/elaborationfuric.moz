@@ -32,7 +32,6 @@ def emptyIMatrix(n: Int, m: Int) -> IMatrix = {
   if n < 0 || m < 0 then error "n and m needs to be positive integers"
   else (Map.empty, n, m)
 }
-
 def checkDim(IM: IMatrix, i: Int, j: Int) -> () = {
   def (M, n, m) = IM;
   if (i >= n || j >= m) then error "Index out of range"
@@ -60,6 +59,15 @@ def set(IM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
   else
     if !(Map.mem i M) then (Map.add i (Map.add j v (Map.empty)) M, n, m)
     else (Map.add i (Map.add j v (Map.find i M)) M, n, m)
+}
+
+def identityIMatrix(n: Int) -> IMatrix = {
+  def work(IM: IMatrix, i: Int, j: Int) -> IMatrix = {
+    if i >= n then IM
+    else work (set IM i j 1) (i + 1) (j + 1)
+  };
+
+  work (emptyIMatrix n n) 0 0
 }
 
 def is_equal(lhs: IMatrix, rhs: IMatrix) -> Bool = {
@@ -315,6 +323,10 @@ def getThroughMatrix(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
   def (nIM, nvm, nn) = aligncols (IM, vm) 0 0;
   (trim nIM 0 (nn - 1) 0 (m - 1), nvm)
 }
+
+// def getAcrossMatrix(TM: IMatrix) -> IMatrix = {
+
+// }
 
 // def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
 

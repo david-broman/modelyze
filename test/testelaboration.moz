@@ -34,6 +34,16 @@ def test_rowred1 = {
   println("==> End test case " ++ name)
 }
 
+def test_identity = {
+  def name = "identity";
+  def _ = println("==> Start test case " ++ name);
+  def exp = list_to_IMatrix [[1, 0, 0],
+                             [0, 1, 0],
+                             [0, 0, 1]];
+  def _ = simple_assert(is_equal (identityIMatrix 3) exp);
+  println("==> End test case " ++ name)
+}
+
 def test_rowred2 = {
   def name = "rowred2";
   def _ = println("==> Start test case " ++ name);

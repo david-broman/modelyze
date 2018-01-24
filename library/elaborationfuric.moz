@@ -356,8 +356,8 @@ def getThroughMatrix(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
 
 def getAcrossMatrix(TM: IMatrix) -> IMatrix = {
   def (_, n, m) = TM;
-  def rhs = chsign (transpose (trim TM 0 (n -1) n (m -1)));
-  concat (identityIMatrix (m - n)) rhs
+  def lhs = chsign (transpose (trim TM 0 (n -1) n (m -1)));
+  concat lhs (identityIMatrix (m - n))
 }
 
 // def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {

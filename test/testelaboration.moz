@@ -23,7 +23,7 @@ include TestHelp
 
 def _ = testCase "create identity matrix"
   (fun t: () ->
-    def exp = list_to_IMatrix [[1, 0, 0],
+    def exp = listToIMatrix [[1, 0, 0],
                                [0, 1, 0],
                                [0, 0, 1]];
     def act = identityIMatrix 3;
@@ -32,10 +32,10 @@ def _ = testCase "create identity matrix"
 
 def _ = testCase "row reduction 1"
   (fun t: () ->
-    def fixt = list_to_IMatrix [[1, 0, -1],
+    def fixt = listToIMatrix [[1, 0, -1],
                                 [0, 1, 1],
                                 [-1, -1, 0]];
-    def exp = list_to_IMatrix [[1, 0, -1],
+    def exp = listToIMatrix [[1, 0, -1],
                                [0, 1, 1],
                                [0, 0, 0]];
     def act = rowreduce fixt;
@@ -44,12 +44,12 @@ def _ = testCase "row reduction 1"
 
 def _ = testCase "row reduction 2"
   (fun t: () ->
-    def fixt = list_to_IMatrix
+    def fixt = listToIMatrix
         [[1, 0, -1, 1, 0],
          [0, 1, 1, 0, -1],
          [-1, -1, 0, 0, 0],
          [0, 0, 0, -1, 1]];
-    def exp = list_to_IMatrix
+    def exp = listToIMatrix
         [[1, 0, -1, 0, 1],
          [0, 1, 1, 0, -1],
          [0, 0, 0, 1, -1],
@@ -60,14 +60,14 @@ def _ = testCase "row reduction 2"
 
 def _ = testCase "row reduction 3"
   (fun t: () ->
-    def fixt = list_to_IMatrix
+    def fixt = listToIMatrix
         [[1, 0, -1, 0, 0, 0],
          [-1, 1, 0, 0, 0, 0],
          [0, -1, 1, 0, 0, 0],
          [0, 0, 0, -1, 1, 0],
          [0, 0, 0, 1, 0, -1],
          [0, 0, 0, 0, -1, 1]];
-    def exp = list_to_IMatrix
+    def exp = listToIMatrix
         [[1, 0, -1, 0, 0, 0],
          [0, 1, -1, 0, 0, 0],
          [0, 0, 0, 1, 0, -1],
@@ -80,33 +80,40 @@ def _ = testCase "row reduction 3"
 
 def _ = testCase "transpose"
   (fun t: () ->
-    def fixt = list_to_IMatrix [[1, 0, -1],
-                                [0, 1, 1]];
-    def exp = list_to_IMatrix [[1, 0],
-                               [0, 1],
-                               [-1, 1]];
+    def fixt = listToIMatrix
+                        [[1, 0, -1],
+                         [0, 1, 1]];
+    def exp = listToIMatrix
+                        [[1, 0],
+                         [0, 1],
+                         [-1, 1]];
     def act = transpose fixt;
     simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "chsign"
   (fun t: () ->
-    def fixt = list_to_IMatrix [[1, 0, -1],
-                                [0, 1, 1]];
-    def exp = list_to_IMatrix [[-1, 0, 1],
-                                [0, -1, -1]];
+    def fixt = listToIMatrix
+                        [[1, 0, -1],
+                         [0, 1, 1]];
+    def exp = listToIMatrix
+                        [[-1, 0, 1],
+                         [0, -1, -1]];
     def act = chsign fixt;
     simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "concat"
   (fun t: () ->
-    def fixtlhs = list_to_IMatrix [[1, 0, -1],
-                                   [0, 1, 1]];
-    def fixtrhs = list_to_IMatrix [[1, 0],
-                                   [0, 1]];
-    def exp = list_to_IMatrix [[1, 0, -1, 1, 0],
-                               [0, 1, 1, 0, 1]];
+    def fixtlhs = listToIMatrix
+                         [[1, 0, -1],
+                          [0, 1, 1]];
+    def fixtrhs = listToIMatrix
+                          [[1, 0],
+                           [0, 1]];
+    def exp = listToIMatrix
+                          [[1, 0, -1, 1, 0],
+                           [0, 1, 1, 0, 1]];
     def act = concat fixtlhs fixtrhs;
     simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
@@ -114,23 +121,23 @@ def _ = testCase "concat"
 def _ = testCase "swcols"
   (fun t: () ->
     def x, y, z: Real;
-    def fixt = list_to_IMatrix [[1, 0, -1],
-                                [0, 1, 1]];
+    def fixt = listToIMatrix [[1, 0, -1],
+                              [0, 1, 1]];
     def fixtvm = list_to_map [(0, x), (1, y), (2, z)];
-    def exp = list_to_IMatrix [[0, 1, -1],
-                               [1, 0, 1]];
+    def exp = listToIMatrix [[0, 1, -1],
+                             [1, 0, 1]];
     def (act, avm) = swcols fixt fixtvm 0 1;
     simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "trim"
   (fun t: () ->
-    def fixt = list_to_IMatrix
+    def fixt = listToIMatrix
         [[1, 0, -1, 0, 1],
          [0, 1, 1, 0, -1],
          [0, 0, 0, 1, -1],
          [0, 0, 0, 0, 0]];
-    def exp = list_to_IMatrix
+    def exp = listToIMatrix
          [[1, 0],
          [0, 1]];
     def act = trim fixt 1 2 2 3;
@@ -141,12 +148,12 @@ def _ = testCase "getThroughMatrix"
   (fun t: () ->
     def x, y, z, u, v: Real;
     def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
-    def fixt = list_to_IMatrix
+    def fixt = listToIMatrix
         [[1, 0, -1, 0, 1],
          [0, 1, 1, 0, -1],
          [0, 0, 0, 1, -1],
          [0, 0, 0, 0, 0]];
-    def exp = list_to_IMatrix
+    def exp = listToIMatrix
         [[1, 0, 0, -1, 1],
          [0, 1, 0, 1, -1],
          [0, 0, 1, 0, -1]];
@@ -156,11 +163,11 @@ def _ = testCase "getThroughMatrix"
 
 def _ = testCase "getAcrossMatrix"
   (fun t: () ->
-    def fixt = list_to_IMatrix
+    def fixt = listToIMatrix
         [[1, 0, 0, -1, 1],
          [0, 1, 0, 1, -1],
          [0, 0, 1, 0, -1]];
-    def exp = list_to_IMatrix
+    def exp = listToIMatrix
         [[1, -1, 0, 1, 0],
          [-1, 1, 1, 0, 1]];
     def act = getAcrossMatrix fixt;
@@ -172,11 +179,11 @@ def _ = testCase "getAcrossMatrix"
 //   def _ = println("==> Start test case " ++ name);
 //   def x, y, z, u, v: Real;
 //   def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
-//   def fixt = list_to_IMatrix
+//   def fixt = listToIMatrix
 //       [[1, 0, 0, -1, 1],
 //        [0, 1, 0, 1, -1],
 //        [0, 0, 1, 0,-1]];
-//   // def exp = list_to_IMatrix
+//   // def exp = listToIMatrix
 //   //     [[1, -1, 0, 1, 0],
 //   //      [-1, 1, 1, 0, 1]];
 //   def eqs = matrixVMapToEquations fixt vm;

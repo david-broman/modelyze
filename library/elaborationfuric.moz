@@ -222,6 +222,15 @@ def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
   fold_left f IM (Map.toList (Map.find i M))
 }
 
+def chsign(IM: IMatrix) -> IMatrix = {
+  def (_, n, m) = IM;
+  def work(IM: IMatrix, i: Int) -> IMatrix = {
+    if i >= n then IM
+    else work (chsignrow IM i) (i + 1)
+  };
+  work IM 0
+}
+
 def transpose(IM: IMatrix) -> IMatrix = {
   def (M, n, m) = IM;
   def IMt = emptyIMatrix m n;

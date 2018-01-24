@@ -19,165 +19,168 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include ElaborationFuric
-include DAELANGinterfaces
+include TestHelp
 
-def test_rowred1 = {
-  def name = "rowred1";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix [[1, 0, -1],
-                              [0, 1, 1],
-                              [-1, -1, 0]];
-  def exp = list_to_IMatrix [[1, 0, -1],
-                             [0, 1, 1],
-                             [0, 0, 0]];
-  def _ = simple_assert(is_equal (rowreduce fixt) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "create identity matrix"
+  (fun t: () ->
+    def exp = list_to_IMatrix [[1, 0, 0],
+                               [0, 1, 0],
+                               [0, 0, 1]];
+    def act = identityIMatrix 3;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_identity = {
-  def name = "identity";
-  def _ = println("==> Start test case " ++ name);
-  def exp = list_to_IMatrix [[1, 0, 0],
-                             [0, 1, 0],
-                             [0, 0, 1]];
-  def _ = simple_assert(is_equal (identityIMatrix 3) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "row reduction 1"
+  (fun t: () ->
+    def fixt = list_to_IMatrix [[1, 0, -1],
+                                [0, 1, 1],
+                                [-1, -1, 0]];
+    def exp = list_to_IMatrix [[1, 0, -1],
+                               [0, 1, 1],
+                               [0, 0, 0]];
+    def act = rowreduce fixt;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_rowred2 = {
-  def name = "rowred2";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix
-      [[1, 0, -1, 1, 0],
-       [0, 1, 1, 0, -1],
-       [-1, -1, 0, 0,0],
-       [0, 0, 0, -1, 1]];
-  def exp = list_to_IMatrix
-      [[1, 0, -1, 0, 1],
-       [0, 1, 1, 0, -1],
-       [0, 0, 0, 1,-1],
-       [0, 0, 0, 0, 0]];
-  def _ = simple_assert(is_equal (rowreduce fixt) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "row reduction 2"
+  (fun t: () ->
+    def fixt = list_to_IMatrix
+        [[1, 0, -1, 1, 0],
+         [0, 1, 1, 0, -1],
+         [-1, -1, 0, 0, 0],
+         [0, 0, 0, -1, 1]];
+    def exp = list_to_IMatrix
+        [[1, 0, -1, 0, 1],
+         [0, 1, 1, 0, -1],
+         [0, 0, 0, 1, -1],
+         [0, 0, 0, 0, 0]];
+    def act = rowreduce fixt;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_rowred3 = {
-  def name = "rowred3";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix
-      [[1, 0, -1, 0, 0, 0],
-       [-1, 1, 0, 0, 0, 0],
-       [0, -1, 1, 0, 0, 0],
-       [0, 0, 0, -1, 1, 0],
-       [0, 0, 0, 1, 0, -1],
-       [0, 0, 0, 0, -1, 1]];
-  def exp = list_to_IMatrix
-      [[1, 0, -1, 0, 0, 0],
-       [0, 1, -1, 0, 0, 0],
-       [0, 0, 0, 1, 0, -1],
-       [0, 0, 0, 0, 1, -1],
-       [0, 0, 0, 0, 0, 0],
-       [0, 0, 0, 0, 0, 0]];
-  def _ = simple_assert(is_equal (rowreduce fixt) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "row reduction 3"
+  (fun t: () ->
+    def fixt = list_to_IMatrix
+        [[1, 0, -1, 0, 0, 0],
+         [-1, 1, 0, 0, 0, 0],
+         [0, -1, 1, 0, 0, 0],
+         [0, 0, 0, -1, 1, 0],
+         [0, 0, 0, 1, 0, -1],
+         [0, 0, 0, 0, -1, 1]];
+    def exp = list_to_IMatrix
+        [[1, 0, -1, 0, 0, 0],
+         [0, 1, -1, 0, 0, 0],
+         [0, 0, 0, 1, 0, -1],
+         [0, 0, 0, 0, 1, -1],
+         [0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0]];
+    def act = rowreduce fixt;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_transpose = {
-  def name = "transpose";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix [[1, 0, -1],
-                              [0, 1, 1]];
-  def exp = list_to_IMatrix [[1, 0],
-                             [0, 1],
-                             [-1, 1]];
-  def _ = simple_assert(is_equal (transpose fixt) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "transpose"
+  (fun t: () ->
+    def fixt = list_to_IMatrix [[1, 0, -1],
+                                [0, 1, 1]];
+    def exp = list_to_IMatrix [[1, 0],
+                               [0, 1],
+                               [-1, 1]];
+    def act = transpose fixt;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_chsign = {
-  def name = "chsign";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix [[1, 0, -1],
-                              [0, 1, 1]];
-  def exp = list_to_IMatrix [[-1, 0, 1],
-                              [0, -1, -1]];
-  def _ = simple_assert(is_equal (chsign fixt) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "chsign"
+  (fun t: () ->
+    def fixt = list_to_IMatrix [[1, 0, -1],
+                                [0, 1, 1]];
+    def exp = list_to_IMatrix [[-1, 0, 1],
+                                [0, -1, -1]];
+    def act = chsign fixt;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_concat = {
-  def name = "concat";
-  def _ = println("==> Start test case " ++ name);
-  def fixtlhs = list_to_IMatrix [[1, 0, -1],
-                                 [0, 1, 1]];
-  def fixtrhs = list_to_IMatrix [[1, 0],
-                                 [0, 1]];
-  def exp = list_to_IMatrix [[1, 0, -1, 1, 0],
-                             [0, 1, 1, 0, 1]];
-  def _ = simple_assert(is_equal (concat fixtlhs fixtrhs) exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "concat"
+  (fun t: () ->
+    def fixtlhs = list_to_IMatrix [[1, 0, -1],
+                                   [0, 1, 1]];
+    def fixtrhs = list_to_IMatrix [[1, 0],
+                                   [0, 1]];
+    def exp = list_to_IMatrix [[1, 0, -1, 1, 0],
+                               [0, 1, 1, 0, 1]];
+    def act = concat fixtlhs fixtrhs;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_swcols = {
-  def name = "swcols";
-  def _ = println("==> Start test case " ++ name);
-  def x, y, z: Real;
-  def fixt = list_to_IMatrix [[1, 0, -1],
-                              [0, 1, 1]];
-  def fixtvm = list_to_map [(0, x), (1, y), (2, z)];
-  def exp = list_to_IMatrix [[0, 1, -1],
-                              [1, 0, 1]];
-  def (IM, avm) = swcols fixt fixtvm 0 1;
-  def _ = simple_assert(is_equal IM exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "swcols"
+  (fun t: () ->
+    def x, y, z: Real;
+    def fixt = list_to_IMatrix [[1, 0, -1],
+                                [0, 1, 1]];
+    def fixtvm = list_to_map [(0, x), (1, y), (2, z)];
+    def exp = list_to_IMatrix [[0, 1, -1],
+                               [1, 0, 1]];
+    def (act, avm) = swcols fixt fixtvm 0 1;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_trim = {
-  def name = "trim";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix
-      [[1, 0, -1, 0, 1],
-       [0, 1, 1, 0, -1],
-       [0, 0, 0, 1,-1],
-       [0, 0, 0, 0, 0]];
-  def exp = list_to_IMatrix
-       [[1, 0],
-       [0, 1]];
-  def res = trim fixt 1 2 2 3;
-  def _ = simple_assert(is_equal res exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "trim"
+  (fun t: () ->
+    def fixt = list_to_IMatrix
+        [[1, 0, -1, 0, 1],
+         [0, 1, 1, 0, -1],
+         [0, 0, 0, 1, -1],
+         [0, 0, 0, 0, 0]];
+    def exp = list_to_IMatrix
+         [[1, 0],
+         [0, 1]];
+    def act = trim fixt 1 2 2 3;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_getThroughMatrix = {
-  def name = "getThroughMatrix";
-  def _ = println("==> Start test case " ++ name);
-  def x, y, z, u, v: Real;
-  def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
-  def fixt = list_to_IMatrix
-      [[1, 0, -1, 0, 1],
-       [0, 1, 1, 0, -1],
-       [0, 0, 0, 1,-1],
-       [0, 0, 0, 0, 0]];
-  def exp = list_to_IMatrix
-      [[1, 0, 0, -1, 1],
-       [0, 1, 0, 1, -1],
-       [0, 0, 1, 0,-1]];
-  def (IM, nvm) = getThroughMatrix fixt vm;
-  def _ = simple_assert(is_equal IM exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "getThroughMatrix"
+  (fun t: () ->
+    def x, y, z, u, v: Real;
+    def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
+    def fixt = list_to_IMatrix
+        [[1, 0, -1, 0, 1],
+         [0, 1, 1, 0, -1],
+         [0, 0, 0, 1, -1],
+         [0, 0, 0, 0, 0]];
+    def exp = list_to_IMatrix
+        [[1, 0, 0, -1, 1],
+         [0, 1, 0, 1, -1],
+         [0, 0, 1, 0, -1]];
+    def (act, nvm) = getThroughMatrix fixt vm;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
 
-def test_getAcrossMatrix = {
-  def name = "getAcrossMatrix";
-  def _ = println("==> Start test case " ++ name);
-  def fixt = list_to_IMatrix
-      [[1, 0, 0, -1, 1],
-       [0, 1, 0, 1, -1],
-       [0, 0, 1, 0,-1]];
-  def exp = list_to_IMatrix
-      [[1, -1, 0, 1, 0],
-       [-1, 1, 1, 0, 1]];
-  def IM = getAcrossMatrix fixt;
-  def _ = simple_assert(is_equal IM exp);
-  println("==> End test case " ++ name)
-}
+def _ = testCase "getAcrossMatrix"
+  (fun t: () ->
+    def fixt = list_to_IMatrix
+        [[1, 0, 0, -1, 1],
+         [0, 1, 0, 1, -1],
+         [0, 0, 1, 0, -1]];
+    def exp = list_to_IMatrix
+        [[1, -1, 0, 1, 0],
+         [-1, 1, 1, 0, 1]];
+    def act = getAcrossMatrix fixt;
+    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+  )
+
+// def _ = "matrixVmapToEquations"
+//   def name = "matrixVmapToEquations";
+//   def _ = println("==> Start test case " ++ name);
+//   def x, y, z, u, v: Real;
+//   def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
+//   def fixt = list_to_IMatrix
+//       [[1, 0, 0, -1, 1],
+//        [0, 1, 0, 1, -1],
+//        [0, 0, 1, 0,-1]];
+//   // def exp = list_to_IMatrix
+//   //     [[1, -1, 0, 1, 0],
+//   //      [-1, 1, 1, 0, 1]];
+//   def eqs = matrixVMapToEquations fixt vm;
+//   def _ = dprint(eqs);
+//   // def _ = simple_assert(is_equal IM exp);
+//   println("==> End test case " ++ name)
+// }

@@ -381,6 +381,28 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
     error "The number of columns and variables doesn't match"
   else work 0 (Set.empty)
 }
-// def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
 
-// }
+def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
+
+  def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
+    def (i, (f, _)) = ee;
+    (i, f)
+  };
+
+  def fe(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
+    def (i, (_, e)) = ee;
+    (i, e)
+  };
+
+  def el = enumerateEdges (Set.toList T);
+  def nm = enumerateNodes el;
+  def (IM, vm) = buildIndcidenceMatrix el nm;
+  def IMr = rowreduce IM;
+  def (A, nvm) = getThroughMatrix IMr vm;
+  def B = getAcrossMatrix A;
+  def fvec = list_to_map (map ff (Map.toList nvm));
+  def evec = list_to_map (map fe (Map.toList nvm));
+  def floweqs = matrixVMapToEquations A fvec;
+  def circeqs = matrixVMapToEquations B evec;
+  union floweqs circeqs
+}

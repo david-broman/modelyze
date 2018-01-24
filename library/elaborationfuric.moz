@@ -301,18 +301,19 @@ def massage(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
   -> (IMatrix, (Int => (<Real>, <Real>))) = {
 
   def (_, n, m) = IM;
-  def aligncols(IMvm: (IMatrix, (Int => (<Real>, <Real>))), i: Int)
-    -> (IMatrix, (Int => (<Real>, <Real>))) = {
+  def aligncols(IMvm: (IMatrix, (Int => (<Real>, <Real>))), nn: Int, i: Int)
+    -> (IMatrix, (Int => (<Real>, <Real>)), Int) = {
       def (IM, vm) = IMvm;
-      if i >= n then (IM, vm)
+      if i >= n then (IM, vm, nn)
       else {
         def lc = leadingcol IM i;
-        if lc >= m then (IM, vm)
-        else aligncols (swcols IM vm i lc) (i + 1)
+        if lc >= m then (IM, vm, nn)
+        else aligncols (swcols IM vm i lc) (i + 1) (i + 1)
       }
     };
 
-  aligncols (IM, vm) 0
+  def (nIM, nvm, nn) = aligncols (IM, vm) 0 0;
+  (trim nIM 0 (nn - 1) 0 (m - 1), nvm)
 }
 
 // def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {

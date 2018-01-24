@@ -27,7 +27,7 @@ def _ = testCase "create identity matrix"
                                [0, 1, 0],
                                [0, 0, 1]];
     def act = identityIMatrix 3;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "row reduction 1"
@@ -39,7 +39,7 @@ def _ = testCase "row reduction 1"
                                [0, 1, 1],
                                [0, 0, 0]];
     def act = rowreduce fixt;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "row reduction 2"
@@ -55,7 +55,7 @@ def _ = testCase "row reduction 2"
          [0, 0, 0, 1, -1],
          [0, 0, 0, 0, 0]];
     def act = rowreduce fixt;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "row reduction 3"
@@ -75,7 +75,7 @@ def _ = testCase "row reduction 3"
          [0, 0, 0, 0, 0, 0],
          [0, 0, 0, 0, 0, 0]];
     def act = rowreduce fixt;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "transpose"
@@ -86,7 +86,7 @@ def _ = testCase "transpose"
                                [0, 1],
                                [-1, 1]];
     def act = transpose fixt;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "chsign"
@@ -96,7 +96,7 @@ def _ = testCase "chsign"
     def exp = list_to_IMatrix [[-1, 0, 1],
                                 [0, -1, -1]];
     def act = chsign fixt;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "concat"
@@ -108,7 +108,7 @@ def _ = testCase "concat"
     def exp = list_to_IMatrix [[1, 0, -1, 1, 0],
                                [0, 1, 1, 0, 1]];
     def act = concat fixtlhs fixtrhs;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "swcols"
@@ -120,7 +120,7 @@ def _ = testCase "swcols"
     def exp = list_to_IMatrix [[0, 1, -1],
                                [1, 0, 1]];
     def (act, avm) = swcols fixt fixtvm 0 1;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "trim"
@@ -134,7 +134,7 @@ def _ = testCase "trim"
          [[1, 0],
          [0, 1]];
     def act = trim fixt 1 2 2 3;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "getThroughMatrix"
@@ -151,7 +151,7 @@ def _ = testCase "getThroughMatrix"
          [0, 1, 0, 1, -1],
          [0, 0, 1, 0, -1]];
     def (act, nvm) = getThroughMatrix fixt vm;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 def _ = testCase "getAcrossMatrix"
@@ -164,7 +164,7 @@ def _ = testCase "getAcrossMatrix"
         [[1, -1, 0, 1, 0],
          [-1, 1, 1, 0, 1]];
     def act = getAcrossMatrix fixt;
-    simpleAssertMsg (is_equal act exp) (expActMsg (pp exp) (pp act))
+    simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
 
 // def _ = "matrixVmapToEquations"
@@ -181,6 +181,6 @@ def _ = testCase "getAcrossMatrix"
 //   //      [-1, 1, 1, 0, 1]];
 //   def eqs = matrixVMapToEquations fixt vm;
 //   def _ = dprint(eqs);
-//   // def _ = simple_assert(is_equal IM exp);
+//   // def _ = simple_assert(isEqual IM exp);
 //   println("==> End test case " ++ name)
 // }

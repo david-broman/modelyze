@@ -173,21 +173,3 @@ def _ = testCase "getAcrossMatrix"
     def act = getAcrossMatrix fixt;
     simpleAssertMsg (isEqual act exp) (expActMsg (pp exp) (pp act))
   )
-
-// def _ = "matrixVmapToEquations"
-//   def name = "matrixVmapToEquations";
-//   def _ = println("==> Start test case " ++ name);
-//   def x, y, z, u, v: Real;
-//   def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
-//   def fixt = listToIMatrix
-//       [[1, 0, 0, -1, 1],
-//        [0, 1, 0, 1, -1],
-//        [0, 0, 1, 0,-1]];
-//   // def exp = listToIMatrix
-//   //     [[1, -1, 0, 1, 0],
-//   //      [-1, 1, 1, 0, 1]];
-//   def eqs = matrixVMapToEquations fixt vm;
-//   def _ = dprint(eqs);
-//   // def _ = simple_assert(isEqual IM exp);
-//   println("==> End test case " ++ name)
-// }

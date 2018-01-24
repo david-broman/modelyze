@@ -40,3 +40,9 @@ def testCase(name: String, test: (() -> ())) -> () = {
   def _ = test();
   println("==> End test case " ++ name)
 }
+
+def isEqual(lhs: Set(?), rhs: Set(?)) -> Bool = {
+  def subsetleft = for_all (fun e: ? -> (Set.mem e rhs)) (Set.toList lhs);
+  def subsetright = for_all (fun e: ? -> (Set.mem e lhs)) (Set.toList rhs);
+  subsetleft && subsetright
+}

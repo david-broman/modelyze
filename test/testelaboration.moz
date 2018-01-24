@@ -175,8 +175,8 @@ def test_getAcrossMatrix = {
        [0, 1, 0, 1, -1],
        [0, 0, 1, 0,-1]];
   def exp = list_to_IMatrix
-      [[1, 0, 1, -1, 0],
-       [0, 1, -1, 1, 1]];
+      [[1, -1, 0, 1, 0],
+       [-1, 1, 1, 0, 1]];
   def IM = getAcrossMatrix fixt;
   def _ = simple_assert(is_equal IM exp);
   println("==> End test case " ++ name)

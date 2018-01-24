@@ -143,7 +143,9 @@ def enumerateNodes(el: [(Node, Node, <Real>, <Real>)])
   m
 }
 
-def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))
+  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+
   def n = (Map.size nm);
   def m = length el;
   def f(IMj: (IMatrix, (Int => (<Real>, <Real>)), Int),
@@ -282,21 +284,35 @@ def rowreduce(IM: IMatrix) -> IMatrix = {
   work IM 0
 }
 
+def trim(IM: IMatrix, si: Int, ei: Int, sj: Int, ej: Int) -> IMatrix = {
+  def (_, n, m) = IM;
+  def _ = checkDim IM si sj;
+  def _ = checkDim IM ei ej;
+  def work(IMr: IMatrix, i: Int, j: Int) -> IMatrix = {
+    if i > ei then IMr
+    else
+      if j > ej then work IMr (i + 1) sj
+      else work (set IMr (i - si) (j - sj) (get IM i j)) i (j + 1)
+  };
+  work (emptyIMatrix (ei - si + 1) (ej - sj + 1)) si sj
+}
+
 def massage(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
   -> (IMatrix, (Int => (<Real>, <Real>))) = {
 
   def (_, n, m) = IM;
-  def work(IMvm: (IMatrix, (Int => (<Real>, <Real>))), i: Int)
+  def aligncols(IMvm: (IMatrix, (Int => (<Real>, <Real>))), i: Int)
     -> (IMatrix, (Int => (<Real>, <Real>))) = {
       def (IM, vm) = IMvm;
       if i >= n then (IM, vm)
       else {
         def lc = leadingcol IM i;
         if lc >= m then (IM, vm)
-        else work (swcols IM vm i lc) (i + 1)
+        else aligncols (swcols IM vm i lc) (i + 1)
       }
     };
-  work (IM, vm) 0
+
+  aligncols (IM, vm) 0
 }
 
 // def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {

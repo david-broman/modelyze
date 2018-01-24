@@ -118,7 +118,7 @@ def concat(lhs: IMatrix, rhs: IMatrix) -> IMatrix = {
   else work (emptyIMatrix ln (lm + rm)) 0 0
 }
 
-def list_to_IMatrix(l: [[Int]]) -> IMatrix = {
+def listToIMatrix(l: [[Int]]) -> IMatrix = {
   def n = length l;
   def m = length (nth l 0);
 

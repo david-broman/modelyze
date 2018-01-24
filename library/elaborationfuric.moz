@@ -97,6 +97,27 @@ def pp(IM: IMatrix) -> String = {
   "---\n" ++ (work 0 0) ++ "---\n"
 }
 
+def concat(lhs: IMatrix, rhs: IMatrix) -> IMatrix = {
+  def (_, ln, lm) = lhs;
+  def (_, rn, rm) = rhs;
+
+  def getv(i: Int, j: Int) -> Int = {
+    if j < lm then get lhs i j
+    else get rhs i (j - lm)
+  };
+
+  def work(IM: IMatrix, i: Int, j: Int) -> IMatrix = {
+    def (_, n, m) = IM;
+    if i >= n then IM
+    else
+      if j >= m then work IM (i + 1) 0
+      else work (set IM i j (getv i j)) i (j + 1)
+  };
+
+  if ln != rn then error "Matrix dimensions do not match"
+  else work (emptyIMatrix ln (lm + rm)) 0 0
+}
+
 def list_to_IMatrix(l: [[Int]]) -> IMatrix = {
   def n = length l;
   def m = length (nth l 0);
@@ -325,6 +346,7 @@ def getThroughMatrix(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
 }
 
 // def getAcrossMatrix(TM: IMatrix) -> IMatrix = {
+//   def (_, n, m) = TM;
 
 // }
 

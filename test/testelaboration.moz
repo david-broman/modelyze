@@ -94,6 +94,19 @@ def test_transpose = {
   println("==> End test case " ++ name)
 }
 
+def test_concat = {
+  def name = "concat";
+  def _ = println("==> Start test case " ++ name);
+  def fixtlhs = list_to_IMatrix [[1, 0, -1],
+                                 [0, 1, 1]];
+  def fixtrhs = list_to_IMatrix [[1, 0],
+                                 [0, 1]];
+  def exp = list_to_IMatrix [[1, 0, -1, 1, 0],
+                             [0, 1, 1, 0, 1]];
+  def _ = simple_assert(is_equal (concat fixtlhs fixtrhs) exp);
+  println("==> End test case " ++ name)
+}
+
 def test_swcols = {
   def name = "swcols";
   def _ = println("==> Start test case " ++ name);

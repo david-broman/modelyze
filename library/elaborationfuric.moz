@@ -70,7 +70,7 @@ def identityIMatrix(n: Int) -> IMatrix = {
   work (emptyIMatrix n n) 0 0
 }
 
-def is_equal(lhs: IMatrix, rhs: IMatrix) -> Bool = {
+def isEqual(lhs: IMatrix, rhs: IMatrix) -> Bool = {
   def (lM, ln, lm) = lhs;
   def (rH, rn, rm) = rhs;
   if ln != rn || lm != rm then false

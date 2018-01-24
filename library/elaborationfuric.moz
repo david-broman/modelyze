@@ -356,10 +356,31 @@ def getThroughMatrix(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
 
 def getAcrossMatrix(TM: IMatrix) -> IMatrix = {
   def (_, n, m) = TM;
-  def lhs = chsign (transpose (trim TM 0 (n -1) n (m -1)));
+  def lhs = chsign (transpose (trim TM 0 (n - 1) n (m - 1)));
   concat lhs (identityIMatrix (m - n))
 }
 
+def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
+  -> Set(Equations) = {
+  def (M, n, m) = IM;
+
+  def f(exp: <Real>, e: (Int, Int)) -> <Real> = {
+    def (i, c) = e;
+    exp + (int2real c)*(Map.find i vm)
+  };
+
+  def work(i: Int, acc: Set(Equations)) -> Set(Equations) = {
+    if i >= n then acc
+    else {
+      def eq = (fold_left f 0. (Map.toList (Map.find i M))) = 0.;
+      work (i + 1) (Set.add eq acc)
+    }
+  };
+
+  if m != (Map.size vm) then
+    error "The number of columns and variables doesn't match"
+  else work 0 (Set.empty)
+}
 // def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
 
 // }

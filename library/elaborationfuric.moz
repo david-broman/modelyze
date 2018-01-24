@@ -364,16 +364,25 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
   -> Set(Equations) = {
   def (M, n, m) = IM;
 
-  def f(exp: <Real>, e: (Int, Int)) -> <Real> = {
+  def vmapElmToSReal(e: (Int, Int)) -> <Real> = {
     def (i, c) = e;
-    exp + (int2real c)*(Map.find i vm)
+    (int2real c)*(Map.find i vm)
   };
+
+  def f(exp: <Real>, e: (Int, Int)) -> <Real> = { exp + (vmapElmToSReal e) };
 
   def work(i: Int, acc: Set(Equations)) -> Set(Equations) = {
     if i >= n then acc
     else {
-      def eq = (fold_left f 0. (Map.toList (Map.find i M))) = 0.;
-      work (i + 1) (Set.add eq acc)
+      def r = (Map.find i M);
+      if (Map.size r) < 2 then
+        error "expected at least two variables on this row"
+      else {
+        def rl = (Map.toList r);
+        def h = vmapElmToSReal (hd rl);
+        def eq = (fold_left f h (tl rl)) = 0.;
+        work (i + 1) (Set.add eq acc)
+      }
     }
   };
 

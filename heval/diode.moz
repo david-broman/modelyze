@@ -34,11 +34,9 @@ def LCD = {
   der u_C = i_C / C;
   der i_L = u_L / L;
   switch (u_D = 0.) (fun t: () -> i_D = 0.) (i_D);
-  u_G = 0.;
   Branch i_D u_D n2 n1;
   Branch i_C u_C n3 n2;
   Branch i_L u_L n1 n3;
-  RefBranch i_G u_G n3;
 }
 
 def monitored =

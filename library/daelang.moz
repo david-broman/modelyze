@@ -18,6 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
+include ElaborationFuric
 include Elaboration
 include DAELANGInterfaces
 include Indexreduction
@@ -46,7 +47,8 @@ def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
 
 def elabtopol(T: Set(?)) -> Set(Equations) = {
   if (Set.size T) == 0 then Set.empty else
-    cont_to_set (elaborateConnections (set_to_cont T))
+    // cont_to_set (elaborateConnections (set_to_cont T))
+    elaboratetopology T
 }
 
 def indexred(sigma: Sigma) -> Sigma = {

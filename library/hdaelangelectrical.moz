@@ -1,0 +1,67 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include Physical
+include HDAELANG
+
+def Capacitor(C: Real, i0: Real, u0: Real, p: Electrical, n: Electrical) = {
+  def i: Current;
+  def u: Voltage;
+  Branch i u p n;
+  C * (der u) = i;
+  init i i0;
+  init u u0;
+  reinit u u
+}
+
+def Inductor(L: Real, i0: Real, u0: Real, p: Electrical, n: Electrical) = {
+  def i: Current;
+  def u: Voltage;
+  Branch i u p n;
+  L * (der i) = u;
+  init i i0;
+  init u u0;
+  reinit i i
+}
+
+def Diode(forward: Bool, p: Electrical, n: Electrical) = {
+  def i: Current;
+  def u: Voltage;
+  Branch i u p n;
+  def d(forward: Real) -> Equations = {
+    if forward then
+      switch (u = 0) (fun t: () -> d(false)) i
+    else
+      switch (i = 0) (fun t: () -> d(true)) u
+  };
+  d(forward)
+}
+
+def CurrentSensor(i: Current, p: ELectrical, n: Electrical) = {
+  def u: Voltage;
+  Branch i u p n;
+  u = .0
+}
+
+def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
+  def i: Voltage;
+  Branch i u n p;
+  i = 0.
+}

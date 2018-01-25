@@ -42,20 +42,20 @@ def Inductor(L: Real, i0: Real, p: Electrical, n: Electrical) = {
 def Diode(forward: Bool, p: Electrical, n: Electrical) = {
   def i: Current;
   def u: Voltage;
-  Branch i u p n;
-  def d(forward: Real) -> Equations = {
+  def d(forward: Bool) -> Equations = {
     if forward then
-      switch (u = 0) (fun t: () -> d(false)) i
+      switch (u = 0.) (fun t: () -> d(false)) i
     else
-      switch (i = 0) (fun t: () -> d(true)) u
+      switch (i = 0.) (fun t: () -> d(true)) u
   };
+  Branch i u p n;
   d(forward)
 }
 
-def CurrentSensor(i: Current, p: ELectrical, n: Electrical) = {
+def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
   def u: Voltage;
   Branch i u p n;
-  u = .0
+  u = 0.
 }
 
 def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {

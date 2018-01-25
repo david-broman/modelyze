@@ -18,29 +18,22 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include HDAELANG
+include HDAELANGElectrical
 include Simulate
 
 def C = 1.
 def L = 1.
-def u_D, u_C, u_L, u_G, i_D, i_C, i_L, i_G: Real
-def n1, n2, n3: Electrical
+def u_D, u_C, u_L, u_G, i: Real
+def n1, n2, n3, n4: Electrical
 
 def LCD = {
-  init i_L 1.;
-  init u_C (-1.);
-  reinit u_C u_C;
-  reinit i_L i_L;
-  der u_C = i_C / C;
-  der i_L = u_L / L;
-  switch (u_D = 0.) (fun t: () -> i_D = 0.) (i_D);
-  Branch i_D u_D n2 n1;
-  Branch i_C u_C n3 n2;
-  Branch i_L u_L n1 n3;
+  Diode true n2 n1;
+  Capacitor C (-1.) n3 n2;
+  Inductor L 1. n4 n3;
+  CurrentSensor i n4 n1;
 }
 
-def monitored =
-  [(u_D, "u_D"), (u_C, "u_C"), (u_L, "u_L"), (i_L, "i")]
+def monitored = [(i, "i")]
 
 def main =
   print(pprintSimulation (simulatehdae LCD 0. 0.1 4.0 monitored))

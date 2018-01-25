@@ -375,14 +375,16 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
     if i >= n then acc
     else {
       def r = (Map.find i M);
-      if (Map.size r) < 2 then
-        error "expected at least two variables on this row"
-      else {
+      if (Map.size r) < 1 then
+        error "Did not expect a zero row here"
+      else
         def rl = (Map.toList r);
         def h = vmapElmToSReal (hd rl);
-        def eq = (fold_left f h (tl rl)) = 0.;
-        work (i + 1) (Set.add eq acc)
-      }
+        if (Map.size r) < 2 then work (i + 1) (Set.add (h = 0.) acc)
+        else {
+          def eq = (fold_left f h (tl rl)) = 0.;
+          work (i + 1) (Set.add eq acc)
+        }
     }
   };
 

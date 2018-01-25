@@ -30,10 +30,13 @@ def LCD = {
   Diode true n2 n1;
   Capacitor C (-1.) n3 n2;
   Inductor L 1. n4 n3;
-  CurrentSensor i n4 n1;
+  CurrentSensor i n1 n4;
+  VoltageSensor u_D n1 n2;
+  VoltageSensor u_C n2 n3;
+  VoltageSensor u_L n3 n4
 }
 
-def monitored = [(i, "i")]
+def monitored = [(i, "i"), (u_D, "u_D"), (u_C, "u_C"), (u_L, "u_L")]
 
 def main =
   print(pprintSimulation (simulatehdae LCD 0. 0.1 4.0 monitored))

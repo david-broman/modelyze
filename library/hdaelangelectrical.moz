@@ -22,73 +22,96 @@ include Physical
 include HDAELANG
 
 def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
-  def u: Voltage;
-  Branch i u p n;
-  u = 0.
+  def u_S: Voltage;
+  Branch i u_S p n;
+  u_S = 0.
 }
 
 def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
-  def i: Voltage;
-  Branch i u n p;
-  i = 0.
+  def i_S: Voltage;
+  Branch i_S u n p;
+  i_S = 0.
 }
 
 def Resistor(R: Real, p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
-  Branch i u p n;
-  u = R * i
+  def i_R: Current;
+  def u_R: Voltage;
+  Branch i_R u_R p n;
+  u_R = R * i_R
 }
 
 def ConstantVoltageSource(V: Real, p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
-  Branch i u p n;
-  init u V;
-  reinit u u;
-  u = V
+  def i_V: Current;
+  def u_V: Voltage;
+  Branch i_V u_V p n;
+  init u_V V;
+  reinit u_V u_V;
+  u_V = V
 }
 
 def Capacitor(C: Real, u0: Real, p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
-  Branch i u p n;
-  init u u0;
-  reinit u u;
-  C * (der u) = i
+  def i_C: Current;
+  def u_C: Voltage;
+  Branch i_C u_C p n;
+  init u_C u0;
+  reinit u_C u_C;
+  C * (der u_C) = i_C
 }
 
 def Inductor(L: Real, i0: Real, p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
-  Branch i u p n;
-  init i i0;
-  reinit i i;
-  L * (der i) = u
+  def i_L: Current;
+  def u_L: Voltage;
+  Branch i_L u_L p n;
+  init i_L i0;
+  reinit i_L i_L;
+  L * (der i_L) = u_L
 }
 
 def Diode(forward: Bool, p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
+  def i_D: Current;
+  def u_D: Voltage;
   def d(forward: Bool) -> Equations = {
     if forward then
-      switch (u = 0.) (fun t: () -> d(false)) i
+      switch (u_D = 0.) (fun t: () -> d(false)) i_D
     else
-      switch (i = 0.) (fun t: () -> d(true)) u
+      switch (i_D = 0.) (fun t: () -> d(true)) u_D
   };
-  Branch i u p n;
+  Branch i_D u_D p n;
   d(forward)
 }
 
-def TimedSwitch(open: Bool, t: <Real>, p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
-  if open then switch (u = 0.) (fun t: () -> i = 0.) t
-  else switch (i = 0.) (fun t: () -> u = 0.) t
+def Diode2(forward: Bool, bias: Real, u_D2: <Real>, p: Electrical, n: Electrical) = {
+  def i_D2: Current;
+  // def u_D2: Voltage;
+  def d(forward: Bool) -> Equations = {
+    if forward then
+      def _ = dprint("forward");
+      switch (u_D2 = bias) (fun t: () -> d(false)) (i_D2 - 0.0001)
+    else
+      def _ = dprint("reverse");
+      switch (i_D2 = 0.) (fun t: () -> d(true)) (u_D2 - 0.0001)
+  };
+  reinit u_D2 u_D2;
+  reinit i_D2 i_D2;
+  Branch i_D2 u_D2 p n;
+  d(forward)
 }
 
 def Clock(t: <Real>) = {
   init t 0.;
   reinit t t;
   der t = 1.
+}
+
+def TimedSwitch(closed: Bool, tb: Real, p: Electrical, n: Electrical) = {
+  def i_TS: Current;
+  def u_TS: Voltage;
+  def t: Real;
+  def s(closed: Bool) -> Equations = {
+    if closed then switch (u_TS = 0.) (fun t: () -> i_TS = 0.) (t - tb)
+    else switch (i_TS = 0.) (fun t: () -> u_TS = 0.) (t - tb)
+  };
+  Branch i_TS u_TS p n;
+  Clock(t);
+  s(closed)
 }

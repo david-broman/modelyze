@@ -39,15 +39,25 @@ def getzcb(s: Equations) -> Set(<Real>) = {
 }
 
 def zcdf(Z: Set(<Real>), fb: VMap, fa: VMap, zcb: <Real>) -> Bool = {
+  def _ = println("start of zcdf");
+  def _ = dprint(zcb);
   if (Set.mem zcb Z) then {
     def bef = (eval_from_vmap zcb fb);
+    def _ = println("before");
+    def _ = dprint(bef);
     def aft = (eval_from_vmap zcb fa);
+    def _ = println("after");
+    def _ = dprint(aft);
     bef*aft < 0.
   } else false
 }
 
 def haszc(Z: Set(<Real>), z: (<Real> -> Bool)) -> Bool = {
-  exists z (Set.toList Z)
+  def _ = println("Start of haszc");
+  def b = exists z (Set.toList Z);
+  def _ = dprint(b);
+  def _ = println("End of haszc");
+  b
 }
 
 def T_s(s: Equations, z: (<Real> -> Bool)) -> Equations = {
@@ -58,7 +68,18 @@ def T_s(s: Equations, z: (<Real> -> Bool)) -> Equations = {
   | reinit _ _ -> s
   | Branch _ _ _ _ -> s
   | RefBranch _ _ _ -> s
-  | switch s_1 (lift s_2: ?) zcb -> if (z zcb) then s_2() else switch (T_s s_1 z) s_2 zcb
+  | switch s_1 (lift s_2: ?) zcb -> {
+      def _ = println("In T_s");
+      def _ = dprint(zcb);
+      if z zcb then s_2() else switch (T_s s_1 z) s_2 zcb
+      }
+  | switch s_1 s_2 zcb -> {
+      def _ = println("2nd switch pattern");
+      def _ = dprint(z zcb);
+      def _ = dprint(s);
+      def _ = dprint(s_2());
+      if z zcb then s_2() else switch (T_s s_1 z) s_2 zcb
+    }
   | nil -> nil
   | _ -> error "Unmatched pattern in T_s"
 }
@@ -99,10 +120,18 @@ def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
   }
   else {
     def s_new = T_s s z;
+    def _ = println("Start of M_h");
+    def _ = dprint(s);
+    def _ = println("--");
+    def _ = dprint(s_new);
     def Z = getzcb s_new;
     def m = R_s s_new f;
     def (t_new, E, f_new) = M_d m t;
     def z_new = zcdf Z f f_new;
+    // def _ = dprint("==");
+    // def _ = dprint(f);
+    // def _ = dprint(f_new);
+    // def _ = dprint("==");
     if haszc Z z_new then {
       M_h s_new f_new z_new t_new
     } else (s_new, t_new, E, f_new, Z)

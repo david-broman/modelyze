@@ -67,29 +67,14 @@ def Inductor(L: Real, i0: Real, p: Electrical, n: Electrical) = {
   L * (der i_L) = u_L
 }
 
-def Diode(forward: Bool, p: Electrical, n: Electrical) = {
-  def i_D: Current;
-  def u_D: Voltage;
-  def d(forward: Bool) -> Equations = {
-    if forward then
-      switch (u_D = 0.) (fun t: () -> d(false)) i_D
-    else
-      switch (i_D = 0.) (fun t: () -> d(true)) u_D
-  };
-  Branch i_D u_D p n;
-  d(forward)
-}
-
-def Diode2(forward: Bool, bias: Real, u_D2: <Real>, p: Electrical, n: Electrical) = {
+def Diode2(forward: Bool, bias: Real, p: Electrical, n: Electrical) = {
   def i_D2: Current;
-  // def u_D2: Voltage;
+  def u_D2: Voltage;
   def d(forward: Bool) -> Equations = {
     if forward then
-      def _ = dprint("forward");
-      switch (u_D2 = bias) (fun t: () -> d(false)) (i_D2 - 0.0001)
+        switch (u_D2 = bias) (fun t: () -> d(false)) (i_D2 - 0.0001)
     else
-      def _ = dprint("reverse");
-      switch (i_D2 = 0.) (fun t: () -> d(true)) (u_D2 - 0.0001)
+        switch (i_D2 = 0.) (fun t: () -> d(true)) (u_D2 - 0.0001)
   };
   reinit u_D2 u_D2;
   reinit i_D2 i_D2;

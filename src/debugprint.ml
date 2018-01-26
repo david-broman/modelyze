@@ -204,7 +204,7 @@ and pp prec t  =
     | TmSym(idx,ty) ->
         getDebugSymId t
     | TmSymApp(t1,t2) -> pprint_app prec t
-    | TmLift(t,ty) -> pp 0 t
+    | TmLift(t,ty) -> us"sval(" ^. pp 0 t ^.us")"
     | TmCons(t1,t2) ->
         (let rec toList t =
           match t with

@@ -31,25 +31,27 @@ def flybackDiode = {
   def n1, n2, n3, n4, n5, n6: Electrical;
   ConstantVoltageSource V n1 n5;
   VoltageSensor u_V n1 n5;
-  Resistor R n1 n3;
-  VoltageSensor u_R n1 n3;
-  // Resistor R n1 n2;
-  // VoltageSensor u_R n1 n2;
-  // TimedSwitch true tb n2 n3;
-  // VoltageSensor u_S n2 n3;
+  // Resistor R n1 n3;
+  // VoltageSensor u_R n1 n3;
+  Resistor R n1 n2;
+  VoltageSensor u_R n1 n2;
+  TimedSwitch true tb n2 n3;
+  VoltageSensor u_S n2 n3;
   CurrentSensor i n3 n4;
   Inductor L 0. n4 n5;
   VoltageSensor u_L n4 n5;
-  Diode false n3 n6;
-  CurrentSensor i_D n5 n6;
-  VoltageSensor u_D n3 n6
+  Diode2 false (-0.7) u_D n3 n6;
+  CurrentSensor i_D n5 n6
+  // VoltageSensor u_D n3 n6
 }
 
 // def monitored = [(u_V, "u_V"), (u_R, "u_R"), (u_S, "u_S"), (u_L, "u_L"),
 //                  (u_D, "u_D"), (i_D, "i_D"), (i, "i")]
 
-def monitored = [(u_V, "u_V"), (u_R, "u_R"), (u_L, "u_L"),
-                 (u_D, "u_D"), (i_D, "i_D"), (i, "i")]
+// def monitored = [(u_V, "u_V"), (u_R, "u_R"), (u_L, "u_L"),
+//                  (u_D, "u_D"), (i_D, "i_D"), (i, "i")]
+
+def monitored = [(u_D, "u_D"), (i_D, "i_D"), (i, "i"), (u_L, "u_L")]
 
 def main =
   print(pprintSimulation (simulatehdae flybackDiode 0. 0.1 4.0 monitored))

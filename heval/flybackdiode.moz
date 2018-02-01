@@ -37,13 +37,13 @@ def flybackDiode = {
   VoltageSensor u_S n2 n3;
   CurrentSensor i n3 n4;
   Inductor L 0. n4 n5;
-  VoltageSensor u_L n4 n5;
+  VoltageSensor u_L n5 n4;
   Diode2 false (-0.7) n3 n6;
   CurrentSensor i_D n5 n6;
   VoltageSensor u_D n3 n6
 }
 
-def monitored = [(u_D, "u_D"), (i_D, "i_D"), (i, "i"), (u_L, "u_L")]
+def monitored = [(i_D, "i_D"), (i, "i"), (u_L, "u_L")]
 
 def main =
   print(pprintSimulation (simulatehdae flybackDiode 0. 0.1 4.0 monitored))

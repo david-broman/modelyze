@@ -21,15 +21,15 @@
 include HDAELANG
 include Simulate
 
+// Constants
 def pi = 3.1415
 def g = 9.81
 def l = 3.
 def m = 5.
 def angle = (-135.0)*pi/180.0
 def ground = -10.
-def x, y, vx, vy, T: Real
 
-def pendulum = {
+def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
   init x (l*cos(angle));
   init y (l*sin(angle));
   -T*x/l = m*(der vx);
@@ -39,38 +39,31 @@ def pendulum = {
   x^2. + y^2. = l^2.;
 }
 
-def freefall(y0: <Real>, vy0: <Real>) -> Equations = {
-  reinit x x;
-  reinit y y0;
-  reinit vx vx;
+def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: Real, vy0: Real) -> Equations = {
   reinit vy vy0;
-  der x = vx;
-  der y = vy;
-  der vx = 0.;
-  switch (der vy = (-g)) (fun t: () -> der vy = 0.) (abs(vy) - abs(y) + 9.998);
-}
-
-def still(x0: <Real>, y0: <Real>) -> Equations = {
-  reinit x x0;
   reinit y y0;
-  reinit vx 0.;
-  reinit vy 0.;
   der x = vx;
   der y = vy;
   der vx = 0.;
-  der vy = 0.;
+  der vy = (-g)
 }
 
-def bounce(y0: <Real>, vy0: <Real>) -> Equations = {
-  switch (freefall y0 vy0) (fun t: () -> bounce (ground) (-0.7*vy)) (y - ground)
+def bounce(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: Real, vy0: Real) -> Equations = {
+  switch (freefall x y vx vy y0 vy0) (fun t: () -> bounce x y vx vy ground (-0.7*vy)) (y - ground)
 }
 
-def bpendulum = {
-  switch pendulum (fun t: () -> bounce y vy) (T - 70.);
+def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
+  // We want the position in y and the velocity in x to be continous
+  reinit y y;
+  reinit vx vx;
+  switch (pendulum x y vx vy T) (fun t: () -> bounce x y vx vy x vy) (T - 70.)
 }
 
-/* def monitored = [(x, "x"), (y, "y"), ((abs vy) - abs(y) + 9.998, "lim")] */
-/* def monitored = [(x, "x"), (y, "y")] */
-def monitored = [(x, "x"), (y, "y"), (T, "T")]
-def main =
-  print(pprintSimulation (simulatehdae bpendulum 0. 0.1 10.0 monitored))
+def main = {
+  def x, y, vx, vy, T: Real;
+  def monitored = [(x, "x"), (y, "y"), (T, "T")];
+  def bp = bpendulum x y vx vy T;
+  def sr = simulatehdae bp 0. 0.1 10.0 monitored;
+  ()
+  // print(pprintSimulation (simulatehdae (bpendulum x y vx vy T) 0. 0.1 10.0 monitored))
+}

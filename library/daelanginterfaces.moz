@@ -126,6 +126,7 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
       }
     | [] -> ()
   };
+
   def _ = work (Map.toList vmap);
   (ukm, yy, yp)
 }
@@ -145,7 +146,6 @@ def get_dae_solver_input(sigma: Sigma, Z: Set(<Real>), undefval: Real)
     def f = (fun e: <Real> -> evalFromArray e ukm yy yp);
     map f zcbl
   };
-
   def (t, E, vmap) = sigma;
   def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap undefval;
   def vids = initConditionCorrection ukm;

@@ -60,7 +60,6 @@ def eval_from_vmap(a: <?>, f: VMap) -> ? = {
 def eval_from_arrays_with_default_val(expr: <Real>, ukm: UkMap, yy: VarArray,
   yp: VarArray, default: Real) -> Real = {
   def undefined_vars_in(expr: <?>) -> Bool = {
-    // def _ = dprint(expr);
     match expr with
     | sym: Real -> !(Map.mem expr ukm)
     | der x -> undefined_vars_in x
@@ -120,7 +119,10 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
     | e::es -> {
         def (ee, v) = e;
         def (x, a) = get_uk_and_arr ee;
-        def (i, _) = (Map.find x ukm);
+        def (i, _) = {
+            if (Map.mem x ukm) then (Map.find x ukm)
+            else error "expected to find var in ukm"
+          };
         def _ = (Array.set a i v);
         work es
       }
@@ -141,7 +143,6 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
 
 def get_dae_solver_input(sigma: Sigma, Z: Set(<Real>), undefval: Real)
   -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
-
   def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray, yp: VarArray) -> [Real] = {
     def f = (fun e: <Real> -> evalFromArray e ukm yy yp);
     map f zcbl

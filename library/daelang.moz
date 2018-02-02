@@ -34,8 +34,7 @@ def M_m(m: Equations, sigma: SigmaT) -> SigmaT = {
       else {
         def r_o = (Map.find x f);
         if r_o != r then error "multiple inits for the same state variable"
-        else
-          (t0, E, (Map.add x r f), T)
+        else (t0, E, (Map.add x r f), T)
       }
     }
   | Branch _ _ _ _ -> (t0, E, f, (Set.add m T))

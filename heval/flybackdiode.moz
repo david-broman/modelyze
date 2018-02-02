@@ -25,7 +25,7 @@ def u_V, u_R, u_S, u_L, u_D, i_D, i: Real
 def V = 1.
 def R = 1.
 def L = 1.
-def tb = 2.
+def tb = 3.
 
 def flybackDiode = {
   def n1, n2, n3, n4, n5, n6: Electrical;
@@ -43,7 +43,7 @@ def flybackDiode = {
   VoltageSensor u_D n3 n6
 }
 
-def monitored = [(i_D, "i_D"), (i, "i"), (u_L, "u_L")]
+def monitored = [(i_D, "h"), (i, "i"), (u_L, "v")]
 
 def main =
-  print(pprintSimulation (simulatehdae flybackDiode 0. 0.1 4.0 monitored))
+  print(pprintSimulation (simulatehdae flybackDiode 0. 0.1 5.0 monitored))

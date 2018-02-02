@@ -60,7 +60,7 @@ def T_s(s: Equations, z: (<Real> -> Bool)) -> Equations = {
   | Branch _ _ _ _ -> s
   | RefBranch _ _ _ -> s
   | switch s_1 (lift s_2: (() -> ?)) zcb -> {
-        if z zcb then o else switch (T_s s_1 z) s_2 zcb
+        if z zcb then s_2() else switch (T_s s_1 z) s_2 zcb
       }
   | nil -> nil
   | _ -> error "Unmatched pattern in T_s"};

@@ -18,7 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include HDAELANGElectrical
+include MEBMLANGElectrical
 include Simulate
 
 def u_V, u_R, u_S, u_L, u_D, i_D, i: Real

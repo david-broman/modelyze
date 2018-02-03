@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -32,23 +32,23 @@ type Modes = Set Mode
 // Internal transition for storing both source and target mode info
 def internalTrans : <TransId -> Mode -> Mode -> Bool -> Equations -> Equations>
 
-def epsilon = 1e-9 
+def epsilon = 1e-9
 
 
 // newModes = Set of new modes that should be active
 // activeCharts = Set of default modes for all active charts
 // updatedNew =  Updated of all new modes (if new modes are discovered)
 // updatedActive = Updated of all default modes (if new modes are discovered)
-// 
-def extractHMode(model:Equations, newModes:Modes, activeCharts:Modes, curr:Mode) -> 
+//
+def extractHMode(model:Equations, newModes:Modes, activeCharts:Modes, curr:Mode) ->
                 (Equations,Modes,Modes) = {
     match model with
-    | hybridchart initmode s e -> 
-        if Set.mem s activeCharts 
+    | hybridchart initmode s e ->
+        if Set.mem s activeCharts
         then extractHMode(e, newModes, activeCharts, curr)
         else extractHMode(e, Set.add s newModes, Set.add s activeCharts, curr)
-    | mode s e -> 
-        if Set.mem s newModes 
+    | mode s e ->
+        if Set.mem s newModes
         then extractHMode(e,newModes,activeCharts, s)
         else (NoEqn,newModes,activeCharts)
     | transition nmode when g action i -> {
@@ -71,7 +71,7 @@ def extractTransitions(model:Expr) -> Transitions = {
     | e1 e2 -> extract(e2,extract(e1,acc))
     | _ -> acc
   };
-  extract(model,[]) 
+  extract(model,[])
 }
 
 
@@ -124,8 +124,8 @@ def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap) -> Bool = {
     | e1 != e2 -> error "Not allowed to compare for equality in transitions."
     | e1 >= e2 -> evalReal(e1) >  evalReal(e2)
     | e1 >  e2 -> evalReal(e1) >  evalReal(e2)
-    | e1 <= e2 -> evalReal(e1) <  evalReal(e2) 
-    | e1 <  e2 -> evalReal(e1) <  evalReal(e2) 
+    | e1 <= e2 -> evalReal(e1) <  evalReal(e2)
+    | e1 <  e2 -> evalReal(e1) <  evalReal(e2)
     | !e1 -> !(evalBool(e1))
     | e1 && e2 -> evalBool(e1) && evalBool(e2)
     | e1 || e2 -> evalBool(e1) || evalBool(e2)
@@ -135,8 +135,8 @@ def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap) -> Bool = {
   evalBool(expr);
 }
 
- 
-// Create the function that is used by IDA/Sundials for root finding 
+
+// Create the function that is used by IDA/Sundials for root finding
 // (detecting zero-crossings). The root function is created by
 // evaluating the transitions that are extracted from the original
 // equation system.
@@ -149,13 +149,13 @@ def makeRootFun(ukmap:UkMap, trans:Transitions, ctime:Real, yy:{Real}, yp:{Real}
     | e1 > e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
     | e1 <= e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
     | e1 < e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
-    | !e1 -> travGuard(e,acc) 
+    | !e1 -> travGuard(e,acc)
     | e1 && e2 -> travGuard(e2,travGuard(e1,acc))
     | e1 || e2 -> travGuard(e2,travGuard(e1,acc))
     | sval b:Bool -> acc
     | _ -> error "Illegal expression in transition guard."
   };
-  def travTrans(trans:Transitions, acc:[Real]) -> [Real] = { 
+  def travTrans(trans:Transitions, acc:[Real]) -> [Real] = {
     match trans with
      | (_,_,_,g,_)::ts -> travTrans ts (travGuard g acc)
      | [] -> acc
@@ -164,7 +164,7 @@ def makeRootFun(ukmap:UkMap, trans:Transitions, ctime:Real, yy:{Real}, yp:{Real}
 }
 
 // Returns a tuple with the index of the searched root and a boolean stating
-// true if the transition is fired. 
+// true if the transition is fired.
 def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
   def fired(e:Expr, i:Int) -> (Int,Bool) = {
     match e with
@@ -207,9 +207,9 @@ def makeEventActions(daesolv:DAESolver, trans:Transitions, newModes:Modes,
             else travTrans(ts,acc,newModes,i2)
      | [] -> (acc,newModes)
   };
-  if (Array.length roots) != 0 then 
+  if (Array.length roots) != 0 then
     travTrans(trans,[],newModes,(Array.length roots) - 1)
-  else 
+  else
     ([],newModes)
 }
 
@@ -220,7 +220,7 @@ def makeEventActions(daesolv:DAESolver, trans:Transitions, newModes:Modes,
 //  | [] -> eqs
 //}
 
-def addTransinits(yymap:InitValMap, inits:[Equations], yy:{Real}, yp:{Real}, ukmap:UkMap) 
+def addTransinits(yymap:InitValMap, inits:[Equations], yy:{Real}, yp:{Real}, ukmap:UkMap)
                   -> InitValMap = {
     def addInitVals(vals:InitValList, acc:InitValMap) -> InitValMap = {
         match vals with
@@ -237,7 +237,7 @@ def addTransinits(yymap:InitValMap, inits:[Equations], yy:{Real}, yp:{Real}, ukm
 
 // Generate arrays of initial values from init value map and old
 // mode information
-def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap, 
+def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap,
                        ukmap:UkMap) -> ({Real},{Real}) = {
   def size = (Map.size ukmap);
   def yy = (Array.make size 0.);
@@ -246,13 +246,13 @@ def makeInitModeArrays(initvals:InitValMap, yymap:InitValMap, ypmap:InitValMap,
     match initvals with
     | (u,e)::xs -> {
          def v = evalFromMap(e,yymap);
-         def _ = (if Map.mem u ukmap then 
-                    Array.set arr (fst (Map.find u ukmap)) v  
+         def _ = (if Map.mem u ukmap then
+                    Array.set arr (fst (Map.find u ukmap)) v
                  else ());
          setvals(xs,arr);
        }
     | [] -> ()
-  }; 
+  };
   def _ = setvals(Map.toList initvals, yy);
   def _ = setvals(Map.toList yymap, yy);
   def _ = setvals(Map.toList ypmap, yp);
@@ -268,7 +268,7 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
   def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
     match uklist with
     | (u,(i,true))::us -> {
-        def _ = (Array.set id i 1.0); 
+        def _ = (Array.set id i 1.0);
         worker us;
       }
     | _::us -> worker us
@@ -280,37 +280,37 @@ def initConditionCorrection(ukmap:UkMap) -> {Real} = {
 
 // The main simulation function. Performs hybrid simulation using
 // hierarical mode machines and differential-algebraic equations
-def simulate(model:Equations, steptime:Real, endtime:Real, 
+def simulate(model:Equations, steptime:Real, endtime:Real,
              probes:ProbeMap) -> SimulationResult = {
 
   def probelist = (Map.toList probes);
 
   // **** Start of discrete-time loop. ****
   //    Iterate for each mode change
-  def dtloop(currtime:Real, acc:[StepVal], model1:Equations, yymap:InitValMap, 
-             ypmap:InitValMap, olddmap:DerivMap, 
+  def dtloop(currtime:Real, acc:[StepVal], model1:Equations, yymap:InitValMap,
+             ypmap:InitValMap, olddmap:DerivMap,
              newModes:Modes, activeCharts:Modes) -> [StepVal] = {
-       
-    // Extract all equations and correct inits for a partiuclar mode path. 
+
+    // Extract all equations and correct inits for a partiuclar mode path.
     // But, keep transitions, since these can contain equations in the action
     def (model2,newModes2,activeCharts2) = extractHMode(model1,newModes,activeCharts,topmode);
-   
+
     // Elaborate derivatives, e.g., get rid of higher-order deriviatives.
     def (model3,newdmap) = elaborateDerivatives(model2,olddmap);
 
     // Peforme index reduction
-    def _ = dprint(model3);
+
     def (model3,newdmap) = indexReducationPantelides(model3,Map.empty);
-    def _ = dprint(model3);
-    def _ = println("===");
+
+
 
     // Extract transitions
     def transitions = extractTransitions(model3);
 
     // Create a map of unknowns to unique integer values
     def ukmap = makeUkMap(model3);
-   
-    // Create the DAE residual 
+
+    // Create the DAE residual
     def residual = peval (makeResidual(ukmap,model3));
 
     // Create a map with all initial values for the current state
@@ -327,13 +327,13 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
 
     // Create the simulation instance for continuous-time simulation using IDA
     def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
-    
+
     // Return the init values after an event or start of simulation (time 0)
     def firststepval = makeStepVal(currtime,yy,probelist,ukmap);
-  
+
     // **** Start of continuous-time loop *****
     def ctloop(currtime:Real, acc:[StepVal]) -> ([StepVal],Real,[Expr], Modes) = {
-        if currtime > endtime then 
+        if currtime > endtime then
             (acc,currtime,[],newModes2)
         else {
             // Compute the next step using numerical integration
@@ -341,24 +341,24 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
             // Save the step value
             def stepval = makeStepVal(newtime,yy,probelist,ukmap);
             // Check if there are event actions
-            def (transInits,newModes3) = 
+            def (transInits,newModes3) =
                 makeEventActions(mode,transitions,newModes2,ukmap,yy,yp);
-                
+
             // End continuous-time loop?
-            if newtime == 0. ||   !(transInits <==> []) 
+            if newtime == 0. ||   !(transInits <==> [])
                then (stepval::acc,newtime,transInits,newModes3)
                else ctloop(newtime + steptime, stepval::acc)
         };
     };
-      // Post processing after continuous-time simulation 
+      // Post processing after continuous-time simulation
       def (acc2,newtime,transInits,newModes) = ctloop(currtime, firststepval::acc);
 
       // Close the continuous-time DAE solver instance.
       def _ = (DAESolver.close mode);
 
       // Perform another round of CT simulation?
-      if newtime > endtime then 
-          acc2  
+      if newtime > endtime then
+          acc2
       else {
          def (yymap,ypmap) = makePreValMap yy yp ukmap;
          def yymap2 = addTransinits(yymap, transInits, yy, yp, ukmap);
@@ -369,7 +369,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
     def result = dtloop(0.,[],model,Map.empty,Map.empty,Map.empty,Set.empty,Set.empty);
     (reverse(makeProbeNames("",probelist)), reverse(result))
 }
- 
+
 // Utility function to both simulate and pretty-print the result
 def printsim(model:Equations, steptime:Real, endtime:Real) -> () = {
     // Extract probes
@@ -378,6 +378,3 @@ def printsim(model:Equations, steptime:Real, endtime:Real) -> () = {
     // Simulate and print result
     print(pprintSimulation(simulate(model1,steptime,endtime,probes)));
 }
-
-
-

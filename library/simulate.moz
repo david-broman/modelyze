@@ -18,8 +18,8 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include DAELANG
-include HDAELANG
+include EBMLANG
+include MEBMLANG
 include Numsolvers
 include simoutput
 

@@ -279,7 +279,7 @@ def leadingcol(IM: IMatrix, i: Int) -> Int = {
 def rowreduce(IM: IMatrix) -> IMatrix = {
   def (_, n, m) = IM;
 
-  def findpivotrowcol(IM: IMatrix, imin: Int) -> (Int, Int) = {
+  def findpivotelem(IM: IMatrix, imin: Int) -> (Int, Int) = {
     def work(i: Int, p: (Int, Int)) -> (Int, Int) = {
       if i >= n then p
       else {
@@ -312,7 +312,7 @@ def rowreduce(IM: IMatrix) -> IMatrix = {
 
   def work(IM: IMatrix, imin: Int) -> IMatrix = {
     if imin < n then {
-      def (pr, pc) = findpivotrowcol IM imin;
+      def (pr, pc) = findpivotelem IM imin;
       if pc < m then
         work (zerocolumn (swrows IM imin pr) imin pc) (imin + 1)
       else work IM (imin + 1)

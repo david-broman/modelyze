@@ -18,7 +18,7 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include HDAELANG
+include MEBMLANG
 include Simulate
 
 // Constants
@@ -51,9 +51,10 @@ def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: <Real>, vy0: <Rea
 def bounce(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: <Real>, vy0: <Real>)
   -> Equations = {
 
+  // def _ = dprint("Bounce!");
   switch
     (freefall x y vx vy y0 vy0)
-    (fun t: () -> bounce x y vx vy ground (-0.7*vy))
+    (fun t: () -> bounce x y vx vy (ground) (-0.7*vy))
     (y - ground)
 }
 
@@ -71,6 +72,6 @@ def main = {
   def x, y, vx, vy, T: Real;
   def monitored = [(x, "x"), (y, "y"), (T, "T")];
   def bp = bpendulum x y vx vy T;
-  def sr = simulatehdae bp 0. 0.1 10.0 monitored;
+  def sr = simulatehdae bp 0. 0.1 2.5 monitored;
   print(pprintSimulation (sr))
 }

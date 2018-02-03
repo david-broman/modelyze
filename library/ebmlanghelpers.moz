@@ -25,6 +25,7 @@ type Sigma = (Real, Set(Equations), VMap)
 type SigmaT = (Real, Set(Equations), VMap, Set(?))
 type Omega = (Equations, Real, Set(Equations), VMap, Set(<Real>))
 type ZCMap = (<Real> => Int)
+type OmegaD = (Equations, Real, Set(Equations), VMap, Set(<Real>), ZCMap)
 
 def makeZMapList(Z: Set(<Real>)) -> (ZCMap, [<Real>]) = {
   def f(i: Int, z: <Real>) -> (<Real>, Int) = { (z, i) };

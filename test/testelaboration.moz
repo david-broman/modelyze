@@ -18,7 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include ElaborationFuric
+include GraphElaboration
 include TestHelp
 
 def _ = testCase "create identity matrix"

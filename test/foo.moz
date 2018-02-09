@@ -1,14 +1,6 @@
-include daelang
-
-def a: Int -> Int
-
-def b(x: Int) = {
-  a(x) + 1
-}
-def a(x: Int) -> Int = {
-  1
-}
+include MEBMLANG2
+include Simulate2
 
 def main = {
-  dprint(b(1))
+  dprint("success!")
 }

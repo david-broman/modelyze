@@ -56,9 +56,9 @@ def S_m(m: Equations, mu: VMap) -> Equations = {
 def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
   match m with
   | m_1; m_2 -> {
-      def (mp_1, l_1) = (R_m m_1 mu);
-      def (mp_2, l_2) = (R_m m_2 mu);
-      (mp_1;mp_2, concat l_1 l_2)
+      def (s_1, l_1) = (R_m m_1 mu);
+      def (s_2, l_2) = (R_m m_2 mu);
+      (s_1;s_2, concat l_1 l_2)
     }
   | init v d -> {
         def r = E_d d mu;
@@ -68,7 +68,11 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
         def r = E_d d mu;
         (init d r, [])
       }
-  | switch m_1 _ l -> (R_m m_1 mu, l)
+  | switch m_1 _ l -> {
+      // def (s,lp) = R_m m_1 mu;
+      // (s, concat l lp)
+      (m_1, [])
+    }
   | d_1 = d_2 -> (m, [])
   | Branch _ _ _ _ -> (m, [])
   | RefBranch _ _ _ -> (m, [])
@@ -79,7 +83,7 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
 def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> F = {
   def (t, n) = tau;
   def mp = { if t == t0 then m else S_m m mu };
-  def (s, l) = R_m mu;
+  def (s, l) = R_m mp mu;
   def L = M_l l;
   def f = M_f s t;
   def (E, mup, tp) = f;

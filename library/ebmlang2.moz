@@ -22,7 +22,7 @@ include GraphElaboration
 include EBMLANGHelpers2
 include IndexReduction
 
-type S = (Set(Equation), VMap, Set(?))
+type S = (Set(Equations), VMap, Set(?))
 
 def nil = NoEqn
 
@@ -77,7 +77,7 @@ def findiv(f: F) -> (VMap, Real) = {
   (ukmap_yy_yp_to_vmap ukm yy0 yp0, t0 +  dt)
 }
 
-def M_d(s: Equations, t0: Real) -> F = {
+def M_f(s: Equations, t: Real) -> F = {
   def (E, mu, G) = M_s s (Set.empty, Map.empty, Set.empty);
   def Ep = elabtopol G;
   def Epp = indexred (union Ep E);

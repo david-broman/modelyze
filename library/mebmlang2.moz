@@ -1,0 +1,88 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include EBMLANGHelpers2
+include EBMLANG2
+
+def init: <Real> -> <Real> -> Equations
+def reinit: <Real> -> <Real> -> Equations
+def switch: Equations -> (() -> ?) -> [<Real>] -> Equations
+
+def E_d(d: <Real>, mu: VMap) -> Real = {
+  eval_from_vmap d mu
+}
+
+def inside(L: Set(<Real>), mu: VMap) -> Bool = {
+  for_all (fun d: <Real> -> (E_d d mu) > 0.) (Set.toList L)
+}
+
+def M_l(l: [<Real>]) -> Set(<Real>) = {
+  list_to_set l
+}
+
+def S_m(m: Equations, mu: VMap) -> Equations = {
+  match m with
+  | m_1; m_2 -> (S_m m_1 mu); (S_m m_2 mu)
+  | d_1 = d_2 -> m
+  | init v _ -> { if (Map.mem v mu) then nil else m }
+  | reinit _ _ -> m
+  | Branch _ _ _ _ -> m
+  | nil -> m
+  | RefBranch _ _ _ -> m
+  | switch m_1 (lift m_2: (() -> ?)) l -> {
+      if (inside l mu) then switch (S_m m_1 mu) m_2 l
+      else S_m (m_2()) mu
+    }
+  | _ -> error "Unmatched pattern in S_m"
+}
+
+def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
+  match m with
+  | m_1; m_2 -> {
+      def (mp_1, l_1) = (R_m m_1 mu);
+      def (mp_2, l_2) = (R_m m_2 mu);
+      (mp_1;mp_2, concat l_1 l_2)
+    }
+  | init v d -> {
+        def r = E_d d mu;
+        (init v r, [])
+      }
+  | reinit v d -> {
+        def r = E_d d mu;
+        (init d r, [])
+      }
+  | switch m_1 _ l -> (R_m m_1 mu, l)
+  | d_1 = d_2 -> (m, [])
+  | Branch _ _ _ _ -> (m, [])
+  | RefBranch _ _ _ -> (m, [])
+  | nil -> (m, [])
+  | _ -> error "Unmatched pattern in R_m"
+}
+
+def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> F = {
+  def (t, n) = tau;
+  def mp = { if t == t0 then m else S_m m mu };
+  def (s, l) = R_m mu;
+  def L = M_l l;
+  def f = M_f s t;
+  def (E, mup, tp) = f;
+  if (inside L mup) then (mp, f, L, (tp, n + 1))
+  else M_m t0 mp mup (tp, n + 1)
+}

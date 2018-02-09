@@ -71,9 +71,9 @@ def findiv(sigma: Sigma) -> (Real, VMap) = {
 }
 
 def M_d(m: Equations, t0: Real) -> Sigma = {
-  def (t, E, f, T) = M_m m (t0, Set.empty, Map.empty, Set.empty);
-  def E_t = elabtopol T;
-  def (_, E_r, f_r) = indexred (t, union E_t E, f);
-  def (it, iv) = findiv (t, E_r, f_r);
-  (it, E_r, iv)
+  def (t, E, beta, T) = M_m m (t0, Set.empty, Map.empty, Set.empty);
+  def Ep = elabtopol T;
+  def (_, Epp, betap) = indexred (t, union Ep E, beta);
+  def (it, iv) = findiv (t, Epp, betap);
+  (it, Epp, iv)
 }

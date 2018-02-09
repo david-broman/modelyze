@@ -95,7 +95,7 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   def (n, ukm) = realUnknowns (set_to_cont E);
   def yy = (Array.make n undefval);
   def yp = (Array.make n undefval);
-  def work(gvlist: [(<Real>, <Real>)]) -> () = {
+  def work(gvlist: [(<Real>, Real)]) -> () = {
     def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
       match e with
       | der x -> (x, yp)
@@ -139,13 +139,13 @@ def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (set_to_cont E);
   def rootf = makeRootFun (Set.toList L) ukm;
-  def nroots = (Map.size zcbm);
+  def nroots = (Set.size L);
   (resf, nroots, rootf, yy, yp, vids, ukm)
 }
 
 def get_dae_find_ic_input(f: F, undefval: Real) ->
   (Residual, VarArray, VarArray, VarArray, UkMap) = {
-  def (resf, _, _, yy, yp, vids, ukm, _) =
+  def (resf, _, _, yy, yp, vids, ukm) =
     get_dae_solver_input f (Set.empty) undefval;
   (resf, yy, yp, vids, ukm)
 }

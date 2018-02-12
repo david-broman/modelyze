@@ -29,7 +29,7 @@ def E_d(d: <Real>, mu: VMap) -> Real = {
 }
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {
-  def b = for_all (fun d: <Real> -> {def v = (E_d d mu); v >= 0.}) (Set.toList L);
+  def b = for_all (fun d: <Real> -> {def v = (E_d d mu); v > 0.}) (Set.toList L);
   b
 }
 

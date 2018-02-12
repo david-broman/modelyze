@@ -34,7 +34,8 @@ def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
 
 def eval_from_vmap(a: <?>, f: VMap) -> ? = {
   def eval(a: <Real>) -> Real = {
-    if (Map.mem a f) then (Map.find a f) else error "Undefined in eval from vmap"
+    if (Map.mem a f) then (Map.find a f)
+    else error "Undefined in eval from vmap"
   };
   match a with
   | der x -> eval a

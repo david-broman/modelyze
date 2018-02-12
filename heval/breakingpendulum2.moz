@@ -37,27 +37,35 @@ def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
   x^2. + y^2. = l^2.;
 }
 
-def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>)
-  -> Equations = {
+def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  y0: <Real>, vy0: <Real>) -> Equations = {
 
+  reinit vy vy0;
+  reinit y y0;
   der x = vx;
   der y = vy;
   der vx = 0.;
   der vy = (-g)
 }
 
+def bounce(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  y0: <Real>, vy0: <Real>) -> Equations = {
+  switch
+    (freefall x y vx vy y0 vy0)
+    (fun t: () -> bounce x y vx vy (ground) ((-0.7)*vy))
+    ([(-ground + y)])
+}
+
 def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
   -> Equations = {
 
+  reinit x x;
+  reinit vx vx;
   init x (l*cos(angle));
   init y (l*sin(angle));
-  reinit x x;
-  reinit y y;
-  reinit vx vx;
-  reinit vy vy;
   switch
     (pendulum x y vx vy T)
-    (fun t: () -> (freefall x y vx vy))
+    (fun t: () -> (bounce x y vx vy y vy))
     ([70. - T])
 }
 
@@ -65,6 +73,6 @@ def main = {
   def x, y, vx, vy, T: Real;
   def monitored = [(x, "x"), (y, "y"), (T, "T")];
   def bp = bpendulum x y vx vy T;
-  def sr = simulatehdae bp 0. 0.1 2.5 monitored;
+  def sr = simulatehdae bp 0. 0.1 10.0 monitored;
   print(pprintSimulation (sr))
 }

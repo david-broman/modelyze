@@ -29,7 +29,8 @@ def E_d(d: <Real>, mu: VMap) -> Real = {
 }
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {
-  for_all (fun d: <Real> -> (E_d d mu) > 0.) (Set.toList L)
+  def b = for_all (fun d: <Real> -> {def v = (E_d d mu); v >= 0.}) (Set.toList L);
+  b
 }
 
 def M_l(l: [<Real>]) -> Set(<Real>) = {
@@ -46,7 +47,7 @@ def S_m(m: Equations, mu: VMap) -> Equations = {
   | RefBranch _ _ _ -> m
   | switch m_1 (lift m_2: (() -> ?)) (lift l: [<Real>]) -> {
       if inside (M_l l) mu then switch (S_m m_1 mu) m_2 l
-      else S_m (m_2()) mu
+      else m_2()
     }
   | nil -> m
   | _ -> error "Unmatched pattern in S_m"
@@ -69,7 +70,7 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
   | reinit v d -> {
         if (Map.mem v mu) then {
           def r = E_d d mu;
-          (init d r, [])
+          (init v r, [])
         } else (nil, [])
       }
   | switch m_1 _ (lift l: [<Real>]) -> {

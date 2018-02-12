@@ -18,12 +18,12 @@ syn match modelyzeNumber '[-+]\d\+' contained display
 syn match modelyzeNumber '\d\+\.\d*' contained display
 syn match modelyzeNumber '[-+]\d\+\.\d*' contained display
 
-syn match modelyzeLineComment '\/\/.*'
 syn match modelyzeBlockComment '\/\*\_.*\*\/'
+syn match modelyzeLineComment '\/\/.*'
 
 let b:current_syntax = "modelyze"
-hi def link modelyzeLineComment     Comment
 hi def link modelyzeBlockComment    Comment
+hi def link modelyzeLineComment     Comment
 hi def link modelyzeKeywords        Keyword
 hi def link modelyzeTypes           Type
 hi def link modelyzeString          Constant

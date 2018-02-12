@@ -21,8 +21,7 @@ written by Oscar Eriksson oerikss@kth.se
 include EBMLANGHelpers2
 include EBMLANG2
 
-def init: <Real> -> <Real> -> Equations
-def reinit: <Real> -> <Real> -> Equations
+def reinit: <Real> -> Real -> Equations
 def switch: Equations -> (() -> ?) -> [<Real>] -> Equations
 
 def E_d(d: <Real>, mu: VMap) -> Real = {
@@ -41,15 +40,15 @@ def S_m(m: Equations, mu: VMap) -> Equations = {
   match m with
   | m_1; m_2 -> (S_m m_1 mu); (S_m m_2 mu)
   | d_1 = d_2 -> m
-  | init v _ -> { if (Map.mem v mu) then nil else m }
+  | init _ _ -> m
   | reinit _ _ -> m
   | Branch _ _ _ _ -> m
-  | nil -> m
   | RefBranch _ _ _ -> m
-  | switch m_1 (lift m_2: (() -> ?)) l -> {
-      if (inside l mu) then switch (S_m m_1 mu) m_2 l
+  | switch m_1 (lift m_2: (() -> ?)) (lift l: [<Real>]) -> {
+      if inside (M_l l) mu then switch (S_m m_1 mu) m_2 l
       else S_m (m_2()) mu
     }
+  | nil -> m
   | _ -> error "Unmatched pattern in S_m"
 }
 
@@ -61,17 +60,21 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
       (s_1;s_2, concat l_1 l_2)
     }
   | init v d -> {
-        def r = E_d d mu;
-        (init v r, [])
+        if (Map.mem v mu) then (nil, [])
+        else {
+          def r = E_d d mu;
+          (init v r, [])
+        }
       }
   | reinit v d -> {
-        def r = E_d d mu;
-        (init d r, [])
+        if (Map.mem v mu) then {
+          def r = E_d d mu;
+          (init d r, [])
+        } else (nil, [])
       }
-  | switch m_1 _ l -> {
-      // def (s,lp) = R_m m_1 mu;
-      // (s, concat l lp)
-      (m_1, [])
+  | switch m_1 _ (lift l: [<Real>]) -> {
+      def (s, lp) = R_m m_1 mu;
+      (s, concat l lp)
     }
   | d_1 = d_2 -> (m, [])
   | Branch _ _ _ _ -> (m, [])
@@ -80,7 +83,7 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
   | _ -> error "Unmatched pattern in R_m"
 }
 
-def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> F = {
+def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
   def (t, n) = tau;
   def mp = { if t == t0 then m else S_m m mu };
   def (s, l) = R_m mp mu;

@@ -52,7 +52,7 @@ def bounce(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
   y0: <Real>, vy0: <Real>) -> Equations = {
   switch
     (freefall x y vx vy y0 vy0)
-    (fun t: () -> bounce x y vx vy (ground) ((-0.7)*vy))
+    (fun t: () -> bounce x y vx vy (ground + 0.00001) ((-0.7)*vy))
     ([(-ground + y)])
 }
 

@@ -15,7 +15,6 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 def (mod) : Int -> Int -> Int = @@int_mod
 def (+) : Int -> Int -> Int = @@int_add
 def (-) : Int -> Int -> Int = @@int_sub
@@ -100,6 +99,21 @@ def println(s:String) -> () = {
 }
 def println(i:Int) -> () = println(int2string(i))
 def println(i:Real) -> () = println(real2string(i))
+
+def OFF = (0, "THIS SHOULD NEVER BE PRINTED!")
+def DEBUG = (1, "DEBUG")
+def TRACE = (2, "TRACE")
+
+def loglevel = DEBUG
+
+def logger(frum: String, level: (Int, String), msg: String, thing: Dyn) -> () = {
+  def (l, s) = level;
+  if l <= (fst loglevel) then {
+    def _ = println("=== start: " ++ msg ++ " === [" ++ frum ++ " : " ++ s ++ "]");
+    def _ = dprint(thing);
+    println("=== end: " ++ msg ++ " ===")
+  } else ()
+}
 
 
 def reverse(lst:[Dyn]) -> [Dyn] = {

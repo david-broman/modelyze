@@ -395,6 +395,8 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
 
 def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
 
+  def llog = logger "elaboratetopology" DEBUG;
+
   def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
     def (i, (f, _)) = ee;
     (i, f)
@@ -408,9 +410,14 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
   def el = enumerateEdges (Set.toList T);
   def nm = enumerateNodes el;
   def (IM, vm) = buildIndcidenceMatrix el nm;
+  def _ = llog "Incidence Matrix" (pp IM);
+  def _ = llog "Variable Map" vm;
   def IMr = rowreduce IM;
   def (A, nvm) = getThroughMatrix IMr vm;
+  def _ = llog "Cutset Matrix (A)" (pp A);
+  def _ = llog "modified Variable Map" nvm;
   def B = getAcrossMatrix A;
+  def _ = llog "Circuit Matrix (B)" (pp B);
   def fvec = list_to_map (map ff (Map.toList nvm));
   def evec = list_to_map (map fe (Map.toList nvm));
   def floweqs = matrixVMapToEquations A fvec;

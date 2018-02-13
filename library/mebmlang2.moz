@@ -85,12 +85,22 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
 }
 
 def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
+  def llog = logger "M_m" DEBUG;
+  def _ = llog "the time is:" tau;
+  def _ = llog "the model is:" m;
   def (t, n) = tau;
   def mp = { if t == t0 then m else S_m m mu };
+  def _ = llog "after elaboration of switches we have:" mp;
   def (s, l) = R_m mp mu;
+  def _ = llog "which is reduced to:" s;
+  def _ = llog "and the boundaries are" l;
   def L = M_l l;
   def f = M_f s t;
   def (E, mup, tp) = f;
-  if (inside L mup) then (mp, f, L, (tp, n + 1))
-  else M_m t0 mp mup (tp, n + 1)
+  def _ = llog "after elaboration of topology:" (set_to_cont E);
+  def _ = llog "with the following ivs:" mup;
+  if (inside L mup) then {
+    def _ = llog "we are outside!" L;
+    (mp, f, L, (tp, n + 1))
+  } else M_m t0 mp mup (tp, n + 1)
 }

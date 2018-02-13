@@ -23,7 +23,7 @@ include MEBMLANG
 include Numsolvers
 include simoutput
 
-def simulatehdae(s: Equations, t0: Real, dt: Real, tend: Real,
+def simulatemebml(s: Equations, t0: Real, dt: Real, tend: Real,
   monitored: [(<Real>, String)]) -> SimulationResult = {
 
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;

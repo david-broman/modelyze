@@ -18,25 +18,23 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include MEBMLANGElectrical
-include Simulate
+include MEBMLANGElectrical2
+include Simulate2
 
 def C = 1.
 def L = 1.
-def u_D, u_C, u_L, u_G, i: Real
+def u_C, u_L, i: Real
 
-def LCD = {
-  def n1, n2, n3, n4: Electrical;
-  Diode2 true 0. n2 n1;
-  Capacitor C (-1.) n3 n2;
-  Inductor L 1. n4 n3;
-  CurrentSensor i n1 n4;
-  VoltageSensor u_D n1 n2;
-  VoltageSensor u_C n2 n3;
-  VoltageSensor u_L n3 n4
+def LC = {
+  def n1, n2, n3: Electrical;
+  Capacitor C (-1.) n1 n2;
+  Inductor L 1. n2 n3;
+  CurrentSensor i n1 n3;
+  VoltageSensor u_C n1 n2;
+  VoltageSensor u_L n2 n3
 }
 
-def monitored = [(i, "i"), (u_D, "u_D"), (u_C, "u_C"), (u_L, "u_L")]
+def monitored = [(i, "i"), (u_C, "u_C"), (u_L, "u_L")]
 
 def main =
-  print(pprintSimulation (simulatemebml LCD 0. 0.1 4.0 monitored))
+  print(pprintSimulation (simulatemebml LC 0. 0.1 4.0 monitored))

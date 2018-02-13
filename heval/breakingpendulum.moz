@@ -72,6 +72,6 @@ def main = {
   def x, y, vx, vy, T: Real;
   def monitored = [(x, "x"), (y, "y"), (T, "T")];
   def bp = bpendulum x y vx vy T;
-  def sr = simulatehdae bp 0. 0.1 2.5 monitored;
+  def sr = simulatemebml bp 0. 0.1 2.5 monitored;
   print(pprintSimulation (sr))
 }

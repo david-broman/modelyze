@@ -46,4 +46,4 @@ def flybackDiode = {
 def monitored = [(i_D, "h"), (i, "i"), (u_L, "v")]
 
 def main =
-  print(pprintSimulation (simulatehdae flybackDiode 0. 0.1 5.0 monitored))
+  print(pprintSimulation (simulatemebml flybackDiode 0. 0.1 5.0 monitored))

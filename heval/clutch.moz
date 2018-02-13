@@ -68,5 +68,4 @@ def monitored =
   [(omega_1, "o_1"), (omega_2, "o_2"), (tau_1, "t_1"), (tau_2, "t_2")]
 
 def main =
-  print(pprintSimulation (simulatehdae fromfreetoclosed 0. 0.1 6.0 monitored))
-
+  print(pprintSimulation (simulatemebml fromfreetoclosed 0. 0.1 6.0 monitored))

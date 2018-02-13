@@ -23,7 +23,7 @@ include MEBMLANG2
 include Numsolvers
 include simoutput
 
-def simulatehdae(m: Equations, t0: Real, dt: Real, tend: Real,
+def simulatemebml(m: Equations, t0: Real, dt: Real, tend: Real,
   monitored: [(<Real>, String)]) -> SimulationResult = {
 
   def Mp_m = M_m t0;

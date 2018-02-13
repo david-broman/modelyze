@@ -63,5 +63,4 @@ def monitored =
   /* [(x, "x"), (y, "y"), (vx, "vx"), (I, "I")] */
 
 def main =
-  print(pprintSimulation (simulatehdae body 0. 0.1 6.0 monitored))
-
+  print(pprintSimulation (simulatemebml body 0. 0.1 6.0 monitored))

@@ -19,15 +19,13 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 /*
-       1 -- +D- -- 2
-       |           |
-       -           +
-      CS           C
-       +           -
-       |           |
-       4 -- -L+ -- 3
-
-           <- i
+           + -
+       1 -- D -- 2
+    -  |         | +
+      CS         C
+    +  |         | -
+       4 -- L -- 3
+           - +
 */
 
 include MEBMLANGElectrical2

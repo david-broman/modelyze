@@ -29,7 +29,14 @@ def E_d(d: <Real>, mu: VMap) -> Real = {
 }
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {
-  def b = for_all (fun d: <Real> -> {def v = (E_d d mu); v > 0.}) (Set.toList L);
+  def llog = logger "inside" DEBUG;
+  def b = for_all (fun d: <Real> -> {
+    def v = (E_d d mu);
+    def _ = llog "expression" d;
+    def _ = llog "value" v;
+    v > 0.
+  }) (Set.toList L);
+  def _ = llog "inside?" b;
   b
 }
 

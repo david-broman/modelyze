@@ -29,7 +29,7 @@ def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
 
 def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
   def i_S: Current;
-  Branch i_S u n p;
+  Branch i_S u p n;
   i_S = 0.
 }
 

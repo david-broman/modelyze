@@ -15,6 +15,19 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
+        Diode-Inductor Circuit
+
+        + -                  +  -
+    1 -- R -- 2 -- TS -- 3 -- CS -- 4
+    |                   -|          |
+    |                    D          |
+   +|                   +|          |+
+    V                    6          L
+   -|                   -|          |-
+    |                    CS         |
+    |                   +|          |
+    ---------------------5-----------
+
 written by Oscar Eriksson oerikss@kth.se
 */
 
@@ -22,7 +35,6 @@ include MEBMLANGElectrical2
 include Simulate2
 
 def u_V, u_R, u_S, u_L, u_D, i_D, i: Real
-def u_Vd, i_Vd, u_Rd, i_Rd, u_Sd, i_Sd, u_Ld, i_Ld, u_Dd, i_Dd: Real
 def V = 1.
 def R = 1.
 def L = 1.
@@ -30,21 +42,18 @@ def tb = 3.
 
 def flybackDiode = {
   def n1, n2, n3, n4, n5, n6: Electrical;
-  ConstantVoltageSourceDebug V n1 n5 i_Vd u_Vd;
-  ResistorDebug R n1 n2 i_Rd u_Rd;
-  TimedSwitchDebug2 true tb n2 n3 i_Sd u_Sd;
-  // CurrentSensor i n3 n4;
-  InductorDebug L (0.) n3 n5 i_Ld u_Ld;
-  // VoltageSensor u_L n4 n5;
-  // CurrentSensor i_D n5 n6;
-  DiodeDebug false (0.7) 0. n5 n3 i_Dd u_Dd
-  // VoltageSensor u_D n3 n6
+  ConstantVoltageSource V n1 n5;
+  Resistor R n1 n2;
+  TimedSwitch true tb n2 n3;
+  CurrentSensor i n3 n4;
+  Inductor L (0.) n4 n5;
+  VoltageSensor u_L n4 n5;
+  CurrentSensor i_D n5 n6;
+  Diode false (0.7) 0. n6 n3
 }
 
 def monitored =
-  // [(i_D, "h"), (i, "i"), (u_L, "v")]
-  // [(u_Vd, "u_V"), (u_Rd, "u_R"), (u_Dd, "u_D"), (u_Ld, "u_L")]
-  [(u_Dd, "-w"), (u_Ld, "v"), (i_Ld, "i"), (i_Dd, "i_D")]
+  [(i_D, "h"), (i, "i"), (u_L, "v")]
 
 def main =
   print(pprintSimulation (simulatemebml flybackDiode 0. 0.05 4.35 monitored))

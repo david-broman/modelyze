@@ -107,6 +107,32 @@ def TimedSwitchDebug(closed: Bool, tb: Real, p: Electrical, n: Electrical,
   s(closed)
 }
 
+def TimedSwitchDebug2(closed: Bool, tb: Real, p: Electrical, n: Electrical,
+  i_TS: Current, u_TS: Voltage) = {
+
+  def Clock(t: <Real>) = {
+    init t 0.;
+    reinit t t;
+    der t = 1.
+  };
+
+  def t: Real;
+  def s(closed: Bool) -> Equations = {
+    if closed then
+      switch
+        (u_TS = 0.; Branch i_TS u_TS p n)
+        (fun t: () -> nil)
+        ([tb - t])
+    else
+      switch
+        (nil)
+        (fun t: () -> u_TS = 0.; Branch i_TS u_TS p n)
+        ([tb - t])
+  };
+  Clock(t);
+  s(closed)
+}
+
 def Resistor(R: Real, p: Electrical, n: Electrical) = {
   def i_R: Current;
   def u_R: Voltage;

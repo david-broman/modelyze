@@ -16,9 +16,9 @@ You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 written by Oscar Eriksson oerikss@kth.se
-*/
 
-/*
+     The LCD Circuit
+
            + -
        1 -- D -- 2
     -  |         | +

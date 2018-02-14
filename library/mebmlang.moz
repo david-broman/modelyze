@@ -21,102 +21,101 @@ written by Oscar Eriksson oerikss@kth.se
 include EBMLANGHelpers
 include EBMLANG
 
-def reinit: <Real> -> <Real> -> Equations
-def switch: Equations -> (() -> ?) -> <Real> -> Equations
+def reinit: <Real> -> Real -> Equations
+def switch: Equations -> (() -> ?) -> [<Real>] -> Equations
 
-def M_ar(a: <Real>, f: VMap) -> Real = {
-  eval_from_vmap a f
+def E_d(d: <Real>, mu: VMap) -> Real = {
+  eval_from_vmap d mu
 }
 
-def getzcb(s: Equations) -> Set(<Real>) = {
-  def work(s: Equations, acc: Set(<Real>)) -> Set(<Real>) = {
-    match s with
-    | switch s_1 _ z -> work s_1 (Set.add z acc)
-    | s_1; s_2 -> work s_1 (work s_2 acc)
-    | _ -> acc
-  };
-  work s (Set.empty)
-}
-
-def zcdf(Z: Set(<Real>), fb: VMap, fa: VMap, zcb: <Real>) -> Bool = {
-  if (Set.mem zcb Z) then {
-    def bef = (eval_from_vmap zcb fb);
-    def aft = (eval_from_vmap zcb fa);
-    bef*aft < 0.
-  } else false
-}
-
-def haszc(Z: Set(<Real>), z: (<Real> -> Bool)) -> Bool = {
-  def b = exists z (Set.toList Z);
+def inside(L: Set(<Real>), mu: VMap) -> Bool = {
+  def llog = logger "inside" DEBUG;
+  def epsilon = 1.0e-16;
+  def b = for_all (fun d: <Real> -> {
+    def v = (E_d d mu);
+    def _ = llog "expression" d;
+    def _ = llog "value" v;
+    v > 0.
+  }) (Set.toList L);
+  def _ = llog "inside?" b;
   b
 }
 
-def inside(beta: VMap, bs: [<Real>]) -> Bool = {
-  def p(b: <Real>) -> Bool = {
-    (eval_from_vmap b beta) > 0
-  };
-
-  for_all p bs
+def M_l(l: [<Real>]) -> Set(<Real>) = {
+  list_to_set l
 }
 
-def T_s(s: Equations, z: (<Real> -> Bool)) -> Equations = {
-  def so = { match s with
-  | s_1; s_2 -> (T_s s_1 z); (T_s s_2 z)
-  | a_1 = a_2 -> s
-  | init _ _ -> nil
-  | reinit _ _ -> s
-  | Branch _ _ _ _ -> s
-  | RefBranch _ _ _ -> s
-  | switch s_1 (lift s_2: (() -> ?)) zcb -> {
-        if z zcb then s_2() else switch (T_s s_1 z) s_2 zcb
+def S_m(m: Equations, mu: VMap) -> Equations = {
+  match m with
+  | m_1; m_2 -> (S_m m_1 mu); (S_m m_2 mu)
+  | d_1 = d_2 -> m
+  | init _ _ -> m
+  | reinit _ _ -> m
+  | Branch _ _ _ _ -> m
+  | RefBranch _ _ _ -> m
+  | switch m_1 (lift m_2: (() -> ?)) (lift l: [<Real>]) -> {
+      if inside (M_l l) mu then switch (S_m m_1 mu) m_2 l
+      else m_2()
+    }
+  | nil -> m
+  | _ -> error "Unmatched pattern in S_m"
+}
+
+def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
+  match m with
+  | m_1; m_2 -> {
+      def (s_1, l_1) = (R_m m_1 mu);
+      def (s_2, l_2) = (R_m m_2 mu);
+      (s_1;s_2, concat l_1 l_2)
+    }
+  | init v d -> {
+        if (Map.mem v mu) then (nil, [])
+        else {
+          def r = E_d d mu;
+          (init v r, [])
+        }
       }
-  | nil -> nil
-  | _ -> error "Unmatched pattern in T_s" };
-  so
-}
-
-def R_s(s: Equations, f: VMap) -> Equations = {
-  match s with
-  | s_1; s_2 -> (R_s s_1 f); (R_s s_2 f)
-  | init x a -> {
-        def r = M_ar a f;
-        init x r
+  | reinit v d -> {
+        if (Map.mem v mu) then {
+          def r = E_d d mu;
+          (init v r, [])
+        } else (nil, [])
       }
-  | reinit x a -> {
-        def r = M_ar a f;
-        init x r
-      }
-  | switch s_1 _ _ -> R_s s_1 f
-  | a_1 = a_2 -> s
-  | Branch _ _ _ _ -> s
-  | RefBranch _ _ _ -> s
-  | nil -> nil
-  | _ -> error "Unmatched pattern in R_s"
+  | switch m_1 _ (lift l: [<Real>]) -> {
+      def (s, lp) = R_m m_1 mu;
+      (s, concat l lp)
+    }
+  | d_1 = d_2 -> (m, [])
+  | Branch _ _ _ _ -> (m, [])
+  | RefBranch _ _ _ -> (m, [])
+  | nil -> (m, [])
+  | _ -> error "Unmatched pattern in R_m"
 }
 
-def R_s_i(s: Equations) -> Equations = {
-  match s with
-  | reinit x a -> nil
-  | s_1; s_2 -> (R_s_i s_1); (R_s_i s_2)
-  | switch s_1 _ _ -> R_s_i s_1
-  | _ -> s
+def M_m_debug(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
+  def llog = logger "M_m" DEBUG;
+  def _ = llog "the time is:" tau;
+  def _ = llog "the model is:" m;
+  def (t, n) = tau;
+  def mp = { if t == t0 then m else S_m m mu };
+  def _ = llog "after elaboration of switches we have:" mp;
+  def (s, l) = R_m mp mu;
+  def _ = llog "which is reduced to:" s;
+  def _ = llog "and the boundaries are" l;
+  def L = M_l l;
+  def f = M_f s t;
+  def (E, mup, tp) = f;
+  def _ = llog "after elaboration of topology:" (set_to_cont E);
+  def _ = llog "with the following ivs:" mup;
+  (mp, f, L, (tp, n + 1))
 }
 
-def M_h(s: Equations, f: VMap, z: (<Real> -> Bool), t: Real) -> Omega = {
-  if (Map.size f) == 0 then {
-    def m = R_s (R_s_i s) f;
-    def (t_new, E, f_new) =  M_d m t;
-    def Z = getzcb s;
-    (s, t_new, E, f_new, Z)
-  }
-  else {
-    def s_new = T_s s z;
-    def Z = getzcb s_new;
-    def m = R_s s_new f;
-    def (t_new, E, f_new) = M_d m t;
-    def z_new = zcdf Z f f_new;
-    if haszc Z z_new then {
-      M_h s_new f_new z_new t_new
-    } else (s_new, t_new, E, f_new, Z)
-  }
+def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
+  def mp = M_m_debug t0 m mu tau;
+  def (mpp, f, L, taupp) = mp;
+  def (_, mup, tp) = f;
+  if inside L mup then mp
+  else M_m t0 mpp mup taupp
 }
+
+

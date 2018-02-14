@@ -37,8 +37,8 @@ def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
   x^2. + y^2. = l^2.;
 }
 
-def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: <Real>, vy0: <Real>)
-  -> Equations = {
+def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  y0: <Real>, vy0: <Real>) -> Equations = {
 
   reinit vy vy0;
   reinit y y0;
@@ -48,30 +48,31 @@ def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: <Real>, vy0: <Rea
   der vy = (-g)
 }
 
-def bounce(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, y0: <Real>, vy0: <Real>)
-  -> Equations = {
-
-  // def _ = dprint("Bounce!");
+def bounce(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  y0: <Real>, vy0: <Real>) -> Equations = {
   switch
     (freefall x y vx vy y0 vy0)
-    (fun t: () -> bounce x y vx vy (ground) (-0.7*vy))
-    (y - ground)
+    (fun t: () -> bounce x y vx vy (ground + 0.00001) ((-0.7)*vy))
+    ([(-ground + y)])
 }
 
-def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
-  // We want the position in y and the velocity in x to be continous
+def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>)
+  -> Equations = {
 
-  reinit vx vx;
   reinit x x;
+  reinit vx vx;
   init x (l*cos(angle));
   init y (l*sin(angle));
-  switch (pendulum x y vx vy T) (fun t: () -> bounce x y vx vy y vy) (T - 70.)
+  switch
+    (pendulum x y vx vy T)
+    (fun t: () -> (bounce x y vx vy y vy))
+    ([70. - T])
 }
 
 def main = {
   def x, y, vx, vy, T: Real;
   def monitored = [(x, "x"), (y, "y"), (T, "T")];
   def bp = bpendulum x y vx vy T;
-  def sr = simulatemebml bp 0. 0.1 2.5 monitored;
+  def sr = simulatemebml bp 0. 0.1 10.0 monitored;
   print(pprintSimulation (sr))
 }

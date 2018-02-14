@@ -93,7 +93,7 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
 }
 
 def M_m_debug(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
-  def llog = logger "M_m" DEBUG;
+  def llog = logger "M_m_debug" DEBUG;
   def _ = llog "the time is:" tau;
   def _ = llog "the model is:" m;
   def (t, n) = tau;
@@ -111,11 +111,15 @@ def M_m_debug(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
 }
 
 def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
+  def llog = logger "M_m" DEBUG;
   def mp = M_m_debug t0 m mu tau;
   def (mpp, f, L, taupp) = mp;
   def (_, mup, tp) = f;
   if inside L mup then mp
-  else M_m t0 mpp mup taupp
+  else
+  {
+    def _ = llog "outside of:" L;
+    M_m t0 mpp mup taupp
+  }
 }
-
 

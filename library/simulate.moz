@@ -80,3 +80,56 @@ def simulatemebml(m: Equations, t0: Real, dt: Real, tend: Real,
 
   (labels, reverse (sim m (Map.empty) t0 probes []))
 }
+
+def simulatemebmlDebug(m: Equations, t0: Real, dt: Real, tend: Real,
+  monitored: [(<Real>, String)], maxn: Int) -> SimulationResult = {
+
+  def llog = logger "simulatemebmlDebug" DEBUG;
+  def Mp_m = M_m_debug t0;
+  def probes = map (fun e: (<Real>, String) -> fst e) monitored;
+  def labels = map (fun e: (<Real>, String) -> snd e) monitored;
+  def cs = ctsim dt tend probes;
+
+  def dtsim(m: Equations, mu: VMap, tau: T, acc: [StepVal])
+    -> (M, [StepVal]) = {
+
+    def eval(mu: VMap, t: Real) -> StepVal = {
+      (t, map (fun e: <Real> ->
+        eval_from_vmap_with_default_val e mu INFINITE) probes)
+    };
+
+    def mp = Mp_m m mu tau;
+    def (mpp, f, L, taup) = mp;
+    def (t, n) = taup;
+    def (_, mup, _) = f;
+    def _ = llog "max n" maxn;
+    def _ = llog "start of dtsim, n" n;
+    if n > maxn || inside L mup then (mp, acc)
+    else {
+      def accp = (eval mup t)::acc;
+      dtsim mpp mup taup accp
+    }
+  };
+
+  def sim(m: Equations, mu: VMap, t: Real, probes: [<Real>],
+    acc: [StepVal]) -> [StepVal] = {
+
+    def (mp, accp) = dtsim m mu (t, 0) acc;
+    def (mpp, f, L, tau) = mp;
+    def (tp, n) = tau;
+
+    if n > maxn then accp
+    else {
+      def _ = llog "about to start ctsim at time:" tp;
+      def (svs, tp, mup, sr) = cs f L;
+      if sr == SolverResultStopTimeReached then concat svs accp
+      else {
+        if sr == SolverResultRootsFound then
+          sim mpp mup tp probes (concat svs accp)
+        else error "Unrecognized return value from numerical solver"
+      }
+    }
+  };
+
+  (labels, reverse (sim m (Map.empty) t0 probes []))
+}

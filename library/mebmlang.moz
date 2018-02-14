@@ -122,4 +122,3 @@ def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
     M_m t0 mpp mup taupp
   }
 }
-

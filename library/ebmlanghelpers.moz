@@ -32,21 +32,38 @@ def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
-def eval_from_vmap(a: <?>, f: VMap) -> ? = {
+def eval_from_vmap(a: <?>, mu: VMap) -> ? = {
   def eval(a: <Real>) -> Real = {
-    if (Map.mem a f) then (Map.find a f)
+    if (Map.mem a mu) then (Map.find a mu)
     else error "Undefined in eval from vmap"
   };
   match a with
   | der x -> eval a
   | sym: Real -> eval a
-  | a_1 a_2 ->  (eval_from_vmap a_1 f) (eval_from_vmap a_2 f)
+  | a_1 a_2 ->  (eval_from_vmap a_1 mu) (eval_from_vmap a_2 mu)
   | lift op: ? -> op
   | _ ->  error "Unsupported model construct"
 }
 
+def eval_from_vmap_with_default_val(expr: <Real>, mu: VMap, default: Real)
+  -> Real = {
+
+  def undefined_vars_in(expr: <?>) -> Bool = {
+    match expr with
+    | sym: Real -> !(Map.mem expr mu)
+    | der x -> !(Map.mem expr mu)
+    | f e -> (undefined_vars_in f) || (undefined_vars_in e)
+    | lift v: ? -> false
+    | _ -> error "Unmatched pattern in undefined_vars_in"
+  };
+
+  if undefined_vars_in expr then default
+  else eval_from_vmap expr mu
+}
+
 def eval_from_arrays_with_default_val(expr: <Real>, ukm: UkMap, yy: VarArray,
   yp: VarArray, default: Real) -> Real = {
+
   def undefined_vars_in(expr: <?>) -> Bool = {
     match expr with
     | sym: Real -> !(Map.mem expr ukm)
@@ -55,6 +72,7 @@ def eval_from_arrays_with_default_val(expr: <Real>, ukm: UkMap, yy: VarArray,
     | lift v: ? -> false
     | _ -> error "Unmatched pattern in undefined_vars_in"
   };
+
   if undefined_vars_in expr then default
   else evalFromArray expr ukm yy yp
 }

@@ -30,6 +30,7 @@ def E_d(d: <Real>, mu: VMap) -> Real = {
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {
   def llog = logger "inside" DEBUG;
+  def epsilon = 1.0e-16;
   def b = for_all (fun d: <Real> -> {
     def v = (E_d d mu);
     def _ = llog "expression" d;
@@ -106,8 +107,9 @@ def M_m(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
   def (E, mup, tp) = f;
   def _ = llog "after elaboration of topology:" (set_to_cont E);
   def _ = llog "with the following ivs:" mup;
-  if (inside L mup) then {
-    def _ = llog "we are outside!" L;
-    (mp, f, L, (tp, n + 1))
-  } else M_m t0 mp mup (tp, n + 1)
+  if (inside L mup) then (mp, f, L, (tp, n + 1))
+  else {
+    def _ = llog "we are outside:" L;
+    M_m t0 mp mup (tp, n + 1)
+  }
 }

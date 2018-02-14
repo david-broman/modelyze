@@ -20,19 +20,9 @@ written by Oscar Eriksson oerikss@kth.se
 
 include ModelyzeDAE
 type VMap = (<Real> => Real)
-type VMapElm = (<Real>, Real)
-type Sigma = (Real, Set(Equations), VMap)
-type SigmaT = (Real, Set(Equations), VMap, Set(?))
-type Omega = (Equations, Real, Set(Equations), VMap, Set(<Real>))
-type Omega2 = (Equations, Set(<Real>), Sigma)
-type ZCMap = (<Real> => Int)
-
-def makeZMapList(Z: Set(<Real>)) -> (ZCMap, [<Real>]) = {
-  def f(i: Int, z: <Real>) -> (<Real>, Int) = { (z, i) };
-  def Zl = (Set.toList Z);
-  def Zm = list_to_map (mapi f Zl);
-  (Zm, Zl)
-}
+type T = (Real, Int)
+type F = (Set(Equations), VMap, Real)
+type M = (Equations, F, Set(<Real>), T)
 
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
 
@@ -44,7 +34,8 @@ def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
 
 def eval_from_vmap(a: <?>, f: VMap) -> ? = {
   def eval(a: <Real>) -> Real = {
-    if (Map.mem a f) then (Map.find a f) else error "Undefined in eval from vmap"
+    if (Map.mem a f) then (Map.find a f)
+    else error "Undefined in eval from vmap"
   };
   match a with
   | der x -> eval a
@@ -105,7 +96,7 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   def (n, ukm) = realUnknowns (set_to_cont E);
   def yy = (Array.make n undefval);
   def yp = (Array.make n undefval);
-  def work(gvlist: [VMapElm]) -> () = {
+  def work(gvlist: [(<Real>, Real)]) -> () = {
     def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
       match e with
       | der x -> (x, yp)
@@ -138,25 +129,24 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
   fold_left f (Map.empty) (Map.toList ukm)
 }
 
-def get_dae_solver_input(sigma: Sigma, Z: Set(<Real>), undefval: Real)
-  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
+def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)
+  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap) = {
   def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray, yp: VarArray) -> [Real] = {
     def f = (fun e: <Real> -> evalFromArray e ukm yy yp);
     map f zcbl
   };
-  def (t, E, vmap) = sigma;
+  def (E, vmap, t) = f;
   def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap undefval;
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (set_to_cont E);
-  def (zcbm, zcbl) = makeZMapList Z;
-  def rootf = makeRootFun zcbl ukm;
-  def nroots = (Map.size zcbm);
-  (resf, nroots, rootf, yy, yp, vids, ukm, zcbm)
+  def rootf = makeRootFun (Set.toList L) ukm;
+  def nroots = (Set.size L);
+  (resf, nroots, rootf, yy, yp, vids, ukm)
 }
 
-def get_dae_find_ic_input(sigma: Sigma, undefval: Real) ->
+def get_dae_find_ic_input(f: F, undefval: Real) ->
   (Residual, VarArray, VarArray, VarArray, UkMap) = {
-  def (resf, _, _, yy, yp, vids, ukm, _) =
-    get_dae_solver_input sigma (Set.empty) undefval;
+  def (resf, _, _, yy, yp, vids, ukm) =
+    get_dae_solver_input f (Set.empty) undefval;
   (resf, yy, yp, vids, ukm)
 }

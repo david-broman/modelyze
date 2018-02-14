@@ -15,35 +15,47 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
+        Diode-Inductor Circuit
+
+        + -                  +  -
+    1 -- R -- 2 -- TS -- 3 -- CS -- 4
+    |                   -|          |
+    |                    D          |
+   +|                   +|          |+
+    V                    6          L
+   -|                   -|          |-
+    |                    CS         |
+    |                   +|          |
+    ---------------------5-----------
+
 written by Oscar Eriksson oerikss@kth.se
 */
 
 include MEBMLANGElectrical
 include Simulate
 
-def u_V, u_R, u_S, u_L, u_D, i_D, i: Real
+def u_L, i_D, i: Real
 def V = 1.
 def R = 1.
 def L = 1.
-def tb = 3.
+def t_break = 3.
+def i_L0 = 0.
+def fbias = 0.7
 
 def flybackDiode = {
   def n1, n2, n3, n4, n5, n6: Electrical;
   ConstantVoltageSource V n1 n5;
-  VoltageSensor u_V n1 n5;
   Resistor R n1 n2;
-  VoltageSensor u_R n1 n2;
-  TimedSwitch true tb n2 n3;
-  VoltageSensor u_S n2 n3;
+  TimedSwitch true t_break n2 n3;
   CurrentSensor i n3 n4;
-  Inductor L 0. n4 n5;
-  VoltageSensor u_L n5 n4;
-  Diode2 false (-0.7) n3 n6;
+  Inductor L i_L0 n4 n5;
+  VoltageSensor u_L n4 n5;
   CurrentSensor i_D n5 n6;
-  VoltageSensor u_D n3 n6
+  Diode false fbias 0. n6 n3
 }
 
-def monitored = [(i_D, "h"), (i, "i"), (u_L, "v")]
+def monitored =
+  [(i_D, "h"), (u_L, "v"), (i, "i")]
 
 def main =
-  print(pprintSimulation (simulatemebml flybackDiode 0. 0.1 5.0 monitored))
+  print(pprintSimulation (simulatemebml flybackDiode 0. 0.05 4.35 monitored))

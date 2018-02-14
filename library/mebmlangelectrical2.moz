@@ -99,25 +99,6 @@ def TimedSwitchDebug(closed: Bool, tb: Real, p: Electrical, n: Electrical,
 
   def t: Real;
   def s(closed: Bool) -> Equations = {
-    if closed then switch (u_TS = 0.) (fun t: () -> i_TS = 0.) [tb - t]
-    else switch (i_TS = 0.) (fun t: () -> u_TS = 0.) [tb - t]
-  };
-  Branch i_TS u_TS p n;
-  Clock(t);
-  s(closed)
-}
-
-def TimedSwitchDebug2(closed: Bool, tb: Real, p: Electrical, n: Electrical,
-  i_TS: Current, u_TS: Voltage) = {
-
-  def Clock(t: <Real>) = {
-    init t 0.;
-    reinit t t;
-    der t = 1.
-  };
-
-  def t: Real;
-  def s(closed: Bool) -> Equations = {
     if closed then
       switch
         (u_TS = 0.; Branch i_TS u_TS p n)

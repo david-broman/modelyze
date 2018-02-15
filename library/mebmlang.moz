@@ -30,7 +30,6 @@ def E_d(d: <Real>, mu: VMap) -> Real = {
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {
   def llog = logger "inside" DEBUG;
-  def epsilon = 1.0e-16;
   def b = for_all (fun d: <Real> -> {
     def v = (E_d d mu);
     def _ = llog "expression" d;
@@ -57,11 +56,12 @@ def S_m(m: Equations, mu: VMap) -> Equations = {
       if inside (M_l l) mu then switch (S_m m_1 mu) m_2 l
       else m_2()
     }
-  | nil -> m
+  | nilp _ -> m  // TODO: fix matching on nil
   | _ -> error "Unmatched pattern in S_m"
 }
 
 def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
+  def llog = logger "R_m" DEBUG;
   match m with
   | m_1; m_2 -> {
       def (s_1, l_1) = (R_m m_1 mu);
@@ -69,7 +69,7 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
       (s_1;s_2, concat l_1 l_2)
     }
   | init v d -> {
-        if (Map.mem v mu) then (nil, [])
+        if (Map.mem v mu) then (nilp (), [])
         else {
           def r = E_d d mu;
           (init v r, [])
@@ -79,7 +79,7 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
         if (Map.mem v mu) then {
           def r = E_d d mu;
           (init v r, [])
-        } else (nil, [])
+        } else (nilp (), [])
       }
   | switch m_1 _ (lift l: [<Real>]) -> {
       def (s, lp) = R_m m_1 mu;
@@ -88,8 +88,11 @@ def R_m(m: Equations, mu: VMap) -> (Equations, [<Real>]) = {
   | d_1 = d_2 -> (m, [])
   | Branch _ _ _ _ -> (m, [])
   | RefBranch _ _ _ -> (m, [])
-  | nil -> (m, [])
-  | _ -> error "Unmatched pattern in R_m"
+  | nilp _ -> (m, [])
+  | _ -> {
+      def _ = llog "unmatched patter" m;
+      error "Unmatched pattern in R_m"
+    }
 }
 
 def M_m_debug(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {

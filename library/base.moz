@@ -104,7 +104,7 @@ def OFF = (0, "THIS SHOULD NEVER BE PRINTED!")
 def DEBUG = (1, "DEBUG")
 def TRACE = (2, "TRACE")
 
-// def loglevel = DEBUG
+/* def loglevel = DEBUG */
 def loglevel = OFF
 
 def logger(frum: String, level: (Int, String), msg: String, thing: Dyn)

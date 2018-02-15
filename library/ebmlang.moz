@@ -25,6 +25,7 @@ include IndexReduction
 type S = (Set(Equations), VMap, Set(?))
 
 def nil = NoEqn
+def nilp : () -> Equations //we need this to pattern match on nil
 
 def M_s(s: Equations, sp: S) -> S = {
   def (E, mu, G) = sp;
@@ -41,7 +42,7 @@ def M_s(s: Equations, sp: S) -> S = {
   | Branch _ _ _ _ -> (E, mu, (Set.add s G))
   | RefBranch _ _ _ -> (E, mu, (Set.add s G))
   | s_1; s_2 -> M_s s_2 (M_s s_1 sp)
-  | nil -> sp
+  | nilp _ -> sp
   | _ -> error "Unmatched pattern in M_s"
 }
 
@@ -50,18 +51,6 @@ def elabtopol(G: Set(?)) -> Set(Equations) = {
     // cont_to_set (elaborateConnections (set_to_cont G))
     elaboratetopology G
 }
-
-// def indexred(sp: F) -> F = {
-//   def f(vmap: VMap, e: (<Real>, <Real>)) -> VMap = {
-//     def (x, xx) = e;
-//     if (Map.mem (der x) vmap) then
-//       Map.add xx (Map.find (der x) vmap) vmap
-//     else vmap
-//   };
-//   def (E, vmap, t0) = sp;
-//   def (eqs, dmap) = indexReducationPantelides (set_to_cont E) (Map.empty);
-//   (cont_to_set eqs, fold_left f (vmap) (Map.toList dmap), t0)
-// }
 
 def indexred(E: Set(Equations)) -> Set(Equations) = {
   def (Ep, dmap) = indexReducationPantelides (set_to_cont E) (Map.empty);

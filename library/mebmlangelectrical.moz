@@ -102,11 +102,11 @@ def TimedSwitchDebug(closed: Bool, tb: Real, p: Electrical, n: Electrical,
     if closed then
       switch
         (u_TS = 0.; Branch i_TS u_TS p n)
-        (fun t: () -> nil)
+        (fun t: () -> nilp ())
         ([tb - t])
     else
       switch
-        (nil)
+        (nilp ())
         (fun t: () -> u_TS = 0.; Branch i_TS u_TS p n)
         ([tb - t])
   };

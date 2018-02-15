@@ -11,12 +11,12 @@ syn keyword modelyzeKeywords else error false fst fun if in sym initmode include
 
 syn keyword modelyzeTypes Real Int Bool ?
 
-syn region modelyzeString oneline start='"' end='"' contained
+syntax region modelyzeString start=/\v"/ skip=/\v\\./ end=/\v"/
 
-syn match modelyzeNumber '\d\+' contained display
-syn match modelyzeNumber '[-+]\d\+' contained display
-syn match modelyzeNumber '\d\+\.\d*' contained display
-syn match modelyzeNumber '[-+]\d\+\.\d*' contained display
+syn match   modelyzeNumber    "\<\d\+\>" display
+syn match   modelyzeNumber    "\.\d\+\(e[+-]\=\d\+\)\=\>" display
+syn match   modelyzeNumber     "\<\d\+e[+-]\=\d\+\>" display
+syn match   modelyzeNumber     "\<\d\+\.\d*\(e[+-]\=\d\+\)\=" display
 
 syn match modelyzeBlockComment '\/\*\_.*\*\/'
 syn match modelyzeLineComment '\/\/.*'
@@ -26,5 +26,5 @@ hi def link modelyzeBlockComment    Comment
 hi def link modelyzeLineComment     Comment
 hi def link modelyzeKeywords        Keyword
 hi def link modelyzeTypes           Type
-hi def link modelyzeString          Constant
 hi def link modelyzeNumber          Constant
+hi def link modelyzeString          String

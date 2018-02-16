@@ -24,7 +24,7 @@ include Simulate
 def g = 9.81
 def mu_s = 0.5
 def mu_d = 0.3
-def vx0 = 9.
+def vx0 = 10.
 def y0 =  20.
 def vx, vy, Ix: Real
 

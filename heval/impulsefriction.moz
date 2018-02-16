@@ -18,49 +18,72 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include MEBMLANG
+include MEBMLANGPhysical
 include Simulate
 
-def x, y, vx, vy, I: Real
 def g = 9.81
 def mu_s = 0.5
 def mu_d = 0.3
 def vx0 = 9.
 def y0 =  20.
+def vx, vy, Ix: Real
 
-def stuck = { reinit vx 0.; der vx = 0. }
+def body(x: <Real>, y: <Real>) = {
+  // def vx, vy, Ix: Real;
 
-def slide = {
-  switch (reinit vx vx; der vx = (-mu_d)*g) (fun t: () -> stuck) (vx)
-}
+  def ystuck = {
+    reinit y 0.; reinit vy 0.; der vy = 0.;
+    switch
+      (reinit Ix (vx - mu_s*(-vy)))
+      (fun t: () -> reinit Ix 0.)
+       ([vx])
+  };
 
-def slideorstop = {
-  switch
-    (reinit I (vx - mu_s*(-vy)); slide)
-    (fun t: () -> stuck)
-    (I)
-}
+  def yfall = {
+    switch
+      (reinit y y; reinit vy vy; der vy = -g)
+      (fun t: () -> ystuck)
+      ([y])
+  };
 
-def body = {
+  def xstuck = { reinit x x; reinit vx 0.; der vx = 0. };
+
+  def xslide = {
+    switch
+      (reinit x x; reinit vx vx; der vx = (-mu_d)*g)
+      (fun t:() -> xstuck)
+      ([vx])
+  };
+
+  def ximpact = {
+    switch
+      (xslide)
+      (fun t: () -> xstuck)
+      ([Ix])
+  };
+
+  def xfall = {
+    switch
+      (reinit x x; reinit vx vx; der vx = 0.)
+      (fun t: () -> ximpact)
+      ([y])
+  };
+
   init x 0.;
   init y y0;
   init vx vx0;
   init vy 0.;
-  init I 9999.;
-  reinit x x;
+  init Ix 0.;
   der x = vx;
   der y = vy;
-  der I = 0.;
-  switch
-    (der vy = (-g); der vx = 0.)
-    (fun t: () ->
-      reinit y 0.; reinit vy 0.; der vy = 0.; slideorstop)
-    (y);
+  der Ix = 0.;
+  yfall;
+  xfall
 }
 
-def monitored =
-  [(x, "x"), (y, "y")]
-  /* [(x, "x"), (y, "y"), (vx, "vx"), (I, "I")] */
 
 def main =
-  print(pprintSimulation (simulatemebml body 0. 0.1 6.0 monitored))
+  def x, y: Real;
+  def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (Ix, "Ix")];
+  // def monitored = [(Ix, "Ix")];
+  print(pprintSimulation (simulatemebmlDebug (body x y) 0. 0.1 6.0 monitored 10))

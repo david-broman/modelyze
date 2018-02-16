@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -26,11 +26,11 @@ def RefBranch : Real -> Real -> Dyn -> Equations
 def MultiBranch : [<Real>] -> [<Real>] -> Dyn -> Dyn -> Equations
 def MultiRefBranch : [<Real>] -> [<Real>] -> Dyn -> Equations
 
-type Electrical 
+type Electrical
 type Voltage = <Real>
 type Current = <Real>
 
-type Rotational  
+type Rotational
 type AngularVelocity = Real
 type AngularAcceleration = Real
 type Angle = Real

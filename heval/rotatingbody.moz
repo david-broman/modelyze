@@ -21,20 +21,20 @@
 include MEBMLANGMechanical
 include Simulate
 
-def o_1, t: Real
-def o_1_0 = 5.
+def o, d, t: Real
+def o_0 = 5.
+def I = 2.5
+def D = 0.5
 
 def rbody = {
-  def I = 2.5
-  def D = 0.5
-  def ref, r1, r2, r3: Dyn;
-  Body I o_1_0 r1 r2;
-  Damper D o_1_0 r2 r3;
-  TorqueSensor t r1 r2;
-  AngularVelocitySensor o_1 r3 r1
+  def r1, r2, r3: Dyn;
+  Body I o_0 r1 r2;
+  Damper D r2 r3;
+  TorqueSensor t r1 r3;
+  AngularVelocitySensor o r3 r1
 }
 
-def monitored = [(o_1, "omega"), (t, "tau")]
+def monitored = [(o, "omega"), (t, "tau")]
 
 def main =
   def sr = pprintSimulation (simulatemebml rbody 0. 0.1 6.0 monitored);

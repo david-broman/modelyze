@@ -419,8 +419,12 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
   def B = getAcrossMatrix A;
   def _ = llog "Circuit Matrix (B)" (pp B);
   def fvec = list_to_map (map ff (Map.toList nvm));
+  def _ = llog "we have flow vec:" fvec;
   def evec = list_to_map (map fe (Map.toList nvm));
+  def _ = llog "and effort vec:" evec;
   def floweqs = matrixVMapToEquations A fvec;
+  def _ = llog "flow eqs:" floweqs;
   def circeqs = matrixVMapToEquations B evec;
+  def _ = llog "circ eqs:" circeqs;
   union floweqs circeqs
 }

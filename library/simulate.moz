@@ -26,6 +26,7 @@ include simoutput
 def ctsim(dt: Real, tend: Real, probes: [<Real>], f: F, L: Set(<Real>))
   -> ([StepVal], Real, VMap, SolverResult) = {
 
+  def llog = logger "ctsim" DEBUG;
   def (_, _, t0) = f;
   def (resf, nroots, rootf, yy, yp, vids, ukm) =
     get_dae_solver_input f L 0.;
@@ -48,6 +49,8 @@ def ctsim(dt: Real, tend: Real, probes: [<Real>], f: F, L: Set(<Real>))
     def accp = (eval(t))::acc;
     if sr == SolverResultsSuccess then {
         def (tp, srp) = (DAESolver.solve_normal mm (t + dt) yy yp);
+        def _ = llog "time:" tp;
+        def _ = llog "yy:" yy;
         go(tp, srp, accp)
     } else (t, sr, accp)
   };

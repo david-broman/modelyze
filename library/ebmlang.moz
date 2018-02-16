@@ -67,9 +67,15 @@ def findiv(f: F) -> (VMap, Real) = {
 }
 
 def M_f(s: Equations, t: Real) -> F = {
+  def llog = logger "M_f" DEBUG;
   def (E, mu, G) = M_s s (Set.empty, Map.empty, Set.empty);
+  def _ = llog "initial eqs:" E;
   def Ep = elabtopol G;
+  def _ = llog "topol eqs:" Ep;
   def Epp = indexred (union Ep E);
+  def _ = llog "after ir" Epp;
   def (mup, tp) = findiv (Epp, mu, t);
+  def _ = llog "before findiv" mu;
+  def _ = llog "after findiv" mup;
   (Epp, mup, tp)
 }

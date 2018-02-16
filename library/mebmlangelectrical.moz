@@ -18,19 +18,14 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include Physical
-include MEBMLANG
+include MEBMLANGPhysical
 
 def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
-  def u_S: Voltage;
-  Branch i u_S p n;
-  u_S = 0.
+  FlowSensor i p n
 }
 
 def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
-  def i_S: Current;
-  Branch i_S u p n;
-  i_S = 0.
+  EffortSensor u p n
 }
 
 def ResistorDebug(R: Real, p: Electrical, n: Electrical,

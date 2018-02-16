@@ -56,7 +56,7 @@ def S_m(m: Equations, mu: VMap) -> Equations = {
       if inside (M_l l) mu then switch (S_m m_1 mu) m_2 l
       else m_2()
     }
-  | nilp _ -> m  // TODO: fix matching on nil
+  | nilp _ -> m
   | _ -> error "Unmatched pattern in S_m"
 }
 
@@ -108,8 +108,6 @@ def M_m_debug(t0: Real, m: Equations, mu: VMap, tau: T) -> M = {
   def L = M_l l;
   def f = M_f s t;
   def (E, mup, tp) = f;
-  def _ = llog "after elaboration of topology:" (set_to_cont E);
-  def _ = llog "with the following ivs:" mup;
   (mp, f, L, (tp, n + 1))
 }
 

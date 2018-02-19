@@ -17,16 +17,16 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
         Diode-Inductor Circuit
 
-        + -                  +  -
-    1 -- R -- 2 -- TS -- 3 -- CS -- 4
-    |                   -|          |
-    |                    D          |
-   +|                   +|          |+
-    V                    6          L
-   -|                   -|          |-
-    |                    CS         |
-    |                   +|          |
-    ---------------------5-----------
+
+    1 -- TS -- 2 ----------
+    |          |          |+
+    |          |          L
+   +|          |+         |-
+    V          D          3
+   -|          |-         |+
+    |          |          R
+    |          |          |-
+    -----------4-----------
 
 written by Oscar Eriksson oerikss@kth.se
 */
@@ -35,30 +35,25 @@ include MEBMLANGElectrical
 include Simulate
 
 def u_L, i_D, i: Real
-def u_Dd, i_Dd: Real
+def u_Dd, i_Dd, u_Ld, i_Ld, u_Rd, i_Rd: Real
 def V = 1.
-def R = 1.
+def R = 0.01
 def L = 1.
 def t_break = 3.
 def i_L0 = 0.
 def fbias = 0.7
 
 def flybackDiode = {
-  def n1, n2, n3, n4, n5, n6: Electrical;
-  ConstantVoltageSource V n1 n5;
-  Resistor R n1 n2;
-  TimedSwitch true t_break n2 n3;
-  CurrentSensor i n3 n4;
-  Inductor L i_L0 n4 n5;
-  VoltageSensor u_L n4 n5
-  // CurrentSensor i_D n5 n6;
-  // DiodeDebug false fbias n6 n3 i_Dd u_Dd
-  // SafeDiodeDebug false fbias n6 n3 i_Dd u_Dd
+  def n1, n2, n3, n4: Electrical;
+  ConstantVoltageSource V n1 n4;
+  TimedSwitch true t_break n1 n2;
+  InductorDebug L i_L0 n2 n3 i_Ld u_Ld;
+  ResistorDebug R n3 n4 i_Rd u_Rd;
+  DiodeDebug false fbias n4 n2 i_Dd u_Dd
 }
 
 def monitored =
-  [(i_Dd, "i_D"), (u_Dd, "u_D"), (u_L, "u_L"), (i, "i")]
-     // [(i_Dd, "i_D"), (u_Dd, "u_D")]
+  [(u_Dd, "u_D"), (i_Dd, "i_D"), (u_Ld, "u_L"), (i_Ld, "i_L"), (u_Rd, "u_R"), (i_Rd, "i_R")]
 
 // def main =
 //   print(pprintSimulation (simulatemebml flybackDiode 0. 0.05 4.35 monitored))

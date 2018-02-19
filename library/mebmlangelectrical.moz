@@ -20,10 +20,12 @@ written by Oscar Eriksson oerikss@kth.se
 
 include MEBMLANGPhysical
 
+// Positive current is defined to be moving from the positive to the negative node
 def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
   FlowSensor i p n
 }
 
+// The potential difference between n and p is pot at p minus pot at n
 def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
   EffortSensor u p n
 }
@@ -38,7 +40,8 @@ def ResistorDebug(R: Real, p: Electrical, n: Electrical,
 def ConstantVoltageSourceDebug(V: Real, p: Electrical, n: Electrical,
   i_V: Current, u_V: Voltage) = {
 
-  Branch i_V u_V p n;
+  // A source drives current from high to low potential
+  Branch i_V u_V n p;
   init u_V V;
   reinit u_V u_V;
   u_V = V
@@ -61,24 +64,50 @@ def InductorDebug(L: Real, i0: Real, p: Electrical, n: Electrical,
   L * (der i_L) = u_L
 }
 
-def DiodeDebug(forward: Bool, fbias: Real, rbias: Real,
+def DiodeDebug(forward: Bool, fbias: Real,
   p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
 
   def d(forward: Bool) -> Equations = {
     if forward then
       switch
-        (u_D = fbias)
+        (reinit u_D fbias; reinit i_D 0.; u_D = fbias)
         (fun t:() -> d(false))
         ([i_D])
     else
       switch
-        (i_D = rbias)
+        (reinit i_D 0.; reinit u_D 0.; i_D = 0.)
+        (fun t: () -> d(true))
+        ([-u_D + fbias])
+  };
+
+  Branch i_D u_D p n;
+  d(forward)
+}
+
+def SafeDiodeDebug(forward: Bool, fbias: Real,
+  p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
+
+  def d(forward: Bool) -> Equations = {
+    if forward then
+      SafeSwitch
+        (reinit u_D fbias; reinit i_D 0.; u_D = fbias)
+        (fun t:() -> d(false))
+        ([i_D])
+        (fun t: () -> u_D = 0.)
+        ([u_D])
+    else
+      // SafeSwitch
+      //   (reinit i_D 0.; reinit u_D 0.; i_D = 0.)
+      //   (fun t: () -> d(true))
+      //   ([-u_D])
+      //   (fun t: () -> i_D = 0.)
+      //   ([])
+      switch
+        (reinit i_D 0.; reinit u_D 0.; i_D = 0.)
         (fun t: () -> d(true))
         ([-u_D])
   };
 
-  reinit u_D u_D;
-  reinit i_D i_D;
   Branch i_D u_D p n;
   d(forward)
 }
@@ -109,6 +138,13 @@ def TimedSwitchDebug(closed: Bool, tb: Real, p: Electrical, n: Electrical,
   s(closed)
 }
 
+def Conductor(p: Electrical, n: Electrical) = {
+  def i: Current;
+  def u: Voltage;
+  Branch i u p n;
+  u = 0.
+}
+
 def Resistor(R: Real, p: Electrical, n: Electrical) = {
   def i_R: Current;
   def u_R: Voltage;
@@ -133,12 +169,20 @@ def Inductor(L: Real, i0: Real, p: Electrical, n: Electrical) = {
   InductorDebug L i0 p n i_L u_L
 }
 
-def Diode(forward: Bool, fbias: Real, rbias: Real,
+def Diode(forward: Bool, fbias: Real,
   p: Electrical, n: Electrical) = {
 
   def i_D: Current;
   def u_D: Voltage;
-  DiodeDebug forward fbias rbias p n i_D u_D
+  DiodeDebug forward fbias p n i_D u_D
+}
+
+def SafeDiode(forward: Bool, fbias: Real,
+  p: Electrical, n: Electrical) = {
+
+  def i_D: Current;
+  def u_D: Voltage;
+  SafeDiodeDebug forward fbias p n i_D u_D
 }
 
 def TimedSwitch(closed: Bool, tb: Real, p: Electrical, n: Electrical) = {

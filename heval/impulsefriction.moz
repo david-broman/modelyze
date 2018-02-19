@@ -84,6 +84,6 @@ def body(x: <Real>, y: <Real>) = {
 
 def main =
   def x, y: Real;
-  def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (Ix, "Ix")];
-  // def monitored = [(Ix, "Ix")];
+  // def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (Ix, "Ix")];
+  def monitored = [(vx, "vx"), (vy, "vy"), (Ix, "Ix")];
   print(pprintSimulation (simulatemebmlDebug (body x y) 0. 0.1 6.0 monitored 10))

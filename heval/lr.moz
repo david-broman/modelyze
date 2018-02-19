@@ -17,39 +17,29 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 written by Oscar Eriksson oerikss@kth.se
 
-     The LCD Circuit
-
-           + -
-       1 -- D -- 2
-    -  |         | +
-      CS         C
-    +  |         | -
-       4 -- L -- 3
-           - +
 */
 
 include MEBMLANGElectrical
 include Simulate
 
-def C = 1.
-def L = 1.
-def u_D, u_C, u_L, i: Real
-def u_Dd, u_Cd, u_Ld, i_Dd, i_Cd, i_Ld: Real
+def i_L, u_L, i_V, u_V, i_R, u_R: Real
 
-def LCD = {
+def L = 0.3
+def R = 0.6
+def V = 1.
+
+def LR = {
   def n1, n2, n3, n4: Electrical;
-  // SafeDiode true 0. n1 n2;
-  Diode true 0. n1 n2;
-  Capacitor C (-1.) n2 n3;
-  Inductor L 1. n3 n4;
-  CurrentSensor i n4 n1;
-  VoltageSensor u_D n1 n2;
-  VoltageSensor u_C n2 n3;
-  VoltageSensor u_L n3 n4
+  ConstantVoltageSourceDebug V n3 n1 i_V u_V;
+  ResistorDebug R n1 n2 i_R u_R;
+  InductorDebug L 0. n2 n3 i_L u_L
 }
 
 def monitored =
-  [(i, "i"), (u_D, "w"), (u_C, "v"), (u_L, "u")]
+  [(i_V, "i_V"), (u_V, "u_V"),
+  (i_R, "i_R"), (u_R, "u_R"),
+  (i_L, "i_L"), (u_L, "u_L")]
 
 def main =
-  print(pprintSimulation (simulatemebml LCD 0. 0.1 4.0 monitored))
+  print(pprintSimulation (simulatemebml LR 0. 0.1 4.0 monitored))
+

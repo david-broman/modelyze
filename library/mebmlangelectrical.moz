@@ -34,6 +34,8 @@ def ResistorDebug(R: Real, p: Electrical, n: Electrical,
   i_R: Current, u_R: Voltage) = {
 
   Branch i_R u_R p n;
+  reinit i_R i_R;
+  reinit u_R u_R;
   u_R = R * i_R
 }
 
@@ -44,6 +46,7 @@ def ConstantVoltageSourceDebug(V: Real, p: Electrical, n: Electrical,
   Branch i_V u_V n p;
   init u_V V;
   reinit u_V u_V;
+  reinit i_V i_V;
   u_V = V
 }
 
@@ -53,6 +56,7 @@ def CapacitorDebug(C: Real, u0: Real, p: Electrical, n: Electrical,
   Branch i_C u_C p n;
   init u_C u0;
   reinit u_C u_C;
+  reinit i_C i_C;
   C * (der u_C) = i_C
 }
 
@@ -61,49 +65,38 @@ def InductorDebug(L: Real, i0: Real, p: Electrical, n: Electrical,
   Branch i_L u_L p n;
   init i_L i0;
   reinit i_L i_L;
+  reinit u_L u_L;
   L * (der i_L) = u_L
 }
 
 def DiodeDebug(forward: Bool, fbias: Real,
   p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
 
-  def d(forward: Bool) -> Equations = {
-    if forward then
-      switch
-        (reinit u_D fbias; reinit i_D 0.; u_D = fbias)
-        (fun t:() -> d(false))
-        ([i_D])
-    else
-      switch
-        (reinit i_D 0.; reinit u_D 0.; i_D = 0.)
-        (fun t: () -> d(true))
-        ([-u_D + fbias])
+  def fmodel = {
+    u_D = fbias;
+    switch
+      (reinit i_D i_D; reinit u_D u_D)
+      (fun t: () -> reinit i_D 0.; reinit u_D (-(abs u_D)))
+      ([i_D])
   };
 
-  Branch i_D u_D p n;
-  d(forward)
-}
-
-def SafeDiodeDebug(forward: Bool, fbias: Real,
-  p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
+  def rmodel = {
+    i_D = 0.;
+    switch
+      (reinit i_D i_D; reinit u_D u_D)
+      (fun t: () -> reinit i_D (abs i_D); reinit u_D fbias)
+      ([-u_D])
+  };
 
   def d(forward: Bool) -> Equations = {
     if forward then
-      SafeSwitch
-        (reinit u_D fbias; reinit i_D 0.; u_D = fbias)
+      switch
+        fmodel
         (fun t:() -> d(false))
         ([i_D])
-        (fun t: () -> u_D = 0.)
-        ([u_D])
     else
-      // SafeSwitch
-      //   (reinit i_D 0.; reinit u_D 0.; i_D = 0.)
-      //   (fun t: () -> d(true))
-      //   ([-u_D])
-      //   (fun t: () -> i_D = 0.)
-      //   ([])
       switch
-        (reinit i_D 0.; reinit u_D 0.; i_D = 0.)
+        rmodel
         (fun t: () -> d(true))
         ([-u_D])
   };
@@ -112,7 +105,7 @@ def SafeDiodeDebug(forward: Bool, fbias: Real,
   d(forward)
 }
 
-def TimedSwitchDebug(closed: Bool, tb: Real, p: Electrical, n: Electrical,
+def TimedSwitchDebug(is_closed: Bool, tb: Real, p: Electrical, n: Electrical,
   i_TS: Current, u_TS: Voltage) = {
 
   def Clock(t: <Real>) = {
@@ -122,20 +115,26 @@ def TimedSwitchDebug(closed: Bool, tb: Real, p: Electrical, n: Electrical,
   };
 
   def t: Real;
-  def s(closed: Bool) -> Equations = {
-    if closed then
+  def closed = {
+    reinit i_TS i_TS;
+    reinit u_TS u_TS;
+    Branch i_TS u_TS p n;
+    u_TS = 0.
+  };
+  def s(is_closed: Bool) -> Equations = {
+    if is_closed then
       switch
-        (u_TS = 0.; Branch i_TS u_TS p n)
+        (closed)
         (fun t: () -> nilp ())
         ([tb - t])
     else
       switch
         (nilp ())
-        (fun t: () -> u_TS = 0.; Branch i_TS u_TS p n)
+        (fun t: () -> closed)
         ([tb - t])
   };
   Clock(t);
-  s(closed)
+  s(is_closed)
 }
 
 def Conductor(p: Electrical, n: Electrical) = {
@@ -177,16 +176,8 @@ def Diode(forward: Bool, fbias: Real,
   DiodeDebug forward fbias p n i_D u_D
 }
 
-def SafeDiode(forward: Bool, fbias: Real,
-  p: Electrical, n: Electrical) = {
-
-  def i_D: Current;
-  def u_D: Voltage;
-  SafeDiodeDebug forward fbias p n i_D u_D
-}
-
-def TimedSwitch(closed: Bool, tb: Real, p: Electrical, n: Electrical) = {
+def TimedSwitch(is_closed: Bool, tb: Real, p: Electrical, n: Electrical) = {
   def i_TS: Current;
   def u_TS: Voltage;
-  TimedSwitchDebug closed tb p n i_TS u_TS
+  TimedSwitchDebug is_closed tb p n i_TS u_TS
 }

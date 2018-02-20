@@ -111,6 +111,7 @@ def set_to_cont(set: Set(Equations)) -> Equations = {
 
 def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   (UkMap, VarArray, VarArray) = {
+  def llog = logger "E_vmap_to_ukmap_yy_yp" DEBUG;
   def (n, ukm) = realUnknowns (set_to_cont E);
   def yy = (Array.make n undefval);
   def yp = (Array.make n undefval);
@@ -126,6 +127,7 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
         def (ee, v) = e;
         def (x, a) = get_uk_and_arr ee;
         def (i, _) = {
+            def _ = llog "variable:" x;
             if (Map.mem x ukm) then (Map.find x ukm)
             else error "expected to find var in ukm"
           };

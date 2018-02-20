@@ -18,6 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
+//include Elaboration
 include GraphElaboration
 include EBMLANGHelpers
 include IndexReduction
@@ -47,13 +48,20 @@ def M_s(s: Equations, sp: S) -> S = {
 }
 
 def elabtopol(G: Set(?)) -> Set(Equations) = {
-  if (Set.size G) == 0 then Set.empty else
-    // cont_to_set (elaborateConnections (set_to_cont G))
-    elaboratetopology G
+  def llog = logger "elabtopol" DEBUG;
+  def _ = llog "before:" (set_to_cont G);
+  def E = { if (Set.size G) == 0 then Set.empty else
+    // cont_to_set (elaborateConnections (set_to_cont G)) };
+    elaboratetopology G };
+  def _ = llog "after:" (set_to_cont E);
+  E
 }
 
 def indexred(E: Set(Equations)) -> Set(Equations) = {
+  def llog = logger "indexred" DEBUG;
+  def _ = llog "before ir" (set_to_cont E);
   def (Ep, dmap) = indexReducationPantelides (set_to_cont E) (Map.empty);
+  def _ = llog "after ir" Ep;
   cont_to_set Ep
 }
 
@@ -71,9 +79,7 @@ def M_f(s: Equations, t: Real) -> F = {
   def (E, mu, G) = M_s s (Set.empty, Map.empty, Set.empty);
   def _ = llog "initial eqs:" E;
   def Ep = elabtopol G;
-  def _ = llog "topol eqs:" Ep;
   def Epp = indexred (union Ep E);
-  def _ = llog "after ir" Epp;
   def (mup, tp) = findiv (Epp, mu, t);
   def _ = llog "before findiv" mu;
   def _ = llog "after findiv" mup;

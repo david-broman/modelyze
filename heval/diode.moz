@@ -38,8 +38,7 @@ def u_Dd, u_Cd, u_Ld, i_Dd, i_Cd, i_Ld: Real
 
 def LCD = {
   def n1, n2, n3, n4: Electrical;
-  // SafeDiode true 0. n1 n2;
-  Diode true 0. n1 n2;
+  DiodeDebug true 0. n1 n2 i_Dd u_Dd;
   Capacitor C (-1.) n2 n3;
   Inductor L 1. n3 n4;
   CurrentSensor i n4 n1;
@@ -49,7 +48,8 @@ def LCD = {
 }
 
 def monitored =
-  [(i, "i"), (u_D, "w"), (u_C, "v"), (u_L, "u")]
+  //[(i, "i"), (u_D, "w"), (u_C, "v"), (u_L, "u")]
+  [(i_Dd, "i_D"), (u_Dd, "u_D")]
 
 def main =
-  print(pprintSimulation (simulatemebml LCD 0. 0.1 4.0 monitored))
+  print(pprintSimulation (simulatemebmlDebug LCD 0. 0.1 4.0 monitored 100))

@@ -30,6 +30,15 @@ def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
   EffortSensor u p n
 }
 
+def Conductor(p: Electrical, n: Electrical) = {
+  def i_Co: Current;
+  def u_Co: Voltage;
+  reinit i_Co i_Co;
+  reinit u_Co u_Co;
+  Branch i_Co u_Co p n;
+  u_Co = 0.
+}
+
 def ResistorDebug(R: Real, p: Electrical, n: Electrical,
   i_R: Current, u_R: Voltage) = {
 
@@ -105,8 +114,9 @@ def DiodeDebug(forward: Bool, fbias: Real,
   d(forward)
 }
 
-def TimedSwitchDebug(is_closed: Bool, tb: Real, p: Electrical, n: Electrical,
-  i_TS: Current, u_TS: Voltage) = {
+def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
+
+  def t: Real;
 
   def Clock(t: <Real>) = {
     init t 0.;
@@ -114,34 +124,21 @@ def TimedSwitchDebug(is_closed: Bool, tb: Real, p: Electrical, n: Electrical,
     der t = 1.
   };
 
-  def t: Real;
-  def closed = {
-    reinit i_TS i_TS;
-    reinit u_TS u_TS;
-    Branch i_TS u_TS p n;
-    u_TS = 0.
-  };
   def s(is_closed: Bool) -> Equations = {
     if is_closed then
       switch
-        (closed)
+        (Conductor p n)
         (fun t: () -> nilp ())
-        ([tb - t])
+        ([tflip - t])
     else
       switch
         (nilp ())
-        (fun t: () -> closed)
-        ([tb - t])
+        (fun t: () -> Conductor p n)
+        ([tflip - t])
   };
+
   Clock(t);
   s(is_closed)
-}
-
-def Conductor(p: Electrical, n: Electrical) = {
-  def i: Current;
-  def u: Voltage;
-  Branch i u p n;
-  u = 0.
 }
 
 def Resistor(R: Real, p: Electrical, n: Electrical) = {
@@ -176,8 +173,3 @@ def Diode(forward: Bool, fbias: Real,
   DiodeDebug forward fbias p n i_D u_D
 }
 
-def TimedSwitch(is_closed: Bool, tb: Real, p: Electrical, n: Electrical) = {
-  def i_TS: Current;
-  def u_TS: Voltage;
-  TimedSwitchDebug is_closed tb p n i_TS u_TS
-}

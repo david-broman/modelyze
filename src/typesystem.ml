@@ -50,6 +50,7 @@ let rec meet ty_a ty_b =
     | TySet(fi,_,ty1),TySet(_,_,ty2) ->
         TySet(fi,0,meet ty1 ty2)
     | TyDAESolver(fi,_),TyDAESolver(_,_) -> TyDAESolver(fi,0)
+    | TyNLEQSolver(fi,_),TyNLEQSolver(_,_) -> TyNLEQSolver(fi,0)
     | _ , _ -> failwith "Meet error. Should not happen."
 
 let rec consistent ty_a ty_b =
@@ -78,6 +79,7 @@ let rec consistent ty_a ty_b =
     | TySet(fi,_,ty1),TySet(_,_,ty2) ->
         consistent ty1 ty2
     | TyDAESolver(fi,_),TyDAESolver(_,_) -> true
+    | TyNLEQSolver(fi,_),TyNLEQSolver(_,_) -> true
     | _ , _ ->  false
 
 (* Remove the symbol type, if it is symbol type *)
@@ -150,6 +152,12 @@ let check_istype_daesolver fi l ty_daesolver =
     | TyDyn(_,_) -> ()
     | _ -> raise (Mkl_type_error(TYPE_EXPECTED_DAESOLVER_TYPE,ERROR,fi,[pprint_ty ty_daesolver]))
 
+let check_istype_nleqsolver fi l ty_nleqsolver =
+  match ty_nleqsolver with
+    | TyNLEQSolver(_,l') when l = l' -> ()
+    | TyDyn(_,_) -> ()
+    | _ -> raise (Mkl_type_error(TYPE_EXPECTED_NLEQSOLVER_TYPE,ERROR,fi,[pprint_ty ty_nleqsolver]))
+
 let check_istype_int fi l ty_int =
   match ty_int with
     | TyInt(_,l') when l = l' -> ()
@@ -168,6 +176,11 @@ let check_istype_resroot fi l ty_residual =
                TyArrow(fi,l,TyArray(fi,l,TyReal(fi,l)), TyList(fi,l,TyReal(fi,l))))) in
    if not (consistent tyexp ty_residual) then
         raise (Mkl_type_error(TYPE_EXPECTED_RESROOT_TYPE,ERROR,fi,[pprint_ty tyexp; pprint_ty ty_residual]))
+
+let check_istype_sysfun fi l ty_sysfun =
+  let tyexp = TyArrow(fi,l,TyArray(fi,l,TyReal(fi,l)), TyList(fi,l,TyReal(fi,l))) in
+  if not (consistent tyexp ty_sysfun) then
+    raise (Mkl_type_error(TYPE_EXPECTED_SYSFUN_TYPE,ERROR,fi,[pprint_ty tyexp; pprint_ty ty_sysfun]))
 
 (*
 let check_arg_type_consistency fi ty' ty_elem =
@@ -414,6 +427,29 @@ and typeof_daesolver_op fi l op ts env  =
      check_istype_real (tm_info tstep) l ty_tstep;
      (TyUnit(NoInfo,l),
       [tmres';tstep;t0';ar_yy';ar_yyfix';ar_yvarid';ar_yynew';ar_ypnew'])
+
+  | _ -> raise (Mkl_type_error
+	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
+                   [ustring_of_int (List.length ts)]))
+
+
+and typeof_nleqsolver_op fi l op ts env  =
+  match op,ts with
+  | NLEQSolverOpInit,[tmsysfun;ar_u] ->
+     let (ty_tmsysfun,tmsysfun') = typeof_pure env tmsysfun in
+     let (ty_ar_u, ar_u') = typeof_pure env ar_u in
+     let ty_ar_u' = check_istype_array (tm_info ar_u) l ty_ar_u in
+     check_istype_real (tm_info ar_u) l ty_ar_u';
+     check_istype_sysfun (tm_info tmsysfun) l ty_tmsysfun;
+     (TyNLEQSolver(fi,l),[tmsysfun';ar_u'])
+
+  | NLEQSolverOpSolve,[kin;ar_u] ->
+     let (ty_kin,kin') = typeof_pure env kin in
+     let (ty_ar_u, ar_u') = typeof_pure env ar_u in
+     let ty_ar_u' = check_istype_array (tm_info ar_u) l ty_ar_u in
+     check_istype_nleqsolver (tm_info kin) l ty_kin;
+     check_istype_real (tm_info ar_u) l ty_ar_u';
+     (TyInt(NoInfo,l),[ar_u'])
 
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
@@ -668,7 +704,10 @@ and typeof_pure env t =
             (ty',TmSetOp(fi,l,op,ts'))
       | TmDAESolverOp(fi,l,op,ts) ->
           let (ty',ts') = typeof_daesolver_op fi l op ts env  in
-            (ty',TmDAESolverOp(fi,l,op,ts'))
+          (ty',TmDAESolverOp(fi,l,op,ts'))
+      | TmNLEQSolverOp(fi,l,op,ts) ->
+          let (ty',ts') = typeof_nleqsolver_op fi l op ts env  in
+            (ty',TmNLEQSolverOp(fi,l,op,ts'))
       | TmDPrint(t) -> let (ty,t') = typeof_pure env  t in (ty,TmDPrint(t'))
       | TmDPrintType(t) -> let (ty,t') = typeof_pure env  t in (ty,TmDPrintType(t'))
       | TmSymStr(fi,t) -> let (ty,t') = typeof_pure env  t in

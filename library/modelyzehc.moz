@@ -100,8 +100,8 @@ def evalFromMap(expr:Expr, valmap:InitValMap) -> Real = {
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
-// Redefines the evalFromArray in ModelyzeDAE
-def evalFromArray(use_epsilon:Bool, expr:Expr, ukmap:UkMap,
+// Redefines the evalFromArrays in ModelyzeDAE
+def evalFromArrays(use_epsilon:Bool, expr:Expr, ukmap:UkMap,
                   yy:{Real}, yp:{Real}) -> Real = {
   def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
   def yyfun_epsilon(s:Signal) -> Signal = {
@@ -117,7 +117,7 @@ def evalFromArray(use_epsilon:Bool, expr:Expr, ukmap:UkMap,
 
 // Evaluate an expression that is assumed to have type Bool.
 def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap) -> Bool = {
-  def evalReal(expr:Expr) -> Real = evalFromArray(true,expr,ukmap,yy,yp);
+  def evalReal(expr:Expr) -> Real = evalFromArrays(true,expr,ukmap,yy,yp);
   def evalBool(expr:Expr) -> Bool = {
     match expr with
     | e1 == e2 -> error "Not allowed to compare for equality in transitions."
@@ -145,10 +145,10 @@ def makeRootFun(ukmap:UkMap, trans:Transitions, ctime:Real, yy:{Real}, yp:{Real}
     match e with
     | e1 == e2 -> error "Operator == is not allowed in a transition guard."
     | e1 != e2 -> error "Operator != is not allowed in a transition guard."
-    | e1 >= e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
-    | e1 > e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
-    | e1 <= e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
-    | e1 < e2 -> evalFromArray(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 >= e2 -> evalFromArrays(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 > e2 -> evalFromArrays(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 <= e2 -> evalFromArrays(false,e1-e2,ukmap,yy,yp)::acc
+    | e1 < e2 -> evalFromArrays(false,e1-e2,ukmap,yy,yp)::acc
     | !e1 -> travGuard(e,acc)
     | e1 && e2 -> travGuard(e2,travGuard(e1,acc))
     | e1 || e2 -> travGuard(e2,travGuard(e1,acc))
@@ -225,7 +225,7 @@ def addTransinits(yymap:InitValMap, inits:[Equations], yy:{Real}, yp:{Real}, ukm
     def addInitVals(vals:InitValList, acc:InitValMap) -> InitValMap = {
         match vals with
         | (x,e)::ss -> {
-              def v = evalFromArray(true, e, ukmap, yy, yp);
+              def v = evalFromArrays(true, e, ukmap, yy, yp);
               addInitVals(ss,Map.add x v acc);
           }
         | [] -> acc

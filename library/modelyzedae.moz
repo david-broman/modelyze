@@ -39,7 +39,7 @@ def eval(e:<Dyn>,yy:Vars,yp:Vars) -> Dyn = {
 
 // Evaluate an expression of real type. The unknowns in the
 // expression are looked up in yy and yp arrays.
-def evalFromArray(expr:Expr, ukmap:UkMap, yy:{Real}, yp:{Real}) -> Real = {
+def evalFromArrays(expr:Expr, ukmap:UkMap, yy:{Real}, yp:{Real}) -> Real = {
   def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
   def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
   eval(expr,yyfun,ypfun);
@@ -47,7 +47,7 @@ def evalFromArray(expr:Expr, ukmap:UkMap, yy:{Real}, yp:{Real}) -> Real = {
 
 // Create the residual function of the DAE. Used by IDA/Sundials.
 def makeResidual(ukmap:UkMap, model:Equations, ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = {
-  def realExpr(expr:Expr) = evalFromArray(expr,ukmap,yy,yp);
+  def realExpr(expr:Expr) = evalFromArrays(expr,ukmap,yy,yp);
   def traverseEq(m:Equations,acc:[Real]) -> [Real] = {
     match m with
     | e1 ; e2 -> traverseEq(e2,traverseEq(e1,acc))
@@ -79,11 +79,11 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
 
 
 def initConditionCorrection(ukmap:UkMap) -> {Varid} = {
-  def id = {Array.make (Map.size ukmap) varidAlgebraic};
+  def id = {Array.make (Map.size ukmap) DAEVaridAlgebraic};
   def worker(uklist:[(Signal,(Int,Bool))]) -> {Varid} = {
     match uklist with
     | (u,(i,true))::us -> {
-         def _ = (Array.set id i varidDifferential);
+         def _ = (Array.set id i DAEVaridDifferential);
          worker us;
       }
     | _::us -> worker us
@@ -148,7 +148,7 @@ def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
   def simloop(t: Time, acc: [StepVal]) -> [StepVal] = {
     def (tnew, res) = daeDoStep(state, t + steptime);
     def stepval = (tnew, getProbeVals(probelist, daeGet(state)));
-    if res == SolverResultStopTimeReached then acc
+    if res == DAESolverResultStopTimeReached then acc
     else simloop(tnew, stepval::acc)
   };
   (makeProbeNames("",probelist), reverse(simloop(0.,[stepval])))

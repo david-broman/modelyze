@@ -79,11 +79,11 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
 
 
 def initConditionCorrection(ukmap:UkMap) -> {Varid} = {
-  def id = {Array.make (Map.size ukmap) DAEVaridAlgebraic};
+  def id = { Array.make (Map.size ukmap) DAE_VARID_ALGEBRAIC };
   def worker(uklist:[(Signal,(Int,Bool))]) -> {Varid} = {
     match uklist with
     | (u,(i,true))::us -> {
-         def _ = (Array.set id i DAEVaridDifferential);
+         def _ = (Array.set id i DAE_VARID_DIFFERENTIAL);
          worker us;
       }
     | _::us -> worker us
@@ -108,7 +108,7 @@ def daeInit(model:Equations) -> (State,ProbeMap) = {
     def (yy,yp) = makeInitValues(model3, ukmap);
     def id = initConditionCorrection(ukmap);
     def solverState = (DAESolver.init residual 0. yy yp);
-    def _ = (DAESolver.calc_ic_ya_ydp solverState id yy yp 0.00000001);
+    def _ = (DAESolver.calcIcYaYdp solverState id yy yp 0.00000001);
     ((solverState, yy, yp, ukmap), probes);
 }
 
@@ -116,7 +116,7 @@ def daeInit(model:Equations) -> (State,ProbeMap) = {
 def daeDoStep(state: State, tnext: Time) -> (Time, SolverResult) = {
     def (solverState, yy, yp, _) = state;
     def (newtime,res) =
-      (DAESolver.solve_normal solverState tnext yy yp);
+      (DAESolver.solveNormal solverState tnext yy yp);
     (newtime, res)
 }
 
@@ -141,14 +141,14 @@ def daeGetAsStr(state:State, var:<Real>) -> String = {
 def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
   def (state, probes) = daeInit(model);
   def (solverState, yy, yp, ukmap) = state;
-  def _ = (DAESolver.set_stop_time solverState endtime);
+  def _ = (DAESolver.setStopTime solverState endtime);
   def probelist = (Map.toList probes);
   def stepval = (0., getProbeVals(probelist, daeGet(state)));
 
   def simloop(t: Time, acc: [StepVal]) -> [StepVal] = {
     def (tnew, res) = daeDoStep(state, t + steptime);
     def stepval = (tnew, getProbeVals(probelist, daeGet(state)));
-    if res == DAESolverResultStopTimeReached then acc
+    if res == DAE_SOLVER_RESULT_STOP_TIME_REACHED then acc
     else simloop(tnew, stepval::acc)
   };
   (makeProbeNames("",probelist), reverse(simloop(0.,[stepval])))

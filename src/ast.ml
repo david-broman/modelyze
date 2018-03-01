@@ -397,13 +397,13 @@ and pprint_set_op op =
 and pprint_daesolver_op op =
   match op with
   | DAESolverOpInit -> us"init"
-  | DAESolverOpInitWithRootf -> us"init_with_rootf"
-  | DAESolverOpCalcICYYYP -> us"calc_ic_ya_ydp"
-  | DAESolverOpSolveNormal -> us"solve_normal"
+  | DAESolverOpInitWithRootf -> us"initWithRootf"
+  | DAESolverOpCalcICYYYP -> us"calcIcYaYdp"
+  | DAESolverOpSolveNormal -> us"solveNormal"
   | DAESolverOpReinit -> us"reinit"
-  | DAESolverOpRootInfo -> us"get_root_info"
-  | DAESolverOpSetStopTime -> us"set_stop_time"
-  | DAESolverOpCalcICWithFixed -> us"calc_ic_with_fixed"
+  | DAESolverOpRootInfo -> us"getRootInfo"
+  | DAESolverOpSetStopTime -> us"setStopTime"
+  | DAESolverOpCalcICWithFixed -> us"calcIcWithFixed"
 
 and pprint_nleqsolver_op op =
   match op with
@@ -1167,13 +1167,13 @@ let mk_daesolverop fi sid =
   let s = Symtbl.get sid in
   match Ustring.to_latin1 s with
   | "init" -> DAESolverOpInit
-  | "init_with_rootf" -> DAESolverOpInitWithRootf
-  | "calc_ic_ya_ydp" -> DAESolverOpCalcICYYYP
-  | "solve_normal" -> DAESolverOpSolveNormal
+  | "initWithRootf" -> DAESolverOpInitWithRootf
+  | "calcIcYaYdp" -> DAESolverOpCalcICYYYP
+  | "solveNormal" -> DAESolverOpSolveNormal
   | "reinit" -> DAESolverOpReinit
-  | "get_root_info" -> DAESolverOpRootInfo
-  | "set_stop_time" -> DAESolverOpSetStopTime
-  | "calc_ic_with_fixed" -> DAESolverOpCalcICWithFixed
+  | "getRootInfo" -> DAESolverOpRootInfo
+  | "setStopTime" -> DAESolverOpSetStopTime
+  | "calcIcWithFixed" -> DAESolverOpCalcICWithFixed
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
 let mk_nleqsolverop fi sid =

@@ -27,8 +27,8 @@ type M = (Equations, F, Set(<Real>), T)
 def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
 
 def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
-  def subsetleft = for_all (fun e: ? -> (Set.mem e rhs)) (Set.toList lhs);
-  def subsetright = for_all (fun e: ? -> (Set.mem e lhs)) (Set.toList rhs);
+  def subsetleft = forAll (fun e: ? -> (Set.mem e rhs)) (Set.toList lhs);
+  def subsetright = forAll (fun e: ? -> (Set.mem e lhs)) (Set.toList rhs);
   subsetleft && subsetright
 }
 
@@ -146,7 +146,7 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
     def (x, (i, _)) = e;
     Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
   };
-  fold_left f (Map.empty) (Map.toList ukm)
+  foldLeft f (Map.empty) (Map.toList ukm)
 }
 
 def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)

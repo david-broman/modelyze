@@ -195,7 +195,7 @@ def iter(f: (Dyn -> ()), l: [Dyn]) -> () = {
   work l
 }
 
-def list_to_array(l: [Dyn]) -> {Dyn} = {
+def listToArray(l: [Dyn]) -> {Dyn} = {
   def work(l: [Dyn], a: {Dyn}, k: Int) -> () = {
     match l with
     | e::es -> {
@@ -212,7 +212,7 @@ def list_to_array(l: [Dyn]) -> {Dyn} = {
   a
 }
 
-def list_to_set(l : [Dyn]) -> Set(Dyn) = {
+def listToSet(l : [Dyn]) -> Set(Dyn) = {
   def work(l : [Dyn], acc: Set(Dyn)) -> Set(Dyn) = {
     match l with
     | e::es -> work es (Set.add e acc)
@@ -221,7 +221,7 @@ def list_to_set(l : [Dyn]) -> Set(Dyn) = {
   work l (Set.empty)
 }
 
-def list_to_map(l: [(Dyn, Dyn)]) -> (Dyn => Dyn) = {
+def listToMap(l: [(Dyn, Dyn)]) -> (Dyn => Dyn) = {
   def work(l: [Dyn], acc: (Dyn => Dyn)) -> (Dyn => Dyn) = {
     match l with
     | (k, v)::es -> work es (Map.add k v acc)
@@ -230,7 +230,7 @@ def list_to_map(l: [(Dyn, Dyn)]) -> (Dyn => Dyn) = {
   work l (Map.empty)
 }
 
-def for_all(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
+def forAll(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
   def work(l: [Dyn]) -> Bool = {
     match l with
     | e::es -> if (p e) then work es else false
@@ -248,7 +248,7 @@ def exists(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
   work l
 }
 
-def fold_left(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
+def foldLeft(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
   def work(a : Dyn, l: [Dyn]) -> Dyn = {
     match l with
     | e::es -> work (f a e) es
@@ -259,11 +259,11 @@ def fold_left(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
 
 def union(lhs: Set(?), rhs: Set(?)) -> Set(?) = {
   def f(res: Set(?), e: ?) -> Set(?) = { Set.add e res };
-  fold_left f lhs (Set.toList rhs)
+  foldLeft f lhs (Set.toList rhs)
 }
 
 def concat(lhs: [Dyn], rhs: [Dyn]) -> [Dyn] = {
   def rlhs = reverse lhs;
   def f(l: [Dyn], e: Dyn) -> [Dyn] = { e::l };
-  fold_left f rhs rlhs
+  foldLeft f rhs rlhs
 }

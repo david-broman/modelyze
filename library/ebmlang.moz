@@ -70,7 +70,7 @@ def findiv(f: F) -> (VMap, Real) = {
   def (_, _, t0) = f;
   def (resf, yy0, yp0, vids, ukm) = get_dae_find_ic_input f 0.;
   def s = (DAESolver.init resf t0 yy0 yp0);
-  def _ = (DAESolver.calc_ic_ya_ydp s vids yy0 yp0 (t0 + dt));
+  def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 (t0 + dt));
   (ukmap_yy_yp_to_vmap ukm yy0 yp0, t0 +  dt)
 }
 

@@ -123,7 +123,7 @@ def _ = testCase "swcols"
     def x, y, z: Real;
     def fixt = listToIMatrix [[1, 0, -1],
                               [0, 1, 1]];
-    def fixtvm = list_to_map [(0, x), (1, y), (2, z)];
+    def fixtvm = listToMap [(0, x), (1, y), (2, z)];
     def exp = listToIMatrix [[0, 1, -1],
                              [1, 0, 1]];
     def (act, avm) = swcols fixt fixtvm 0 1;
@@ -147,7 +147,7 @@ def _ = testCase "trim"
 def _ = testCase "getThroughMatrix"
   (fun t: () ->
     def x, y, z, u, v: Real;
-    def vm = list_to_map [(0, x), (1, y), (2, z), (3, u), (4, v)];
+    def vm = listToMap [(0, x), (1, y), (2, z), (3, u), (4, v)];
     def fixt = listToIMatrix
         [[1, 0, -1, 0, 1],
          [0, 1, 1, 0, -1],

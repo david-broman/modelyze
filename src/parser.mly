@@ -366,6 +366,11 @@ term:
                 else mkinfo $1.i (tm_info (List.hd $4)) in
        let op = mk_daesolverop $3.i $3.v in
        TmDAESolverOp(fi,$1.l,op,List.rev $4) }
+  | NLEQSOLVER DOT IDENT op_atom_list_rev
+     { let fi = if $4 = [] then mkinfo $1.i $3.i
+                else mkinfo $1.i (tm_info (List.hd $4)) in
+       let op = mk_nleqsolverop $3.i $3.v in
+       TmNLEQSolverOp(fi,$1.l,op,List.rev $4) }
 
 
 op_atom_list_rev:

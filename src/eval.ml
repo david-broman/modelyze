@@ -137,8 +137,9 @@ let bigarray_from_tmlist tm rr =
   in List.iteri (fun i e -> rr.{i} <- e) (worker tm)
 
 let eval_daesolver_op eval op arg_lst =
+
   (* Residual and root finder functions *)
-  let resrootfun tmres time yy yp rr =
+  let mk_resrootfun tmres time yy yp rr =
     let tmtime = TmConst(Ast.ConstReal(time)) in
     let tmyy = TmArray(from_realArray yy) in
     let tmyp = TmArray(from_realArray yp) in
@@ -146,16 +147,18 @@ let eval_daesolver_op eval op arg_lst =
       eval (TmApp(TmApp(TmApp(tmres,tmtime,false),tmyy,false),tmyp,false)) in
     bigarray_from_tmlist lst rr
   in
+
   let solver_result_to_rccode sr =
     match sr with
     | Ida.Success -> 0
     | Ida.RootsFound -> 1
     | Ida.StopTimeReached -> 2
   in
+
   match op,arg_lst with
   | Ast.DAESolverOpInit,
     [tmres;TmConst(Ast.ConstReal(t0));TmArray(tm_yy0);TmArray(tm_yp0)] ->
-    let resf = resrootfun tmres in
+    let resf = mk_resrootfun tmres in
     let yy = Nvector_serial.wrap (from_tm tm_yy0) in
     let yp = Nvector_serial.wrap (from_tm tm_yp0) in
     let st = Ida.(init (Dls.dense ()) (SStolerances (1e-5, 1e-5)) resf t0 yy yp) in
@@ -164,8 +167,8 @@ let eval_daesolver_op eval op arg_lst =
   | Ast.DAESolverOpInitWithRootf,
     [tmres;TmConst(Ast.ConstInt(nroots));tmroot;TmConst(Ast.ConstReal(t0));
      TmArray(tm_yy0);TmArray(tm_yp0)] ->
-    let resf = resrootfun tmres in
-    let rootf = resrootfun tmroot in
+    let resf = mk_resrootfun tmres in
+    let rootf = mk_resrootfun tmroot in
     let yy = Nvector_serial.wrap (from_tm tm_yy0) in
     let yp = Nvector_serial.wrap (from_tm tm_yp0) in
     let st = Ida.(init (Dls.dense ()) (SStolerances (1e-5, 1e-5))
@@ -216,7 +219,7 @@ let eval_daesolver_op eval op arg_lst =
      TmArray(tm_yy0);TmArray(tm_yy0fix);TmArray(tm_yp0);TmArray(tm_vids);
      TmArray(tm_yy0new);TmArray(tm_yp0new)] ->
     let epsilon = 1.0e-5
-    and resf = resrootfun tmres
+    and resf = mk_resrootfun tmres
     and yy0 = from_tm tm_yy0
     and yy0fix = from_tm tm_yy0fix
     and yp0 = from_tm tm_yp0

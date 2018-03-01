@@ -1,4 +1,4 @@
-    (*
+(*
 Modelyze toolchain
 Copyright (C) 2010-2012 David Broman
 
@@ -443,7 +443,7 @@ and typeof_nleqsolver_op fi l op ts env  =
     let ty_ar_u' = check_istype_array (tm_info ar_u) l ty_ar_u in
     check_istype_nleqsolver (tm_info kin) l ty_kin;
     check_istype_real (tm_info ar_u) l ty_ar_u';
-    (TyInt(NoInfo,l),[ar_u'])
+    (TyInt(NoInfo,l),[kin';ar_u'])
 
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,

@@ -248,6 +248,9 @@ type id =
   | TYPE_EXPECTED_DAESOLVER_TYPE
       (* arg1 = type of the type that is not a dae solver
          arg2 = expected level of the type *)
+  | TYPE_EXPECTED_NLEQSOLVER_TYPE
+      (* arg1 = type of the type that is not a dae solver
+         arg2 = expected level of the type *)
   | TYPE_EXPECTED_INT_TYPE
       (* arg1 = type of the type that is not an int
          arg2 = expected level of the type *)
@@ -259,6 +262,9 @@ type id =
          arg2 = the expected level *)
   | TYPE_UNEXPECTED_NO_ARGS
   | TYPE_EXPECTED_RESROOT_TYPE
+      (* arg1 = The expected type
+         arg2 = The current type *)
+  | TYPE_EXPECTED_SYSFUN_TYPE
       (* arg1 = The expected type
          arg2 = The current type *)
   | TYPE_ERROR_TERM_NOT_SYM
@@ -389,11 +395,13 @@ let id2str id args =
     | TYPE_EXPECTED_MAP_TYPE -> us"TYPE_EXPECTED_MAP_TYPE"
     | TYPE_EXPECTED_SET_TYPE -> us"TYPE_EXPECTED_SET_TYPE"
     | TYPE_EXPECTED_DAESOLVER_TYPE -> us"TYPE_EXPECTED_DAESOLVER_TYPE"
+    | TYPE_EXPECTED_NLEQSOLVER_TYPE -> us"TYPE_EXPECTED_NLEQSOLVER_TYPE"
     | TYPE_EXPECTED_INT_TYPE -> us"TYPE_EXPECTED_INT_TYPE"
     | TYPE_EXPECTED_REAL_TYPE -> us"TYPE_EXPECTED_REAL_TYPE"
     | TYPE_EXPECTED_CONSTANT_LEV -> us"TYPE_EXPECTED_CONSTANT_LEV"
     | TYPE_UNEXPECTED_NO_ARGS -> us"TYPE_UNEXPECTED_NO_ARGS"
     | TYPE_EXPECTED_RESROOT_TYPE -> us"TYPE_EXPECTED_RESROOT_TYPE"
+    | TYPE_EXPECTED_SYSFUN_TYPE -> us"TYPE_EXPECTED_SYSFUN_TYPE"
     | TYPE_ERROR_TERM_NOT_SYM -> us"The supplied term is not a symbol type but of type " ^.
                                  (List.nth args 0) ^. us"'."
     | STATIC_CIRCULAR_DEP_INCLUDE -> us"STATIC_CIRCULAR_DEP_INCLUDE"

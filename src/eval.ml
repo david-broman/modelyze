@@ -231,6 +231,42 @@ let eval_daesolver_op eval op arg_lst =
 
   | _ -> TmDAESolverOp(op,arg_lst)
 
+let eval_nleqsolver_op eval op arg_lst =
+
+  let mk_sysfun tmsysfun uu rr =
+    let tmuu = TmArray(from_realArray uu) in
+    let lst =
+      eval (TmApp(tmsysfun,tmuu,false)) in
+    bigarray_from_tmlist lst rr
+  in
+
+  let solver_result_to_rccode sr =
+    match sr with
+    | Kinsol.Success -> 0
+    | Kinsol.InitialGuessOK -> 1
+    | Kinsol.StoppedOnStepTol -> 2
+  in
+
+  match op,arg_lst with
+  | Ast.NLEQSolverOpInit, [tmsysfun;TmArray(tm_uu)] ->
+     let sysfun = mk_sysfun tmsysfun
+     and uu = Nvector_serial.wrap (from_tm tm_uu)
+     in
+     let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
+     Kinsol.set_func_norm_tol st 1.0e-5;
+     Kinsol.set_scaled_step_tol st 1.0e-5;
+     Kinsol.set_max_setup_calls st 1;
+     TmNLEQSolver(st, uu)
+
+  | Ast.NLEQSolverOpSolve, [TmNLEQSolver(st,uu);TmArray(tm_uu_out)] ->
+     let ud = (Nvector_serial.unwrap uu) in
+     let snv = Nvector_serial.make (Sundials.RealArray.length ud) 1.0 in
+     let r = Kinsol.(solve st uu Newton snv snv) in
+     let rc = solver_result_to_rccode r in
+     into_tm ud tm_uu_out;
+     TmConst(Ast.ConstInt(rc))
+
+  | _ -> TmNLEQSolverOp(op,arg_lst)
 
 (* Creates two model values from a primitive function constant. Used when
    for example build in +. operator is partially applied with one argument
@@ -292,6 +328,8 @@ let rec readback syms d tm =
   | TmSetOp(op,tms) -> TmSetOp(op,List.map (readback syms d) tms)
   | TmDAESolver(st,_,_) -> tm
   | TmDAESolverOp(op,tms) -> TmDAESolverOp(op,List.map (readback syms d) tms)
+  | TmNLEQSolver(st, uu) -> tm
+  | TmNLEQSolverOp(op,tms) -> TmNLEQSolverOp(op,List.map (readback syms d) tms)
   | TmDPrint(t) -> TmDPrint(readback syms d t)
   | TmDPrintType(t) -> TmDPrintType(readback syms d t)
   | TmSymStr(t) -> TmSymStr(readback syms d t)
@@ -328,6 +366,7 @@ let rec consistent ty_a ty_b =
   | TySet(ty1),TySet(ty2) ->
     consistent ty1 ty2
   | TyDAESolver,TyDAESolver -> true
+  | TyNLEQSolver,TyNLEQSolver -> true
   | _ , _ ->  false
 
 
@@ -436,7 +475,10 @@ and eval venv norec t =
   | TmSetOp(op,tms) -> eval_set_op op (List.map (eval venv norec) tms)
   | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
   | TmDAESolverOp(op,tms) ->
-    eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
+     eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
+  | TmNLEQSolver(st, uu) -> TmNLEQSolver(st, uu)
+  | TmNLEQSolverOp(op,tms) ->
+    eval_nleqsolver_op (eval venv norec) op (List.map (eval venv norec) tms)
   | TmDPrint(t) -> let t' = eval venv norec t  in
     pprint t' |> uprint_endline; t'
   | TmDPrintType(t) -> us"[Printing types is not supported]"

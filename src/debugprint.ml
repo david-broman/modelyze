@@ -96,6 +96,7 @@ let pprint_ty t =
 	      us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")"
         | TySet(t) -> us"{" ^. (pprint_ty false t) ^. us"}"
 	| TyDAESolver ->  us"SimInst"
+	| TyNLEQSolver ->  us"NLEQSolverInst"
         | TyEnv -> us"TyEnv"
   in pprint_ty false t
 
@@ -227,6 +228,7 @@ and pp prec t  =
         let lst = PMap.foldi (fun t1 _ ts -> (pp 0 t1)::ts) tmset [] in
           us"{" ^. (Ustring.concat (us", ") lst) ^. us"}"
     | TmDAESolver(_) -> us"DAEsolver"
+    | TmNLEQSolver(_) -> us"NLEQsolver"
     | TmDPrint(t) | TmDPrintType(t) | TmDebugId(_,t) | TmPEval(t) -> pp prec t
     | TmError(fi,t) -> us"error " ^. pp 0 t
     | TmSpecSym(i) -> us"TmSpecSym(" ^. ustring_of_int i ^. us")"
@@ -250,6 +252,7 @@ and pp prec t  =
     | TmSetOp(op,tms) -> us"TmSetOp()"
     | TmSymStr(t) -> us"TmSetOp(" ^. pp 0 t ^. us")"
     | TmDAESolverOp(op,tms) -> us"TmDAESolverOp()"
+    | TmNLEQSolverOp(op,tms) -> us"TmNLEQSolverOp()"
     | TmByteCode(code,extid,ident,args) -> Symtbl.get ident
     | TmTheta(t) -> us"thera(" ^. pp 0 t ^. us")"
 

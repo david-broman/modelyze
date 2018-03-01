@@ -48,6 +48,7 @@ let ty_normalize ty =
           TyMap(fi,l,norm isSym ty1, norm isSym ty2)
       | TySet(fi,l,ty1) -> TySet(fi,l, norm isSym ty1)
       | TyDAESolver(_,_) -> ty
+      | TyNLEQSolver(_,_) -> ty
       | TyEnv(_,_,_) -> ty
   in
     norm false ty
@@ -76,6 +77,7 @@ let ty_typesubst typemap numap ty =
           TyMap(fi,l,subst ty1,subst ty2)
       | TySet(fi,l,ty) -> TySet(fi,l,subst ty)
       | TyDAESolver(_,_) as tt -> tt
+      | TyNLEQSolver(_,_) as tt -> tt
       | TyEnv(_,_,_) -> ty
   in
     ty_normalize (subst ty)
@@ -157,6 +159,7 @@ and tm_typesubst typemap numap tm =
     | TmMapOp(fi,l,op,tms) -> TmMapOp(fi,l,op,List.map tmsub tms)
     | TmSetOp(fi,l,op,tms) -> TmSetOp(fi,l,op,List.map tmsub tms)
     | TmDAESolverOp(fi,l,op,tms) -> TmDAESolverOp(fi,l,op,List.map tmsub tms)
+    | TmNLEQSolverOp(fi,l,op,tms) -> TmNLEQSolverOp(fi,l,op,List.map tmsub tms)
     | TmDPrint(t) -> TmDPrint(tmsub t)
     | TmDPrintType(t) -> TmDPrintType(tmsub t)
     | TmSymStr(fi,t) -> TmSymStr(fi,tmsub t)

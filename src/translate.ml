@@ -38,6 +38,7 @@ let rec trans_ty ty =
   | Ast.TyMap(_,_,ty1,ty2) -> TyMap(trans_ty ty1,trans_ty ty2)
   | Ast.TySet(_,_,ty) -> TySet(trans_ty ty)
   | Ast.TyDAESolver(_,_) -> TyDAESolver
+  | Ast.TyNLEQSolver(_,_) -> TyNLEQSolver
   | Ast.TyEnv(_,_,_) -> TyEnv
 
 let trans_pat l p denv =
@@ -117,9 +118,11 @@ let translate t =
       | Ast.TmMapOp(_,l,op,tms) ->
           nl l d (TmMapOp(op,List.map (fun t -> trans t l denv ) tms))
       | Ast.TmSetOp(_,l,op,tms) ->
-          nl l d (TmSetOp(op,List.map (fun t -> trans t l denv ) tms))
+         nl l d (TmSetOp(op,List.map (fun t -> trans t l denv ) tms))
       | Ast.TmDAESolverOp(_,l,op,tms) ->
-          nl l d (TmDAESolverOp(op,List.map (fun t -> trans t l denv ) tms))
+         nl l d (TmDAESolverOp(op,List.map (fun t -> trans t l denv ) tms))
+      | Ast.TmNLEQSolverOp(_,l,op,tms) ->
+         nl l d (TmNLEQSolverOp(op,List.map (fun t -> trans t l denv ) tms))
       | Ast.TmDPrint(t) -> TmDPrint(trans t d denv )
       | Ast.TmDPrintType(t) -> TmDPrintType(trans t d denv )
       | Ast.TmSymStr(_,t) -> TmSymStr(trans t d denv)

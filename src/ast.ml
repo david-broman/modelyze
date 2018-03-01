@@ -47,23 +47,24 @@ type specialize = bool
     the translation function to increase the index number. The tuple with a type
   and a term expresses one possible overloading choice. *)
 type ty =
-  | TyBool      of info * level
-  | TyInt       of info * level
-  | TyReal      of info * level
-  | TyString    of info * level
-  | TyArrow     of info * level * ty * ty
-  | TyUnit      of info * level
-  | TyList      of info * level * ty
-  | TyTuple     of info * level * ty list
-  | TySym       of info * level * ty
-  | TyDyn       of info * level
-  | TySymData   of info * level * typeid * ident
-  | TyIdent     of info * level * ident
-  | TyArray     of info * level * ty
-  | TyMap       of info * level * ty * ty
-  | TySet       of info * level * ty
-  | TyDAESolver of info * level
-  | TyEnv       of info * ident * (int * (ty * tm)) list
+  | TyBool       of info * level
+  | TyInt        of info * level
+  | TyReal       of info * level
+  | TyString     of info * level
+  | TyArrow      of info * level * ty * ty
+  | TyUnit       of info * level
+  | TyList       of info * level * ty
+  | TyTuple      of info * level * ty list
+  | TySym        of info * level * ty
+  | TyDyn        of info * level
+  | TySymData    of info * level * typeid * ident
+  | TyIdent      of info * level * ident
+  | TyArray      of info * level * ty
+  | TyMap        of info * level * ty * ty
+  | TySet        of info * level * ty
+  | TyDAESolver  of info * level
+  | TyNLEQSolver of info * level
+  | TyEnv        of info * ident * (int * (ty * tm)) list
 
   (** Primitive, built-in functions *)
 and primitive =
@@ -192,6 +193,10 @@ and daesolverop =
   | DAESolverOpSetStopTime
   | DAESolverOpCalcICWithFixed
 
+and nleqsolverop =
+  | NLEQSolverOpInit
+  | NLEQSolverOpSolve
+
   (** Top elements of a source code file *)
 and top =
   | TopLet        of info * ident * ty option * (ident * ty) list *
@@ -204,7 +209,7 @@ and top =
   (** Terms of the abstract syntax tree. This tree is used for desugaring
     terms, type checking and then translating to another term which
     is interpreted. *)
-  and tm =
+and tm =
     (* Basic terms *)
   | TmVar         of info * ident * int
   | TmLam         of info * level * ident * ty * tm
@@ -241,6 +246,7 @@ and top =
   | TmSetOp       of info * level * setop * tm list
     (* Simulation *)
   | TmDAESolverOp of  info * level * daesolverop * tm list
+  | TmNLEQSolverOp of info * level * nleqsolverop * tm list
     (* Debugging and errors *)
   | TmDPrint      of tm
   | TmDPrintType  of tm
@@ -352,6 +358,7 @@ let rec pprint_ty t =
         metastr l ^. us"=>" ^. us" " ^. (pprint_ty false t2) ^. us")"
   | TySet(_,l,t) -> metastr l ^. us"Set(" ^. (pprint_ty false t) ^. us")"
   | TyDAESolver(_,l) -> metastr l ^. us"SimInst"
+  | TyNLEQSolver(_,l) -> metastr l ^. us"NLEQSolverInst"
   | TyEnv(_,_,lst) -> (us"TyEnv(" ^. ((lst |>
             (List.map (fun (k,(ty,tm)) ->
               us"(" ^. ustring_of_int k ^. us",(" ^.
@@ -395,6 +402,11 @@ and pprint_daesolver_op op =
   | DAESolverOpRootInfo -> us"get_root_info"
   | DAESolverOpSetStopTime -> us"set_stop_time"
   | DAESolverOpCalcICWithFixed -> us"calc_ic_with_fixed"
+
+and pprint_nleqsolver_op op =
+  match op with
+  | NLEQSolverOpInit -> us"init"
+  | NLEQSolverOpSolve -> us"solve"
 
 and pprint_mpat p =
   match p with
@@ -495,7 +507,9 @@ and pprint tm =
   | TmSetOp(_,l,op,tms) -> metastr l ^. pprint_set_op op ^. us" " ^.
       (tms |> List.map pprint |> Ustring.fast_concat (us" "))
   | TmDAESolverOp(_,l,op,tms) -> metastr l ^. pprint_daesolver_op op ^. us" " ^.
-      (tms |> List.map pprint |> Ustring.fast_concat (us" "))
+                                   (tms |> List.map pprint |> Ustring.fast_concat (us" "))
+  | TmNLEQSolverOp(_,l,op,tms) -> metastr l ^. pprint_nleqsolver_op op ^. us" " ^.
+                                   (tms |> List.map pprint |> Ustring.fast_concat (us" "))
   | TmDPrint(t) -> pprint t
   | TmDPrintType(t) -> pprint t
   | TmSymStr(fi,t) -> pprint t
@@ -526,6 +540,7 @@ let rec ty_equiv ty1 ty2 =
       l1 = l2 && ty_equiv ty1a ty2a  && ty_equiv ty1b ty2b
   | TySet(_,l1,ty1),TySet(_,l2,ty2) -> l1 = l2 && ty_equiv ty1 ty2
   | TyDAESolver(_,l1),TyDAESolver(_,l2) -> l1 = l2
+  | TyNLEQSolver(_,l1),TyNLEQSolver(_,l2) -> l1 = l2
   | _ -> false
 
 let rec ty_restriction ty1 ty2 =
@@ -873,6 +888,7 @@ let rec tm_info t =
     | TmMapOp(fi,_,_,_) -> fi
     | TmSetOp(fi,_,_,_) -> fi
     | TmDAESolverOp(fi,_,_,_) -> fi
+    | TmNLEQSolverOp(fi,_,_,_) -> fi
     | TmDPrint(t) -> tm_info t
     | TmDPrintType(t) -> tm_info t
     | TmSymStr(fi,t) -> fi
@@ -909,6 +925,7 @@ let rec set_tm_info newfi tm =
     | TmMapOp(_,l,op,tms) -> TmMapOp(newfi,l,op,tms)
     | TmSetOp(_,l,op,tms) -> TmSetOp(newfi,l,op,tms)
     | TmDAESolverOp(_,l,op,tms) -> TmDAESolverOp(newfi,l,op,tms)
+    | TmNLEQSolverOp(_,l,op,tms) -> TmNLEQSolverOp(newfi,l,op,tms)
     | TmDPrint(t) -> TmDPrint(set_tm_info newfi t)
     | TmDPrintType(t) -> TmDPrintType(set_tm_info newfi t)
     | TmSymStr(fi,t) -> TmSymStr(fi,set_tm_info newfi t)
@@ -946,6 +963,7 @@ let ty_info ty =
     | TyMap(fi,_,_,_) -> fi
     | TySet(fi,_,_) -> fi
     | TyDAESolver(fi,_) -> fi
+    | TyNLEQSolver(fi,_) -> fi
     | TyEnv(fi,_,_) -> fi
 
 let rec set_ty_info newfi ty =
@@ -968,6 +986,7 @@ let rec set_ty_info newfi ty =
         TyMap(newfi,l,set_ty_info newfi ty1,set_ty_info newfi ty2)
     | TySet(_,l,ty) -> TySet(newfi,l,set_ty_info newfi ty)
     | TyDAESolver(_,l) -> TyDAESolver(newfi,l)
+    | TyNLEQSolver(_,l) -> TyNLEQSolver(newfi,l)
     | TyEnv(_,x,lst) -> TyEnv(newfi,x,lst)
 
 let ty_lev ty =
@@ -988,6 +1007,7 @@ let ty_lev ty =
     | TyMap(_,l,_,_) -> l
     | TySet(_,l,_) -> l
     | TyDAESolver(_,l) -> l
+    | TyNLEQSolver(_,l) -> l
     | TyEnv(_,_,_) -> 0
 
 
@@ -1100,6 +1120,8 @@ and fv_patcases cases =
         tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmDAESolverOp(fi,l,op,tms) ->
        tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
+    | TmNLEQSolverOp(fi,l,op,tms) ->
+       tms |> List.map fv_tm |> List.fold_left VarSet.union VarSet.empty
     | TmDPrint(t) -> fv_tm t
     | TmDPrintType(t) -> fv_tm t
     | TmSymStr(fi,t) -> fv_tm t
@@ -1163,5 +1185,11 @@ let mk_daesolverop fi sid =
   | "calc_ic_with_fixed" -> DAESolverOpCalcICWithFixed
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
+let mk_nleqsolverop fi sid =
+  let s = Symtbl.get sid in
+  match Ustring.to_latin1 s with
+  | "init" -> NLEQSolverOpInit
+  | "solve" -> NLEQSolverOpSolve
+  | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
 type 'a tokendata = {i:info; l:int; v:'a}

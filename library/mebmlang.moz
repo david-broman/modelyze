@@ -30,7 +30,7 @@ def E_d(d: <Real>, mu: VMap) -> Real = {
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {
   def llog = logger "inside" DEBUG;
-  def b = for_all (fun d: <Real> -> {
+  def b = forAll (fun d: <Real> -> {
     def v = (E_d d mu);
     def _ = llog "expression" d;
     def _ = llog "value" v;
@@ -41,7 +41,7 @@ def inside(L: Set(<Real>), mu: VMap) -> Bool = {
 }
 
 def M_l(l: [<Real>]) -> Set(<Real>) = {
-  list_to_set l
+  listToSet l
 }
 
 def S_m(m: Equations, mu: VMap) -> Equations = {

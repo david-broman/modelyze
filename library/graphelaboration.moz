@@ -130,11 +130,11 @@ def listToIMatrix(l: [[Int]]) -> IMatrix = {
 
   def ff(IMi: (IMatrix, Int), e: [Int]) -> (IMatrix, Int) = {
     def (IM, i) = IMi;
-    def (IM, _, _) = fold_left f (IM, i, 0) e;
+    def (IM, _, _) = foldLeft f (IM, i, 0) e;
     (IM, i + 1)
   };
 
-  def (IM, _) = fold_left ff (emptyIMatrix n m, 0) l;
+  def (IM, _) = foldLeft ff (emptyIMatrix n m, 0) l;
   IM
 }
 
@@ -149,7 +149,7 @@ def enumerateEdges(Tl: [Equations])
     | _ -> error "Unrecognized element type in topological description"
   };
 
-  fold_left f [] Tl
+  foldLeft f [] Tl
 }
 
 def enumerateNodes(el: [(Node, Node, <Real>, <Real>)])
@@ -168,7 +168,7 @@ def enumerateNodes(el: [(Node, Node, <Real>, <Real>)])
         else (Map.add n (i + 1) (Map.add p i m), i + 2)
   };
 
-  def (m, _) = fold_left f (Map.empty, 0) el;
+  def (m, _) = foldLeft f (Map.empty, 0) el;
   m
 }
 
@@ -188,7 +188,7 @@ def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))
      (set (set IM i_in j in_edge) i_out j out_edge, Map.add j (f, e) vm, j + 1)
    };
 
-  def (IM, vm, _) = fold_left f (emptyIMatrix n m, Map.empty, 0) el;
+  def (IM, vm, _) = foldLeft f (emptyIMatrix n m, Map.empty, 0) el;
   (IM, vm)
 }
 
@@ -201,7 +201,7 @@ def addsubrow(IM: IMatrix, fi: Int, ti: Int, add: Bool) -> IMatrix = {
   };
   def _ = checkDim IM fi 0;
   def _ = checkDim IM ti 0;
-  fold_left f IM (Map.toList (Map.find fi M))
+  foldLeft f IM (Map.toList (Map.find fi M))
 }
 
 def addrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
@@ -219,7 +219,7 @@ def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
     def (j, v) = e;
     set IM i j ((get IM i j) * (-1))
   };
-  fold_left f IM (Map.toList (Map.find i M))
+  foldLeft f IM (Map.toList (Map.find i M))
 }
 
 def chsign(IM: IMatrix) -> IMatrix = {
@@ -272,7 +272,7 @@ def leadingcol(IM: IMatrix, i: Int) -> Int = {
     def l = (Map.toList (Map.find i M));
     match l with
     | [] -> m
-    | _ -> fold_left f m l
+    | _ -> foldLeft f m l
   }
 }
 
@@ -382,7 +382,7 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
         def h = vmapElmToSReal (hd rl);
         if (Map.size r) < 2 then work (i + 1) (Set.add (h = 0.) acc)
         else {
-          def eq = (fold_left f h (tl rl)) = 0.;
+          def eq = (foldLeft f h (tl rl)) = 0.;
           work (i + 1) (Set.add eq acc)
         }
     }
@@ -421,9 +421,9 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
   def _ = llog "modified Variable Map" nvm;
   def B = getAcrossMatrix A;
   def _ = llog "Circuit Matrix (B)" (pp B);
-  def fvec = list_to_map (map ff (Map.toList nvm));
+  def fvec = listToMap (map ff (Map.toList nvm));
   def _ = llog "we have flow vec:" fvec;
-  def evec = list_to_map (map fe (Map.toList nvm));
+  def evec = listToMap (map fe (Map.toList nvm));
   def _ = llog "and effort vec:" evec;
   def floweqs = matrixVMapToEquations A fvec;
   def _ = llog "flow eqs:" floweqs;

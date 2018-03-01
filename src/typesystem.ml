@@ -1,4 +1,4 @@
-(*
+    (*
 Modelyze toolchain
 Copyright (C) 2010-2012 David Broman
 
@@ -194,8 +194,6 @@ let check_and_lift_arg_type_consistency fi e1 elem_ty container_ty =
   then (meet (TySym(NoInfo,0,elem_ty)) container_ty, TmLift(NoInfo,0,e1,elem_ty))
   else raise (Mkl_type_error(TYPE_APP_ARG_MISMATCH,ERROR,fi,[us""; pprint_ty container_ty; pprint_ty elem_ty]))
 
-
-
 let missing_infix_message env ty =
   try
     (match List.assoc (Symtbl.add (us"(;)")) env with
@@ -203,8 +201,6 @@ let missing_infix_message env ty =
        us"Forgot to add a ';'? "
      | _ -> us"")
   with Not_found -> us""
-
-
 
 let rec typeof_array_op fi l op ts env  =
   match op,ts with
@@ -277,7 +273,6 @@ and typeof_map_op fi l op ts env  =
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                    [ustring_of_int (List.length ts)]))
-
 
 and typeof_set_op fi l op ts env  =
   match op,ts with
@@ -432,7 +427,6 @@ and typeof_daesolver_op fi l op ts env  =
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                    [ustring_of_int (List.length ts)]))
 
-
 and typeof_nleqsolver_op fi l op ts env  =
   match op,ts with
   | NLEQSolverOpInit,[tmsysfun;ar_u] ->
@@ -454,7 +448,6 @@ and typeof_nleqsolver_op fi l op ts env  =
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,
                    [ustring_of_int (List.length ts)]))
-
 
 (* Type of function that picks the top element if we have a type environment.
    Basically used everywhere, except for function application *)

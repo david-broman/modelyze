@@ -215,19 +215,19 @@ let eval_daesolver_op eval op arg_lst =
     [tmres;TmConst(Ast.ConstReal(tstep));TmConst(Ast.ConstReal(t0));
      TmArray(tm_yy0);TmArray(tm_yy0fix);TmArray(tm_yp0);TmArray(tm_vids);
      TmArray(tm_yy0new);TmArray(tm_yp0new)] ->
-     let epsilon = 1.0e-5
-     and resf = resrootfun tmres
-     and yy0 = from_tm tm_yy0
-     and yy0fix = from_tm tm_yy0fix
-     and yp0 = from_tm tm_yp0
-     and vids = from_tm tm_vids
-     and yy0new = from_tm tm_yy0new
-     and yp0new = from_tm tm_yp0new
-     in
-     Findic.findic epsilon resf tstep t0 yy0 yy0fix yp0 vids yy0new yp0new;
-     into_tm yy0new tm_yy0new;
-     into_tm yp0new tm_yp0new;
-     TmConst(Ast.ConstUnit)
+    let epsilon = 1.0e-5
+    and resf = resrootfun tmres
+    and yy0 = from_tm tm_yy0
+    and yy0fix = from_tm tm_yy0fix
+    and yp0 = from_tm tm_yp0
+    and vids = from_tm tm_vids
+    and yy0new = from_tm tm_yy0new
+    and yp0new = from_tm tm_yp0new
+    in
+    Findic.findic epsilon resf tstep t0 yy0 yy0fix yp0 vids yy0new yp0new;
+    into_tm yy0new tm_yy0new;
+    into_tm yp0new tm_yp0new;
+    TmConst(Ast.ConstUnit)
 
   | _ -> TmDAESolverOp(op,arg_lst)
 
@@ -249,22 +249,22 @@ let eval_nleqsolver_op eval op arg_lst =
 
   match op,arg_lst with
   | Ast.NLEQSolverOpInit, [tmsysfun;TmArray(tm_uu)] ->
-     let sysfun = mk_sysfun tmsysfun
-     and uu = Nvector_serial.wrap (from_tm tm_uu)
-     in
-     let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
-     Kinsol.set_func_norm_tol st 1.0e-5;
-     Kinsol.set_scaled_step_tol st 1.0e-5;
-     Kinsol.set_max_setup_calls st 1;
-     TmNLEQSolver(st, uu)
+    let sysfun = mk_sysfun tmsysfun
+    and uu = Nvector_serial.wrap (from_tm tm_uu)
+    in
+    let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
+    Kinsol.set_func_norm_tol st 1.0e-5;
+    Kinsol.set_scaled_step_tol st 1.0e-5;
+    Kinsol.set_max_setup_calls st 1;
+    TmNLEQSolver(st, uu)
 
   | Ast.NLEQSolverOpSolve, [TmNLEQSolver(st,uu);TmArray(tm_uu_out)] ->
-     let ud = (Nvector_serial.unwrap uu) in
-     let snv = Nvector_serial.make (Sundials.RealArray.length ud) 1.0 in
-     let r = Kinsol.(solve st uu Newton snv snv) in
-     let rc = solver_result_to_rccode r in
-     into_tm ud tm_uu_out;
-     TmConst(Ast.ConstInt(rc))
+    let ud = (Nvector_serial.unwrap uu) in
+    let snv = Nvector_serial.make (Sundials.RealArray.length ud) 1.0 in
+    let r = Kinsol.(solve st uu Newton snv snv) in
+    let rc = solver_result_to_rccode r in
+    into_tm ud tm_uu_out;
+    TmConst(Ast.ConstInt(rc))
 
   | _ -> TmNLEQSolverOp(op,arg_lst)
 
@@ -475,7 +475,7 @@ and eval venv norec t =
   | TmSetOp(op,tms) -> eval_set_op op (List.map (eval venv norec) tms)
   | TmDAESolver(st,yy,yp) -> TmDAESolver(st,yy,yp)
   | TmDAESolverOp(op,tms) ->
-     eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
+    eval_daesolver_op (eval venv norec) op (List.map (eval venv norec) tms)
   | TmNLEQSolver(st, uu) -> TmNLEQSolver(st, uu)
   | TmNLEQSolverOp(op,tms) ->
     eval_nleqsolver_op (eval venv norec) op (List.map (eval venv norec) tms)

@@ -74,7 +74,7 @@ def eval_from_arrays_with_default_val(expr: <Real>, ukm: UkMap, yy: VarArray,
   };
 
   if undefined_vars_in expr then default
-  else evalFromArray expr ukm yy yp
+  else evalFromArrays expr ukm yy yp
 }
 
 def cont_to_set(cont: ?) -> Set(?) = {
@@ -152,7 +152,7 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
 def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)
   -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap) = {
   def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray, yp: VarArray) -> [Real] = {
-    def f = (fun e: <Real> -> evalFromArray e ukm yy yp);
+    def f = (fun e: <Real> -> evalFromArrays e ukm yy yp);
     map f zcbl
   };
   def (E, vmap, t) = f;
@@ -169,4 +169,22 @@ def get_dae_find_ic_input(f: F, undefval: Real) ->
   def (resf, _, _, yy, yp, vids, ukm) =
     get_dae_solver_input f (Set.empty) undefval;
   (resf, yy, yp, vids, ukm)
+}
+
+def makeBEulerFuns(eqs: Equations, ukm: UkMap, h: Real, yy0: {Real}, yy: {Real})
+  -> [Real] = {
+
+  def yyfun(x: <Real>) -> <Real> = { Array.get yy (fst (Map.find x ukm)) };
+  def ypfun(x: <Real>) -> <Real> = {
+    def i = (fst (Map.find x ukm));
+    ((Array.get yy i) - (Array.get yy0 i)) / h
+  };
+
+  def f(e: Equations) -> Real = {
+    match e with
+    | e1 = e2 -> (eval e1 yyfun ypfun) - (eval e2 yyfun ypfun)
+    | _ -> error "Expected only equations here"
+  };
+
+  map f (cont_to_list eqs)
 }

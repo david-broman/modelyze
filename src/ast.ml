@@ -195,6 +195,7 @@ and daesolverop =
 
 and nleqsolverop =
   | NLEQSolverOpInit
+  | NLEQSolverOpInitWithConstrs
   | NLEQSolverOpSolve
 
 (** Top elements of a source code file *)
@@ -408,6 +409,7 @@ and pprint_daesolver_op op =
 and pprint_nleqsolver_op op =
   match op with
   | NLEQSolverOpInit -> us"init"
+  | NLEQSolverOpInitWithConstrs -> us"initWithConstrs"
   | NLEQSolverOpSolve -> us"solve"
 
 and pprint_mpat p =
@@ -1180,6 +1182,7 @@ let mk_nleqsolverop fi sid =
   let s = Symtbl.get sid in
   match Ustring.to_latin1 s with
   | "init" -> NLEQSolverOpInit
+  | "initWithConstrs" -> NLEQSolverOpInitWithConstrs
   | "solve" -> NLEQSolverOpSolve
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 

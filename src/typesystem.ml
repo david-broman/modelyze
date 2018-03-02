@@ -433,9 +433,20 @@ and typeof_nleqsolver_op fi l op ts env  =
     let (ty_tmsysfun,tmsysfun') = typeof_pure env tmsysfun in
     let (ty_ar_u, ar_u') = typeof_pure env ar_u in
     let ty_ar_u' = check_istype_array (tm_info ar_u) l ty_ar_u in
-    check_istype_real (tm_info ar_u) l ty_ar_u';
     check_istype_sysfun (tm_info tmsysfun) l ty_tmsysfun;
+    check_istype_real (tm_info ar_u) l ty_ar_u';
     (TyNLEQSolver(fi,l),[tmsysfun';ar_u'])
+
+  | NLEQSolverOpInitWithConstrs,[tmsysfun;ar_u;ar_c] ->
+    let (ty_tmsysfun,tmsysfun') = typeof_pure env tmsysfun in
+    let (ty_ar_u, ar_u') = typeof_pure env ar_u in
+    let ty_ar_u' = check_istype_array (tm_info ar_u) l ty_ar_u in
+    let (ty_ar_c, ar_c') = typeof_pure env ar_c in
+    let ty_ar_c' = check_istype_array (tm_info ar_c) l ty_ar_c in
+    check_istype_sysfun (tm_info tmsysfun) l ty_tmsysfun;
+    check_istype_real (tm_info ar_u) l ty_ar_u';
+    check_istype_real (tm_info ar_c) l ty_ar_c';
+    (TyNLEQSolver(fi,l),[tmsysfun';ar_u';ar_c'])
 
   | NLEQSolverOpSolve,[kin;ar_u] ->
     let (ty_kin,kin') = typeof_pure env kin in

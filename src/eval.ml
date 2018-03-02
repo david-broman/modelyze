@@ -250,15 +250,30 @@ let eval_nleqsolver_op eval op arg_lst =
     | Kinsol.StoppedOnStepTol -> 2
   in
 
+  let mk_kinsol_session sysfun uu =
+    let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
+    Kinsol.set_func_norm_tol st 1.0e-5;
+    Kinsol.set_scaled_step_tol st 1.0e-5;
+    Kinsol.set_max_setup_calls st 1;
+    st
+  in
+
   match op,arg_lst with
   | Ast.NLEQSolverOpInit, [tmsysfun;TmArray(tm_uu)] ->
     let sysfun = mk_sysfun tmsysfun
     and uu = Nvector_serial.wrap (from_tm tm_uu)
     in
-    let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
-    Kinsol.set_func_norm_tol st 1.0e-5;
-    Kinsol.set_scaled_step_tol st 1.0e-5;
-    Kinsol.set_max_setup_calls st 1;
+    let st = mk_kinsol_session sysfun uu in
+    TmNLEQSolver(st, uu)
+
+  | Ast.NLEQSolverOpInitWithConstrs,
+    [tmsysfun;TmArray(tm_uu);TmArray(tm_cc)] ->
+    let sysfun = mk_sysfun tmsysfun
+    and uu = Nvector_serial.wrap (from_tm tm_uu)
+    and cc = Nvector_serial.wrap (from_tm tm_cc)
+    in
+    let st = mk_kinsol_session sysfun uu in
+    Kinsol.set_constraints st cc;
     TmNLEQSolver(st, uu)
 
   | Ast.NLEQSolverOpSolve, [TmNLEQSolver(st,uu);TmArray(tm_uu_out)] ->

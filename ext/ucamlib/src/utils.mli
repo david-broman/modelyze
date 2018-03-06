@@ -75,12 +75,12 @@ val string_of_intlist : int list -> string
 val intlist_of_string : string -> int list
 (** Converts a string into a list of integers *)
 
-val write_binfile : string -> string -> unit
+val write_binfile : string -> bytes -> unit
 (** Call [write_binfile n d] creates a binary file named [n] and stores 
     string data [d] in the file. Raises [Sys_error] if error creating or
     writing to file. *)
 
-val read_binfile : string -> string
+val read_binfile : string -> bytes
 (** Call [read_binfile n] reads the binary file with filename [n] and
     returns the binary data as a string. Exception [Sys_error] is raised
     if the file cannot be found or cannot be read. *)
@@ -95,6 +95,11 @@ val genlist : (int -> 'a) -> int -> 'a list
     is the value of each element and [i] is the index in the list starting at 0. *)
 
 val xor : bool -> bool -> bool
+
+val sign_extension : int -> int -> int
+(** [sign_extension v n] assumes that the value in [v] is stored in
+    the lower [n] bits of [v]. The function sign extends the value to a
+    signed integer [int] *)
 
 module Int :
 sig

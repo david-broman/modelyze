@@ -29,7 +29,6 @@ def der : <Real->Real>
 def (')  = der
 def init : <Real->Real->Equations>
 
-
 def (<-)  = init
 def NoEqn : Equations
 

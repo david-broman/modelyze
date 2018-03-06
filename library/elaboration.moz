@@ -138,7 +138,7 @@ def makeRefBranches(i_lst:[<Real>],v_lst:[<Real>],p_lst:[<Dyn>]) -> Equations = 
 def expandMultiBranches(model:Equations) -> Equations = {
     def expand(m:Equations, mnodemap:MultiNodeMap) -> (Equations,MultiNodeMap) = {     
         match m with
-        | MultiBranch (lift i_lst:[<Real>]) (lift v_lst:[<Real>]) p n -> {
+        | MultiBranch (sval i_lst:[<Real>]) (sval v_lst:[<Real>]) p n -> {
             def len = length(i_lst);
             if len != length(v_lst)
             then error "Multi branches need to have the same dimentions."
@@ -147,7 +147,7 @@ def expandMultiBranches(model:Equations) -> Equations = {
                 (makeBranches(i_lst,v_lst, Map.find p map2, Map.find n map2), map2);
             }
           }
-        | MultiRefBranch (lift i_lst:[<Real>]) (lift v_lst:[<Real>]) p -> {
+        | MultiRefBranch (sval i_lst:[<Real>]) (sval v_lst:[<Real>]) p -> {
             def len = length(i_lst);
             if len != length(v_lst)
             then error "Multi reference branches need to have the same dimentions."

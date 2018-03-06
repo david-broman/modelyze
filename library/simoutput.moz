@@ -94,7 +94,7 @@ def addProbe(s:String, u:Signal, ps:ProbeMap) = {
 
 def elabProbesAcc(e:<?>, ps:ProbeMap) -> (<?>,ProbeMap) = {
     match e with
-    | probe (lift s:String) -> {
+    | probe (sval s:String) -> {
         def u:Signal; 
         (u,addProbe s u ps);
       }

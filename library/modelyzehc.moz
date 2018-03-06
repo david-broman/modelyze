@@ -129,7 +129,7 @@ def evalBoolFromArray(expr:Expr, yy:{Real}, yp:{Real}, ukmap:UkMap) -> Bool = {
     | !e1 -> !(evalBool(e1))
     | e1 && e2 -> evalBool(e1) && evalBool(e2)
     | e1 || e2 -> evalBool(e1) || evalBool(e2)
-    | lift b:Bool -> b
+    | sval b:Bool -> b
     | _ -> error "The value is not a boolean type."
   };
   evalBool(expr);
@@ -152,7 +152,7 @@ def makeRootFun(ukmap:UkMap, trans:Transitions, ctime:Real, yy:{Real}, yp:{Real}
     | !e1 -> travGuard(e,acc) 
     | e1 && e2 -> travGuard(e2,travGuard(e1,acc))
     | e1 || e2 -> travGuard(e2,travGuard(e1,acc))
-    | lift b:Bool -> acc
+    | sval b:Bool -> acc
     | _ -> error "Illegal expression in transition guard."
   };
   def travTrans(trans:Transitions, acc:[Real]) -> [Real] = { 
@@ -185,7 +185,7 @@ def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
          def (i2,f2) = fired(e2,i1);
          (i2,f1||f2)
       }
-    | lift b:Bool -> (i,false)
+    | sval b:Bool -> (i,false)
     | _ -> error "Error in term"
   };
   fired(expr,index);

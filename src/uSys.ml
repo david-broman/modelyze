@@ -7,5 +7,5 @@ let shellcmd cmd =
   let retcode = Sys.command (cmd ^ " 1> " ^ tmpout ^ " 2> " ^ tmperr) in
   let msgout = Utils.read_binfile tmpout in
   let msgerr = Utils.read_binfile tmperr in
-  Sys.remove tmpout; Sys.remove tmperr; 
-  (retcode, msgout, msgerr) 
+  Sys.remove tmpout; Sys.remove tmperr;
+  (retcode, Bytes.to_string msgout, Bytes.to_string msgerr)

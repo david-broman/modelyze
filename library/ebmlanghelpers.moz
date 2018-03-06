@@ -20,11 +20,15 @@ written by Oscar Eriksson oerikss@kth.se
 
 include ModelyzeDAE
 type VMap = (<Real> => Real)
+type ZCMap = (<Real> => Int)
 type T = (Real, Int)
 type F = (Set(Equations), VMap, Real)
 type M = (Equations, F, Set(<Real>), T)
 
-def is_equal(lhs: <Real>, rhs: <Real>) -> Bool = Set.mem rhs (Set.add lhs (Set.empty))
+def EPSILON = 1.0e-10
+
+def is_equal(lhs: <Real>, rhs: <Real>) -> Bool =
+  (Set.mem rhs (Set.add lhs (Set.empty)))
 
 def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
   def subsetleft = forAll (fun e: ? -> (Set.mem e rhs)) (Set.toList lhs);
@@ -32,17 +36,13 @@ def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
-def eval_from_vmap(a: <?>, mu: VMap) -> ? = {
-  def eval(a: <Real>) -> Real = {
-    if (Map.mem a mu) then (Map.find a mu)
-    else error "Undefined in eval from vmap"
-  };
-  match a with
-  | der x -> eval a
-  | sym: Real -> eval a
-  | a_1 a_2 ->  (eval_from_vmap a_1 mu) (eval_from_vmap a_2 mu)
-  | lift op: ? -> op
-  | _ ->  error "Unsupported model construct"
+def eval_from_vmap(a: <?>, mu: VMap) -> Real = {
+  def checkUndef = (fun x: <Real> -> if (Map.mem x mu) then ()
+    else error "undefined variable");
+
+  def yyfun(x: <Real>) -> <Real> = { def _ = checkUndef x; (Map.find x mu) };
+  def ypfun(x: <Real>) -> <Real> = { error "we do not allow derivatives in vmap" };
+  eval a yyfun ypfun
 }
 
 def eval_from_vmap_with_default_val(expr: <Real>, mu: VMap, default: Real)
@@ -150,18 +150,29 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
 }
 
 def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)
-  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap) = {
-  def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray, yp: VarArray) -> [Real] = {
-    def f = (fun e: <Real> -> evalFromArrays e ukm yy yp);
+  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
+
+  def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray,
+    yp: VarArray)-> [Real] = {
+
+    def f = (fun e: <Real> -> (evalFromArrays e ukm yy yp) - EPSILON);
     map f zcbl
   };
+
+  def makeZCMap(zcbl: [<Real>]) -> ZCMap = {
+    def f(i: Int, e: <Real>) -> (<Real>, Int) = { (e, i) };
+    listToMap (mapi f zcbl)
+  };
+
+  def zcbl = (Set.toList L);
   def (E, vmap, t) = f;
   def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap undefval;
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (set_to_cont E);
-  def rootf = makeRootFun (Set.toList L) ukm;
+  def rootf = makeRootFun zcbl ukm;
+  def zcm = makeZCMap zcbl;
   def nroots = (Set.size L);
-  (resf, nroots, rootf, yy, yp, vids, ukm)
+  (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
 }
 
 def get_dae_find_ic_input(f: F, undefval: Real) ->
@@ -188,3 +199,35 @@ def makeBEulerFuns(eqs: Equations, ukm: UkMap, h: Real, yy0: {Real}, yy: {Real})
 
   map f (cont_to_list eqs)
 }
+
+// def interpolateOverZeroCrossing(zcm: ZCMap, zca: {Root}, ukm: UkMap,
+//   t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real}) -> Real = {
+
+//   def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {
+//     def i = (fst (Map.find x ukm));
+//     def x0 = (Array.get a0 i);
+//     def x1 = (Array.get a1 i);
+//     (x1 - x0) / (t1 - t2) * (t - t0) + x0
+//   };
+
+//   def yyfun(t: Real, x: <Real>) = f yy0 yy1;
+//   def ypfun(t: Real, x: <Real>) = f yp0 yp1;
+
+//   def candidates =
+//    map
+//      (fun e: (<Real>, Int) -> fst e)
+//      (filter
+//        (fun b: (<Real>, Int) -> { def (e, i) = b; (Array.get zca i) != 0 })
+//        (Map.toList zcm));
+
+//   def sysf(ts: {Real}) -> [Real] = {
+//     def f(i: Int, c: <Real>) -> Real = {
+//       def t = (Array.get ts i);
+//       eval c (yyfun t) (ypfun t)
+//     };
+
+//     mapi f candidates
+//   };
+
+//   def tt = (Array.mk )
+// }

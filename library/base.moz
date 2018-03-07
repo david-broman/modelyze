@@ -267,3 +267,8 @@ def concat(lhs: [Dyn], rhs: [Dyn]) -> [Dyn] = {
   def f(l: [Dyn], e: Dyn) -> [Dyn] = { e::l };
   foldLeft f rhs rlhs
 }
+
+def filter(p: (Dyn -> Bool), l: [Dyn]) -> [Dyn] = {
+  def f(acc: [Dyn], e: Dyn) -> [Dyn] = { if p e then e::acc else acc };
+  foldLeft f [] l
+}

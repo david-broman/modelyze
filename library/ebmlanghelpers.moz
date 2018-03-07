@@ -27,16 +27,16 @@ type M = (Equations, F, Set(<Real>), T)
 
 def EPSILON = 1.0e-10
 
-def is_equal(lhs: <Real>, rhs: <Real>) -> Bool =
+def isEqual(lhs: <Real>, rhs: <Real>) -> Bool =
   (Set.mem rhs (Set.add lhs (Set.empty)))
 
-def is_equal(lhs: Set(?), rhs: Set(?)) -> Bool = {
+def isEqual(lhs: Set(?), rhs: Set(?)) -> Bool = {
   def subsetleft = forAll (fun e: ? -> (Set.mem e rhs)) (Set.toList lhs);
   def subsetright = forAll (fun e: ? -> (Set.mem e lhs)) (Set.toList rhs);
   subsetleft && subsetright
 }
 
-def eval_from_vmap(a: <?>, mu: VMap) -> Real = {
+def evalFromVmap(a: <?>, mu: VMap) -> Real = {
   def checkUndef = (fun x: <Real> -> if (Map.mem x mu) then ()
     else error "undefined variable");
 
@@ -45,39 +45,39 @@ def eval_from_vmap(a: <?>, mu: VMap) -> Real = {
   eval a yyfun ypfun
 }
 
-def eval_from_vmap_with_default_val(expr: <Real>, mu: VMap, default: Real)
+def evalFromVmapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
   -> Real = {
 
-  def undefined_vars_in(expr: <?>) -> Bool = {
+  def hasUndefinedVars(expr: <?>) -> Bool = {
     match expr with
     | sym: Real -> !(Map.mem expr mu)
     | der x -> !(Map.mem expr mu)
-    | f e -> (undefined_vars_in f) || (undefined_vars_in e)
+    | f e -> (hasUndefinedVars f) || (hasUndefinedVars e)
     | lift v: ? -> false
-    | _ -> error "Unmatched pattern in undefined_vars_in"
+    | _ -> error "Unmatched pattern in hasUndefinedVars"
   };
 
-  if undefined_vars_in expr then default
-  else eval_from_vmap expr mu
+  if hasUndefinedVars expr then default
+  else evalFromVmap expr mu
 }
 
-def eval_from_arrays_with_default_val(expr: <Real>, ukm: UkMap, yy: VarArray,
+def evalFromArraysWithDefaultVal(expr: <Real>, ukm: UkMap, yy: VarArray,
   yp: VarArray, default: Real) -> Real = {
 
-  def undefined_vars_in(expr: <?>) -> Bool = {
+  def hasUndefinedVars(expr: <?>) -> Bool = {
     match expr with
     | sym: Real -> !(Map.mem expr ukm)
-    | der x -> undefined_vars_in x
-    | f e -> (undefined_vars_in f) || (undefined_vars_in e)
+    | der x -> hasUndefinedVars x
+    | f e -> (hasUndefinedVars f) || (hasUndefinedVars e)
     | lift v: ? -> false
-    | _ -> error "Unmatched pattern in undefined_vars_in"
+    | _ -> error "Unmatched pattern in hasUndefinedVars"
   };
 
-  if undefined_vars_in expr then default
+  if hasUndefinedVars expr then default
   else evalFromArrays expr ukm yy yp
 }
 
-def cont_to_set(cont: ?) -> Set(?) = {
+def contToSet(cont: ?) -> Set(?) = {
   def work(cont: ?, acc: Set(?)) -> Set(?) = {
     match cont with
     | this; that -> work that (work this acc)
@@ -86,11 +86,11 @@ def cont_to_set(cont: ?) -> Set(?) = {
   work cont (Set.empty)
 }
 
-def cont_to_list(cont: ?) -> [?] = {
-  reverse (Set.toList (cont_to_set cont))
+def contToList(cont: ?) -> [?] = {
+  reverse (Set.toList (contToSet cont))
 }
 
-def set_to_cont_impl(set: Set(?)) -> ? = {
+def setToCont_impl(set: Set(?)) -> ? = {
    def work(l: [?], acc: ?) -> ? = {
       match l with
       | e::es -> work es (acc;e)
@@ -101,18 +101,18 @@ def set_to_cont_impl(set: Set(?)) -> ? = {
    if (length l) == 1 then (hd l) else work (tl l) (hd l)
 }
 
-def set_to_cont(set: Set(?)) -> ? = {
-  set_to_cont_impl set
+def setToCont(set: Set(?)) -> ? = {
+  setToCont_impl set
 }
 
-def set_to_cont(set: Set(Equations)) -> Equations = {
-  if (Set.size set) == 0 then NoEqn else set_to_cont_impl set
+def setToCont(set: Set(Equations)) -> Equations = {
+  if (Set.size set) == 0 then NoEqn else setToCont_impl set
 }
 
-def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
+def eVMapToUkMapYyYp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   (UkMap, VarArray, VarArray) = {
-  def llog = logger "E_vmap_to_ukmap_yy_yp" DEBUG;
-  def (n, ukm) = realUnknowns (set_to_cont E);
+  def llog = logger "eVMapToUkMapYyYp" DEBUG;
+  def (n, ukm) = realUnknowns (setToCont E);
   def yy = (Array.make n undefval);
   def yp = (Array.make n undefval);
   def work(gvlist: [(<Real>, Real)]) -> () = {
@@ -141,7 +141,7 @@ def E_vmap_to_ukmap_yy_yp(E: Set(Equations), vmap: VMap, undefval: Real) ->
   (ukm, yy, yp)
 }
 
-def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
+def ukMapYyYpToVMap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
   def f(acc: VMap,  e: (<Real>, (Int, Bool))) -> VMap = {
     def (x, (i, _)) = e;
     Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
@@ -149,7 +149,7 @@ def ukmap_yy_yp_to_vmap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)
+def getDAESolverInput(f: F, L: Set(<Real>), undefval: Real)
   -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
 
   def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray,
@@ -166,19 +166,19 @@ def get_dae_solver_input(f: F, L: Set(<Real>), undefval: Real)
 
   def zcbl = (Set.toList L);
   def (E, vmap, t) = f;
-  def (ukm, yy, yp) = E_vmap_to_ukmap_yy_yp E vmap undefval;
+  def (ukm, yy, yp) = eVMapToUkMapYyYp E vmap undefval;
   def vids = initConditionCorrection ukm;
-  def resf = makeResidual ukm (set_to_cont E);
+  def resf = makeResidual ukm (setToCont E);
   def rootf = makeRootFun zcbl ukm;
   def zcm = makeZCMap zcbl;
   def nroots = (Set.size L);
   (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
 }
 
-def get_dae_find_ic_input(f: F, undefval: Real) ->
+def getDAEFindICInput(f: F, undefval: Real) ->
   (Residual, VarArray, VarArray, VarArray, UkMap) = {
   def (resf, _, _, yy, yp, vids, ukm) =
-    get_dae_solver_input f (Set.empty) undefval;
+    getDAESolverInput f (Set.empty) undefval;
   (resf, yy, yp, vids, ukm)
 }
 
@@ -197,7 +197,7 @@ def makeBEulerFuns(eqs: Equations, ukm: UkMap, h: Real, yy0: {Real}, yy: {Real})
     | _ -> error "Expected only equations here"
   };
 
-  map f (cont_to_list eqs)
+  map f (contToList eqs)
 }
 
 // def interpolateOverZeroCrossing(zcm: ZCMap, zca: {Root}, ukm: UkMap,

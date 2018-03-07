@@ -430,6 +430,6 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
   def circeqs = matrixVMapToEquations B evec;
   def _ = llog "circ eqs:" circeqs;
   def E = union floweqs circeqs;
-  def _ = llog "topological equations" (set_to_cont E);
+  def _ = llog "topological equations" (setToCont E);
   E
 }

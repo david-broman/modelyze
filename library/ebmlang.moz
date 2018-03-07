@@ -49,29 +49,29 @@ def M_s(s: Equations, sp: S) -> S = {
 
 def elabtopol(G: Set(?)) -> Set(Equations) = {
   def llog = logger "elabtopol" DEBUG;
-  def _ = llog "before:" (set_to_cont G);
+  def _ = llog "before:" (setToCont G);
   def E = { if (Set.size G) == 0 then Set.empty else
-    // cont_to_set (elaborateConnections (set_to_cont G)) };
+    // contToSet (elaborateConnections (setToCont G)) };
     elaboratetopology G };
-  def _ = llog "after:" (set_to_cont E);
+  def _ = llog "after:" (setToCont E);
   E
 }
 
 def indexred(E: Set(Equations)) -> Set(Equations) = {
   def llog = logger "indexred" DEBUG;
-  def _ = llog "before ir" (set_to_cont E);
-  def (Ep, dmap) = indexReducationPantelides (set_to_cont E) (Map.empty);
+  def _ = llog "before ir" (setToCont E);
+  def (Ep, dmap) = indexReducationPantelides (setToCont E) (Map.empty);
   def _ = llog "after ir" Ep;
-  cont_to_set Ep
+  contToSet Ep
 }
 
 def findiv(f: F) -> (VMap, Real) = {
   def dt = 0.00001;
   def (_, _, t0) = f;
-  def (resf, yy0, yp0, vids, ukm) = get_dae_find_ic_input f 0.;
+  def (resf, yy0, yp0, vids, ukm) = getDAEFindICInput f 0.;
   def s = (DAESolver.init resf t0 yy0 yp0);
   def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 (t0 + dt));
-  (ukmap_yy_yp_to_vmap ukm yy0 yp0, t0 +  dt)
+  (ukMapYyYpToVMap ukm yy0 yp0, t0 +  dt)
 }
 
 def M_f(s: Equations, t: Real) -> F = {

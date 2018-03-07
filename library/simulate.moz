@@ -27,9 +27,10 @@ def ctsim(dt: Real, tend: Real, probes: [<Real>], f: F, L: Set(<Real>))
   -> ([StepVal], Real, VMap, SolverResult) = {
 
   def llog = logger "ctsim" DEBUG;
+
   def (_, _, t0) = f;
-  def (resf, nroots, rootf, yy, yp, vids, ukm) =
-    get_dae_solver_input f L 0.;
+  def (resf, nroots, rootf, yy, yp, vids, ukm, zcm) =
+    getDAESolverInput f L 0.;
 
   def mm = (DAESolver.initWithRootf resf nroots rootf t0 yy yp);
   def _ = (DAESolver.setStopTime mm tend);
@@ -43,7 +44,7 @@ def ctsim(dt: Real, tend: Real, probes: [<Real>], f: F, L: Set(<Real>))
 
     def eval(t: Real) -> StepVal = {
       (t, map (fun e: <Real> ->
-        eval_from_arrays_with_default_val e ukm yy yp INFINITE) probes)
+        evalFromArraysWithDefaultVal e ukm yy yp INFINITE) probes)
     };
 
     def accp = (eval(t))::acc;
@@ -56,7 +57,7 @@ def ctsim(dt: Real, tend: Real, probes: [<Real>], f: F, L: Set(<Real>))
   };
 
   def (tp, sr, svs) = go(t0 + dtt, DAE_SOLVER_RESULT_SUCCESS, []);
-  def mu = ukmap_yy_yp_to_vmap ukm yy yp;
+  def mu = ukMapYyYpToVMap ukm yy yp;
   (svs, tp, mu, sr)
 }
 
@@ -98,7 +99,7 @@ def simulatemebmlDebug(m: Equations, t0: Real, dt: Real, tend: Real,
 
     def eval(mu: VMap, t: Real) -> StepVal = {
       (t, map (fun e: <Real> ->
-        eval_from_vmap_with_default_val e mu INFINITE) probes)
+        evalFromVmapWithDefaultVal e mu INFINITE) probes)
     };
 
     def mp = Mp_m m mu tau;

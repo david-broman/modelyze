@@ -36,13 +36,51 @@ def isEqual(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
-def evalFromVMap(a: <?>, mu: VMap) -> Real = {
-  def checkUndef = (fun x: <Real> -> if (Map.mem x mu) then ()
-    else error "undefined variable");
+def checkStateVar(x: <Real>) -> () = {
+  match x with
+  | sym: Real -> ()
+  | _ -> error "Not a state variable"
+}
 
-  def yyfun(x: <Real>) -> <Real> = { def _ = checkUndef x; (Map.find x mu) };
+def find(x: <Real>, vmap: VMap) -> Real = {
+  def _ = checkStateVar x;
+  if (Map.mem x vmap) then (Map.find x vmap)
+  else error "State variable undefined"
+}
+
+def add(x: <Real>, v: Real, vmap: VMap) -> VMap = {
+  def _ = checkStateVar x;
+  Map.add x v vmap
+}
+
+def isUndefined(x: <Real>, vmap: VMap) -> Bool = {
+  def _ = checkStateVar x;
+  !(Map.mem x vmap)
+}
+
+def evalFromVMap(a: <?>, mu: VMap) -> Real = {
+  def yyfun(x: <Real>) -> <Real> = { (find x mu) };
   def ypfun(x: <Real>) -> <Real> = { error "we do not allow derivatives in vmap" };
   eval a yyfun ypfun
+}
+
+def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
+  def evalReal(expr: <?>) -> Real = (evalFromVMap expr vmap);
+  def evalBool(expr: <?>) -> Bool = {
+    match expr with
+    | e1 == e2 -> error "Not allowed to compare for equality in transitions."
+    | e1 != e2 -> error "Not allowed to compare for equality in transitions."
+    | e1 >= e2 -> evalReal(e1) >=  evalReal(e2)
+    | e1 >  e2 -> evalReal(e1) >  evalReal(e2)
+    | e1 <= e2 -> evalReal(e1) <=  evalReal(e2)
+    | e1 <  e2 -> evalReal(e1) <  evalReal(e2)
+    | !e1 -> !(evalBool(e1))
+    | e1 && e2 -> evalBool(e1) && evalBool(e2)
+    | e1 || e2 -> evalBool(e1) || evalBool(e2)
+    | lift b:Bool -> b
+    | _ -> error "The value is not a boolean type."
+  };
+  evalBool(expr);
 }
 
 def evalFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
@@ -50,7 +88,7 @@ def evalFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
 
   def hasUndefinedVars(expr: <?>) -> Bool = {
     match expr with
-    | sym: Real -> !(Map.mem expr mu)
+    | sym: Real -> isUndefined expr mu
     | der x -> !(Map.mem expr mu)
     | f e -> (hasUndefinedVars f) || (hasUndefinedVars e)
     | lift v: ? -> false
@@ -90,7 +128,7 @@ def contToList(cont: ?) -> [?] = {
   reverse (Set.toList (contToSet cont))
 }
 
-def setToCont_impl(set: Set(?)) -> ? = {
+def setToContImpl(set: Set(?)) -> ? = {
    def work(l: [?], acc: ?) -> ? = {
       match l with
       | e::es -> work es (acc;e)
@@ -102,11 +140,11 @@ def setToCont_impl(set: Set(?)) -> ? = {
 }
 
 def setToCont(set: Set(?)) -> ? = {
-  setToCont_impl set
+  setToContImpl set
 }
 
 def setToCont(set: Set(Equations)) -> Equations = {
-  if (Set.size set) == 0 then NoEqn else setToCont_impl set
+  if (Set.size set) == 0 then NoEqn else setToContImpl set
 }
 
 def eVMapToUkMapYyYp(E: Set(Equations), vmap: VMap, undefval: Real) ->

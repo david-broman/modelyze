@@ -1,0 +1,18 @@
+include OSCMMLANG
+
+def x, y, z: <Real>
+// def n1, n2: Node
+def vmap = listToMap [(x, 1.), (y, -1.)]
+
+// def model = {
+//   Branch x y n1 n2;
+//   location
+//     (x = der y + 2.)
+//     [
+//       (y > 0., ([], fun t: () -> x = 0.)),
+//       (y > 1., ([], fun t: () -> y = 0.))
+//     ]
+//     (x > 0.)
+// }
+
+def main = dprint(isUndefined x vmap)

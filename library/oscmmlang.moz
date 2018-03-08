@@ -28,10 +28,11 @@ type Invariant = <Bool>
 type Transition = ([Step], Location)
 type GuardedTransition = (Predicate, () -> Transition)
 
-def loc: Equations -> Invariant -> [GuardedTransition] -> Location
-def step: <Real> -> <Real> -> Step
+def loc: Location -> Invariant -> [GuardedTransition] -> Location
+def eqns: Equations -> Location
 def (;): Location -> Location -> Location
 def noloc: () -> Location
+def step: <Real> -> <Real> -> Step
 
 def elabtopol(G: Set(?)) -> Set(Equations) = {
   def E = {
@@ -49,7 +50,7 @@ def fulfills(inv: Invariant, vmap: VMap) -> Bool = {
   evalBoolFromVMap inv vmap
 }
 
-def transLoc(gts: [GuardedTransition], vmap: VMap, nvmap: VMap)
+def transition(gts: [GuardedTransition], vmap: VMap, nvmap: VMap)
   -> (Location, VMap) = {
 
   def valid(gt: GuardedTransition) -> Bool = {
@@ -81,25 +82,40 @@ def transLoc(gts: [GuardedTransition], vmap: VMap, nvmap: VMap)
     }
 }
 
-def findLocs(lcs: Location, vmap: VMap, nvmap: VMap) -> (Location, VMap) = {
+def findLocsBeforeImp(lcs: Location, vmap: VMap, nvmap: VMap)
+  -> (Location, VMap) = {
+
   match lcs with
   | lcs_1; lcs_2 -> {
-      def (lloc, lnvmap) = (findLocs lcs_1 vmap nvmap);
-      def (rloc, rnvmap) = (findLocs lcs_2 vmap lnvmap);
+      def (lloc, lnvmap) = (findLocsBeforeImp lcs_1 vmap nvmap);
+      def (rloc, rnvmap) = (findLocsBeforeImp lcs_2 vmap lnvmap);
       (lloc; rloc, rnvmap)
     }
-  | e_1 = e_2 -> (lcs, nvmap)
-  | init _ _ -> (lcs, nvmap)
-  | Branch _ _ _ _ -> (lcs, nvmap)
-  | loc eqs inv (lift gts: [GuardedTransition]) -> {
-      if fulfills inv vmap then (lcs, nvmap)
-      else {
-        def (l, nnvmap) = transLoc gts vmap nvmap;
-        findLocs l vmap nnvmap
-      }
+  | loc loc_1 inv (lift gts: [GuardedTransition]) -> {
+      if fulfills inv vmap then {
+        def (l, nnvmap) = findLocsBeforeImp loc_1 vmap nvmap;
+        (loc l inv gts, nvmap)
+      } else transition gts vmap nvmap
     }
+  | eqn _ -> (lcs, nvmap)
   | noloc _ -> (lcs, nvmap)
   | _ -> {
-    error "Unmatched pattern in findLocs"
-  }
+      def _ = dprint(lcs);
+      error "Unmatched pattern in findLocsBeforeImp"
+    }
+}
+
+def getDAE(lcs: Location) -> Equations = {
+  def getEquations(lcs: Location) -> Equations = {
+    match lcs with
+    | lcs_1; lcs_2 -> (getEquations lcs_1); (getEquations lcs_2)
+    | loc loc_1 _ _ -> getEquations loc_1
+    | eqns e -> e
+    | noloc _ -> nilp ()
+    | _ -> {
+        def _ = dprint(lcs);
+        error "Unmatched pattern in getEquations"
+      }
+  };
+  getEquations lcs
 }

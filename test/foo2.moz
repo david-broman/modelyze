@@ -2,21 +2,21 @@ include OSCMMLANG
 
 def x, y, z: <Real>
 // def n1, n2: Node
-def vmap = listToMap [(x, 0.1), (y, 1.1)]
+def vmap = listToMap [(x, 1.1), (y, 1.1)]
 
 def loc1 = loc
-  (x = der y)
+  (eqns (x = der y))
   (x > 0.)
   []
 
 def loc2 = loc
-  (x^2. = der y)
+  (eqns (x^2. = der y))
   (y > 0.)
   []
 
 def loc3 = {
   loc
-    (der y = 3.)
+    (eqns (der y = 3.); loc1)
     (x > 1. && y > 1.)
     [
       (x > 0.5, fun t: () -> ([step x 1.], loc1)),
@@ -24,4 +24,7 @@ def loc3 = {
     ]
 }
 
-def main = dprint(findLocs loc3 vmap (Map.empty))
+def main = {
+  def (l, _) = dprint(findLocsBeforeImp loc3 vmap (Map.empty));
+  dprint(getDAE l)
+}

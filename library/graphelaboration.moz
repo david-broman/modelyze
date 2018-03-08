@@ -394,7 +394,6 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
 }
 
 def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
-
   def llog = logger "elaboratetopology" DEBUG;
 
   def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
@@ -419,17 +418,24 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
   def (A, nvm) = getThroughMatrix IMr vm;
   def _ = llog "Cutset Matrix (A)" (pp A);
   def _ = llog "modified Variable Map" nvm;
-  def B = getAcrossMatrix A;
-  def _ = llog "Circuit Matrix (B)" (pp B);
   def fvec = listToMap (map ff (Map.toList nvm));
   def _ = llog "we have flow vec:" fvec;
-  def evec = listToMap (map fe (Map.toList nvm));
-  def _ = llog "and effort vec:" evec;
   def floweqs = matrixVMapToEquations A fvec;
   def _ = llog "flow eqs:" floweqs;
-  def circeqs = matrixVMapToEquations B evec;
-  def _ = llog "circ eqs:" circeqs;
-  def E = union floweqs circeqs;
-  def _ = llog "topological equations" (setToCont E);
-  E
+  def (_, n, m) = A;
+  if (m > 1) then {
+    def B = getAcrossMatrix A;
+    def _ = llog "Circuit Matrix (B)" (pp B);
+    def evec = listToMap (map fe (Map.toList nvm));
+    def _ = llog "and effort vec:" evec;
+    def circeqs = matrixVMapToEquations B evec;
+    def _ = llog "circ eqs:" circeqs;
+    def E = union floweqs circeqs;
+    def _ = llog "topological equations" (setToCont E);
+    E
+  } else {
+    def _ =
+      llog "We only have one edge, topological equations" (setToCont floweqs);
+    floweqs
+  }
 }

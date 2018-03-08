@@ -2,17 +2,26 @@ include OSCMMLANG
 
 def x, y, z: <Real>
 // def n1, n2: Node
-def vmap = listToMap [(x, 1.), (y, -1.)]
+def vmap = listToMap [(x, 0.1), (y, 1.1)]
 
-// def model = {
-//   Branch x y n1 n2;
-//   location
-//     (x = der y + 2.)
-//     [
-//       (y > 0., ([], fun t: () -> x = 0.)),
-//       (y > 1., ([], fun t: () -> y = 0.))
-//     ]
-//     (x > 0.)
-// }
+def loc1 = loc
+  (x = der y)
+  (x > 0.)
+  []
 
-def main = dprint(isUndefined x vmap)
+def loc2 = loc
+  (x^2. = der y)
+  (y > 0.)
+  []
+
+def loc3 = {
+  loc
+    (der y = 3.)
+    (x > 1. && y > 1.)
+    [
+      (x > 0.5, fun t: () -> ([step x 1.], loc1)),
+      (y > 0.5, fun t:() -> ([step y (x + 1.)], loc2))
+    ]
+}
+
+def main = dprint(findLocs loc3 vmap (Map.empty))

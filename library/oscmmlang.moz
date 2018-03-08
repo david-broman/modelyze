@@ -1,0 +1,102 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include OSCLANG
+include GraphElaboration
+
+type Location
+type Predicate = <Bool>
+type Step
+type Invariant = <Bool>
+type Transition = ([Step], Location)
+type GuardedTransition = (Predicate, () -> Transition)
+
+def loc: Equations -> Invariant -> [GuardedTransition] -> Location
+def step: <Real> -> <Real> -> Step
+def (;): Location -> Location -> Location
+def noloc: () -> Location
+
+def elabtopol(G: Set(?)) -> Set(Equations) = {
+  def E = {
+   if (Set.size G) == 0 then Set.empty
+   else  elaboratetopology G
+  };
+  E
+}
+
+def eval(e: <Real>, vmap: VMap) -> Real = {
+  evalFromVMap e vmap
+}
+
+def fulfills(inv: Invariant, vmap: VMap) -> Bool = {
+  evalBoolFromVMap inv vmap
+}
+
+def transLoc(gts: [GuardedTransition], vmap: VMap) -> (Location, VMap) = {
+
+  def valid(gt: GuardedTransition) -> Bool = {
+    evalBoolFromVMap (fst gt) vmap
+  };
+
+  def addstep(nvmap: VMap, s: Step) -> VMap = {
+    match s with
+    | step x e -> {
+        if isUndefined x nvmap then add x (eval e vmap) nvmap
+        else error "Multiple steps on the same state variable"
+      };
+  };
+
+  def vts = filter valid gts;
+
+  match vts with
+  | [] -> error "No valid location transitions"
+  | _ -> {
+      def locs = map (fun t: GuardedTransition -> (snd t) ()) vts;
+
+      def f(acc: (Location, VMap), t: Transition) -> (Location, VMap) = {
+        def (locs, nvmap) = acc;
+        def (ss, l) = t;
+        (locs;l, foldLeft addstep nvmap ss)
+      };
+
+      foldLeft f (noloc ()) locs
+    }
+}
+
+def findLocs(lcs: Location, vmap: VMap, nvmap: VMap) -> (Location, VMap) = {
+  match lcs with
+  | lcs_1; lcs_2 -> {
+      def (lloc, lnvmap) = (findLocs lcs_1 vmap nvmap);
+      def (rloc, rnvmap) = (findLocs lcs_2 vmap lnvmap);
+      (lloc;rloc, rnvmap)
+    }
+  | e_1 = e_2 -> (lcs, nvmap)
+  | init _ _ -> (lcs, nvmap)
+  | Branch _ _ _ _ -> (lcs, nvmap)
+  | loc lcs_1 inv (lift gts: [GuardedTransition]) -> {
+      if fulfills inv vmap then (lcs, nvmap)
+      else {
+        def (l, nnvmap) = transLoc gts nvmap;
+        findLocs l vmap nnvmap
+      }
+    }
+  | nilp _ -> (lcs, nvmap)
+  | _ -> error "Unmatched pattern in findLocs"
+}

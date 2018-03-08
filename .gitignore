@@ -10,3 +10,5 @@ Viktor Testar/
 /tags
 /.merlin
 tmux*
+.vsocde
+/.vscode/tasks.json

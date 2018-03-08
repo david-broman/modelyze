@@ -99,7 +99,7 @@ def simulatemebmlDebug(m: Equations, t0: Real, dt: Real, tend: Real,
 
     def eval(mu: VMap, t: Real) -> StepVal = {
       (t, map (fun e: <Real> ->
-        evalFromVmapWithDefaultVal e mu INFINITE) probes)
+        evalFromVMapWithDefaultVal e mu INFINITE) probes)
     };
 
     def mp = Mp_m m mu tau;

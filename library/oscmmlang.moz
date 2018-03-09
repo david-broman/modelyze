@@ -29,14 +29,6 @@ def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
   error "Unmatched pattern"
 }
 
-def elabtopol(G: Set(?)) -> Set(Equations) = {
-  def E = {
-   if (Set.size G) == 0 then Set.empty
-   else  elaboratetopology G
-  };
-  E
-}
-
 def evalReal(e: <Real>, vm: VMap) -> Real = {
   evalRealFromVMap e vm
 }
@@ -78,6 +70,32 @@ def elabinits(es: Equations, vm: VMap) -> VMap = {
   | init x v ->
       if isUndefined x vm then add x (evalReal v vm) vm else vm
   | Branch _ _ _ _ -> vm
-  | sw es_1 _ r -> (elabinits es_1 vm)
+  | sw es_1 _ _ -> (elabinits es_1 vm)
+  | _ -> unmatched llog es
+}
+
+def elabtopol(es: Equations, E: Set(Equations)) -> Set(Equations) = {
+  def llog = logger "elabtopol";
+  def gather(es: Equations, E: Set(?)) -> Set(?) = {
+    match es with
+    | e_1; e_2 -> gather e_1 (gather e_2 E)
+    | d_1 = d_2 -> E
+    | init x v -> E
+    | Branch _ _ _ _ -> (Set.add es E)
+    | sw es_1 _ _ -> (gather es_1 E)
+    | _ -> unmatched llog es
+  };
+
+  elaboratetopology (gather es (Set.empty))
+}
+
+def gathereqs(es: Equations, E: Set(Equations)) -> Set(Equations) = {
+  def llog = logger "gathereqs";
+  match es with
+  | e_1; e_2 -> gathereqs e_1 (gathereqs e_2 E)
+  | d_1 = d_2 -> (Set.add es E)
+  | init x v -> E
+  | Branch _ _ _ _ -> E
+  | sw es_1 _ _ -> (gathereqs es_1 E)
   | _ -> unmatched llog es
 }

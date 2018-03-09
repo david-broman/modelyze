@@ -37,39 +37,47 @@ def elabtopol(G: Set(?)) -> Set(Equations) = {
   E
 }
 
-def eval(e: <Real>, vm: VMap) -> Real = {
+def evalReal(e: <Real>, vm: VMap) -> Real = {
   evalRealFromVMap e vm
 }
 
-def eval(e: <Bool>, vm: VMap) -> Bool = {
+def evalBool(e: <Bool>, vm: VMap) -> Bool = {
   evalBoolFromVMap e vm
 }
 
 def stable(es: Equations, vm: VMap) -> Bool = {
   def llog = logger "stable";
-  def _ = llog DEBUG "checking if sub-tree is stable:" es;
-  def _ = llog DEBUG "where the state variable value map is:" vm;
   match es with
   | e_1; e_2 -> (stable e_1 vm) && (stable e_2 vm)
   | d_1 = d_2 -> true
   | init _ _ -> true
   | Branch _ _ _ _ -> true
-  | sw es_1 _ r -> (eval r vm) && (stable es_1 vm)
+  | sw es_1 _ r -> (evalBool r vm) && (stable es_1 vm)
   | _ -> unmatched llog es
 }
 
 def elabsws(es: Equations, vm: VMap) -> Equations = {
   def llog = logger "elabsws";
-  def _ = llog DEBUG "elaborating switches on sub-tree:" es;
-  def _ = llog DEBUG "where the state variable value map is:" vm;
   match es with
   | e_1; e_2 -> (elabsws e_1 vm); (elabsws e_2 vm)
   | d_1 = d_2 -> es
   | init _ _ -> es
   | Branch _ _ _ _ -> es
   | sw es_1 (lift es_2: (() -> ?)) r -> {
-      if eval r vm then sw (elabsws es_1 vm) (fun t: () -> es_2) r
+      if evalBool r vm then sw (elabsws es_1 vm) (fun t: () -> es_2) r
       else es_2 ()
     }
+  | _ -> unmatched llog es
+}
+
+def elabinits(es: Equations, vm: VMap) -> VMap = {
+  def llog = logger "elabinits";
+  match es with
+  | e_1; e_2 -> elabinits e_1 (elabinits e_2 vm)
+  | d_1 = d_2 -> vm
+  | init x v ->
+      if isUndefined x vm then add x (evalReal v vm) vm else vm
+  | Branch _ _ _ _ -> vm
+  | sw es_1 _ r -> (elabinits es_1 vm)
   | _ -> unmatched llog es
 }

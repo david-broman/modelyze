@@ -9,11 +9,11 @@ def model = {
   x = der y;
   Branch x y n1 n2;
   sw
-    (y = 3.; sw (x = 2.) (fun t: () -> x = 3.*y) (x > 2.))
+    (y = 3.; sw (x = 2.; init z x) (fun t: () -> x = 3.*y) (x > 2.))
     (fun t: () -> x + y = 0.)
     (y > 1. && x > 1.)
 }
 
 def main = {
-  dprint(stable model vm)
+  dprint(elabinits model vm)
 }

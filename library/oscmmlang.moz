@@ -30,7 +30,7 @@ type GuardedTransition = (Predicate, () -> Transition)
 
 def loc: Location -> Invariant -> [GuardedTransition] -> Location
 def eqns: Equations -> Location
-def (;): Location -> Location -> Location
+def cont: Location -> Location -> Location
 def noloc: () -> Location
 def step: <Real> -> <Real> -> Step
 
@@ -75,7 +75,7 @@ def transition(gts: [GuardedTransition], vmap: VMap, nvmap: VMap)
       def f(acc: (Location, VMap), t: Transition) -> (Location, VMap) = {
         def (locs, nvmap) = acc;
         def (ss, l) = t;
-        (locs;l, foldLeft addstep nvmap ss)
+        (cont locs l, foldLeft addstep nvmap ss)
       };
 
       foldLeft f (noloc (), nvmap) locs
@@ -86,10 +86,10 @@ def findLocsBeforeImp(lcs: Location, vmap: VMap, nvmap: VMap)
   -> (Location, VMap) = {
 
   match lcs with
-  | lcs_1; lcs_2 -> {
+  | cont lcs_1 lcs_2 -> {
       def (lloc, lnvmap) = (findLocsBeforeImp lcs_1 vmap nvmap);
       def (rloc, rnvmap) = (findLocsBeforeImp lcs_2 vmap lnvmap);
-      (lloc; rloc, rnvmap)
+      (cont lloc rloc, rnvmap)
     }
   | loc loc_1 inv (lift gts: [GuardedTransition]) -> {
       if fulfills inv vmap then {
@@ -105,17 +105,41 @@ def findLocsBeforeImp(lcs: Location, vmap: VMap, nvmap: VMap)
     }
 }
 
-def getDAE(lcs: Location) -> Equations = {
-  def getEquations(lcs: Location) -> Equations = {
+def getDAE(lcs: Location) -> Set(Equations) = {
+
+  def getEquationsAndTopology(lcs: Location) -> Equations = {
     match lcs with
-    | lcs_1; lcs_2 -> (getEquations lcs_1); (getEquations lcs_2)
-    | loc loc_1 _ _ -> getEquations loc_1
+    | cont lcs_1 lcs_2 ->
+      (getEquationsAndTopology lcs_1); (getEquationsAndTopology lcs_2)
+    | loc loc_1 _ _ -> getEquationsAndTopology loc_1
     | eqns e -> e
     | noloc _ -> nilp ()
     | _ -> {
         def _ = dprint(lcs);
+        error "Unmatched pattern in getEquationsAndTopology"
+      }
+  };
+
+  def getTopology(e: Equations, acc: Set(?)) -> Set(?) = {
+    match e with
+    | e_1; e_2 -> getTopology e_2 (sgetTopology e_1 acc)
+    | Branch _ _ _ _ -> Set.add e acc
+    | _ -> acc
+  };
+
+  def getEquations(e: Equations, acc: Set(Equations)) -> Set(Equations) = {
+    match e with
+    | e_1; e_2 -> getEquations e_2 (getEquations e_1 acc)
+    | e_1 = e_1 -> Set.add e acc
+    | init _ _ -> Set.add e acc
+    | Branch _ _ _ _ -> acc
+    | _ -> {
+        def _ = dprint(e);
         error "Unmatched pattern in getEquations"
       }
   };
-  getEquations lcs
+
+  def e = getEquationsAndTopology lcs;
+  def e_t = elabtopol (getTopology e (Set.empty));
+  union (getEquations e (Set.empty)) e_t
 }

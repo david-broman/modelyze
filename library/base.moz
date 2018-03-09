@@ -101,11 +101,12 @@ def println(i:Int) -> () = println(int2string(i))
 def println(i:Real) -> () = println(real2string(i))
 
 def OFF = (0, "THIS SHOULD NEVER BE PRINTED!")
-def DEBUG = (1, "DEBUG")
-def TRACE = (2, "TRACE")
+def INFO = (1, "INFO")
+def DEBUG = (2, "DEBUG")
+def TRACE = (3, "TRACE")
 
-//def loglevel = DEBUG
-def loglevel = OFF
+def loglevel = DEBUG
+// def loglevel = OFF
 
 def logger(frum: String, level: (Int, String), msg: String, thing: Dyn)
   -> () = {

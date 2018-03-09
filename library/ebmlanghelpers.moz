@@ -36,7 +36,7 @@ def isEqual(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
-def evalFromVMap(a: <?>, mu: VMap) -> Real = {
+def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   def checkUndef = (fun x: <Real> -> if (Map.mem x mu) then ()
     else error "undefined variable");
 
@@ -45,7 +45,7 @@ def evalFromVMap(a: <?>, mu: VMap) -> Real = {
   eval a yyfun ypfun
 }
 
-def evalFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
+def evalRealFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
   -> Real = {
 
   def hasUndefinedVars(expr: <?>) -> Bool = {
@@ -58,7 +58,7 @@ def evalFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
   };
 
   if hasUndefinedVars expr then default
-  else evalFromVMap expr mu
+  else evalRealFromVMap expr mu
 }
 
 def evalFromArraysWithDefaultVal(expr: <Real>, ukm: UkMap, yy: VarArray,

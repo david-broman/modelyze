@@ -23,9 +23,6 @@ include IndexReduction
 
 type S = (Set(Equations), VMap)
 
-def nil = NoEqn
-def nilp : () -> Equations //we need this to pattern match on nil
-
 def M_s(s: Equations, sp: S) -> S = {
   def (E, mu) = sp;
   match s with
@@ -39,7 +36,6 @@ def M_s(s: Equations, sp: S) -> S = {
       }
     }
   | s_1; s_2 -> M_s s_2 (M_s s_1 sp)
-  | nilp _ -> sp
   | _ -> error "Unmatched pattern in M_s"
 }
 

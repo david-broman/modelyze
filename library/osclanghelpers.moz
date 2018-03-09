@@ -58,14 +58,14 @@ def isUndefined(x: <Real>, vmap: VMap) -> Bool = {
   !(Map.mem x vmap)
 }
 
-def evalFromVMap(a: <?>, mu: VMap) -> Real = {
+def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   def yyfun(x: <Real>) -> <Real> = { (find x mu) };
   def ypfun(x: <Real>) -> <Real> = { error "we do not allow derivatives in vmap" };
   eval a yyfun ypfun
 }
 
 def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
-  def evalReal(expr: <?>) -> Real = (evalFromVMap expr vmap);
+  def evalReal(expr: <?>) -> Real = (evalRealFromVMap expr vmap);
   def evalBool(expr: <?>) -> Bool = {
     match expr with
     | e1 == e2 -> error "Not allowed to compare for equality in transitions."
@@ -83,7 +83,7 @@ def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
   evalBool(expr);
 }
 
-def evalFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
+def evalRealFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
   -> Real = {
 
   def hasUndefinedVars(expr: <?>) -> Bool = {
@@ -96,7 +96,7 @@ def evalFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
   };
 
   if hasUndefinedVars expr then default
-  else evalFromVMap expr mu
+  else evalRealFromVMap expr mu
 }
 
 def evalFromArraysWithDefaultVal(expr: <Real>, ukm: UkMap, yy: VarArray,

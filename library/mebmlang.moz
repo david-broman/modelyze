@@ -25,7 +25,7 @@ def reinit: <Real> -> Real -> Equations
 def switch: Equations -> (() -> ?) -> [<Real>] -> Equations
 
 def E_d(d: <Real>, mu: VMap) -> Real = {
-  evalFromVMap d mu
+  evalRealFromVMap d mu
 }
 
 def inside(L: Set(<Real>), mu: VMap) -> Bool = {

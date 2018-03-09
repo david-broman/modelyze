@@ -21,18 +21,13 @@ written by Oscar Eriksson oerikss@kth.se
 include OSCLANG
 include GraphElaboration
 
-type Location
-type Predicate = <Bool>
-type Step
-type Invariant = <Bool>
-type Transition = ([Step], Location)
-type GuardedTransition = (Predicate, () -> Transition)
+def pre: <Real> -> Equations
+def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 
-def loc: Location -> Invariant -> [GuardedTransition] -> Location
-def eqns: Equations -> Location
-def cont: Location -> Location -> Location
-def noloc: () -> Location
-def step: <Real> -> <Real> -> Step
+def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
+  def _ = llog INFO "Pattern:" pat;
+  error "Unmatched pattern"
+}
 
 def elabtopol(G: Set(?)) -> Set(Equations) = {
   def E = {
@@ -42,104 +37,39 @@ def elabtopol(G: Set(?)) -> Set(Equations) = {
   E
 }
 
-def eval(e: <Real>, vmap: VMap) -> Real = {
-  evalFromVMap e vmap
+def eval(e: <Real>, vm: VMap) -> Real = {
+  evalRealFromVMap e vm
 }
 
-def fulfills(inv: Invariant, vmap: VMap) -> Bool = {
-  evalBoolFromVMap inv vmap
+def eval(e: <Bool>, vm: VMap) -> Bool = {
+  evalBoolFromVMap e vm
 }
 
-def transition(gts: [GuardedTransition], vmap: VMap, nvmap: VMap)
-  -> (Location, VMap) = {
-
-  def valid(gt: GuardedTransition) -> Bool = {
-    evalBoolFromVMap (fst gt) vmap
-  };
-
-  def addstep(nvmap: VMap, s: Step) -> VMap = {
-    match s with
-    | step x e -> {
-        if isUndefined x nvmap then add x (eval e vmap) nvmap
-        else error "Multiple steps on the same state variable"
-      };
-  };
-
-  def vts = filter valid gts;
-
-  match vts with
-  | [] -> error "No valid location transitions"
-  | _ -> {
-      def locs = map (fun t: GuardedTransition -> (snd t) ()) vts;
-
-      def f(acc: (Location, VMap), t: Transition) -> (Location, VMap) = {
-        def (locs, nvmap) = acc;
-        def (ss, l) = t;
-        (cont locs l, foldLeft addstep nvmap ss)
-      };
-
-      foldLeft f (noloc (), nvmap) locs
-    }
+def stable(es: Equations, vm: VMap) -> Bool = {
+  def llog = logger "stable";
+  def _ = llog DEBUG "checking if sub-tree is stable:" es;
+  def _ = llog DEBUG "where the state variable value map is:" vm;
+  match es with
+  | e_1; e_2 -> (stable e_1 vm) && (stable e_2 vm)
+  | d_1 = d_2 -> true
+  | init _ _ -> true
+  | Branch _ _ _ _ -> true
+  | sw es_1 _ r -> (eval r vm) && (stable es_1 vm)
+  | _ -> unmatched llog es
 }
 
-def findLocsBeforeImp(lcs: Location, vmap: VMap, nvmap: VMap)
-  -> (Location, VMap) = {
-
-  match lcs with
-  | cont lcs_1 lcs_2 -> {
-      def (lloc, lnvmap) = (findLocsBeforeImp lcs_1 vmap nvmap);
-      def (rloc, rnvmap) = (findLocsBeforeImp lcs_2 vmap lnvmap);
-      (cont lloc rloc, rnvmap)
+def elabsws(es: Equations, vm: VMap) -> Equations = {
+  def llog = logger "elabsws";
+  def _ = llog DEBUG "elaborating switches on sub-tree:" es;
+  def _ = llog DEBUG "where the state variable value map is:" vm;
+  match es with
+  | e_1; e_2 -> (elabsws e_1 vm); (elabsws e_2 vm)
+  | d_1 = d_2 -> es
+  | init _ _ -> es
+  | Branch _ _ _ _ -> es
+  | sw es_1 (lift es_2: (() -> ?)) r -> {
+      if eval r vm then sw (elabsws es_1 vm) (fun t: () -> es_2) r
+      else es_2 ()
     }
-  | loc loc_1 inv (lift gts: [GuardedTransition]) -> {
-      if fulfills inv vmap then {
-        def (l, nnvmap) = findLocsBeforeImp loc_1 vmap nvmap;
-        (loc l inv gts, nvmap)
-      } else transition gts vmap nvmap
-    }
-  | eqn _ -> (lcs, nvmap)
-  | noloc _ -> (lcs, nvmap)
-  | _ -> {
-      def _ = dprint(lcs);
-      error "Unmatched pattern in findLocsBeforeImp"
-    }
-}
-
-def getDAE(lcs: Location) -> Set(Equations) = {
-
-  def getEquationsAndTopology(lcs: Location) -> Equations = {
-    match lcs with
-    | cont lcs_1 lcs_2 ->
-      (getEquationsAndTopology lcs_1); (getEquationsAndTopology lcs_2)
-    | loc loc_1 _ _ -> getEquationsAndTopology loc_1
-    | eqns e -> e
-    | noloc _ -> nilp ()
-    | _ -> {
-        def _ = dprint(lcs);
-        error "Unmatched pattern in getEquationsAndTopology"
-      }
-  };
-
-  def getTopology(e: Equations, acc: Set(?)) -> Set(?) = {
-    match e with
-    | e_1; e_2 -> getTopology e_2 (sgetTopology e_1 acc)
-    | Branch _ _ _ _ -> Set.add e acc
-    | _ -> acc
-  };
-
-  def getEquations(e: Equations, acc: Set(Equations)) -> Set(Equations) = {
-    match e with
-    | e_1; e_2 -> getEquations e_2 (getEquations e_1 acc)
-    | e_1 = e_1 -> Set.add e acc
-    | init _ _ -> Set.add e acc
-    | Branch _ _ _ _ -> acc
-    | _ -> {
-        def _ = dprint(e);
-        error "Unmatched pattern in getEquations"
-      }
-  };
-
-  def e = getEquationsAndTopology lcs;
-  def e_t = elabtopol (getTopology e (Set.empty));
-  union (getEquations e (Set.empty)) e_t
+  | _ -> unmatched llog es
 }

@@ -395,57 +395,59 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
 
 def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
   def llog = logger "elaboratetopology" DEBUG;
+  if (Set.size T) == 0 then Set.empty
+  else {
+    def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
+      def (i, (f, _)) = ee;
+      (i, f)
+    };
 
-  def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
-    def (i, (f, _)) = ee;
-    (i, f)
-  };
+    def fe(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
+      def (i, (_, e)) = ee;
+      (i, e)
+    };
 
-  def fe(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
-    def (i, (_, e)) = ee;
-    (i, e)
-  };
+    def el = enumerateEdges (Set.toList T);
+    def _ = llog "edge list" el;
 
-  def el = enumerateEdges (Set.toList T);
-  def _ = llog "edge list" el;
+    def nm = enumerateNodes el;
+    def _ = llog "node list" nm;
 
-  def nm = enumerateNodes el;
-  def _ = llog "node list" nm;
+    // TODO: handle self loops
+    def (IM, vm) = buildIndcidenceMatrix el nm;
+    def _ = llog "Incidence Matrix" (pp IM);
+    def _ = llog "Variable Map" vm;
 
-  // TODO: handle self loops
-  def (IM, vm) = buildIndcidenceMatrix el nm;
-  def _ = llog "Incidence Matrix" (pp IM);
-  def _ = llog "Variable Map" vm;
+    def IMr = rowreduce IM;
+    def (A, nvm) = getThroughMatrix IMr vm;
+    def _ = llog "Cutset Matrix (A)" (pp A);
+    def _ = llog "modified Variable Map" nvm;
 
-  def IMr = rowreduce IM;
-  def (A, nvm) = getThroughMatrix IMr vm;
-  def _ = llog "Cutset Matrix (A)" (pp A);
-  def _ = llog "modified Variable Map" nvm;
+    def fvec = listToMap (map ff (Map.toList nvm));
+    def _ = llog "we have flow vec:" fvec;
 
-  def fvec = listToMap (map ff (Map.toList nvm));
-  def _ = llog "we have flow vec:" fvec;
+    def floweqs = matrixVMapToEquations A fvec;
+    def _ = llog "flow eqs:" floweqs;
 
-  def floweqs = matrixVMapToEquations A fvec;
-  def _ = llog "flow eqs:" floweqs;
+    def (_, n, m) = A;
+    if (m > 1) then {
+      def B = getAcrossMatrix A;
+      def _ = llog "Circuit Matrix (B)" (pp B);
 
-  def (_, n, m) = A;
-  if (m > 1) then {
-    def B = getAcrossMatrix A;
-    def _ = llog "Circuit Matrix (B)" (pp B);
+      def evec = listToMap (map fe (Map.toList nvm));
+      def _ = llog "and effort vec:" evec;
 
-    def evec = listToMap (map fe (Map.toList nvm));
-    def _ = llog "and effort vec:" evec;
+      def circeqs = matrixVMapToEquations B evec;
+      def _ = llog "circ eqs:" circeqs;
 
-    def circeqs = matrixVMapToEquations B evec;
-    def _ = llog "circ eqs:" circeqs;
+      def E = union floweqs circeqs;
+      def _ = llog "topological equations" (setToCont E);
 
-    def E = union floweqs circeqs;
-    def _ = llog "topological equations" (setToCont E);
-
-    E
-  } else {
-    def _ =
-      llog "We only have one edge, topological equations" (setToCont floweqs);
-    floweqs
+      E
+    } else {
+      def _ =
+        llog "We only have one edge, topological equations" (setToCont floweqs);
+      floweqs
+    }
   }
 }

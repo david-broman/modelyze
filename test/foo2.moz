@@ -15,5 +15,5 @@ def model = {
 }
 
 def main = {
-  dprint(elabinits model vm)
+  dprint(gathereqs model (Set.empty))
 }

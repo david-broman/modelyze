@@ -21,7 +21,7 @@ written by Oscar Eriksson oerikss@kth.se
 include OSCLANG
 include GraphElaboration
 
-def pre: <Real> -> Equations
+def pre: <Real> -> <Real>
 def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 
 def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
@@ -74,28 +74,50 @@ def elabinits(es: Equations, vm: VMap) -> VMap = {
   | _ -> unmatched llog es
 }
 
-def elabtopol(es: Equations, E: Set(Equations)) -> Set(Equations) = {
+def elabtopol(es: Equations) -> Set(Equations) = {
   def llog = logger "elabtopol";
-  def gather(es: Equations, E: Set(?)) -> Set(?) = {
+  def work(es: Equations, T: Set(?)) -> Set(?) = {
     match es with
-    | e_1; e_2 -> gather e_1 (gather e_2 E)
-    | d_1 = d_2 -> E
-    | init x v -> E
-    | Branch _ _ _ _ -> (Set.add es E)
-    | sw es_1 _ _ -> (gather es_1 E)
+    | e_1; e_2 -> work e_1 (work e_2 T)
+    | d_1 = d_2 -> T
+    | init x v -> T
+    | Branch _ _ _ _ -> (Set.add es T)
+    | sw es_1 _ _ -> (work es_1 T)
     | _ -> unmatched llog es
   };
 
-  elaboratetopology (gather es (Set.empty))
+  elaboratetopology (work es (Set.empty))
 }
 
-def gathereqs(es: Equations, E: Set(Equations)) -> Set(Equations) = {
-  def llog = logger "gathereqs";
-  match es with
-  | e_1; e_2 -> gathereqs e_1 (gathereqs e_2 E)
-  | d_1 = d_2 -> (Set.add es E)
-  | init x v -> E
-  | Branch _ _ _ _ -> E
-  | sw es_1 _ _ -> (gathereqs es_1 E)
-  | _ -> unmatched llog es
+def gathereqs(es: Equations) -> Set(Equations) = {
+  def work(es: Equations, E: Set(Equations)) -> Set(Equations) = {
+    def llog = logger "gathereqs";
+    match es with
+    | e_1; e_2 -> work e_1 (work e_2 E)
+    | d_1 = d_2 -> (Set.add es E)
+    | init x v -> E
+    | Branch _ _ _ _ -> E
+    | sw es_1 _ _ -> (work es_1 E)
+    | _ -> unmatched llog es
+  };
+
+  work es (Set.empty)
+}
+
+def elaboratepre(E: Set(Equations), vm: VMap) -> Set(Equations) = {
+  def llog = logger "elaboratepre";
+  def work(e: Equations) -> Equations = {
+    def workharder(ee: <Real>) -> <Real> = {
+      match ee with
+      | pre x -> evalReal x vm
+      | f ee_1 -> f (workharder ee_1)
+      | _ -> ee
+    };
+
+    match e with
+    | e_1 = e_2 -> (workharder e_1) = (workharder e_2)
+    | _ -> unmatched llog e
+  };
+
+  listToSet (map work (Set.toList E))
 }

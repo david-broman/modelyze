@@ -104,13 +104,31 @@ def gathereqs(es: Equations) -> Set(Equations) = {
   work es (Set.empty)
 }
 
-def elaboratepre(E: Set(Equations), vm: VMap) -> Set(Equations) = {
-  def llog = logger "elaboratepre";
+def elaboratepres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
+  def llog = logger "elaboratepres";
   def work(e: Equations) -> Equations = {
-    def workharder(ee: <Real>) -> <Real> = {
+    def workharder(ee: <?>) -> <?> = {
       match ee with
       | pre x -> evalReal x vm
-      | f ee_1 -> f (workharder ee_1)
+      | f ee_1 -> (workharder f) (workharder ee_1)
+      | _ -> ee
+    };
+
+    match e with
+    | e_1 = e_2 -> (workharder e_1) = (workharder e_2)
+    | _ -> unmatched llog e
+  };
+
+  listToSet (map work (Set.toList E))
+}
+
+def mapToBEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
+  def llog = logger "mapToBEuler";
+  def work(e: Equations) -> Equations = {
+    def workharder(ee: <?>) -> <?> = {
+      match ee with
+      | der x -> (x - (evalReal x vm)) / h
+      | f ee_1 -> (workharder f) (workharder ee_1)
       | _ -> ee
     };
 

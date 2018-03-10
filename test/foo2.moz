@@ -16,10 +16,10 @@ def model = {
 
 def model2 = {
   init x 3.;
-  x + (sin (pre y)) = 0.
+  x + (sin (pre y)) = der y + 2. + (pre x) + (pre y)
 }
 
 def main = {
   // dprint(gathereqs model (Set.empty))
-  dprint(elaboratepre (gathereqs model2) vm)
+  dprint(mapToBEuler (elaboratepres (gathereqs model2) vm) vm 0.1)
 }

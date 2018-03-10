@@ -62,15 +62,15 @@ def elabsws(es: Equations, vm: VMap) -> Equations = {
   | _ -> unmatched llog es
 }
 
-def elabinits(es: Equations, vm: VMap) -> VMap = {
-  def llog = logger "elabinits";
+def evalinits(es: Equations, vm: VMap) -> VMap = {
+  def llog = logger "evalinits";
   match es with
-  | e_1; e_2 -> elabinits e_1 (elabinits e_2 vm)
+  | e_1; e_2 -> evalinits e_1 (evalinits e_2 vm)
   | d_1 = d_2 -> vm
   | init x v ->
       if isUndefined x vm then add x (evalReal v vm) vm else vm
   | Branch _ _ _ _ -> vm
-  | sw es_1 _ _ -> (elabinits es_1 vm)
+  | sw es_1 _ _ -> (evalinits es_1 vm)
   | _ -> unmatched llog es
 }
 
@@ -104,8 +104,8 @@ def gathereqs(es: Equations) -> Set(Equations) = {
   work es (Set.empty)
 }
 
-def elaboratepres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
-  def llog = logger "elaboratepres";
+def evalpres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
+  def llog = logger "evalpres";
   def work(e: Equations) -> Equations = {
     def workharder(ee: <?>) -> <?> = {
       match ee with

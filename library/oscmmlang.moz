@@ -122,7 +122,7 @@ def evalpres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
-def mapToBEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
+def mapToImplEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
   def llog = logger "mapToBEuler";
   def work(e: Equations) -> Equations = {
     def workharder(ee: <?>) -> <?> = {
@@ -138,4 +138,8 @@ def mapToBEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
   };
 
   listToSet (map work (Set.toList E))
+}
+
+def impulseApprox(E: Set(Equations), vm: VMap) -> VMap = {
+
 }

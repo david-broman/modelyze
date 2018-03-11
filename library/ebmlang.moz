@@ -20,7 +20,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 //include Elaboration
 include GraphElaboration
-include EBMLANGHelpers
+include OSCLANGHelpers
 include IndexReduction
 
 type S = (Set(Equations), VMap, Set(?))

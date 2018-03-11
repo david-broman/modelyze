@@ -36,6 +36,28 @@ def isEqual(lhs: Set(?), rhs: Set(?)) -> Bool = {
   subsetleft && subsetright
 }
 
+def checkStateVar(x: <Real>) -> () = {
+  match x with
+  | sym: Real -> ()
+  | _ -> error "Not a state variable"
+}
+
+def find(x: <Real>, vmap: VMap) -> Real = {
+  def _ = checkStateVar x;
+  if (Map.mem x vmap) then (Map.find x vmap)
+  else error "State variable undefined"
+}
+
+def add(x: <Real>, v: Real, vmap: VMap) -> VMap = {
+  def _ = checkStateVar x;
+  Map.add x v vmap
+}
+
+def isUndefined(x: <Real>, vmap: VMap) -> Bool = {
+  def _ = checkStateVar x;
+  !(Map.mem x vmap)
+}
+
 def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   def checkUndef = (fun x: <Real> -> if (Map.mem x mu) then ()
     else error "undefined variable");
@@ -108,36 +130,24 @@ def setToCont(set: Set(?)) -> ? = {
 def setToCont(set: Set(Equations)) -> Equations = {
   if (Set.size set) == 0 then NoEqn else setToCont_impl set
 }
+def setArrayFromVMap(vm: VMap, udfv: Real, ukm: UkMap, yy: {Real}) -> () = {
+  def f(u: (<Real>, (Int, Bool))) -> () = {
+    def (x, (i, _)) = u;
+    if isUndefined x vm then (Array.set yy i udfv)
+    else (Array.set yy i (find x vm))
+  };
 
-def eVMapToUkMapYyYp(E: Set(Equations), vmap: VMap, undefval: Real) ->
+  def _ = map f (Map.toList ukm);
+  ()
+}
+
+def eVMapToUkMapYyYp(E: Set(Equations), vm: VMap, udfv: Real) ->
   (UkMap, VarArray, VarArray) = {
   def llog = logger "eVMapToUkMapYyYp" DEBUG;
   def (n, ukm) = realUnknowns (setToCont E);
-  def yy = (Array.make n undefval);
-  def yp = (Array.make n undefval);
-  def work(gvlist: [(<Real>, Real)]) -> () = {
-    def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
-      match e with
-      | der x -> (x, yp)
-      | x -> (x, yy)
-      | _ -> error "expected variables and derivatives"
-    };
-    match gvlist with
-    | e::es -> {
-        def (ee, v) = e;
-        def (x, a) = get_uk_and_arr ee;
-        def (i, _) = {
-            def _ = llog "variable:" x;
-            if (Map.mem x ukm) then (Map.find x ukm)
-            else error "expected to find var in ukm"
-          };
-        def _ = (Array.set a i v);
-        work es
-      }
-    | [] -> ()
-  };
-
-  def _ = work (Map.toList vmap);
+  def yy = (Array.make n udfv);
+  def yp = (Array.make n udfv);
+  def _ = setArrayFromVMap vm udfv ukm yy;
   (ukm, yy, yp)
 }
 

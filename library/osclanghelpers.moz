@@ -24,6 +24,7 @@ type ZCMap = (<Real> => Int)
 type T = (Real, Int)
 type F = (Set(Equations), VMap, Real)
 type M = (Equations, F, Set(<Real>), T)
+type Sysfun = ({Real} -> [Real])
 
 def EPSILON = 1.0e-10
 
@@ -147,36 +148,41 @@ def setToCont(set: Set(Equations)) -> Equations = {
   if (Set.size set) == 0 then NoEqn else setToContImpl set
 }
 
-def eVMapToUkMapYyYp(E: Set(Equations), vmap: VMap, undefval: Real) ->
+def setArrayFromVMap(vm: VMap, udfv: Real, ukm: UkMap, yy: {Real}) -> () = {
+  def f(u: (<Real>, (Int, Bool))) -> () = {
+    def (x, (i, _)) = u;
+    if isUndefined x vm then (Array.set yy i udfv)
+    else (Array.set yy i (find x vm))
+  };
+
+  def _ = map f (Map.toList ukm);
+  ()
+}
+
+def eVMapToUkMapYyYp(E: Set(Equations), vm: VMap, udfv: Real) ->
   (UkMap, VarArray, VarArray) = {
   def llog = logger "eVMapToUkMapYyYp" DEBUG;
   def (n, ukm) = realUnknowns (setToCont E);
-  def yy = (Array.make n undefval);
-  def yp = (Array.make n undefval);
-  def work(gvlist: [(<Real>, Real)]) -> () = {
-    def get_uk_and_arr(e: <Real>) -> (<Real>, VarArray) = {
-      match e with
-      | der x -> (x, yp)
-      | x -> (x, yy)
-      | _ -> error "expected variables and derivatives"
-    };
-    match gvlist with
-    | e::es -> {
-        def (ee, v) = e;
-        def (x, a) = get_uk_and_arr ee;
-        def (i, _) = {
-            def _ = llog "variable:" x;
-            if (Map.mem x ukm) then (Map.find x ukm)
-            else error "expected to find var in ukm"
-          };
-        def _ = (Array.set a i v);
-        work es
-      }
-    | [] -> ()
-  };
-
-  def _ = work (Map.toList vmap);
+  def yy = (Array.make n udfv);
+  def yp = (Array.make n udfv);
+  def _ = setArrayFromVMap vm udfv ukm yy;
   (ukm, yy, yp)
+}
+
+def eVMapToUkMapYy(E: Set(Equations), vm: VMap, udfv: Real) ->
+  (UkMap, VarArray) = {
+  def (n, ukm) = realUnknowns (setToCont E);
+  def yy = (Array.make n udfv);
+  def _ = setArrayFromVMap vm udfv ukm yy;
+  (ukm, yy)
+}
+
+def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> VMap = {
+  def f(acc: VMap, e: (<Real>, (Int, Bool))) -> VMap = {
+    def (x, (i, _)) = e;
+    Map.add x (Array.get yy i) acc
+  };
+  foldLeft f (Map.empty) (Map.toList ukm)
 }
 
 def ukMapYyYpToVMap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
@@ -220,23 +226,43 @@ def getDAEFindICInput(f: F, undefval: Real) ->
   (resf, yy, yp, vids, ukm)
 }
 
-def makeBEulerFuns(eqs: Equations, ukm: UkMap, h: Real, yy0: {Real}, yy: {Real})
-  -> [Real] = {
+def getNLEQInput(E: Set(Equations), vm: VMap, udfv: Real)
+  -> (Sysfun, UkMap, {Real}) = {
 
-  def yyfun(x: <Real>) -> <Real> = { Array.get yy (fst (Map.find x ukm)) };
-  def ypfun(x: <Real>) -> <Real> = {
-    def i = (fst (Map.find x ukm));
-    ((Array.get yy i) - (Array.get yy0 i)) / h
+  def (ukm, yy) = eVMapToUkMapYy E vm udfv;
+  def sysfun(yy: {Real}) -> [Real] = {
+    def dummyYp = (Array.make 0 0.);
+    def dummyt = 0.;
+    makeResidual ukm (setToCont E) dummyt yy dummyYp
   };
 
-  def f(e: Equations) -> Real = {
-    match e with
-    | e1 = e2 -> (eval e1 yyfun ypfun) - (eval e2 yyfun ypfun)
-    | _ -> error "Expected only equations here"
-  };
-
-  map f (contToList eqs)
+  (sysfun, ukm, yy)
 }
+
+def solveNLEQ(E: Set(Equations), vm: VMap, udfv: Real) -> VMap = {
+  def (sysfun, ukm, yy) = getNLEQInput E vm udfv;
+  def s = (NLEQSolver.init sysfun yy);
+  def _ = (NLEQSolver.solve s yy);
+  ukMapYyToVMap ukm yy
+}
+
+// def makeBEulerFuns(eqs: Equations, ukm: UkMap, h: Real, yy0: {Real}, yy: {Real})
+//   -> [Real] = {
+
+//   def yyfun(x: <Real>) -> <Real> = { Array.get yy (fst (Map.find x ukm)) };
+//   def ypfun(x: <Real>) -> <Real> = {
+//     def i = (fst (Map.find x ukm));
+//     ((Array.get yy i) - (Array.get yy0 i)) / h
+//   };
+
+//   def f(e: Equations) -> Real = {
+//     match e with
+//     | e1 = e2 -> (eval e1 yyfun ypfun) - (eval e2 yyfun ypfun)
+//     | _ -> error "Expected only equations here"
+//   };
+
+//   map f (contToList eqs)
+// }
 
 // def interpolateOverZeroCrossing(zcm: ZCMap, zca: {Root}, ukm: UkMap,
 //   t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real}) -> Real = {

@@ -140,6 +140,14 @@ def mapToImplEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
-def impulseApprox(E: Set(Equations), vm: VMap) -> VMap = {
+def impulseApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
+  def EIE = mapToImplEuler E vm h;
+  def nvm = solveNLEQ EIE vm 0.;
+  nvm
+}
 
+def ivApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
+  def EIE = mapToImplEuler E vm (-h);
+  def nvm = solveNLEQ EIE vm 0.;
+  nvm
 }

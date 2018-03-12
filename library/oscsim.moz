@@ -71,6 +71,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   def dtsim(ss: SS)
     -> (SS, [StepVal]) = {
 
+
+    def llog = logger "dtsim";
+
     def (m, vm, (t, n)) = ss;
 
     def eval(mu: VMap) -> StepVal = {
@@ -85,7 +88,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
       if n > maxn || stable m vm then (ss, acc)
       else {
+        def _ = llog DEBUG "before switch" m;
         def nm = elabsws m vm;
+        def _ = llog DEBUG "after switch" nm;
         def E = evalpres (elaborate nm) vm;
         def imp = impulseApprox E vm h;
         def nacc = (eval imp)::acc;

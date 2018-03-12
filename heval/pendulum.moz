@@ -40,10 +40,21 @@ def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
   x^2. + y^2. = l^2.;
 }
 
+def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>) = {
+  0. = der vx;
+  -g = der vy;
+  vy = der y;
+  vx = der x;
+}
+
+def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
+  sw (pendulum x y vx vy T) (fun t: () -> freefall x y vx vy) (T < 200.)
+}
+
 def main = {
   def x, y, vx, vy, T: Real;
   def monitored = [(x, "x"), (y, "y"), (T, "T")];
-  def p = pendulum x y vx vy T;
-  def sr = simulateDebug p 0. 0.1 10.0 monitored 10;
+  def bp = bpendulum x y vx vy T;
+  def sr = simulateDebug bp 0. 0.1 10.0 monitored 10;
   print(pprintSimulation (sr))
 }

@@ -18,7 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include OSCLANG
+include OSCLANGHelpers
 include GraphElaboration
 
 def pre: <Real> -> <Real>
@@ -27,6 +27,14 @@ def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
   def _ = llog INFO "Pattern:" pat;
   error "Unmatched pattern"
+}
+
+def indexred(E: Set(Equations)) -> Set(Equations) = {
+  def llog = logger "indexred" TRACE;
+  def _ = llog "before ir" (setToCont E);
+  def (Ep, dmap) = indexReducationPantelides (setToCont E) (Map.empty);
+  def _ = llog "after ir" Ep;
+  contToSet Ep
 }
 
 def evalReal(e: <Real>, vm: VMap) -> Real = {
@@ -56,8 +64,13 @@ def elabsws(es: Equations, vm: VMap) -> Equations = {
   | init _ _ -> es
   | Branch _ _ _ _ -> es
   | sw es_1 (lift es_2: (() -> ?)) r -> {
-      if evalBool r vm then sw (elabsws es_1 vm) (fun t: () -> es_2) r
-      else es_2 ()
+      if evalBool r vm then sw (elabsws es_1 vm) es_2 r
+      else {
+        def _ = llog DEBUG "es_2" es_2;
+        def tmp = es_2();
+        def _ = llog DEBUG "es_2()" tmp;
+        tmp
+      }
     }
   | _ -> unmatched llog es
 }

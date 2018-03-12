@@ -20,13 +20,11 @@ written by Oscar Eriksson oerikss@kth.se
 
 include ModelyzeDAE
 type VMap = (<Real> => Real)
-type ZCMap = (<Real> => Int)
-type T = (Real, Int)
-type F = (Set(Equations), VMap, Real)
-type M = (Equations, F, Set(<Real>), T)
+type IVP = (Set(Equations), VMap, Real)
 type Sysfun = ({Real} -> [Real])
 
-def EPSILON = 1.0e-10
+// def EPSILON = 1.0e-10
+def EPSILON = 0.
 
 def isEqual(lhs: <Real>, rhs: <Real>) -> Bool =
   (Set.mem rhs (Set.add lhs (Set.empty)))
@@ -66,6 +64,9 @@ def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
 }
 
 def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
+  def llog = logger "evalBoolFromVMap";
+  def _ = llog TRACE "expression" expr;
+  def _ = llog TRACE "vmap" vmap;
   def evalReal(expr: <?>) -> Real = (evalRealFromVMap expr vmap);
   def evalBool(expr: <?>) -> Bool = {
     match expr with
@@ -223,10 +224,10 @@ def ukMapYyYpToVMap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def getDAESolverInput(f: F, P: Set(<Bool>), undefval: Real)
+def getDAESolverInput(ivp: IVP, P: Set(<Bool>), undefval: Real)
   -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap) = {
 
-  def (E, vmap, t) = f;
+  def (E, vmap, t) = ivp;
   def (ukm, yy, yp) = eVMapToUkMapYyYp E vmap undefval;
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (setToCont E);
@@ -234,13 +235,6 @@ def getDAESolverInput(f: F, P: Set(<Bool>), undefval: Real)
   def rootf = mkRootFuns PP ukm;
   def nroots = (Set.size PP);
   (resf, nroots, rootf, yy, yp, vids, ukm)
-}
-
-def getDAEFindICInput(f: F, undefval: Real) ->
-  (Residual, VarArray, VarArray, VarArray, UkMap) = {
-  def (resf, _, _, yy, yp, vids, ukm) =
-    getDAESolverInput f (Set.empty) undefval;
-  (resf, yy, yp, vids, ukm)
 }
 
 def getNLEQInput(E: Set(Equations), vm: VMap, udfv: Real)

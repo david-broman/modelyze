@@ -25,10 +25,14 @@ def pi = 3.1415
 def g = 9.81
 def l = 3.
 def m = 5.
-def angle = (-135.0)*pi/180.0
-def ground = -10.
+def angle = (45.0)*pi/180.0
 
 def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
+  init x (l*cos(angle));
+  init y (l*sin(angle));
+  init vx 0.;
+  init vy 0.;
+  init T 0.;
   -T*x/l = m*(der vx);
   -T*y/l - m*g = m*(der vy);
   vy = der y;

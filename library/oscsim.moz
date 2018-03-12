@@ -37,12 +37,17 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def E = elaborate m;
     def P = gatherregs m;
 
+
+    // Perform index reduction
+    def nE = indexred E;
+
     // Create IV guess
-    def nvm = ivApprox E vm (-h);
+    // def nvm = ivApprox E vm (-h);
+    def nvm = vm;
 
     // Setup the DAE Solver
     def (resf, nroots, rootf, yy, yp, vids, ukm) =
-      getDAESolverInput (E, nvm, t) P 0.;
+      getDAESolverInput (nE, nvm, t) P 0.;
     def s = (DAESolver.initWithRootf resf nroots rootf t0 yy yp);
     def _ = (DAESolver.setStopTime s tend);
     def nt = t + 0.00001;
@@ -103,7 +108,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
                   ss: SS, acc: [StepVal]) -> (SS, [StepVal]) = {
 
       def (m, vm, (t, n)) = ss;
-      if t > tend || n > maxn then (ss, acc)
+      if t >= tend || n > maxn then (ss, acc)
       else {
         def (nss, nacc) = first ss;
         alternate second first nss nacc

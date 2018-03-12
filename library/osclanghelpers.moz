@@ -84,6 +84,36 @@ def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
   evalBool(expr);
 }
 
+def mkRootFuns(P: Set(<Bool>), ukm: UkMap, t: Real, yy: {Real}, yp: {Real}) -> [Real] = {
+
+  def evalReal(e: <?>) -> Real = { (evalFromArrays e ukm yy yp) };
+
+  def f(p: <Bool>) -> Real = {
+    match p with
+    | e_1 == e_2 -> error "Equality not allowed in root functions"
+    | e_1 != e_2 -> error "Inequality not allowed in root functions"
+    | e_1 >= e_2 -> (evalReal e_1) - (evalReal e_2)
+    | e_1 >  e_2 -> (evalReal e_1) - (evalReal e_2) - EPSILON
+    | e_1 <= e_2 -> (evalReal e_1) - (evalReal e_2)
+    | e_1 <  e_2 -> (evalReal e_1) - (evalReal e_2) + EPSILON
+    | _ -> error "We only allow operators <, <=, > and >="
+  };
+
+  map f (Set.toList P)
+}
+
+def splitAndAndOrs(P: Set(<Bool>)) -> Set(<Bool>) = {
+
+  def f(P: Set(<Bool>), e: <Bool>) -> Set(<Bool>) = {
+    match e with
+    | e_1 && e_2 -> f (f P e_1) e_2
+    | e_1 || e_2 -> error "We only allow && operator"
+    | _ -> Set.add e P
+  };
+
+  foldLeft f (Set.empty) (Set.toList P)
+}
+
 def evalRealFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
   -> Real = {
 
@@ -193,30 +223,17 @@ def ukMapYyYpToVMap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def getDAESolverInput(f: F, L: Set(<Real>), undefval: Real)
-  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
+def getDAESolverInput(f: F, P: Set(<Bool>), undefval: Real)
+  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap) = {
 
-  def makeRootFun(zcbl: [<Real>], ukm: UkMap, t: Real, yy: VarArray,
-    yp: VarArray)-> [Real] = {
-
-    def f = (fun e: <Real> -> (evalFromArrays e ukm yy yp) - EPSILON);
-    map f zcbl
-  };
-
-  def makeZCMap(zcbl: [<Real>]) -> ZCMap = {
-    def f(i: Int, e: <Real>) -> (<Real>, Int) = { (e, i) };
-    listToMap (mapi f zcbl)
-  };
-
-  def zcbl = (Set.toList L);
   def (E, vmap, t) = f;
   def (ukm, yy, yp) = eVMapToUkMapYyYp E vmap undefval;
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (setToCont E);
-  def rootf = makeRootFun zcbl ukm;
-  def zcm = makeZCMap zcbl;
-  def nroots = (Set.size L);
-  (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
+  def PP = splitAndAndOrs P;
+  def rootf = mkRootFuns PP ukm;
+  def nroots = (Set.size PP);
+  (resf, nroots, rootf, yy, yp, vids, ukm)
 }
 
 def getDAEFindICInput(f: F, undefval: Real) ->

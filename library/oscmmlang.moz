@@ -104,6 +104,21 @@ def gathereqs(es: Equations) -> Set(Equations) = {
   work es (Set.empty)
 }
 
+def gatherregs(es: Equations) -> Set(<Bool>) = {
+  def work(es: Equations, P: Set(<Bool>)) -> Set(<Bool>) = {
+    def llog = logger "gatherregs";
+    match es with
+    | e_1; e_2 -> work e_1 (work e_2 P)
+    | d_1 = d_2 -> P
+    | init x v -> P
+    | Branch _ _ _ _ -> P
+    | sw es_1 _ p -> (work es_1 (Set.add p P))
+    | _ -> unmatched llog es
+  };
+
+  work es (Set.empty)
+}
+
 def evalpres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
   def llog = logger "evalpres";
   def work(e: Equations) -> Equations = {
@@ -153,16 +168,8 @@ def ivApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
   nvm
 }
 
-def meaning(m: Equations, vm: VMap, h: Real) -> (Equations, VMap) = {
-  def nvm = evalinits m vm;
-  if stable m nvm then (m, nvm)
-  else {
-    def nm = elabsws m nvm;
-    def E = gathereqs m;
-    def Et = elabtopol m;
-    def Ep = evalpres (union E Et) nvm;
-    def imp = impulseApprox Ep nvm h;
-    if stable nm imp then meaning (elabsws nm imp) nvm h
-    else meaning nm (ivApprox Ep imp (-h)) h
-  }
+def elaborate(m: Equations) -> Set(Equations) = {
+  def E = gathereqs m;
+  def Et = elabtopol m;
+  union E Et
 }

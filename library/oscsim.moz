@@ -1,0 +1,120 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include OSCMMLANG
+include Numsolvers
+include simoutput
+
+type SS = (Equations, VMap, (Real, Int))
+
+def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
+  monitored: [(<Real>, String)], maxn: Int) -> SimulationResult = {
+
+  def probes = map (fun e: (<Real>, String) -> fst e) monitored;
+  def labels = map (fun e: (<Real>, String) -> snd e) monitored;
+
+  def ctsim(ss: SS)
+    -> (SS, [StepVal]) = {
+
+    def (m, vm, (t, _)) = ss;
+    def E = elaborate m;
+    def P = gatherregs m;
+
+    // Create IV guess
+    def nvm = ivApprox E vm (-h);
+
+    // Setup the DAE Solver
+    def (resf, nroots, rootf, yy, yp, vids, ukm) =
+      getDAESolverInput (E, nvm, t) P 0.;
+    def s = (DAESolver.initWithRootf resf nroots rootf t0 yy yp);
+    def _ = (DAESolver.setStopTime s tend);
+    def nt = t + 0.00001;
+    def _ = (DAESolver.calcIcYaYdp s vids yy yp nt);
+
+    // And then solve!
+    def go(sr: SolverResult, t: Real, acc: [StepVal])
+      -> (SolverResult, Real, [StepVal]) = {
+
+      def sv = (t, map (fun e: <Real> ->
+          evalFromArraysWithDefaultVal e ukm yy yp INFINITE) probes);
+
+      def nacc = sv::acc;
+      if sr == DAE_SOLVER_RESULT_SUCCESS then {
+          def (nt, nsr) = (DAESolver.solveNormal s (t + h) yy yp);
+          go(nsr, nt, nacc)
+      } else (sr, t, nacc)
+    };
+
+    def (sr, nnt, nacc) = go(DAE_SOLVER_RESULT_SUCCESS, nt, []);
+    def nnvm = ukMapYyYpToVMap ukm yy yp;
+    ((m, nnvm, (nnt, 0)), nacc)
+  };
+
+  def dtsim(ss: SS)
+    -> (SS, [StepVal]) = {
+
+    def (m, vm, (t, n)) = ss;
+
+    def eval(mu: VMap) -> StepVal = {
+      (t, map (fun e: <Real> ->
+        evalRealFromVMapWithDefaultVal e mu INFINITE) probes)
+    };
+
+    def go(ss: SS, acc: [StepVal])
+      -> (SS, [StepVal]) = {
+
+      def (m, vm, (t, n)) = ss;
+
+      if n > maxn || stable m vm then (ss, acc)
+      else {
+        def nm = elabsws m vm;
+        def E = evalpres (elaborate nm) vm;
+        def imp = impulseApprox E vm h;
+        def nacc = (eval imp)::acc;
+        if stable nm imp then go (nm, imp, (t, n + 1)) nacc
+        else go (elabsws nm imp, vm, (t, n + 1)) nacc
+      }
+    };
+
+    go ss [];
+  };
+
+  def sim(m: Equations) -> [StepVal] = {
+
+    def alternate(first: (SS -> (SS, [StepVal])),
+                  second: (SS -> (SS, [StepVal])),
+                  ss: SS, acc: [StepVal]) -> (SS, [StepVal]) = {
+
+      def (m, vm, (t, n)) = ss;
+      if t > tend || n > maxn then (ss, acc)
+      else {
+        def (nss, nacc) = first ss;
+        alternate second first nss nacc
+      }
+    };
+
+    // TODO: eval inits at each mode-switch
+    def ss = (m, evalinits m (Map.empty), (t0, 0));
+    def (_, acc) = alternate ctsim dtsim ss [];
+    acc
+  };
+
+  (labels, reverse (sim m))
+}

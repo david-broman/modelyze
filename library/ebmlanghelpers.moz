@@ -53,9 +53,9 @@ def add(x: <Real>, v: Real, vmap: VMap) -> VMap = {
   Map.add x v vmap
 }
 
-def isUndefined(x: <Real>, vmap: VMap) -> Bool = {
+def isDefined(x: <Real>, vmap: VMap) -> Bool = {
   def _ = checkStateVar x;
-  !(Map.mem x vmap)
+  Map.mem x vmap
 }
 
 def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
@@ -133,7 +133,7 @@ def setToCont(set: Set(Equations)) -> Equations = {
 def setArrayFromVMap(vm: VMap, udfv: Real, ukm: UkMap, yy: {Real}) -> () = {
   def f(u: (<Real>, (Int, Bool))) -> () = {
     def (x, (i, _)) = u;
-    if isUndefined x vm then (Array.set yy i udfv)
+    if !(isDefined x vm) then (Array.set yy i udfv)
     else (Array.set yy i (find x vm))
   };
 

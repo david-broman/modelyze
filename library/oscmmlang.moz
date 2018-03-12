@@ -37,8 +37,6 @@ def evalBool(e: <Bool>, vm: VMap) -> Bool = {
   evalBoolFromVMap e vm
 }
 
-def isDefined
-
 def stable(es: Equations, vm: VMap) -> Bool = {
   def llog = logger "stable";
   match es with
@@ -142,6 +140,7 @@ def mapToImplEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
+// TODO: handle newly introduced eqs and variables
 def impulseApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
   def EIE = mapToImplEuler E vm h;
   def nvm = solveNLEQ EIE vm 0.;
@@ -154,9 +153,16 @@ def ivApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
   nvm
 }
 
-def meaning(m: Equations, vm: VMap) -> (Equations, VMap) = {
-  if stable m vm then (m, vm)
+def meaning(m: Equations, vm: VMap, h: Real) -> (Equations, VMap) = {
+  def nvm = evalinits m vm;
+  if stable m nvm then (m, nvm)
   else {
-
+    def nm = elabsws m nvm;
+    def E = gathereqs m;
+    def Et = elabtopol m;
+    def Ep = evalpres (union E Et) nvm;
+    def imp = impulseApprox Ep nvm h;
+    if stable nm imp then meaning (elabsws nm imp) nvm h
+    else meaning nm (ivApprox Ep imp (-h)) h
   }
 }

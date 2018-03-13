@@ -25,13 +25,31 @@ include simoutput
 type SS = (Equations, VMap, (Real, Int))
 
 def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
-  monitored: [(<Real>, String)], maxn: Int) -> SimulationResult = {
+  monitored: [(<Real>, String)], maxn: Int) -> () = {
 
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;
   def labels = map (fun e: (<Real>, String) -> snd e) monitored;
 
+  def printSimHeader = (fun thunk: () -> {
+    def _ = print "time";
+    def _ = map (fun l: String -> print ("\t" ++ l)) labels;
+    print "\n"
+  });
+
+  def printSimResult(ukm: UkMap, t: Real, yy: {Real}, yp: {Real}) = {
+    def f(e: <Real>) -> () = {
+      def _ =  print "\t";
+      if isDefined e ukm then print (real2string (evalFromArrays e ukm yy yp))
+      else print "?"
+    };
+
+    def _ = print (real2string t);
+    def _ = map f probes;
+    print "\n"
+  };
+
   def ctsim(ss: SS)
-    -> (SS, [StepVal]) = {
+    -> SS = {
 
     def (m, vm, (t, _)) = ss;
     def E = elaborate m;
@@ -49,78 +67,71 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def nt = t + 0.00001;
     def _ = (DAESolver.calcIcYaYdp s vids yy yp nt);
 
+
+    def psr = (fun t: Real -> printSimResult ukm t yy yp);
+
     // And then solve!
-    def go(sr: SolverResult, t: Real, acc: [StepVal])
-      -> (SolverResult, Real, [StepVal]) = {
+    def go(sr: SolverResult, t: Real)
+      -> (SolverResult, Real) = {
 
-      def sv = (t, map (fun e: <Real> ->
-          evalFromArraysWithDefaultVal e ukm yy yp INFINITE) probes);
-
-      def nacc = sv::acc;
+      def _ = psr t;
       if sr == DAE_SOLVER_RESULT_SUCCESS then {
           def (nt, nsr) = (DAESolver.solveNormal s (t + h) yy yp);
-          go(nsr, nt, nacc)
-      } else (sr, t, nacc)
+          go(nsr, nt)
+      } else (sr, t)
     };
 
-    def (sr, nnt, nacc) = go(DAE_SOLVER_RESULT_SUCCESS, nt, []);
+    def (sr, nnt) = go(DAE_SOLVER_RESULT_SUCCESS, nt);
     def nvm = ukMapYyYpToVMap ukm yy yp;
-    ((m, nvm, (nnt, 0)), nacc)
+    ((m, nvm, (nnt, 0)))
   };
 
   def dtsim(ss: SS)
-    -> (SS, [StepVal]) = {
-
-
+    -> SS = {
     def llog = logger "dtsim";
 
     def (m, vm, (t, n)) = ss;
 
-    def eval(mu: VMap) -> StepVal = {
-      (t, map (fun e: <Real> ->
-        evalRealFromVMapWithDefaultVal e mu INFINITE) probes)
-    };
-
-    def go(ss: SS, acc: [StepVal])
-      -> (SS, [StepVal]) = {
+    def go(ss: SS)
+      -> SS = {
 
       def (m, vm, (t, n)) = ss;
 
-      if n > maxn || stable m vm then (ss, acc)
+      if n > maxn || stable m vm then ss
       else {
         def _ = llog DEBUG "before switch" m;
         def nm = elabsws m vm;
         def _ = llog DEBUG "after switch" nm;
         def E = evalpres (elaborate nm) vm;
         def imp = impulseApprox E vm h;
-        def nacc = (eval imp)::acc;
-        if stable nm imp then go (nm, ivApprox E imp h, (t, n + 1)) nacc
-        else go (elabsws nm imp, vm, (t, n + 1)) nacc
+        if stable nm imp then go (nm, ivApprox E imp h, (t, n + 1))
+        else go (elabsws nm imp, vm, (t, n + 1))
       }
     };
 
-    go ss [];
+    go ss;
   };
 
-  def sim(m: Equations) -> [StepVal] = {
+  def sim(m: Equations) -> () = {
 
-    def alternate(first: (SS -> (SS, [StepVal])),
-                  second: (SS -> (SS, [StepVal])),
-                  ss: SS, acc: [StepVal]) -> (SS, [StepVal]) = {
+    def alternate(first: (SS -> SS),
+                  second: (SS -> SS),
+                  ss: SS) -> SS = {
 
       def (m, vm, (t, n)) = ss;
-      if t >= tend || n > maxn then (ss, acc)
+      if t >= tend || n > maxn then ss
       else {
-        def (nss, nacc) = first ss;
-        alternate second first nss nacc
+        def nss = first ss;
+        alternate second first nss
       }
     };
 
     // TODO: eval inits at each mode-switch
     def ss = (m, evalinits m (Map.empty), (t0, 0));
-    def (_, acc) = alternate ctsim dtsim ss [];
-    acc
+    def _  = alternate ctsim dtsim ss;
+    ()
   };
 
-  (labels, reverse (sim m))
+  def _ = printSimHeader ();
+  sim m
 }

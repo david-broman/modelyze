@@ -53,8 +53,11 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   def ctsim(ss: SS)
     -> SS = {
 
+    def llog = logger "ctsim";
+
     def (m, vm, (t, _)) = ss;
     def E = elaborate m;
+    def _ = llog DEBUG "model before ir" E;
     def P = gatherregs m;
 
 
@@ -64,11 +67,14 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     // Setup the DAE Solver
     def (resf, nroots, rootf, yy, yp, vids, ukm) =
       getDAESolverInput (nE, vm, t) P 0.;
-    def s = (DAESolver.initWithRootf resf nroots rootf t0 yy yp);
+    def s = (DAESolver.initWithRootf resf nroots rootf t yy yp);
     def _ = (DAESolver.setStopTime s tend);
     def nt = t + 0.00001;
+    def _ = llog DEBUG "yy before ivc" yy;
+    def _ = llog DEBUG "yp before ivc" yp;
     def _ = (DAESolver.calcIcYaYdp s vids yy yp nt);
-
+    def _ = llog DEBUG "yy after ivc" yy;
+    def _ = llog DEBUG "yp after ivc" yp;
 
     def psr = printSimResult (isDefined ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
@@ -94,6 +100,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def llog = logger "dtsim";
 
     def (m, vm, (t, n)) = ss;
+    def psr = (fun vm: VMap ->
+      printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t);
 
     def go(ss: SS)
       -> SS = {
@@ -102,12 +110,12 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
       if stable m vm then ss
       else {
-        def _ = llog DEBUG "before switch" m;
         def nm = elabsws m vm;
-        def _ = llog DEBUG "after switch" nm;
         def E = evalpres (elaborate nm) vm;
-        def imp = impulseApprox E vm h;
-        if stable nm imp then go (nm, ivApprox E imp h, (t, n + 1))
+        def imp = impulseApprox E vm (h / 10.);
+        // def _ = llog DEBUG "Impulse" "IMP";
+        // def _ = psr imp;
+        if stable nm imp then go (nm, ivApprox E imp (h / 10.), (t, n + 1))
         else go (elabsws nm imp, vm, (t, n + 1))
       }
     };

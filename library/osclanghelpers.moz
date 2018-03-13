@@ -26,6 +26,11 @@ type Sysfun = ({Real} -> [Real])
 // def EPSILON = 1.0e-10
 def EPSILON = 0.
 
+def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
+  def _ = llog INFO "Pattern:" pat;
+  error "Unmatched pattern"
+}
+
 def isEqual(lhs: <Real>, rhs: <Real>) -> Bool =
   (Set.mem rhs (Set.add lhs (Set.empty)))
 
@@ -58,22 +63,33 @@ def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   eval a yyfun ypfun
 }
 
-def isDefined(map: (<Real> => ?), expr: <?>) -> Bool = {
-  match expr with
-  | sym: Real -> (Map.mem expr map)
+def isDefined(map: (<Real> => ?), e: <?>) -> Bool = {
+  def llog = logger "isDefined";
+  match e with
+  | sym: Real -> (Map.mem e map)
   | der x -> isDefined map x
-  | f e -> (isDefined map f) && (isDefined map e)
+  | e_1 e_2 -> (isDefined map e_1) && (isDefined map e_2)
   | lift v: ? -> true
-  | _ -> error "Unmatched pattern in isDefined"
+  | _ -> unmatched llog e
 }
 
-def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
+def isIEDerDefined(map: (<Real> => ?), e: <?>) -> Bool = {
+  def llog = logger "isIEDerDefined";
+  match e with
+  | der x -> isDefined map x
+  | e_1 e_2 -> (isIEDerDefined map e_1) && (isIEDerDefined map e_2)
+  | sym: Real -> true
+  | lift v: ? -> true
+  | _ -> unmatched llog e
+}
+
+def evalBoolFromVMap(e: <?>, vmap: VMap) -> Bool = {
   def llog = logger "evalBoolFromVMap";
-  def _ = llog TRACE "expression" expr;
+  def _ = llog TRACE "expression" e;
   def _ = llog TRACE "vmap" vmap;
-  def evalReal(expr: <?>) -> Real = (evalRealFromVMap expr vmap);
-  def evalBool(expr: <?>) -> Bool = {
-    match expr with
+  def evalReal(e: <?>) -> Real = (evalRealFromVMap e vmap);
+  def evalBool(e: <?>) -> Bool = {
+    match e with
     | e1 == e2 -> error "Not allowed to compare for equality in transitions."
     | e1 != e2 -> error "Not allowed to compare for equality in transitions."
     | e1 >= e2 -> evalReal(e1) >=  evalReal(e2)
@@ -84,9 +100,9 @@ def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
     | e1 && e2 -> evalBool(e1) && evalBool(e2)
     | e1 || e2 -> evalBool(e1) || evalBool(e2)
     | lift b: Bool -> b
-    | _ -> error "The value is not a boolean type."
+    | _ -> unmatched llog e
   };
-  evalBool(expr);
+  evalBool(e);
 }
 
 def mkRootFuns(P: Set(<Bool>), ukm: UkMap, t: Real, yy: {Real}, yp: {Real}) -> [Real] = {

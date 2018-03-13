@@ -26,6 +26,7 @@ def g = 9.81
 def l = 3.
 def m = 5.
 def angle = (45.0)*pi/180.0
+def t: Real
 
 def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
   ax: <Real>, ay: <Real>, T: <Real>) = {
@@ -47,6 +48,8 @@ def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
 def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
   ax: <Real>, ay: <Real>) = {
 
+  init t 0.;
+  der t = 1.;
   ax = 0.;
   ay = -g;
   ax = der vx;
@@ -64,7 +67,7 @@ def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
 
 def main = {
   def x, y, vx, vy, ax, ay, T: Real;
-  def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (ax, "ax"), (ay, "ay")];
+  def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (ax, "ax"), (ay, "ay"), (t, "t")];
   def bp = bpendulum x y vx vy ax ay T;
   simulateDebug bp 0. 0.01 4.0 monitored
 }

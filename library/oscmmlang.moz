@@ -24,16 +24,8 @@ include GraphElaboration
 def pre: <Real> -> <Real>
 def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 
-def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
-  def _ = llog INFO "Pattern:" pat;
-  error "Unmatched pattern"
-}
-
 def indexred(E: Set(Equations)) -> Set(Equations) = {
-  def llog = logger "indexred" TRACE;
-  def _ = llog "before ir" (setToCont E);
   def (Ep, dmap) = indexReducationPantelides (setToCont E) (Map.empty);
-  def _ = llog "after ir" Ep;
   contToSet Ep
 }
 
@@ -145,12 +137,27 @@ def evalpres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
-def mapToImplEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
+def gatherIEulerDefEquations(E: Set(Equations), pvm: VMap) -> Set(Equations) = {
+  def llog = logger "gatherIEulerDefEquations";
+
+  def work(acc: Set(Equations), e: Equations) -> Set(Equations) = {
+    match e with
+    | e_1 = e_2 ->
+      if (isIEDerDefined pvm e_1) && (isIEDerDefined pvm e_2) then (Set.add e acc)
+      else acc
+    | _ -> unmatched llog e
+  };
+
+  foldLeft work (Set.empty) (Set.toList E)
+}
+
+def mapToImplEuler(E: Set(Equations), pvm: VMap, h: Real) -> Set(Equations) = {
   def llog = logger "mapToBEuler";
+
   def work(e: Equations) -> Equations = {
     def workharder(ee: <?>) -> <?> = {
       match ee with
-      | der x -> (x - (evalReal x vm)) / h
+      | der x -> (x - (evalReal x pvm)) / h
       | f ee_1 -> (workharder f) (workharder ee_1)
       | _ -> ee
     };
@@ -164,14 +171,16 @@ def mapToImplEuler(E: Set(Equations), vm: VMap, h: Real) -> Set(Equations) = {
 }
 
 // TODO: handle newly introduced eqs and variables
-def impulseApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
-  def EIE = mapToImplEuler E vm h;
+def impulseApprox(E: Set(Equations), pvm: VMap, vm: VMap, h: Real) -> VMap = {
+  def IEDE = gatherIEulerDefEquations E pvm;
+  def EIE = mapToImplEuler IEDE pvm h;
   def nvm = solveNLEQ EIE vm 0.;
   nvm
 }
 
 def ivApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
-  def EIE = mapToImplEuler E vm (-h);
+  def IEDE = gatherIEulerDefEquations E vm;
+  def EIE = mapToImplEuler IEDE vm (-h);
   def nvm = solveNLEQ EIE vm 0.;
   nvm
 }

@@ -55,5 +55,5 @@ def main = {
   def x, y, vx, vy, T: Real;
   def monitored = [(x, "x"), (y, "y"), (T, "T")];
   def bp = bpendulum x y vx vy T;
-  simulateDebug bp 0. 0.1 10.0 monitored 10
+  simulateDebug bp 0. 0.1 10.0 monitored
 }

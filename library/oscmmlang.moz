@@ -81,7 +81,7 @@ def evalinits(es: Equations, vm: VMap) -> VMap = {
   | e_1; e_2 -> evalinits e_1 (evalinits e_2 vm)
   | d_1 = d_2 -> vm
   | init x v ->
-      if !(isDefined x vm) then add x (evalReal v vm) vm else vm
+      if !(isDefined vm x) then add x (evalReal v vm) vm else vm
   | Branch _ _ _ _ -> vm
   | sw es_1 _ _ -> (evalinits es_1 vm)
   | _ -> unmatched llog es

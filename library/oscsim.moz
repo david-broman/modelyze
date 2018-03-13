@@ -25,7 +25,7 @@ include simoutput
 type SS = (Equations, VMap, (Real, Int))
 
 def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
-  monitored: [(<Real>, String)], maxn: Int) -> () = {
+  monitored: [(<Real>, String)]) -> () = {
 
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;
   def labels = map (fun e: (<Real>, String) -> snd e) monitored;
@@ -36,10 +36,12 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     print "\n"
   });
 
-  def printSimResult(ukm: UkMap, t: Real, yy: {Real}, yp: {Real}) = {
+  def printSimResult(isD: (<Real> -> Bool), ev: (<Real> -> Real),
+    t: Real) -> () = {
+
     def f(e: <Real>) -> () = {
       def _ =  print "\t";
-      if isDefined e ukm then print (real2string (evalFromArrays e ukm yy yp))
+      if isD e then print (real2string (ev e))
       else print "?"
     };
 
@@ -68,7 +70,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def _ = (DAESolver.calcIcYaYdp s vids yy yp nt);
 
 
-    def psr = (fun t: Real -> printSimResult ukm t yy yp);
+    def psr = printSimResult (isDefined ukm)
+      (fun e: <Real> -> evalFromArrays e ukm yy yp);
 
     // And then solve!
     def go(sr: SolverResult, t: Real)
@@ -97,7 +100,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
       def (m, vm, (t, n)) = ss;
 
-      if n > maxn || stable m vm then ss
+      if stable m vm then ss
       else {
         def _ = llog DEBUG "before switch" m;
         def nm = elabsws m vm;
@@ -114,21 +117,21 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
   def sim(m: Equations) -> () = {
 
-    def alternate(first: (SS -> SS),
+    def chain(first: (SS -> SS),
                   second: (SS -> SS),
                   ss: SS) -> SS = {
 
       def (m, vm, (t, n)) = ss;
-      if t >= tend || n > maxn then ss
+      if t >= tend then ss
       else {
         def nss = first ss;
-        alternate second first nss
+        chain second first nss
       }
     };
 
     // TODO: eval inits at each mode-switch
     def ss = (m, evalinits m (Map.empty), (t0, 0));
-    def _  = alternate ctsim dtsim ss;
+    def _  = chain ctsim dtsim ss;
     ()
   };
 

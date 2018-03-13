@@ -52,22 +52,17 @@ def add(x: <Real>, v: Real, vmap: VMap) -> VMap = {
   Map.add x v vmap
 }
 
-def isDefined(x: <Real>, vmap: VMap) -> Bool = {
-  def _ = checkStateVar x;
-  Map.mem x vmap
-}
-
 def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   def yyfun(x: <Real>) -> <Real> = { (find x mu) };
   def ypfun(x: <Real>) -> <Real> = { error "we do not allow derivatives in vmap" };
   eval a yyfun ypfun
 }
 
-def isDefined(expr: <?>, ukm: UkMap) -> Bool = {
+def isDefined(ukm: (<Real> => ?), expr: <?>) -> Bool = {
   match expr with
   | sym: Real -> (Map.mem expr ukm)
-  | der x -> isDefined x ukm
-  | f e -> (isDefined f ukm) && (isDefined e ukm)
+  | der x -> isDefined ukm x
+  | f e -> (isDefined ukm f) && (isDefined ukm e)
   | lift v: ? -> true
   | _ -> error "Unmatched pattern in isDefined"
 }
@@ -124,38 +119,6 @@ def splitAndAndOrs(P: Set(<Bool>)) -> Set(<Bool>) = {
   foldLeft f (Set.empty) (Set.toList P)
 }
 
-def evalRealFromVMapWithDefaultVal(expr: <Real>, mu: VMap, default: Real)
-  -> Real = {
-
-  def hasUndefinedVars(expr: <?>) -> Bool = {
-    match expr with
-    | sym: Real -> !(isDefined expr mu)
-    | der x -> !(Map.mem expr mu)
-    | f e -> (hasUndefinedVars f) || (hasUndefinedVars e)
-    | lift v: ? -> false
-    | _ -> error "Unmatched pattern in hasUndefinedVars"
-  };
-
-  if hasUndefinedVars expr then default
-  else evalRealFromVMap expr mu
-}
-
-def evalFromArraysWithDefaultVal(expr: <Real>, ukm: UkMap, yy: VarArray,
-  yp: VarArray, default: Real) -> Real = {
-
-  def hasUndefinedVars(expr: <?>) -> Bool = {
-    match expr with
-    | sym: Real -> !(Map.mem expr ukm)
-    | der x -> hasUndefinedVars x
-    | f e -> (hasUndefinedVars f) || (hasUndefinedVars e)
-    | lift v: ? -> false
-    | _ -> error "Unmatched pattern in hasUndefinedVars"
-  };
-
-  if hasUndefinedVars expr then default
-  else evalFromArrays expr ukm yy yp
-}
-
 def contToSet(cont: ?) -> Set(?) = {
   def work(cont: ?, acc: Set(?)) -> Set(?) = {
     match cont with
@@ -191,7 +154,7 @@ def setToCont(set: Set(Equations)) -> Equations = {
 def setArrayFromVMap(vm: VMap, udfv: Real, ukm: UkMap, yy: {Real}) -> () = {
   def f(u: (<Real>, (Int, Bool))) -> () = {
     def (x, (i, _)) = u;
-    if !(isDefined x vm) then (Array.set yy i udfv)
+    if !(isDefined vm x) then (Array.set yy i udfv)
     else (Array.set yy i (find x vm))
   };
 

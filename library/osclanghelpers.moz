@@ -63,6 +63,15 @@ def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   eval a yyfun ypfun
 }
 
+def isDefined(expr: <?>, ukm: UkMap) -> Bool = {
+  match expr with
+  | sym: Real -> (Map.mem expr ukm)
+  | der x -> isDefined x ukm
+  | f e -> (isDefined f ukm) && (isDefined e ukm)
+  | lift v: ? -> true
+  | _ -> error "Unmatched pattern in isDefined"
+}
+
 def evalBoolFromVMap(expr: <?>, vmap: VMap) -> Bool = {
   def llog = logger "evalBoolFromVMap";
   def _ = llog TRACE "expression" expr;

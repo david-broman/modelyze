@@ -26,9 +26,10 @@ def g = 9.81
 def l = 3.
 def m = 5.
 def angle = (45.0)*pi/180.0
-def ax, ay: Real
 
-def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
+def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  ax: <Real>, ay: <Real>, T: <Real>) = {
+
   init x (l*cos(angle));
   init y (l*sin(angle));
   init vx 0.;
@@ -43,7 +44,9 @@ def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
   x^2. + y^2. = l^2.;
 }
 
-def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>) = {
+def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  ax: <Real>, ay: <Real>) = {
+
   ax = 0.;
   ay = -g;
   ax = der vx;
@@ -53,13 +56,15 @@ def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>) = {
 
 }
 
-def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>, T: <Real>) = {
-  sw (pendulum x y vx vy T) (fun t: () -> freefall x y vx vy) (T < 200.)
+def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
+  ax: <Real>, ay: <Real>, T: <Real>) = {
+
+  sw (pendulum x y vx vy ax ay T) (fun t: () -> freefall x y vx vy ax ay) (T < 210.)
 }
 
 def main = {
-  def x, y, vx, vy, T: Real;
+  def x, y, vx, vy, ax, ay, T: Real;
   def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (ax, "ax"), (ay, "ay")];
-  def bp = bpendulum x y vx vy T;
-  simulateDebug bp 0. 0.01 2.0 monitored
+  def bp = bpendulum x y vx vy ax ay T;
+  simulateDebug bp 0. 0.01 4.0 monitored
 }

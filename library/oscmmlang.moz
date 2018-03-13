@@ -65,12 +65,7 @@ def elabsws(es: Equations, vm: VMap) -> Equations = {
   | Branch _ _ _ _ -> es
   | sw es_1 (lift es_2: (() -> ?)) r -> {
       if evalBool r vm then sw (elabsws es_1 vm) es_2 r
-      else {
-        def _ = llog DEBUG "es_2" es_2;
-        def tmp = es_2();
-        def _ = llog DEBUG "es_2()" tmp;
-        tmp
-      }
+      else es_2 ()
     }
   | _ -> unmatched llog es
 }

@@ -22,7 +22,7 @@ include OSCMMLANG
 include Numsolvers
 include simoutput
 
-type SS = (Equations, VMap, (Real, Int))
+type SimState = (Equations, VMap, (Real, Int))
 
 def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   monitored: [(<Real>, String)]) -> () = {
@@ -50,8 +50,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     print "\n"
   };
 
-  def ctsim(ss: SS)
-    -> SS = {
+  def ctsim(ss: SimState)
+    -> SimState = {
 
     def llog = logger "ctsim";
 
@@ -84,27 +84,27 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       -> (SolverResult, Real) = {
 
       def _ = psr t;
-      if sr == DAE_SOLVER_RESULT_SUCCESS then {
+      if sr == DAE_SOLVER_RESULT_SUCCESimState then {
           def (nt, nsr) = (DAESolver.solveNormal s (t + h) yy yp);
           go(nsr, nt)
       } else (sr, t)
     };
 
-    def (sr, nnt) = go(DAE_SOLVER_RESULT_SUCCESS, nt);
+    def (sr, nnt) = go(DAE_SOLVER_RESULT_SUCCESimState, nt);
     def nvm = ukMapYyYpToVMap ukm yy yp;
     ((m, nvm, (nnt, 0)))
   };
 
-  def dtsim(ss: SS)
-    -> SS = {
+  def dtsim(ss: SimState)
+    -> SimState = {
     def llog = logger "dtsim";
 
     def (m, vm, (t, n)) = ss;
     def psr = (fun vm: VMap ->
       printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t);
 
-    def go(ss: SS)
-      -> SS = {
+    def go(ss: SimState)
+      -> SimState = {
 
       def (m, vm, (t, n)) = ss;
 
@@ -114,7 +114,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def E = evalpres (elaborate nm) vm;
         def imp = impulseApprox E vm (h / 10.);
         // def _ = llog DEBUG "Impulse" "IMP";
-        // def _ = psr imp;
+        def _ = psr imp;
         if stable nm imp then go (nm, ivApprox E imp (h / 10.), (t, n + 1))
         else go (elabsws nm imp, vm, (t, n + 1))
       }
@@ -125,9 +125,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
   def sim(m: Equations) -> () = {
 
-    def chain(first: (SS -> SS),
-                  second: (SS -> SS),
-                  ss: SS) -> SS = {
+    def chain(first: (SimState -> SimState),
+      second: (SimState -> SimState), ss: SimState) -> SimState = {
 
       def (m, vm, (t, n)) = ss;
       if t >= tend then ss

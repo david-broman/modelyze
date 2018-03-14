@@ -55,7 +55,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     def llog = logger "ctsim";
 
-    def (m, vm, (t, _)) = ss;
+    def (m, vm, (t0, _)) = ss;
     def E = evalpres (elaborate m) vm;
     def _ = llog DEBUG "model before ir" E;
     def P = gatherregs m;
@@ -66,15 +66,16 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     // Setup the DAE Solver
     def (resf, nroots, rootf, yy0, yp0, vids, ukm, zcm) =
-      getDAESolverInput (nE, vm, t) P 0.;
+      getDAESolverInput (nE, vm, t0) P 0.;
     def yy1 = (Array.make (Array.length yy0) INFINITE);
     def yp1 = (Array.make (Array.length yp0) INFINITE);
-    def s = (DAESolver.initWithRootf resf nroots rootf t yy0 yp0);
+    def t1 = INFINITE;
+    def s = (DAESolver.initWithRootf resf nroots rootf t0 yy0 yp0);
     def _ = (DAESolver.setStopTime s tend);
-    def nt = t + 0.00001;
+    def nt0 = t0 + 0.00001;
     def _ = llog DEBUG "yy0 before ivc" yy0;
     def _ = llog DEBUG "yp0 before ivc" yp0;
-    def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 nt);
+    def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 nt0);
     def _ = llog DEBUG "yy0 after ivc" yy0;
     def _ = llog DEBUG "yp0 after ivc" yp0;
 
@@ -82,22 +83,23 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
 
     // And then solve!
-    def go(sr: SolverResult, yy0: {Real}, yp0: {Real},
-      yy1: {Real}, yp1: {Real}, t: Real, use1: Bool) -> (SolverResult, Real, Bool) = {
+    def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
+      t1: Real, yy1: {Real}, yp1: {Real}, use0: Bool)
+        -> (SolverResult, Real, Bool) = {
 
-      def _ = psr yy0 yp0 t;
+      def _ = psr yy0 yp0 t0;
       if sr == DAE_SOLVER_RESULT_SUCCESS then {
-          def (nt, nsr) = (DAESolver.solveNormal s (t + h) yy1 yp1);
-          go nsr yy1 yp1 yy0 yp0 nt (!use1)
+          def (t1, nsr) = (DAESolver.solveNormal s (t0 + h) yy1 yp1);
+          go nsr t1 yy1 yp1 t0 yy0 yp0 (!use0)
       } else {
-        (sr, t, use1)
+        (sr, t0, use0)
       }
     };
 
-    def (sr, nnt, use1) = go DAE_SOLVER_RESULT_SUCCESS yy0 yp0 yy1 yp1 nt false;
-    def nvm = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
-                else ukMapYyYpToVMap ukm yy0 yp0};
-    ((m, nvm, (nnt, 0)))
+    def (sr, t, use0) = go DAE_SOLVER_RESULT_SUCCESS nt0 yy0 yp0 t1 yy1 yp1 true;
+    def nvm = { if use0 then ukMapYyYpToVMap ukm yy0 yp0
+                else ukMapYyYpToVMap ukm yy1 yp1 };
+    ((m, nvm, (t, 0)))
   };
 
   def dtsim(ss: SimState)

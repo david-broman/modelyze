@@ -26,6 +26,7 @@ type Sysfun = ({Real} -> [Real])
 
 // def EPSILON = 1.0e-10
 def EPSILON = 0.
+def EPSILON2 = 1.0e-10
 
 def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
   def _ = llog INFO "Pattern:" pat;
@@ -195,11 +196,12 @@ def getDAESolverInput(ivp: IVP, P: Set(<Bool>), undefval: Real)
       match p with
       | e_1 == e_2 -> error "Equality not allowed in root functions"
       | e_1 != e_2 -> error "Inequality not allowed in root functions"
-      | e_1 >= e_2 -> e_1 - e_2
+      // | e_1 >= e_2 -> e_1 - e_2
       | e_1 >  e_2 -> e_1 - e_2 - EPSILON
-      | e_1 <= e_2 -> e_2 - e_1
+      // | e_1 <= e_2 -> e_2 - e_1
       | e_1 <  e_2 -> e_2 - e_1 - EPSILON
-      | _ -> error "We only allow operators <, <=, > and >="
+      // | _ -> error "We only allow operators <, <=, > and >="
+      | _ -> error "We only allow operators < and >"
     };
 
     map f (Set.toList P)
@@ -266,11 +268,18 @@ def linIpol(x0: Real, x1: Real, t0: Real, t1: Real, t: Real) -> Real = {
 def ipolArray(a0: {Real}, a1: {Real}, t0: Real, t1: Real, t: Real, aout: {Real})
   -> () = {
 
+  def llog = logger "ipolArray";
   def f(i: Int, e: Real) -> () = {
     (Array.set aout i (linIpol (Array.get a0 i) (Array.get a1 i) t0 t1 t))
   };
-
-  iteri f aout
+  def _ = llog DEBUG "t0" t0;
+  def _ = llog DEBUG "t" t;
+  def _ = llog DEBUG "t1" t1;
+  def _ = llog DEBUG "a0" a0;
+  def _ = llog DEBUG "before interpolation" aout;
+  def _ = iteri f aout;
+  def _ = llog DEBUG "after interpolation" aout;
+  ()
 }
 
 def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
@@ -308,6 +317,22 @@ def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
   def tt = (Array.make (length candidates) ((t1 - t0) / 2.));
   def s = (NLEQSolver.init sysf tt);
   def _ = (NLEQSolver.solve s tt);
-  def _ = dprint(tt);
   min tt
+}
+
+def trunc(a: {Real}, epsilon: Real) -> () = {
+  def f(i: Int, e: Real) -> () = {
+    if (abs e) < epsilon then (Array.set a i 0.) else ()
+  };
+
+  iteri f a
+}
+
+def trunc(vm: VMap, epsilon: Real) -> VMap = {
+  def f(e: (<Real>, Real)) -> (<Real>, Real) = {
+    def (x, v) = e;
+    if (abs v) < epsilon then (x, 0.) else e
+  };
+
+  listToMap (map f (Map.toList vm))
 }

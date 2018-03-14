@@ -273,3 +273,32 @@ def filter(p: (Dyn -> Bool), l: [Dyn]) -> [Dyn] = {
   def f(acc: [Dyn], e: Dyn) -> [Dyn] = { if p e then e::acc else acc };
   foldLeft f [] l
 }
+
+def foldLeft(f: (Dyn -> Dyn -> Dyn), acc: Dyn, a: {Dyn}) -> Dyn = {
+  def work(i: Int, acc: Dyn) -> Dyn = {
+    if (Array.length a) == i then acc
+    else work (i + 1) (f acc (Array.get a i))
+  };
+
+  work 0 acc
+}
+
+def iteri(f: (Int -> Dyn -> ()), a: {Dyn}) -> () = {
+  def work(i: Int) -> () = {
+    if (Array.length a) == i then ()
+    else {
+      def _ = f i (Array.get a i);
+      work (i + 1)
+    }
+  };
+
+  work 0
+}
+
+def min(a: {Dyn}) -> Dyn = {
+  def f(min: Dyn, e: Dyn) -> Dyn = {
+    if e < min then e else min
+  };
+
+  foldLeft f (Array.get a 0) a;
+}

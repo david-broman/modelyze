@@ -20,6 +20,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 include ModelyzeDAE
 type VMap = (<Real> => Real)
+type ZCMap = (Int => <Real>)
 type IVP = (Set(Equations), VMap, Real)
 type Sysfun = ({Real} -> [Real])
 
@@ -105,36 +106,6 @@ def evalBoolFromVMap(e: <?>, vmap: VMap) -> Bool = {
   evalBool(e);
 }
 
-def mkRootFuns(P: Set(<Bool>), ukm: UkMap, t: Real, yy: {Real}, yp: {Real}) -> [Real] = {
-
-  def evalReal(e: <?>) -> Real = { (evalFromArrays e ukm yy yp) };
-
-  def f(p: <Bool>) -> Real = {
-    match p with
-    | e_1 == e_2 -> error "Equality not allowed in root functions"
-    | e_1 != e_2 -> error "Inequality not allowed in root functions"
-    | e_1 >= e_2 -> (evalReal e_1) - (evalReal e_2)
-    | e_1 >  e_2 -> (evalReal e_1) - (evalReal e_2) - EPSILON
-    | e_1 <= e_2 -> (evalReal e_1) - (evalReal e_2)
-    | e_1 <  e_2 -> (evalReal e_1) - (evalReal e_2) + EPSILON
-    | _ -> error "We only allow operators <, <=, > and >="
-  };
-
-  map f (Set.toList P)
-}
-
-def splitAndAndOrs(P: Set(<Bool>)) -> Set(<Bool>) = {
-
-  def f(P: Set(<Bool>), e: <Bool>) -> Set(<Bool>) = {
-    match e with
-    | e_1 && e_2 -> f (f P e_1) e_2
-    | e_1 || e_2 -> error "We only allow && operator"
-    | _ -> Set.add e P
-  };
-
-  foldLeft f (Set.empty) (Set.toList P)
-}
-
 def contToSet(cont: ?) -> Set(?) = {
   def work(cont: ?, acc: Set(?)) -> Set(?) = {
     match cont with
@@ -207,22 +178,65 @@ def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> VMap = {
 def ukMapYyYpToVMap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
   def f(acc: VMap,  e: (<Real>, (Int, Bool))) -> VMap = {
     def (x, (i, _)) = e;
-    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
+    // Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
+    Map.add x (Array.get yy i) acc
   };
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
 def getDAESolverInput(ivp: IVP, P: Set(<Bool>), undefval: Real)
-  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap) = {
+  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
 
   def (E, vmap, t) = ivp;
   def (ukm, yy, yp) = eVMapToUkMapYyYp E vmap undefval;
+
+  def mkRootExpr(P: Set(<Bool>)) -> [<Real>] = {
+    def f(p: <Bool>) -> <Real> = {
+      match p with
+      | e_1 == e_2 -> error "Equality not allowed in root functions"
+      | e_1 != e_2 -> error "Inequality not allowed in root functions"
+      | e_1 >= e_2 -> e_1 - e_2
+      | e_1 >  e_2 -> e_1 - e_2 - EPSILON
+      | e_1 <= e_2 -> e_2 - e_1
+      | e_1 <  e_2 -> e_2 - e_1 - EPSILON
+      | _ -> error "We only allow operators <, <=, > and >="
+    };
+
+    map f (Set.toList P)
+  };
+
+  def mkRootFuns(re: [<Real>], ukm: UkMap, t: Real, yy: {Real}, yp: {Real})
+    ->   [Real] = {
+
+    def f(e: <Real>) -> Real = { (evalFromArrays e ukm yy yp) };
+    map f re
+  };
+
+  def splitAndAndOrs(P: Set(<Bool>)) -> Set(<Bool>) = {
+
+    def f(P: Set(<Bool>), e: <Bool>) -> Set(<Bool>) = {
+      match e with
+      | e_1 && e_2 -> f (f P e_1) e_2
+      | e_1 || e_2 -> error "We only allow && operator"
+      | _ -> Set.add e P
+    };
+
+    foldLeft f (Set.empty) (Set.toList P)
+  };
+
+
+  def mkZCMap(re: [<Real>]) -> ZCMap = {
+    def f(i: Int, e: <Real>) -> (Int, <Real>) = { (i, e) };
+    listToMap (mapi f re)
+  };
+
   def vids = initConditionCorrection ukm;
   def resf = makeResidual ukm (setToCont E);
-  def PP = splitAndAndOrs P;
-  def rootf = mkRootFuns PP ukm;
-  def nroots = (Set.size PP);
-  (resf, nroots, rootf, yy, yp, vids, ukm)
+  def re = mkRootExpr (splitAndAndOrs P);
+  def rootf = mkRootFuns re ukm;
+  def zcm = mkZCMap re;
+  def nroots = (Map.size zcm);
+  (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
 }
 
 def getNLEQInput(E: Set(Equations), vm: VMap, udfv: Real)
@@ -263,7 +277,7 @@ def solveNLEQ(E: Set(Equations), vm: VMap, udfv: Real) -> VMap = {
 //   map f (contToList eqs)
 // }
 
-// def interpolateOverZeroCrossing(zcm: ZCMap, zca: {Root}, ukm: UkMap,
+// def interpolateOverZeroCrossings(zcm: ZCMap, zca: {Root}, ukm: UkMap,
 //   t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real}) -> Real = {
 
 //   def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {

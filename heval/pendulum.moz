@@ -56,7 +56,6 @@ def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
   ay = der vy;
   vy = der y;
   vx = der x;
-
 }
 
 def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
@@ -67,7 +66,8 @@ def bpendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
 
 def main = {
   def x, y, vx, vy, ax, ay, T: Real;
-  def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"), (ax, "ax"), (ay, "ay"), (t, "t")];
+  def monitored = [(x, "x"), (y, "y"), (vx, "vx"), (vy, "vy"),
+    (ax, "ax"), (ay, "ay"), (t, "t")];
   def bp = bpendulum x y vx vy ax ay T;
   simulateDebug bp 0. 0.01 4.0 monitored
 }

@@ -34,6 +34,10 @@ def evalReal(e: <Real>, vm: VMap) -> Real = {
 }
 
 def evalBool(e: <Bool>, vm: VMap) -> Bool = {
+  def llog = logger"evalBool";
+  def _ = llog TRACE "expr" e;
+  def _ = llog TRACE "vm" vm;
+  def _ = llog TRACE "evals to:" (evalBoolFromVMap e vm);
   evalBoolFromVMap e vm
 }
 
@@ -170,7 +174,6 @@ def mapToImplEuler(E: Set(Equations), pvm: VMap, h: Real) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
-// TODO: handle newly introduced eqs and variables
 def impulseApprox(E: Set(Equations), pvm: VMap, vm: VMap, h: Real) -> VMap = {
   def IEDE = gatherIEulerDefEquations E pvm;
   def EIE = mapToImplEuler IEDE pvm h;
@@ -178,10 +181,10 @@ def impulseApprox(E: Set(Equations), pvm: VMap, vm: VMap, h: Real) -> VMap = {
   nvm
 }
 
-def ivApprox(E: Set(Equations), vm: VMap, h: Real) -> VMap = {
-  def IEDE = gatherIEulerDefEquations E vm;
-  def EIE = mapToImplEuler IEDE vm (-h);
-  def nvm = solveNLEQ EIE vm 0.;
+def ivApprox(E: Set(Equations), imp: VMap, h: Real) -> VMap = {
+  def IEDE = gatherIEulerDefEquations E imp;
+  def EIE = mapToImplEuler IEDE imp (-h);
+  def nvm = solveNLEQ EIE imp 0.;
   nvm
 }
 

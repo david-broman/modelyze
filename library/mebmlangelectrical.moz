@@ -33,8 +33,6 @@ def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
 def Conductor(p: Electrical, n: Electrical) = {
   def i_Co: Current;
   def u_Co: Voltage;
-  reinit i_Co i_Co;
-  reinit u_Co u_Co;
   Branch i_Co u_Co p n;
   u_Co = 0.
 }
@@ -43,8 +41,6 @@ def ResistorDebug(R: Real, p: Electrical, n: Electrical,
   i_R: Current, u_R: Voltage) = {
 
   Branch i_R u_R p n;
-  reinit i_R i_R;
-  reinit u_R u_R;
   u_R = R * i_R
 }
 
@@ -53,9 +49,6 @@ def ConstantVoltageSourceDebug(V: Real, p: Electrical, n: Electrical,
 
   // A source drives current from high to low potential
   Branch i_V u_V n p;
-  init u_V V;
-  reinit u_V u_V;
-  reinit i_V i_V;
   u_V = V
 }
 
@@ -64,8 +57,6 @@ def CapacitorDebug(C: Real, u0: Real, p: Electrical, n: Electrical,
 
   Branch i_C u_C p n;
   init u_C u0;
-  reinit u_C u_C;
-  reinit i_C i_C;
   C * (der u_C) = i_C
 }
 
@@ -73,73 +64,55 @@ def InductorDebug(L: Real, i0: Real, p: Electrical, n: Electrical,
   i_L: Current, u_L: Voltage) = {
   Branch i_L u_L p n;
   init i_L i0;
-  reinit i_L i_L;
-  reinit u_L u_L;
   L * (der i_L) = u_L
 }
 
 def DiodeDebug(forward: Bool, fbias: Real,
   p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
 
-  def fmodel = {
-    u_D = fbias;
-    switch
-      (reinit i_D i_D; reinit u_D u_D)
-      (fun t: () -> reinit i_D 0.; reinit u_D (-(abs u_D)))
-      ([i_D])
-  };
-
-  def rmodel = {
-    i_D = 0.;
-    switch
-      (reinit i_D i_D; reinit u_D u_D)
-      (fun t: () -> reinit i_D (abs i_D); reinit u_D fbias)
-      ([-u_D])
-  };
-
   def d(forward: Bool) -> Equations = {
     if forward then
-      switch
-        fmodel
+      sw
+        (u_D = fbias)
         (fun t:() -> d(false))
-        ([i_D])
+        (i_D > 0.)
     else
-      switch
-        rmodel
+      sw
+        (i_D = 0.)
         (fun t: () -> d(true))
-        ([-u_D])
+        (u_D < fbias)
   };
 
   Branch i_D u_D p n;
   d(forward)
 }
 
-def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
+// def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
 
-  def t: Real;
+//   def t: Real;
 
-  def Clock(t: <Real>) = {
-    init t 0.;
-    reinit t t;
-    der t = 1.
-  };
+//   def Clock(t: <Real>) = {
+//     init t 0.;
+//     reinit t t;
+//     der t = 1.
+//   };
 
-  def s(is_closed: Bool) -> Equations = {
-    if is_closed then
-      switch
-        (Conductor p n)
-        (fun t: () -> nilp ())
-        ([tflip - t])
-    else
-      switch
-        (nilp ())
-        (fun t: () -> Conductor p n)
-        ([tflip - t])
-  };
+//   def s(is_closed: Bool) -> Equations = {
+//     if is_closed then
+//       switch
+//         (Conductor p n)
+//         (fun t: () -> nilp ())
+//         ([tflip - t])
+//     else
+//       switch
+//         (nilp ())
+//         (fun t: () -> Conductor p n)
+//         ([tflip - t])
+//   };
 
-  Clock(t);
-  s(is_closed)
-}
+//   Clock(t);
+//   s(is_closed)
+// }
 
 def Resistor(R: Real, p: Electrical, n: Electrical) = {
   def i_R: Current;
@@ -172,4 +145,3 @@ def Diode(forward: Bool, fbias: Real,
   def u_D: Voltage;
   DiodeDebug forward fbias p n i_D u_D
 }
-

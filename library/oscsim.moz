@@ -92,16 +92,19 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
         go nsr t1 yy1 yp1 nt0 yy0 yp0 (!use1)
       } else {
-        if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
-          def zca = (DAESolver.getRootInfo s);
-          def nt1 = ipolZCTime zcm zca ukm t0 yy0 yp0 t1 yy1 yp1;
-          def _ = ipolArray yy0 yy1 t0 t1 nt1 yy1;
-          def _ = ipolArray yp0 yp1 t0 t1 nt1 yp1;
-          (sr, nt1, use1)
-        } else {
+        // if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
+        //   def zca = (DAESolver.getRootInfo s);
+        //   def nt1 = ipolZCTime zcm zca ukm t0 yy0 yp0 t1 yy1 yp1;
+        //   def _ = ipolArray yy0 yy1 t0 t1 nt1 yy1;
+        //   def _ = ipolArray yp0 yp1 t0 t1 nt1 yp1;
+        //   def _ = psr yy1 yp1 nt1;
+        //   (sr, nt1, use1)
+        // } else {
+          // def _ = trunc yy1 EPSILON2;
+          // def _ = trunc yp1 EPSILON2;
           def _ = psr yy1 yp1 t1;
           (sr, t1, use1)
-        }
+        // }
       }
     };
 
@@ -122,7 +125,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def go(ss: SimState)
       -> SimState = {
 
-      def (m, pvm, (t, n)) = ss;
+      def (m, pvmnt, (t, n)) = ss;
+      // def pvm = trunc pvmnt;
+      def pvm = pvmnt;
       def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
 
       if stable m pvm then ss
@@ -130,10 +135,11 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def nm = elabsws m pvm;
         def vm = evalinits nm pvm;
         def E = evalpres (elaborate nm) pvm;
-        def imp = impulseApprox E pvm vm (h / 10.);
+        def imp = impulseApprox E pvm vm (h / 1.);
+        def timp = trunc imp (1. / h);
         def _ = llog DEBUG "Impulse" (psr imp);
-        if stable nm imp then {
-            def iva = ivApprox E imp (h / 10.);
+        if stable nm timp then {
+            def iva = ivApprox E imp (h / 1.);
             def _ = llog DEBUG "IVApprox" (psr iva);
             go (nm, iva, (t, n + 1))
           }

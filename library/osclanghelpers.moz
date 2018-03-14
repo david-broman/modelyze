@@ -259,52 +259,38 @@ def solveNLEQ(E: Set(Equations), vm: VMap, udfv: Real) -> VMap = {
   ukMapYyToVMap ukm yy
 }
 
-// def makeBEulerFuns(eqs: Equations, ukm: UkMap, h: Real, yy0: {Real}, yy: {Real})
-//   -> [Real] = {
+def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
+  t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real})
+  -> Real = {
 
-//   def yyfun(x: <Real>) -> <Real> = { Array.get yy (fst (Map.find x ukm)) };
-//   def ypfun(x: <Real>) -> <Real> = {
-//     def i = (fst (Map.find x ukm));
-//     ((Array.get yy i) - (Array.get yy0 i)) / h
-//   };
+  def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {
+    def i = (fst (Map.find x ukm));
+    def x0 = (Array.get a0 i);
+    def x1 = (Array.get a1 i);
+    (x1 - x0) / (t1 - t0) * (t - t0) + x0
+  };
 
-//   def f(e: Equations) -> Real = {
-//     match e with
-//     | e1 = e2 -> (eval e1 yyfun ypfun) - (eval e2 yyfun ypfun)
-//     | _ -> error "Expected only equations here"
-//   };
+  def yyfun(t: Real, x: <Real>) = f yy0 yy1 t x;
+  def ypfun(t: Real, x: <Real>) = f yp0 yp1 t x;
 
-//   map f (contToList eqs)
-// }
+  def candidates =
+   map
+     (fun e: (Int, <Real>) -> fst e)
+     (filter
+       (fun b: (Int, <Real>) -> { def (i, e) = b; (Array.get zca i) != 0 })
+       (Map.toList zcm));
 
-// def interpolateOverZeroCrossings(zcm: ZCMap, zca: {Root}, ukm: UkMap,
-//   t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real}) -> Real = {
+  def sysf(ts: {Real}) -> [Real] = {
+    def f(i: Int, c: <Real>) -> Real = {
+      def t = (Array.get ts i);
+      eval c (yyfun t) (ypfun t)
+    };
 
-//   def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {
-//     def i = (fst (Map.find x ukm));
-//     def x0 = (Array.get a0 i);
-//     def x1 = (Array.get a1 i);
-//     (x1 - x0) / (t1 - t2) * (t - t0) + x0
-//   };
+    mapi f candidates
+  };
 
-//   def yyfun(t: Real, x: <Real>) = f yy0 yy1;
-//   def ypfun(t: Real, x: <Real>) = f yp0 yp1;
-
-//   def candidates =
-//    map
-//      (fun e: (<Real>, Int) -> fst e)
-//      (filter
-//        (fun b: (<Real>, Int) -> { def (e, i) = b; (Array.get zca i) != 0 })
-//        (Map.toList zcm));
-
-//   def sysf(ts: {Real}) -> [Real] = {
-//     def f(i: Int, c: <Real>) -> Real = {
-//       def t = (Array.get ts i);
-//       eval c (yyfun t) (ypfun t)
-//     };
-
-//     mapi f candidates
-//   };
-
-//   def tt = (Array.mk )
-// }
+  def tt = (Array.make (length candidates) ((t1 - t0) / 2.));
+  def s = (NLEQSolver.init sysf tt);
+  def _ = (NLEQSolver.solve s tt);
+  min tt
+}

@@ -136,7 +136,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def vm = evalinits nm pvm;
         def E = evalpres (elaborate nm) pvm;
         def imp = impulseApprox E pvm vm (h / 1.);
-        def timp = trunc imp (1. / h);
+        def timp = trunc imp (10.*h);
         def _ = llog DEBUG "Impulse" (psr imp);
         if stable nm timp then {
             def iva = ivApprox E imp (h / 1.);

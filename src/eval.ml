@@ -210,30 +210,14 @@ let eval_daesolver_op eval op arg_lst =
     let nroots = Ida.get_num_roots st in
     let roots = Sundials.Roots.create nroots in
     Ida.get_root_info st roots;
-    let a = Array.map Sundials.Roots.int_of_root (Sundials.Roots.to_array roots) in
+    let a = Array.map Sundials.Roots.int_of_root
+        (Sundials.Roots.to_array roots)
+    in
     TmArray(Array.map (fun e -> TmConst(Ast.ConstInt(e))) a)
 
   | Ast.DAESolverOpSetStopTime,
     [TmDAESolver(st,yy,yp);TmConst(Ast.ConstReal(tend))] ->
     Ida.set_stop_time st tend;
-    TmConst(Ast.ConstUnit)
-
-  | Ast.DAESolverOpCalcICWithFixed,
-    [tmres;TmConst(Ast.ConstReal(tstep));TmConst(Ast.ConstReal(t0));
-     TmArray(tm_yy0);TmArray(tm_yy0fix);TmArray(tm_yp0);TmArray(tm_vids);
-     TmArray(tm_yy0new);TmArray(tm_yp0new)] ->
-    let epsilon = 1.0e-5
-    and resf = mk_resrootfun tmres
-    and yy0 = from_tm tm_yy0
-    and yy0fix = from_tm tm_yy0fix
-    and yp0 = from_tm tm_yp0
-    and vids = from_tm tm_vids
-    and yy0new = from_tm tm_yy0new
-    and yp0new = from_tm tm_yp0new
-    in
-    Findic.findic epsilon resf tstep t0 yy0 yy0fix yp0 vids yy0new yp0new;
-    into_tm yy0new tm_yy0new;
-    into_tm yp0new tm_yp0new;
     TmConst(Ast.ConstUnit)
 
   | _ -> TmDAESolverOp(op,arg_lst)
@@ -256,8 +240,8 @@ let eval_nleqsolver_op eval op arg_lst =
 
   let mk_kinsol_session sysfun uu =
     let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
-    Kinsol.set_func_norm_tol st 1.0e-5;
-    Kinsol.set_scaled_step_tol st 1.0e-5;
+    Kinsol.set_func_norm_tol st 1.0e-9;
+    Kinsol.set_scaled_step_tol st 1.0e-9;
     Kinsol.set_max_setup_calls st 1;
     st
   in

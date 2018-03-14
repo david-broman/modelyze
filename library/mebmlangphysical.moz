@@ -19,7 +19,7 @@
  */
 
 include Physical
-include MEBMLANG
+include OSCMMLANG
 
 type AngularVelocity = <Real>
 type Torque = <Real>
@@ -35,25 +35,3 @@ def EffortSensor(e: <Real>, p: Dyn, n: Dyn) = {
   Branch f e p n;
   f = 0.
 }
-
-def SafeSwitch(m_1: Equations, m_2: (() -> ?), r: [<Real>],
-  m_3: (() -> ?), lr: [<Real>]) -> Equations = {
-
-  switch (switch m_1 m_2 r) m_3 lr
-}
-
-// def ImpulseSwitch(m_1: Equations, m_2: Equations, m_3: Equations, I: [<Real>]) = {
-//   def d: <Real>;
-//   init d 1.;
-//   der d = 0.;
-//   switch
-//     (m_1, reinit d 1.)
-//     (fun t: () ->
-//       reinit d 0.
-//       switch
-//         (m_2)
-//         (fun t: () -> m_3)
-//         ([d])
-//     )
-//     (I)
-// }

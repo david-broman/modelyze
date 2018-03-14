@@ -29,7 +29,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include MEBMLANGElectrical
-include Simulate
+include OSCSIM
 
 def C = 1.
 def L = 1.
@@ -48,8 +48,8 @@ def LCD = {
 }
 
 def monitored =
-  //[(i, "i"), (u_D, "w"), (u_C, "v"), (u_L, "u")]
-  [(i_Dd, "i_D"), (u_Dd, "u_D")]
+  [(i, "i"), (u_D, "w"), (u_C, "v"), (u_L, "u")]
+  // [(i_Dd, "i_D"), (u_Dd, "u_D")]
 
 def main =
-  print(pprintSimulation (simulatemebmlDebug LCD 0. 0.1 4.0 monitored 100))
+  simulateDebug LCD 0. 0.1 4.0 monitored

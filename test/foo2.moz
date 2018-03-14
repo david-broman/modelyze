@@ -1,25 +1,23 @@
 include OSCMMLANG
 
 def x, y, z: <Real>
-def n1, n2: Node
-def vm = listToMap [(x, 2.1), (y, 1.1)]
 
-def model = {
-  init x 1.;
-  x = der y;
-  Branch x y n1 n2;
-  sw
-    (y = 3.; sw (x = 2.; init z x) (fun t: () -> x = 3.*y) (x > 2.))
-    (fun t: () -> x + y = 0.)
-    (y > 1. && x > 1.)
-}
+def t0 = 0.
+def y0 = listToArray [10., 2., 3.]
+def yp0 = listToArray [0., 0., 0.]
 
-def model2 = {
-  init x 3.;
-  x + (sin (pre y)) = der y + 2. + (pre x) + (pre y)
-}
+def t1 = 1.
+def y1 = listToArray [-1., 0.001, -2.]
+def yp1 = listToArray [0., 0., 0.]
+
+def ukm = listToMap [(x, (0, false)), (y, (1, false)), (z, (2, false))]
+def zcm = listToMap [(0, x), (1, x + z), (2, y)]
+def zca = listToArray [1, 1, 0]
 
 def main = {
-  // dprint(gathereqs model (Set.empty))
-  dprint(mapToImplEuler (evalpres (gathereqs model2) vm) vm 0.1)
+  def t = ipolZCTime zcm zca ukm t0 y0 yp0 t1 y1 yp1;
+  def r = (Array.make 3 0.);
+  def _ = dprint(t);
+  def _ = ipolArray y0 y1 t0 t1 t r;
+  dprint(r)
 }

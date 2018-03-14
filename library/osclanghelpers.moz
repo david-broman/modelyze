@@ -259,23 +259,39 @@ def solveNLEQ(E: Set(Equations), vm: VMap, udfv: Real) -> VMap = {
   ukMapYyToVMap ukm yy
 }
 
+def linIpol(x0: Real, x1: Real, t0: Real, t1: Real, t: Real) -> Real = {
+  (x1 - x0) / (t1 - t0) * (t - t0) + x0
+}
+
+def ipolArray(a0: {Real}, a1: {Real}, t0: Real, t1: Real, t: Real, aout: {Real})
+  -> () = {
+
+  def f(i: Int, e: Real) -> () = {
+    (Array.set aout i (linIpol (Array.get a0 i) (Array.get a1 i) t0 t1 t))
+  };
+
+  iteri f aout
+}
+
 def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
   t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real})
   -> Real = {
 
-  def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {
-    def i = (fst (Map.find x ukm));
-    def x0 = (Array.get a0 i);
-    def x1 = (Array.get a1 i);
-    (x1 - x0) / (t1 - t0) * (t - t0) + x0
-  };
+  def eval(e: <Real>, t: Real) -> Real = {
+    def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {
+      def i = (fst (Map.find x ukm));
+      linIpol (Array.get a0 i) (Array.get a1 i) t0 t1 t
+    };
 
-  def yyfun(t: Real, x: <Real>) = f yy0 yy1 t x;
-  def ypfun(t: Real, x: <Real>) = f yp0 yp1 t x;
+    def yyfun(t: Real, x: <Real>) = f yy0 yy1 t x;
+    def ypfun(t: Real, x: <Real>) = f yp0 yp1 t x;
+
+    eval e (yyfun t) (ypfun t)
+  };
 
   def candidates =
    map
-     (fun e: (Int, <Real>) -> fst e)
+     (fun e: (Int, <Real>) -> snd e)
      (filter
        (fun b: (Int, <Real>) -> { def (i, e) = b; (Array.get zca i) != 0 })
        (Map.toList zcm));
@@ -283,7 +299,7 @@ def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
   def sysf(ts: {Real}) -> [Real] = {
     def f(i: Int, c: <Real>) -> Real = {
       def t = (Array.get ts i);
-      eval c (yyfun t) (ypfun t)
+      eval c t
     };
 
     mapi f candidates
@@ -292,5 +308,6 @@ def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
   def tt = (Array.make (length candidates) ((t1 - t0) / 2.));
   def s = (NLEQSolver.init sysf tt);
   def _ = (NLEQSolver.solve s tt);
+  def _ = dprint(tt);
   min tt
 }

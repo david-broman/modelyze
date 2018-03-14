@@ -56,7 +56,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def llog = logger "ctsim";
 
     def (m, vm, (t, _)) = ss;
-    def E = elaborate m;
+    def E = evalpres (elaborate m) vm;
     def _ = llog DEBUG "model before ir" E;
     def P = gatherregs m;
 
@@ -65,7 +65,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def nE = indexred E;
 
     // Setup the DAE Solver
-    def (resf, nroots, rootf, yy, yp, vids, ukm) =
+    def (resf, nroots, rootf, yy, yp, vids, ukm, zcm) =
       getDAESolverInput (nE, vm, t) P 0.;
     def s = (DAESolver.initWithRootf resf nroots rootf t yy yp);
     def _ = (DAESolver.setStopTime s tend);
@@ -115,9 +115,12 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def vm = evalinits nm pvm;
         def E = evalpres (elaborate nm) pvm;
         def imp = impulseApprox E pvm vm (h / 10.);
-        // def _ = llog DEBUG "Impulse" "IMP";
-        def _ = psr imp;
-        if stable nm imp then go (nm, ivApprox E imp (h / 10.), (t, n + 1))
+        def _ = llog DEBUG "Impulse" (psr imp);
+        if stable nm imp then {
+            def iva = ivApprox E imp (h / 10.);
+            def _ = llog DEBUG "IVApprox" (psr iva);
+            go (nm, iva, (t, n + 1))
+          }
         else go (elabsws nm imp, vm, (t, n + 1))
       }
     };

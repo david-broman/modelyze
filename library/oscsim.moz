@@ -55,7 +55,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     def llog = logger "ctsim";
 
-    def (m, vm, (t0, _)) = ss;
+    def (m, vm, (t1, _)) = ss;
     def E = evalpres (elaborate m) vm;
     def _ = llog DEBUG "model before ir" E;
     def P = gatherregs m;
@@ -65,40 +65,49 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def nE = indexred E;
 
     // Setup the DAE Solver
-    def (resf, nroots, rootf, yy0, yp0, vids, ukm, zcm) =
+    def (resf, nroots, rootf, yy1, yp1, vids, ukm, zcm) =
       getDAESolverInput (nE, vm, t0) P 0.;
-    def yy1 = (Array.make (Array.length yy0) INFINITE);
-    def yp1 = (Array.make (Array.length yp0) INFINITE);
-    def t1 = INFINITE;
-    def s = (DAESolver.initWithRootf resf nroots rootf t0 yy0 yp0);
+    def yy0 = (Array.make (Array.length yy1) INFINITE);
+    def yp0 = (Array.make (Array.length yp1) INFINITE);
+    def t0 = INFINITE;
+    def s = (DAESolver.initWithRootf resf nroots rootf t1 yy1 yp1);
     def _ = (DAESolver.setStopTime s tend);
-    def nt0 = t0 + 0.00001;
-    def _ = llog DEBUG "yy0 before ivc" yy0;
-    def _ = llog DEBUG "yp0 before ivc" yp0;
-    def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 nt0);
-    def _ = llog DEBUG "yy0 after ivc" yy0;
-    def _ = llog DEBUG "yp0 after ivc" yp0;
+    def nt1 = t1 + 0.00001;
+    def _ = llog DEBUG "yy1 before ivc" yy1;
+    def _ = llog DEBUG "yp1 before ivc" yp1;
+    def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 nt1);
+    def _ = llog DEBUG "yy1 after ivc" yy1;
+    def _ = llog DEBUG "yp1 after ivc" yp1;
 
     def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefined ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
 
     // And then solve!
     def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
-      t1: Real, yy1: {Real}, yp1: {Real}, use0: Bool)
+      t1: Real, yy1: {Real}, yp1: {Real}, use1: Bool)
         -> (SolverResult, Real, Bool) = {
 
-      def _ = psr yy0 yp0 t0;
       if sr == DAE_SOLVER_RESULT_SUCCESS then {
-          def (t1, nsr) = (DAESolver.solveNormal s (t0 + h) yy1 yp1);
-          go nsr t1 yy1 yp1 t0 yy0 yp0 (!use0)
+        def _ = psr yy1 yp1 t1;
+        def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
+        go nsr t1 yy1 yp1 nt0 yy0 yp0 (!use1)
       } else {
-        (sr, t0, use0)
+        if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
+          def zca = (DAESolver.getRootInfo s);
+          def nt1 = ipolZCTime zcm zca ukm t0 yy0 yp0 t1 yy1 yp1;
+          def _ = ipolArray yy0 yy1 t0 t1 nt1 yy1;
+          def _ = ipolArray yp0 yp1 t0 t1 nt1 yp1;
+          (sr, nt1, use1)
+        } else {
+          def _ = psr yy1 yp1 t1;
+          (sr, t1, use1)
+        }
       }
     };
 
-    def (sr, t, use0) = go DAE_SOLVER_RESULT_SUCCESS nt0 yy0 yp0 t1 yy1 yp1 true;
-    def nvm = { if use0 then ukMapYyYpToVMap ukm yy0 yp0
-                else ukMapYyYpToVMap ukm yy1 yp1 };
+    def (sr, t, use1) = go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1 true;
+    def nvm = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
+                else ukMapYyYpToVMap ukm yy0 yp0 };
     ((m, nvm, (t, 0)))
   };
 

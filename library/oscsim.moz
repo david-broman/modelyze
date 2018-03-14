@@ -65,33 +65,38 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def nE = indexred E;
 
     // Setup the DAE Solver
-    def (resf, nroots, rootf, yy, yp, vids, ukm, zcm) =
+    def (resf, nroots, rootf, yy0, yp0, vids, ukm, zcm) =
       getDAESolverInput (nE, vm, t) P 0.;
-    def s = (DAESolver.initWithRootf resf nroots rootf t yy yp);
+    def yy1 = (Array.make (Array.length yy0) INFINITE);
+    def yp1 = (Array.make (Array.length yp0) INFINITE);
+    def s = (DAESolver.initWithRootf resf nroots rootf t yy0 yp0);
     def _ = (DAESolver.setStopTime s tend);
     def nt = t + 0.00001;
-    def _ = llog DEBUG "yy before ivc" yy;
-    def _ = llog DEBUG "yp before ivc" yp;
-    def _ = (DAESolver.calcIcYaYdp s vids yy yp nt);
-    def _ = llog DEBUG "yy after ivc" yy;
-    def _ = llog DEBUG "yp after ivc" yp;
+    def _ = llog DEBUG "yy0 before ivc" yy0;
+    def _ = llog DEBUG "yp0 before ivc" yp0;
+    def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 nt);
+    def _ = llog DEBUG "yy0 after ivc" yy0;
+    def _ = llog DEBUG "yp0 after ivc" yp0;
 
-    def psr = printSimResult (isDefined ukm)
+    def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefined ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
 
     // And then solve!
-    def go(sr: SolverResult, t: Real)
-      -> (SolverResult, Real) = {
+    def go(sr: SolverResult, yy0: {Real}, yp0: {Real},
+      yy1: {Real}, yp1: {Real}, t: Real, use1: Bool) -> (SolverResult, Real, Bool) = {
 
-      def _ = psr t;
+      def _ = psr yy0 yp0 t;
       if sr == DAE_SOLVER_RESULT_SUCCESS then {
-          def (nt, nsr) = (DAESolver.solveNormal s (t + h) yy yp);
-          go(nsr, nt)
-      } else (sr, t)
+          def (nt, nsr) = (DAESolver.solveNormal s (t + h) yy1 yp1);
+          go nsr yy1 yp1 yy0 yp0 nt (!use1)
+      } else {
+        (sr, t, use1)
+      }
     };
 
-    def (sr, nnt) = go(DAE_SOLVER_RESULT_SUCCESS, nt);
-    def nvm = ukMapYyYpToVMap ukm yy yp;
+    def (sr, nnt, use1) = go DAE_SOLVER_RESULT_SUCCESS yy0 yp0 yy1 yp1 nt false;
+    def nvm = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
+                else ukMapYyYpToVMap ukm yy0 yp0};
     ((m, nvm, (nnt, 0)))
   };
 

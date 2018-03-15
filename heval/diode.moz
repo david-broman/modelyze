@@ -38,7 +38,7 @@ def u_Dd, u_Cd, u_Ld, i_Dd, i_Cd, i_Ld: Real
 
 def LCD = {
   def n1, n2, n3, n4: Electrical;
-  DiodeDebug true 0.01 n1 n2 i_Dd u_Dd;
+  DiodeDebug true 0.0 n1 n2 i_Dd u_Dd;
   Capacitor C (-1.) n2 n3;
   Inductor L 1. n3 n4;
   CurrentSensor i n4 n1;

@@ -22,7 +22,7 @@ include OSCMMLANG
 include Numsolvers
 include simoutput
 
-type SimState = (Equations, VMap, (Real, Int))
+type SimState = (Equations, VMap, VMap, (Real, Int))
 
 def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   monitored: [(<Real>, String)]) -> () = {
@@ -55,9 +55,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     def llog = logger "ctsim";
 
-    def (m, vm, (t1, _)) = ss;
-    def E = evalpres (elaborate m) vm;
-    def _ = llog DEBUG "model before ir" E;
+    def (m, ll, rl, (t1, _)) = ss;
+    def E = evalpres (elaborate m) rl;
+    def _ = llog DEBUG "model before ir" (setToCont E);
     def P = gatherregs m;
 
 
@@ -66,7 +66,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     // Setup the DAE Solver
     def (resf, nroots, rootf, yy1, yp1, vids, ukm, zcm) =
-      getDAESolverInput (nE, vm, t0) P 0.;
+      getDAESolverInput (nE, rl, t0) P 0.;
     def yy0 = (Array.make (Array.length yy1) INFINITE);
     def yp0 = (Array.make (Array.length yp1) INFINITE);
     def t0 = INFINITE;
@@ -109,42 +109,45 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     };
 
     def (sr, t, use1) = go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1 true;
-    def nvm = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
+    def nrl = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
                 else ukMapYyYpToVMap ukm yy0 yp0 };
-    ((m, nvm, (t, 0)))
+    // def nll = { if use1 then ukMapYyYpToVMap ukm yy0 yp0
+    //             else ukMapYyYpToVMap ukm yy1 yp1 };
+    def nll = nrl;
+    ((m, nll, nrl, (t, 0)))
   };
 
   def dtsim(ss: SimState)
     -> SimState = {
-    def llog = logger "dtsim" DEBUG;
+    def llog = dlogger "dtsim" DEBUG;
 
-    def (m, vm, (t, n)) = ss;
-    def psr = (fun vm: VMap ->
+    def (m, ll, rl, (t, n)) = ss;
+    def psr = (fun vm: VMap -> fun thnk: () ->
       printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t);
 
     def go(ss: SimState)
       -> SimState = {
 
-      def (m, pvmnt, (t, n)) = ss;
-      // def pvm = trunc pvmnt;
-      def pvm = pvmnt;
-      def _ = llog "vm" (psr pvm);
-      def _ = llog "model" m;
+      def (m, ll, rl, (t, n)) = ss;
       def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
 
-      if stable m pvm then ss
+      def _ = llog "left limit:" (psr ll);
+      def _ = llog "right limit:" (psr rl);
+
+      if (stable m rl) then ss
       else {
-        def nm = elabsws m pvm;
-        def vm = evalinits nm pvm;
-        def E = evalpres (elaborate nm) pvm;
-        def imp = impulseApprox E pvm vm (h / 1.);
-        def timp = trunc imp (10.*h);
-        def _ = llog "Impulse" (psr imp);
-        if stable nm timp then {
-            def iva = ivApprox E imp (h / 1.);
-            go (nm, iva, (t, n + 1))
-          }
-        else go (elabsws nm imp, vm, (t, n + 1))
+        def nm = elabsws m rl;
+        def nrl = evalinits nm rl;
+        def E = evalpres (elaborate nm) ll;
+        def _ = llog "model" (fun thnk: () -> (setToCont E));
+        def nnrl = impulseApprox E ll nrl (h / 1.);
+        def _ = llog "impulse" (psr nnrl);
+        def _ = llog "truc impulse" (psr (trunc nnrl (10.* h)));
+
+        if stable nm (trunc nnrl (10. * h)) then {
+          def nnnrl = ivApprox E nnrl (h / 1.);
+          go (nm, ll, nnnrl, (t, n + 1))
+        } else go (nm, ll, nnrl, (t, n + 1))
       }
     };
 
@@ -156,7 +159,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def chain(first: (SimState -> SimState),
       second: (SimState -> SimState), ss: SimState) -> SimState = {
 
-      def (m, vm, (t, n)) = ss;
+      def (m, ll, rl, (t, n)) = ss;
       if t >= tend then ss
       else {
         def nss = first ss;
@@ -165,7 +168,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     };
 
     // TODO: eval inits at each mode-switch
-    def ss = (m, evalinits m (Map.empty), (t0, 0));
+    def ss = (m, Map.empty, evalinits m (Map.empty), (t0, 0));
     def _  = chain ctsim dtsim ss;
     ()
   };

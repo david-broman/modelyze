@@ -116,7 +116,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
   def dtsim(ss: SimState)
     -> SimState = {
-    def llog = logger "dtsim";
+    def llog = logger "dtsim" DEBUG;
 
     def (m, vm, (t, n)) = ss;
     def psr = (fun vm: VMap ->
@@ -128,6 +128,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       def (m, pvmnt, (t, n)) = ss;
       // def pvm = trunc pvmnt;
       def pvm = pvmnt;
+      def _ = llog "vm" (psr pvm);
+      def _ = llog "model" m;
       def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
 
       if stable m pvm then ss
@@ -137,10 +139,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def E = evalpres (elaborate nm) pvm;
         def imp = impulseApprox E pvm vm (h / 1.);
         def timp = trunc imp (10.*h);
-        def _ = llog DEBUG "Impulse" (psr imp);
+        def _ = llog "Impulse" (psr imp);
         if stable nm timp then {
             def iva = ivApprox E imp (h / 1.);
-            def _ = llog DEBUG "IVApprox" (psr iva);
             go (nm, iva, (t, n + 1))
           }
         else go (elabsws nm imp, vm, (t, n + 1))

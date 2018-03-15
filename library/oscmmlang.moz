@@ -21,6 +21,7 @@ written by Oscar Eriksson oerikss@kth.se
 include OSCLANGHelpers
 include GraphElaboration
 
+def nilp: () -> Equations
 def pre: <Real> -> <Real>
 def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 
@@ -49,6 +50,7 @@ def stable(es: Equations, vm: VMap) -> Bool = {
   | init _ _ -> true
   | Branch _ _ _ _ -> true
   | sw es_1 _ r -> (evalBool r vm) && (stable es_1 vm)
+  | nilp _ -> true
   | _ -> unmatched llog es
 }
 
@@ -63,6 +65,7 @@ def elabsws(es: Equations, vm: VMap) -> Equations = {
       if evalBool r vm then sw (elabsws es_1 vm) es_2 r
       else es_2 ()
     }
+  | nilp _ -> es
   | _ -> unmatched llog es
 }
 
@@ -75,6 +78,7 @@ def evalinits(es: Equations, vm: VMap) -> VMap = {
       if !(isDefined vm x) then add x (evalReal v vm) vm else vm
   | Branch _ _ _ _ -> vm
   | sw es_1 _ _ -> (evalinits es_1 vm)
+  | nilp _ -> vm
   | _ -> unmatched llog es
 }
 
@@ -87,6 +91,7 @@ def elabtopol(es: Equations) -> Set(Equations) = {
     | init x v -> T
     | Branch _ _ _ _ -> (Set.add es T)
     | sw es_1 _ _ -> (work es_1 T)
+    | nilp _ -> T
     | _ -> unmatched llog es
   };
 
@@ -102,6 +107,7 @@ def gathereqs(es: Equations) -> Set(Equations) = {
     | init x v -> E
     | Branch _ _ _ _ -> E
     | sw es_1 _ _ -> (work es_1 E)
+    | nilp _ -> E
     | _ -> unmatched llog es
   };
 
@@ -117,6 +123,7 @@ def gatherregs(es: Equations) -> Set(<Bool>) = {
     | init x v -> P
     | Branch _ _ _ _ -> P
     | sw es_1 _ p -> (work es_1 (Set.add p P))
+    | nilp _ -> P
     | _ -> unmatched llog es
   };
 

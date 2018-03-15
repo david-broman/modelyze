@@ -32,7 +32,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include MEBMLANGElectrical
-include Simulate
+include OSCSIM
 
 def u_L, i_D, i: Real
 def u_Dd, i_Dd: Real
@@ -50,18 +50,15 @@ def flybackDiode = {
   TimedSwitch true t_break n2 n3;
   CurrentSensor i n3 n4;
   Inductor L i_L0 n4 n5;
-  VoltageSensor u_L n4 n5
-  // CurrentSensor i_D n5 n6;
-  // DiodeDebug false fbias n6 n3 i_Dd u_Dd
-  // SafeDiodeDebug false fbias n6 n3 i_Dd u_Dd
+  VoltageSensor u_L n4 n5;
+  CurrentSensor i_D n5 n6;
+  DiodeDebug false fbias n6 n3 i_Dd u_Dd
+
 }
 
 def monitored =
   [(i_Dd, "i_D"), (u_Dd, "u_D"), (u_L, "u_L"), (i, "i")]
      // [(i_Dd, "i_D"), (u_Dd, "u_D")]
 
-// def main =
-//   print(pprintSimulation (simulatemebml flybackDiode 0. 0.05 4.35 monitored))
-
 def main =
-  print(pprintSimulation (simulatemebmlDebug flybackDiode 0. 0.05 10.35 monitored 100))
+  simulateDebug flybackDiode 0. 0.1 10. monitored

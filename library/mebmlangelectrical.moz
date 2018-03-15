@@ -48,7 +48,7 @@ def ConstantVoltageSourceDebug(V: Real, p: Electrical, n: Electrical,
   i_V: Current, u_V: Voltage) = {
 
   // A source drives current from high to low potential
-  Branch i_V u_V n p;
+  Branch i_V u_V p n;
   u_V = V
 }
 
@@ -69,8 +69,10 @@ def InductorDebug(L: Real, i0: Real, p: Electrical, n: Electrical,
 
 def DiodeDebug(forward: Bool, fbias: Real,
   p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
+  def llog = logger "Diode" DEBUG;
 
   def d(forward: Bool) -> Equations = {
+    def _ = llog "is forward biased" forward;
     if forward then
       sw
         (u_D = fbias)
@@ -87,32 +89,31 @@ def DiodeDebug(forward: Bool, fbias: Real,
   d(forward)
 }
 
-// def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
+def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
 
-//   def t: Real;
+  def t: Real;
 
-//   def Clock(t: <Real>) = {
-//     init t 0.;
-//     reinit t t;
-//     der t = 1.
-//   };
+  def Clock(t: <Real>) = {
+    init t 0.;
+    der t = 1.
+  };
 
-//   def s(is_closed: Bool) -> Equations = {
-//     if is_closed then
-//       switch
-//         (Conductor p n)
-//         (fun t: () -> nilp ())
-//         ([tflip - t])
-//     else
-//       switch
-//         (nilp ())
-//         (fun t: () -> Conductor p n)
-//         ([tflip - t])
-//   };
+  def s(is_closed: Bool) -> Equations = {
+    if is_closed then
+      sw
+        (Conductor p n)
+        (fun t: () -> nilp ())
+        (t < tflip)
+    else
+      sw
+        (nilp ())
+        (fun t: () -> Conductor p n)
+        (t < tflip)
+  };
 
-//   Clock(t);
-//   s(is_closed)
-// }
+  Clock(t);
+  s(is_closed)
+}
 
 def Resistor(R: Real, p: Electrical, n: Electrical) = {
   def i_R: Current;

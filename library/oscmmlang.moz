@@ -35,10 +35,10 @@ def evalReal(e: <Real>, vm: VMap) -> Real = {
 }
 
 def evalBool(e: <Bool>, vm: VMap) -> Bool = {
-  def llog = logger"evalBool";
-  def _ = llog TRACE "expr" e;
-  def _ = llog TRACE "vm" vm;
-  def _ = llog TRACE "evals to:" (evalBoolFromVMap e vm);
+  def llog = logger "evalBool" TRACE;
+  def _ = llog "expr" e;
+  def _ = llog "variable map" vm;
+  def _ = llog "evals to:" (evalBoolFromVMap e vm);
   evalBoolFromVMap e vm
 }
 
@@ -148,13 +148,13 @@ def evalpres(E: Set(Equations), vm: VMap) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
-def gatherIEulerDefEquations(E: Set(Equations), pvm: VMap) -> Set(Equations) = {
+def gatherIEulerDefEquations(E: Set(Equations), ll: VMap) -> Set(Equations) = {
   def llog = logger "gatherIEulerDefEquations";
 
   def work(acc: Set(Equations), e: Equations) -> Set(Equations) = {
     match e with
     | e_1 = e_2 ->
-      if (isIEDerDefined pvm e_1) && (isIEDerDefined pvm e_2) then (Set.add e acc)
+      if (isIEDerDefined ll e_1) && (isIEDerDefined ll e_2) then (Set.add e acc)
       else acc
     | _ -> unmatched llog e
   };
@@ -162,13 +162,13 @@ def gatherIEulerDefEquations(E: Set(Equations), pvm: VMap) -> Set(Equations) = {
   foldLeft work (Set.empty) (Set.toList E)
 }
 
-def mapToImplEuler(E: Set(Equations), pvm: VMap, h: Real) -> Set(Equations) = {
+def mapToImplEuler(E: Set(Equations), ll: VMap, h: Real) -> Set(Equations) = {
   def llog = logger "mapToBEuler";
 
   def work(e: Equations) -> Equations = {
     def workharder(ee: <?>) -> <?> = {
       match ee with
-      | der x -> (x - (evalReal x pvm)) / h
+      | der x -> (x - (evalReal x ll)) / h
       | f ee_1 -> (workharder f) (workharder ee_1)
       | _ -> ee
     };
@@ -181,18 +181,19 @@ def mapToImplEuler(E: Set(Equations), pvm: VMap, h: Real) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
-def impulseApprox(E: Set(Equations), pvm: VMap, vm: VMap, h: Real) -> VMap = {
-  def IEDE = gatherIEulerDefEquations E pvm;
-  def EIE = mapToImplEuler IEDE pvm h;
-  def nvm = solveNLEQ EIE vm 0.;
-  nvm
+def impulseApprox(E: Set(Equations), ll: VMap, rl: VMap, h: Real) -> VMap = {
+  def IEDE = gatherIEulerDefEquations E ll;
+  def EIE = mapToImplEuler IEDE ll h;
+  def nrl = solveNLEQ EIE rl 0.;
+  nrl
 }
 
-def ivApprox(E: Set(Equations), imp: VMap, h: Real) -> VMap = {
-  def IEDE = gatherIEulerDefEquations E imp;
-  def EIE = mapToImplEuler IEDE imp (-h);
-  def nvm = solveNLEQ EIE imp 0.;
-  nvm
+def ivApprox(E: Set(Equations), rl: VMap, h: Real) -> VMap = {
+  // def IEDE = gatherIEulerDefEquations E rl;
+  def IEDE = E;
+  def EIE = mapToImplEuler IEDE rl (-h);
+  def nrl = solveNLEQ EIE rl 0.;
+  nrl
 }
 
 def elaborate(m: Equations) -> Set(Equations) = {

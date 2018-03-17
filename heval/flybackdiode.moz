@@ -61,4 +61,4 @@ def monitored =
      // [(i_Dd, "i_D"), (u_Dd, "u_D")]
 
 def main =
-  simulateDebug flybackDiode 0. 0.001 6. monitored
+  simulateDebug flybackDiode 0. 0.1 6. monitored

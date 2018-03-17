@@ -48,7 +48,7 @@ def bb(y: <Real>, v: <Real>, a: <Real>) -> Equations = {
         sw
           (floor y v a)
           (fun t: () -> bb y v a)
-          (y < EPSILON2)
+          (a > 0.)
     )
     (y > 0.)
 }
@@ -56,8 +56,8 @@ def bb(y: <Real>, v: <Real>, a: <Real>) -> Equations = {
 def main = {
   def y, v, a: Real;
   def monitored = [(y, "y"), (v, "v")
-    ];
-    // ,(a, "a")];
+    // ];
+    ,(a, "a")];
   def b = bb y v a;
   simulateDebug b 0. 0.01 7.5 monitored
 }

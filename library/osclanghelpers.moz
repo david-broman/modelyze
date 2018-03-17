@@ -24,6 +24,7 @@ type ZCMap = (Int => <Real>)
 type IVP = (Set(Equations), VMap, Real)
 type Sysfun = ({Real} -> [Real])
 
+def CONSISTLIM = 0.01
 def EPSILON = 1.0e-10
 def EPSILON2 = 1.0e-10
 
@@ -42,15 +43,24 @@ def isEqual(lhs: Set(?), rhs: Set(?)) -> Bool = {
 }
 
 def checkStateVar(x: <Real>) -> () = {
+  def llog = logger "checkStateVar" INFO;
   match x with
   | sym: Real -> ()
-  | _ -> error "Not a state variable"
+  | der xx -> checkStateVar xx
+  | _ -> {
+      def _ = llog "state var:" x;
+      error "Not a state variable"
+    }
 }
 
 def find(x: <Real>, vmap: VMap) -> Real = {
+  def llog = logger "find" INFO;
   def _ = checkStateVar x;
   if (Map.mem x vmap) then (Map.find x vmap)
-  else error "State variable undefined"
+  else {
+      def _ = llog "state var:" x;
+      error "State variable undefined"
+    }
 }
 
 def add(x: <Real>, v: Real, vmap: VMap) -> VMap = {
@@ -64,7 +74,17 @@ def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
   eval a yyfun ypfun
 }
 
-def isDefined(map: (<Real> => ?), e: <?>) -> Bool = {
+def isDefined(map: VMap, e: <?>) -> Bool = {
+  def llog = logger "isDefined";
+  match e with
+  | sym: Real -> (Map.mem e map)
+  | der x -> (Map.mem e map)
+  | e_1 e_2 -> (isDefined map e_1) && (isDefined map e_2)
+  | lift v: ? -> true
+  | _ -> unmatched llog e
+}
+
+def isDefined(map: UkMap, e: <?>) -> Bool = {
   def llog = logger "isDefined";
   match e with
   | sym: Real -> (Map.mem e map)
@@ -73,6 +93,7 @@ def isDefined(map: (<Real> => ?), e: <?>) -> Bool = {
   | lift v: ? -> true
   | _ -> unmatched llog e
 }
+
 
 def isIEDerDefined(map: (<Real> => ?), e: <?>) -> Bool = {
   def llog = logger "isIEDerDefined";
@@ -138,54 +159,65 @@ def setToCont(set: Set(Equations)) -> Equations = {
   if (Set.size set) == 0 then NoEqn else setToContImpl set
 }
 
-def setArrayFromVMap(vm: VMap, udfv: Real, ukm: UkMap, yy: {Real}) -> () = {
-  def f(u: (<Real>, (Int, Bool))) -> () = {
-    def (x, (i, _)) = u;
-    if !(isDefined vm x) then (Array.set yy i udfv)
-    else (Array.set yy i (find x vm))
-  };
-
-  def _ = map f (Map.toList ukm);
-  ()
+def updArr(x: <Real>, vm: VMap, i: Int, a: {Real}) -> () = {
+  if !(isDefined vm x) then ()
+  else (Array.set a i (find x vm))
 }
 
 def eVMapToUkMapYyYp(E: Set(Equations), vm: VMap, udfv: Real) ->
-  (UkMap, VarArray, VarArray) = {
+  (UkMap, {Real}, {Real}) = {
   def llog = logger "eVMapToUkMapYyYp" DEBUG;
   def (n, ukm) = realUnknowns (setToCont E);
   def yy = (Array.make n udfv);
   def yp = (Array.make n udfv);
-  def _ = setArrayFromVMap vm udfv ukm yy;
+  def _ = map
+    (fun e: (<Real>, (Int, Bool)) ->
+      { def (x, (i, _)) = e; updArr x vm i yy })
+    (Map.toList ukm);
+  def _ = map
+    (fun e: (<Real>, (Int, Bool)) ->
+      { def (x, (i, _)) = e; updArr (der x) vm i yp })
+    (Map.toList ukm);
   (ukm, yy, yp)
 }
 
 def eVMapToUkMapYy(E: Set(Equations), vm: VMap, udfv: Real) ->
-  (UkMap, VarArray) = {
+  (UkMap, {Real}) = {
   def (n, ukm) = realUnknowns (setToCont E);
   def yy = (Array.make n udfv);
-  def _ = setArrayFromVMap vm udfv ukm yy;
+  def _ = map
+    (fun e: (<Real>, (Int, Bool)) ->
+      { def (x, (i, _)) = e; updArr x vm i yy })
+    (Map.toList ukm);
   (ukm, yy)
 }
 
-def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> VMap = {
-  def f(acc: VMap, e: (<Real>, (Int, Bool))) -> VMap = {
+def ukMapYyYpToVMap(ukm: UkMap, yy: {Real}, yp: {Real}) -> VMap = {
+  def f(acc: VMap,  e: (<Real>, (Int, Bool))) -> VMap = {
     def (x, (i, _)) = e;
-    Map.add x (Array.get yy i) acc
+    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
   };
+
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def ukMapYyYpToVMap(ukm: UkMap, yy: VarArray, yp: VarArray) -> VMap = {
+
+def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> VMap = {
   def f(acc: VMap,  e: (<Real>, (Int, Bool))) -> VMap = {
     def (x, (i, _)) = e;
-    // Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
     Map.add x (Array.get yy i) acc
   };
+
   foldLeft f (Map.empty) (Map.toList ukm)
+}
+
+def indexred(E: Set(Equations)) -> Set(Equations) = {
+  def (Ep, dmap) = indexReducationPantelides (setToCont E) (Map.empty);
+  contToSet Ep
 }
 
 def getDAESolverInput(ivp: IVP, P: Set(<Bool>), undefval: Real)
-  -> (Residual, Int, Residual, VarArray, VarArray, VarArray, UkMap, ZCMap) = {
+  -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap, ZCMap) = {
 
   def (E, vmap, t) = ivp;
   def (ukm, yy, yp) = eVMapToUkMapYyYp E vmap undefval;
@@ -238,6 +270,22 @@ def getDAESolverInput(ivp: IVP, P: Set(<Bool>), undefval: Real)
   def zcm = mkZCMap re;
   def nroots = (Map.size zcm);
   (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
+}
+
+def getDAEFindICInput(ivp: IVP, undefval: Real) ->
+  (Residual, {Real}, {Real}, {Real}, UkMap) = {
+  def (resf, _, _, yy, yp, vids, ukm, _) =
+    getDAESolverInput ivp (Set.empty) undefval;
+  (resf, yy, yp, vids, ukm)
+}
+
+def findiv(ivp: IVP) -> (VMap, Real) = {
+  def dt = 0.00001;
+  def (_, _, t0) = ivp;
+  def (resf, yy0, yp0, vids, ukm) = getDAEFindICInput ivp 0.;
+  def s = (DAESolver.init resf t0 yy0 yp0);
+  def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 (t0 + dt));
+  (ukMapYyYpToVMap ukm yy0 yp0, t0 +  dt)
 }
 
 def getNLEQInput(E: Set(Equations), vm: VMap, udfv: Real)

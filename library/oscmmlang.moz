@@ -25,11 +25,6 @@ def nilp: () -> Equations
 def pre: <Real> -> <Real>
 def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 
-def indexred(E: Set(Equations)) -> Set(Equations) = {
-  def (Ep, dmap) = indexReducationPantelides (setToCont E) (Map.empty);
-  contToSet Ep
-}
-
 def evalReal(e: <Real>, vm: VMap) -> Real = {
   evalRealFromVMap e vm
 }
@@ -209,4 +204,13 @@ def elaborate(m: Equations) -> Set(Equations) = {
   def E = gathereqs m;
   def Et = elabtopol m;
   union E Et
+}
+
+def combineImpIVApp(imp: VMap, iva: VMap, co: Real) -> VMap = {
+  def f(e: (<Real>, Real)) -> (<Real>, Real) = {
+    def (x, v) = e;
+    if v > (find x iva)*100. then (x, (1./0.)*v) else (x, find x iva)
+  };
+
+  listToMap (map f (Map.toList imp))
 }

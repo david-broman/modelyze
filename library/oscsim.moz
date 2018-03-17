@@ -22,7 +22,7 @@ include OSCMMLANG
 include Numsolvers
 include simoutput
 
-type SimState = (Equations, VMap, VMap, (Real, Int))
+type SimState = (Equations, Set(Equations), VMap, VMap, (Real, Int))
 
 def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   monitored: [(<Real>, String)]) -> () = {
@@ -50,34 +50,46 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     print "\n"
   };
 
+  def consCheck(ivp: IVP) -> (Bool, VMap, Real) = {
+    def (E, vm, t) = ivp;
+    def (nvm, nt) = findiv ivp;
+
+    def p(e: (<Real>, Real)) -> Bool = {
+      def (x, v) = e;
+      (abs ((find x nvm) - v)) < CONSISTLIM
+    };
+
+    (forAll p (Map.toList vm), nvm, nt)
+  };
+
   def ctsim(ss: SimState)
     -> SimState = {
 
     def llog = logger "ctsim";
 
-    def (m, ll, rl, (t1, _)) = ss;
-    def E = evalpres (elaborate m) rl;
-    def _ = llog DEBUG "model before ir" (setToCont E);
+    def (m, E, ll, rl, (nt1, _)) = ss;
+    // def (m, ll, rl, (t1, _)) = ss;
+    // def E = evalpres (elaborate m) rl;
+    // def _ = llog DEBUG "model before ir" (setToCont E);
     def P = gatherregs m;
 
-
     // Perform index reduction
-    def nE = indexred E;
+    // def nE = indexred E;
 
     // Setup the DAE Solver
     def (resf, nroots, rootf, yy1, yp1, vids, ukm, zcm) =
-      getDAESolverInput (nE, rl, t0) P 0.;
+      getDAESolverInput (E, rl, nt1) P INFINITE;
     def yy0 = (Array.make (Array.length yy1) INFINITE);
     def yp0 = (Array.make (Array.length yp1) INFINITE);
     def t0 = INFINITE;
-    def s = (DAESolver.initWithRootf resf nroots rootf t1 yy1 yp1);
+    def s = (DAESolver.initWithRootf resf nroots rootf nt1 yy1 yp1);
     def _ = (DAESolver.setStopTime s tend);
-    def nt1 = t1 + 0.00001;
-    def _ = llog DEBUG "yy1 before ivc" yy1;
-    def _ = llog DEBUG "yp1 before ivc" yp1;
-    def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 nt1);
-    def _ = llog DEBUG "yy1 after ivc" yy1;
-    def _ = llog DEBUG "yp1 after ivc" yp1;
+    // def nt1 = t1 + 0.00001;
+    // def _ = llog DEBUG "yy1 before ivc" yy1;
+    // def _ = llog DEBUG "yp1 before ivc" yp1;
+    // def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 nt1);
+    // def _ = llog DEBUG "yy1 after ivc" yy1;
+    // def _ = llog DEBUG "yp1 after ivc" yp1;
 
     def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefined ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
@@ -114,50 +126,46 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def nll = { if use1 then ukMapYyYpToVMap ukm yy0 yp0
                 else ukMapYyYpToVMap ukm yy1 yp1 };
     // def nll = nrl;
-    ((m, nll, nrl, (t, 0)))
+    // ((m, nll, nrl, (t, 0)))
+    (m, E, nll, nrl, (t, 0))
   };
 
   def dtsim(ss: SimState)
     -> SimState = {
     def llog = dlogger "dtsim" DEBUG;
 
-    def (m, ll, rl, (t, n)) = ss;
-    def psr = (fun vm: VMap -> fun thnk: () ->
-      printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t);
+    def psr(vm: VMap, t: Real) -> () = {
+      printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t
+    };
 
     def go(ss: SimState)
       -> SimState = {
 
       def dh = 0.001;
-      def (m, ll, rl, (t, n)) = ss;
-      def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
 
-      def _ = llog "left limit:" (psr ll);
-      def _ = llog "right limit:" (psr rl);
+      def (m, E, ll, rl, (t, n)) = ss;
+      def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
 
       if (stable m rl) then ss
       else {
         def nm = elabsws m rl;
         def nrl = evalinits nm rl;
-        def E = evalpres (elaborate nm) ll;
-        def _ = llog "model" (fun thnk: () -> (setToCont E));
-        def dia = impulseApprox E ll nrl dh;
-        def _ = llog "impulse" (psr dia);
-
-        // if containsImps dia (1. / h) then {
-          // we have impulses
-          // def _ = llog "we have an impulse" (fun thnk: () -> ());
-          if stable nm dia then {
-            def rla = ivApprox E dia dh;
-            go (nm, rla, rla, (t, n + 1))
-          } else {
-            go (nm, ll, dia, (t, n + 1))
-          }
-        // } else go (nm, ll, nrl, (t, n + 1))
+        def nE = evalpres (elaborate nm) ll;
+        def nEir = indexred nE;
+        def (c, nnrl, nt) = consCheck (nEir, nrl, t);
+        if c then go (nm, nEir, ll, nnrl, (nt, n + 1))
+        else {
+          def dia = impulseApprox nE ll nnrl dh;
+          def iva = ivApprox nE dia dh;
+          def imp = combineImpIVApp dia iva (10.);
+          if (stable nm imp) then {
+            go (nm, nEir, ll, iva, (nt, n + 1))
+          } else go (nm, nEir, ll, imp, (nt, n + 1))
+        }
       }
     };
 
-    go ss;
+    go ss
   };
 
   def sim(m: Equations) -> () = {
@@ -165,7 +173,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def chain(first: (SimState -> SimState),
       second: (SimState -> SimState), ss: SimState) -> SimState = {
 
-      def (m, ll, rl, (t, n)) = ss;
+      def (_, _, _, _, (t, _)) = ss;
       if t >= tend then ss
       else {
         def nss = first ss;
@@ -173,8 +181,10 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       }
     };
 
-    // TODO: eval inits at each mode-switch
-    def ss = (m, Map.empty, evalinits m (Map.empty), (t0, 0));
+    def E = indexred (elaborate m);
+    def g = evalinits m (Map.empty);
+    def (_, iv, nt0) = consCheck (E, g, t0);
+    def ss = (m, E, Map.empty, iv, (nt0, 0));
     def _  = chain ctsim dtsim ss;
     ()
   };

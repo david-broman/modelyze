@@ -24,8 +24,7 @@ type ZCMap = (Int => <Real>)
 type IVP = (Set(Equations), VMap, Real)
 type Sysfun = ({Real} -> [Real])
 
-// def EPSILON = 1.0e-10
-def EPSILON = 0.
+def EPSILON = 1.0e-10
 def EPSILON2 = 1.0e-10
 
 def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
@@ -197,9 +196,9 @@ def getDAESolverInput(ivp: IVP, P: Set(<Bool>), undefval: Real)
       | e_1 == e_2 -> error "Equality not allowed in root functions"
       | e_1 != e_2 -> error "Inequality not allowed in root functions"
       // | e_1 >= e_2 -> e_1 - e_2
-      | e_1 >  e_2 -> e_1 - e_2 - EPSILON
+      | e_1 >  e_2 -> e_1 - e_2
       // | e_1 <= e_2 -> e_2 - e_1
-      | e_1 <  e_2 -> e_2 - e_1 - EPSILON
+      | e_1 <  e_2 -> e_2 - e_1
       // | _ -> error "We only allow operators <, <=, > and >="
       | _ -> error "We only allow operators < and >"
     };
@@ -268,17 +267,17 @@ def linIpol(x0: Real, x1: Real, t0: Real, t1: Real, t: Real) -> Real = {
 def ipolArray(a0: {Real}, a1: {Real}, t0: Real, t1: Real, t: Real, aout: {Real})
   -> () = {
 
-  def llog = logger "ipolArray";
+  def llog = logger "ipolArray" TRACE;
   def f(i: Int, e: Real) -> () = {
     (Array.set aout i (linIpol (Array.get a0 i) (Array.get a1 i) t0 t1 t))
   };
-  def _ = llog DEBUG "t0" t0;
-  def _ = llog DEBUG "t" t;
-  def _ = llog DEBUG "t1" t1;
-  def _ = llog DEBUG "a0" a0;
-  def _ = llog DEBUG "before interpolation" aout;
+  def _ = llog "t0" t0;
+  def _ = llog "t" t;
+  def _ = llog "t1" t1;
+  def _ = llog "a0" a0;
+  def _ = llog "before interpolation" aout;
   def _ = iteri f aout;
-  def _ = llog DEBUG "after interpolation" aout;
+  def _ = llog "after interpolation" aout;
   ()
 }
 
@@ -295,7 +294,7 @@ def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
     def yyfun(t: Real, x: <Real>) = f yy0 yy1 t x;
     def ypfun(t: Real, x: <Real>) = f yp0 yp1 t x;
 
-    eval e (yyfun t) (ypfun t)
+    eval e (yyfun t) (ypfun t) - EPSILON
   };
 
   def candidates =

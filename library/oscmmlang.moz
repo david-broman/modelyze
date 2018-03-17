@@ -188,6 +188,15 @@ def impulseApprox(E: Set(Equations), ll: VMap, rl: VMap, h: Real) -> VMap = {
   nrl
 }
 
+def containsImps(dma: VMap, tresh: Real) -> Bool = {
+  def p(e: (<Real>, Real)) -> Bool = {
+    def (x, v) = e;
+    (abs v) > tresh
+  };
+
+  exists p (Map.toList dma)
+}
+
 def ivApprox(E: Set(Equations), rl: VMap, h: Real) -> VMap = {
   // def IEDE = gatherIEulerDefEquations E rl;
   def IEDE = E;

@@ -92,28 +92,28 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
         go nsr t1 yy1 yp1 nt0 yy0 yp0 (!use1)
       } else {
-        // if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
-        //   def zca = (DAESolver.getRootInfo s);
-        //   def nt1 = ipolZCTime zcm zca ukm t0 yy0 yp0 t1 yy1 yp1;
-        //   def _ = ipolArray yy0 yy1 t0 t1 nt1 yy1;
-        //   def _ = ipolArray yp0 yp1 t0 t1 nt1 yp1;
-        //   def _ = psr yy1 yp1 nt1;
-        //   (sr, nt1, use1)
-        // } else {
+        if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
+          def zca = (DAESolver.getRootInfo s);
+          def nt0 = ipolZCTime zcm zca ukm t0 yy0 yp0 t1 yy1 yp1;
+          def _ = ipolArray yy0 yy1 t0 t1 nt0 yy0;
+          def _ = ipolArray yp0 yp1 t0 t1 nt0 yp0;
+          def _ = psr yy0 yp0 nt0;
+          (sr, t1, use1)
+        } else {
           // def _ = trunc yy1 EPSILON2;
           // def _ = trunc yp1 EPSILON2;
           def _ = psr yy1 yp1 t1;
           (sr, t1, use1)
-        // }
+        }
       }
     };
 
     def (sr, t, use1) = go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1 true;
     def nrl = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
                 else ukMapYyYpToVMap ukm yy0 yp0 };
-    // def nll = { if use1 then ukMapYyYpToVMap ukm yy0 yp0
-    //             else ukMapYyYpToVMap ukm yy1 yp1 };
-    def nll = nrl;
+    def nll = { if use1 then ukMapYyYpToVMap ukm yy0 yp0
+                else ukMapYyYpToVMap ukm yy1 yp1 };
+    // def nll = nrl;
     ((m, nll, nrl, (t, 0)))
   };
 
@@ -128,6 +128,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def go(ss: SimState)
       -> SimState = {
 
+      def dh = 0.001;
       def (m, ll, rl, (t, n)) = ss;
       def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
 
@@ -140,14 +141,19 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def nrl = evalinits nm rl;
         def E = evalpres (elaborate nm) ll;
         def _ = llog "model" (fun thnk: () -> (setToCont E));
-        def nnrl = impulseApprox E ll nrl (h / 1.);
-        def _ = llog "impulse" (psr nnrl);
-        def _ = llog "truc impulse" (psr (trunc nnrl (10.* h)));
+        def dia = impulseApprox E ll nrl dh;
+        def _ = llog "impulse" (psr dia);
 
-        if stable nm (trunc nnrl (10. * h)) then {
-          def nnnrl = ivApprox E nnrl (h / 1.);
-          go (nm, ll, nnnrl, (t, n + 1))
-        } else go (nm, ll, nnrl, (t, n + 1))
+        // if containsImps dia (1. / h) then {
+          // we have impulses
+          // def _ = llog "we have an impulse" (fun thnk: () -> ());
+          if stable nm dia then {
+            def rla = ivApprox E dia dh;
+            go (nm, rla, rla, (t, n + 1))
+          } else {
+            go (nm, ll, dia, (t, n + 1))
+          }
+        // } else go (nm, ll, nrl, (t, n + 1))
       }
     };
 

@@ -26,7 +26,7 @@ type Sysfun = ({Real} -> [Real])
 
 def CONSISTLIM = 0.01
 def EPSILON = 1.0e-10
-def EPSILON2 = 1.0e-10
+def EPSILON2 = 1.0e-15
 
 def unmatched(llog: ((Int, String) -> String -> Dyn), pat: Dyn) = {
   def _ = llog INFO "Pattern:" pat;
@@ -84,18 +84,18 @@ def isDefined(map: VMap, e: <?>) -> Bool = {
   | _ -> unmatched llog e
 }
 
-def isDefined(map: UkMap, e: <?>) -> Bool = {
-  def llog = logger "isDefined";
+def isDefinedUkMap(map: UkMap, e: <?>) -> Bool = {
+  def llog = logger "isDefinedUkMap";
   match e with
   | sym: Real -> (Map.mem e map)
-  | der x -> isDefined map x
-  | e_1 e_2 -> (isDefined map e_1) && (isDefined map e_2)
+  | der x -> isDefinedUkMap map x
+  | e_1 e_2 -> (isDefinedUkMap map e_1) && (isDefinedUkMap map e_2)
   | lift v: ? -> true
   | _ -> unmatched llog e
 }
 
 
-def isIEDerDefined(map: (<Real> => ?), e: <?>) -> Bool = {
+def isIEDerDefined(map: (<Real> => Real), e: <?>) -> Bool = {
   def llog = logger "isIEDerDefined";
   match e with
   | der x -> isDefined map x

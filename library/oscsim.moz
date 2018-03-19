@@ -56,10 +56,13 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     def p(e: (<Real>, Real)) -> Bool = {
       def (x, v) = e;
-      (abs ((find x nvm) - v)) < CONSISTLIM
+      // if isDefined nvm x then abs ((find x nvm) - v) > CONSISTLIM else true
+      false
     };
 
-    (forAll p (Map.toList vm), nvm, nt)
+    def l = (Map.toList vm);
+    // (forAll p l, nvm, nt)
+    (false, nvm, nt)
   };
 
   def ctsim(ss: SimState)
@@ -91,7 +94,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     // def _ = llog DEBUG "yy1 after ivc" yy1;
     // def _ = llog DEBUG "yp1 after ivc" yp1;
 
-    def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefined ukm)
+    def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
 
     // And then solve!
@@ -145,6 +148,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
       def (m, E, ll, rl, (t, n)) = ss;
       def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
+      def _ = llog "ll" (fun tnk: () -> psr ll t);
+      def _ = llog "rl" (fun tnk: () -> psr rl t);
 
       if (stable m rl) then ss
       else {
@@ -152,15 +157,22 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         def nrl = evalinits nm rl;
         def nE = evalpres (elaborate nm) ll;
         def nEir = indexred nE;
+        def _ = llog "bf consCheck" (fun tnk: () -> psr nrl t);
         def (c, nnrl, nt) = consCheck (nEir, nrl, t);
+        def _ = llog "aft consCheck" (fun tnk: () -> psr nnrl t);
         if c then go (nm, nEir, ll, nnrl, (nt, n + 1))
         else {
           def dia = impulseApprox nE ll nnrl dh;
           def iva = ivApprox nE dia dh;
           def imp = combineImpIVApp dia iva (10.);
           if (stable nm imp) then {
-            go (nm, nEir, ll, iva, (nt, n + 1))
-          } else go (nm, nEir, ll, imp, (nt, n + 1))
+            def _ = llog "bf consCheck2" (fun tnk: () -> psr nrl t);
+            def (nc, nnnrl, nnt) = consCheck (nEir, iva, nt);
+            def _ = llog "aft consCheck2" (fun tnk: () -> psr nnrl t);
+            go (nm, nEir, ll, nnnrl, (nnt, n + 1))
+          } else {
+            go (nm, nEir, ll, dia, (nt, n + 1))
+          }
         }
       }
     };

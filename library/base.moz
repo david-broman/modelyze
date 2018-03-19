@@ -73,6 +73,7 @@ def strlen : String -> Int = @@string_strlen
 def (++) : String -> String -> String = @@string_concat
 
 def INFINITE = 1./0.
+def NEG_INFINITE = -1./0.
 
 type RealSignal = <Real>
 type IntSignal = <Int>
@@ -105,9 +106,9 @@ def INFO = (1, "INFO")
 def DEBUG = (2, "DEBUG")
 def TRACE = (3, "TRACE")
 
-// def loglevel = DEBUG
+def loglevel = DEBUG
 // def loglevel = OFF
-def loglevel = INFO
+// def loglevel = INFO
 
 def dlogger(frum: String, level: (Int, String), msg: String, thing: (() -> Dyn))
   -> () = {

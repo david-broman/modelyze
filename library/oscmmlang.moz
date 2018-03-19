@@ -208,8 +208,11 @@ def elaborate(m: Equations) -> Set(Equations) = {
 
 def combineImpIVApp(imp: VMap, iva: VMap, co: Real) -> VMap = {
   def f(e: (<Real>, Real)) -> (<Real>, Real) = {
+    def getinf(v: Real) -> Real = {
+      if v > 0. then INFINITE else NEG_INFINITE
+    };
     def (x, v) = e;
-    if v > (find x iva)*100. then (x, (1./0.)*v) else (x, find x iva)
+    if v > (find x iva)*100. then (x, getinf v) else (x, find x iva)
   };
 
   listToMap (map f (Map.toList imp))

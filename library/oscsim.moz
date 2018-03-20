@@ -54,15 +54,16 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def (E, vm, t) = ivp;
     def (nvm, nt) = findiv ivp;
 
+    def _ = dprint(vm);
+    def _ = dprint(nvm);
+
     def p(e: (<Real>, Real)) -> Bool = {
       def (x, v) = e;
-      // if isDefined nvm x then abs ((find x nvm) - v) > CONSISTLIM else true
-      false
+      if isDefined nvm x then abs ((find x nvm) - v) < CONSISTLIM else true
     };
 
     def l = (Map.toList vm);
-    // (forAll p l, nvm, nt)
-    (false, nvm, nt)
+    (forAll p l, nvm, nt)
   };
 
   def ctsim(ss: SimState)
@@ -71,6 +72,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def llog = logger "ctsim";
 
     def (m, E, ll, rl, (nt1, _)) = ss;
+    def _ = llog DEBUG "here we are!" rl;
+    def _ = llog DEBUG "and the time is" nt1;
     // def (m, ll, rl, (t1, _)) = ss;
     // def E = evalpres (elaborate m) rl;
     // def _ = llog DEBUG "model before ir" (setToCont E);
@@ -91,8 +94,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     // def _ = llog DEBUG "yy1 before ivc" yy1;
     // def _ = llog DEBUG "yp1 before ivc" yp1;
     // def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 nt1);
-    // def _ = llog DEBUG "yy1 after ivc" yy1;
-    // def _ = llog DEBUG "yp1 after ivc" yp1;
+    def _ = llog DEBUG "yy1 after ivc" yy1;
+    def _ = llog DEBUG "yp1 after ivc" yp1;
 
     def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
@@ -135,6 +138,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
   def dtsim(ss: SimState)
     -> SimState = {
+
     def llog = dlogger "dtsim" DEBUG;
 
     def psr(vm: VMap, t: Real) -> () = {
@@ -147,33 +151,54 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       def dh = 0.001;
 
       def (m, E, ll, rl, (t, n)) = ss;
-      def _ = (if n > 10 then error "Number of ticks exceeded 10" else ());
-      def _ = llog "ll" (fun tnk: () -> psr ll t);
-      def _ = llog "rl" (fun tnk: () -> psr rl t);
 
-      if (stable m rl) then ss
-      else {
+      def elab(m: Equations, rl: VMap) -> (Equations, Set(Equations), VMap) = {
         def nm = elabsws m rl;
+        def E = evalpres (elaborate nm) ll;
         def nrl = evalinits nm rl;
-        def nE = evalpres (elaborate nm) ll;
-        def nEir = indexred nE;
-        def _ = llog "bf consCheck" (fun tnk: () -> psr nrl t);
-        def (c, nnrl, nt) = consCheck (nEir, nrl, t);
-        def _ = llog "aft consCheck" (fun tnk: () -> psr nnrl t);
-        if c then go (nm, nEir, ll, nnrl, (nt, n + 1))
-        else {
-          def dia = impulseApprox nE ll nnrl dh;
-          def iva = ivApprox nE dia dh;
-          def imp = combineImpIVApp dia iva (10.);
-          if (stable nm imp) then {
-            def _ = llog "bf consCheck2" (fun tnk: () -> psr nrl t);
-            def (nc, nnnrl, nnt) = consCheck (nEir, iva, nt);
-            def _ = llog "aft consCheck2" (fun tnk: () -> psr nnrl t);
-            go (nm, nEir, ll, nnnrl, (nnt, n + 1))
-          } else {
-            go (nm, nEir, ll, dia, (nt, n + 1))
+        (nm, E, nrl)
+      };
+
+      def propgimp(m: Equations, rl: VMap, n: Int)
+        -> (Equations, VMap, Int) = {
+
+        def work(m: Equations, imp: VMap, dia: VMap, iva: VMap) -> (Equations, VMap) = {
+          // def _ = llog "m" (fun tnk: () -> m);
+          def _ = llog "imp" (fun tnk: () -> psr imp t);
+          def _ = llog "dia" (fun tnk: () -> psr dia t);
+          def _ = llog "iva" (fun tnk: () -> psr iva t);
+
+          if (stable m imp) && (stable m iva) then (m, iva)
+          else {
+            def nm = elabsws m imp;
+            def E = evalpres (elaborate nm) ll;
+            def diawi = evalinits nm dia;
+            def ndia = impulseApprox E ll diawi dh;
+            def niva = ivApprox E ndia dh;
+            def nimp = combineImpIVApp ndia niva (10./ dh);
+            work nm nimp ndia niva
           }
-        }
+        };
+
+        def (nm, nrl) = work m rl rl rl;
+        (nm, nrl, n)
+      };
+
+      def _ = llog "left limit" (fun thk: () -> psr ll t);
+      def _ = llog "right limit" (fun thk: () -> psr rl t);
+
+      def (nm, E, nrl) = elab m rl;
+      def Eir = indexred E;
+      def (c, nnrl, nt) =  consCheck (Eir, nrl, t);
+
+      def _ = llog "right limit after cs" (fun thk: () -> psr nnrl t);
+      def _ = llog "c after cs" (fun thk: () -> c);
+
+      if c && (stable nm nnrl) then (nm, Eir, ll, nnrl, (nt, n))
+      else {
+        def (nnm, nnrl, nn) = propgimp m rl n;
+        def _ = llog "right limit after propgimp" (fun thk: () -> psr nnrl t);
+        go (nnm, Set.empty, ll, nnrl, (t, nn))
       }
     };
 

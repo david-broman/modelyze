@@ -207,13 +207,21 @@ def elaborate(m: Equations) -> Set(Equations) = {
 }
 
 def combineImpIVApp(imp: VMap, iva: VMap, co: Real) -> VMap = {
+  def big_number = 1.e15;
+  def big_neg_number = -1.e15;
   def f(e: (<Real>, Real)) -> (<Real>, Real) = {
     def getinf(v: Real) -> Real = {
-      if v > 0. then INFINITE else NEG_INFINITE
+      if v > 0. then big_number else big_neg_number
     };
     def (x, v) = e;
-    if v > (find x iva)*100. then (x, getinf v) else (x, find x iva)
+    if (abs v) > abs ((find x iva)*co) then (x, getinf v) else (x, find x iva)
   };
 
   listToMap (map f (Map.toList imp))
 }
+
+// def addDerivApprox(ll: VMap, rl: VMap, h: Real) -> VMap = {
+//   def f(e: (<Real>, Real)) -> (<Real>, Real) = {
+//     def (x, v)
+//   };
+// }

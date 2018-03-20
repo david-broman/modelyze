@@ -126,7 +126,6 @@ def logger(frum: String, level: (Int, String), msg: String, thing: Dyn)
   dlogger frum level msg (fun t: () -> thing)
 }
 
-
 def reverse(lst:[Dyn]) -> [Dyn] = {
     def work(lst:[Dyn],acc:[Dyn]) -> [Dyn] = {
         match lst with

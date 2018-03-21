@@ -96,16 +96,22 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       t1: Real, yy1: {Real}, yp1: {Real})
         -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
 
-      def findLimits(nt0: Real, nyy0: {Real}, nyp0: {Real}) -> Real = {
+      def findLimits(t: Real, nyy0: {Real}, nyp0: {Real}) -> Real = {
+        def llog = logger "findLimits" DEBUG;
+        def _ = llog "t" t;
+
         def e = 1.e-10;
-        if nt0 < t0 then t0
-        else {
+        if (t1 - t > e) then {
           def _ = (DAESolver.reinit s t0 yy0 yp0);
-          def (tc, sr) = (DAESolver.solveNormal s nt0 nyy0 nyp0);
-          if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then
-            findLimits (nt0 - e) nyy0 nyp0
-          else tc
-        }
+          def (tc, sr) = (DAESolver.solveNormal s t nyy0 nyp0);
+          if sr != DAE_SOLVER_RESULT_ROOTS_FOUND then {
+            findLimits (t + (t1 - t) / 2.) nyy0 nyp0
+          } else {
+            def _ = (DAESolver.reinit s t0 yy0 yp0);
+            def (pt, _) = (DAESolver.solveNormal s (2. * t - t1) nyy0 nyp0);
+            pt
+          }
+         } else t
       };
 
       if sr == DAE_SOLVER_RESULT_SUCCESS then {
@@ -116,14 +122,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
           def nyy0 = (Array.make (Array.length yy0) 0.);
           def nyp0 = (Array.make (Array.length yp0) 0.);
-          def nt0 = findLimits t1 nyy0 nyp0;
-          if nt0 == t0 then {
-            def _ = psr yy0 yp0 t0;
-            (sr, t1, yy0, yp0, yy1, yp1)
-          } else {
-            def _ = psr nyy0 nyp0 nt0;
-            (sr, t1, nyy0, nyp0, yy1, yp1)
-          }
+          def nt0 = findLimits (t0 + (t1 - t0) / 2.) nyy0 nyp0;
+          def _ = psr nyy0 nyp0 nt0;
+          (sr, t1, nyy0, nyp0, yy1, yp1)
         } else {
           def _ = psr yy1 yp1 t1;
           (sr, t1, yy0, yp0, yy1, yp1)

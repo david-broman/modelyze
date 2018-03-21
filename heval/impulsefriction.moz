@@ -18,7 +18,7 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include MEBMLANGPhysical
+include OSCLANGPhysical
 include Simulate
 
 def g = 9.81

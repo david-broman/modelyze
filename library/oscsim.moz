@@ -75,15 +75,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def llog = logger "ctsim";
 
     def (m, E, ll, rl, (nt1, _)) = ss;
-    def _ = llog DEBUG "here we are!" rl;
+    def _ = llog DEBUG "here we are in continous land!" rl;
     def _ = llog DEBUG "and the time is" nt1;
-    // def (m, ll, rl, (t1, _)) = ss;
-    // def E = evalpres (elaborate m) rl;
-    // def _ = llog DEBUG "model before ir" (setToCont E);
     def P = gatherregs m;
-
-    // Perform index reduction
-    // def nE = indexred E;
 
     // Setup the DAE Solver
     def (resf, nroots, rootf, yy1, yp1, vids, ukm, zcm) =
@@ -93,49 +87,54 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def t0 = INFINITE;
     def s = (DAESolver.initWithRootf resf nroots rootf nt1 yy1 yp1);
     def _ = (DAESolver.setStopTime s tend);
-    // def nt1 = t1 + 0.00001;
-    // def _ = llog DEBUG "yy1 before ivc" yy1;
-    // def _ = llog DEBUG "yp1 before ivc" yp1;
-    // def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 nt1);
-    def _ = llog DEBUG "yy1 after ivc" yy1;
-    def _ = llog DEBUG "yp1 after ivc" yp1;
 
     def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm)
       (fun e: <Real> -> evalFromArrays e ukm yy yp);
 
     // And then solve!
     def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
-      t1: Real, yy1: {Real}, yp1: {Real}, use1: Bool)
-        -> (SolverResult, Real, Bool) = {
+      t1: Real, yy1: {Real}, yp1: {Real})
+        -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
+
+      def findLimits(nt0: Real, nyy0: {Real}, nyp0: {Real}) -> Real = {
+        def e = 1.e-10;
+        if nt0 < t0 then t0
+        else {
+          def _ = (DAESolver.reinit s t0 yy0 yp0);
+          def (tc, sr) = (DAESolver.solveNormal s nt0 nyy0 nyp0);
+          if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then
+            findLimits (nt0 - e) nyy0 nyp0
+          else tc
+        }
+      };
 
       if sr == DAE_SOLVER_RESULT_SUCCESS then {
         def _ = psr yy1 yp1 t1;
         def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
-        go nsr t1 yy1 yp1 nt0 yy0 yp0 (!use1)
+        go nsr t1 yy1 yp1 nt0 yy0 yp0
       } else {
         if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
-          def zca = (DAESolver.getRootInfo s);
-          def nt0 = ipolZCTime zcm zca ukm t0 yy0 yp0 t1 yy1 yp1;
-          def _ = ipolArray yy0 yy1 t0 t1 nt0 yy0;
-          def _ = ipolArray yp0 yp1 t0 t1 nt0 yp0;
-          def _ = psr yy0 yp0 nt0;
-          (sr, t1, use1)
+          def nyy0 = (Array.make (Array.length yy0) 0.);
+          def nyp0 = (Array.make (Array.length yp0) 0.);
+          def nt0 = findLimits t1 nyy0 nyp0;
+          if nt0 == t0 then {
+            def _ = psr yy0 yp0 t0;
+            (sr, t1, yy0, yp0, yy1, yp1)
+          } else {
+            def _ = psr nyy0 nyp0 nt0;
+            (sr, t1, nyy0, nyp0, yy1, yp1)
+          }
         } else {
-          // def _ = trunc yy1 EPSILON2;
-          // def _ = trunc yp1 EPSILON2;
           def _ = psr yy1 yp1 t1;
-          (sr, t1, use1)
+          (sr, t1, yy0, yp0, yy1, yp1)
         }
       }
     };
 
-    def (sr, t, use1) = go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1 true;
-    def nrl = { if use1 then ukMapYyYpToVMap ukm yy1 yp1
-                else ukMapYyYpToVMap ukm yy0 yp0 };
-    def nll = { if use1 then ukMapYyYpToVMap ukm yy0 yp0
-                else ukMapYyYpToVMap ukm yy1 yp1 };
-    // def nll = nrl;
-    // ((m, nll, nrl, (t, 0)))
+    def (sr, t, nyy0, nyp0, nyy1, nyp1) =
+      go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1;
+    def nll = ukMapYyYpToVMap ukm nyy0 nyp0;
+    def nrl = ukMapYyYpToVMap ukm nyy1 nyp1;
     (m, E, nll, nrl, (t, 0))
   };
 
@@ -180,7 +179,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
             def diawi = evalinits nm dia;
             def ndia = impulseApprox E ll diawi dh;
             def niva = ivApprox E ndia dh;
-            def ii = isImpulse ll ndia niva dh 1.;
+            def ii = isImpulse ll ndia niva dh 3.;
             def nimp = combineImpIVApp ndia niva ii;
             work nm nimp ndia niva
           }

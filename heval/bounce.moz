@@ -50,7 +50,7 @@ def bb(y: <Real>, v: <Real>, a: <Real>) -> Equations = {
         sw
           (floor y v a)
           (fun t: () -> bb y v a)
-          (y < 0.00001)
+          (y < 1.e-5)
     )
     (y > 0.)
 }

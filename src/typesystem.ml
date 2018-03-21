@@ -369,6 +369,17 @@ and typeof_daesolver_op fi l op ts env  =
     check_istype_real (tm_info ar_ypout) l ty_ypout';
     (TyTuple(NoInfo,l,[ty_tout;TyInt(NoInfo,l)]),[sun';tout';ar_yyout';ar_ypout'])
 
+  | DAESolverOpSolveOneStep,[sun;ar_yyout;ar_ypout] ->
+    let (ty_sun,sun') = typeof_pure env  sun in
+    let (ty_ar_yyout, ar_yyout') = typeof_pure env ar_yyout in
+    let (ty_ar_ypout, ar_ypout') = typeof_pure env ar_ypout in
+    let ty_yyout' = check_istype_array (tm_info ar_yyout) l ty_ar_yyout in
+    let ty_ypout' = check_istype_array (tm_info ar_ypout) l ty_ar_ypout in
+    check_istype_daesolver (tm_info sun) l ty_sun;
+    check_istype_real (tm_info ar_yyout) l ty_yyout';
+    check_istype_real (tm_info ar_ypout) l ty_ypout';
+    (TyTuple(NoInfo,l,[TyInt(NoInfo,l)]),[sun';ar_yyout';ar_ypout'])
+
   | DAESolverOpReinit,[sun;t0;ar_yy0;ar_yp0] ->
     let (ty_sun,sun') = typeof_pure env  sun in
     let (ty_t0,t0') = typeof_pure env t0 in
@@ -393,35 +404,6 @@ and typeof_daesolver_op fi l op ts env  =
     check_istype_daesolver (tm_info sun) l ty_sun;
     check_istype_real (tm_info tend) l ty_tend;
     (TyUnit(NoInfo,l),[sun';tend'])
-
-  | DAESolverOpCalcICWithFixed,
-    [tmres;tstep;t0;ar_yy;ar_yyfix;ar_yp;ar_yvarid;ar_yynew;ar_ypnew] ->
-    let (ty_tmres,tmres') = typeof_pure env tmres in
-    let (ty_t0,t0') = typeof_pure env t0 in
-    let (ty_tstep,tstep') = typeof_pure env tstep in
-    let (ty_ar_yy, ar_yy') = typeof_pure env ar_yy in
-    let (ty_ar_yp, ar_yp') = typeof_pure env ar_yp in
-    let (ty_ar_yynew, ar_yynew') = typeof_pure env ar_yynew in
-    let (ty_ar_ypnew, ar_ypnew') = typeof_pure env ar_ypnew in
-    let (ty_ar_yyfix, ar_yyfix') = typeof_pure env ar_yyfix in
-    let (ty_ar_yvarid, ar_yvarid') = typeof_pure env ar_yvarid in
-    let ty_yy' = check_istype_array (tm_info ar_yy) l ty_ar_yy in
-    let ty_yp' = check_istype_array (tm_info ar_yp) l ty_ar_yp in
-    let ty_yynew' = check_istype_array (tm_info ar_yynew) l ty_ar_yynew in
-    let ty_ypnew' = check_istype_array (tm_info ar_ypnew) l ty_ar_ypnew in
-    let ty_yyfix' = check_istype_array (tm_info ar_yyfix) l ty_ar_yyfix in
-    let ty_yvarid' = check_istype_array (tm_info ar_yvarid) l ty_ar_yvarid in
-    check_istype_resroot (tm_info tmres) l ty_tmres;
-    check_istype_real (tm_info ar_yy) l ty_yy';
-    check_istype_real (tm_info ar_yp') l ty_yp';
-    check_istype_real (tm_info ar_yynew) l ty_yynew';
-    check_istype_real (tm_info ar_ypnew') l ty_ypnew';
-    check_istype_int (tm_info ar_yyfix) l ty_yyfix';
-    check_istype_int (tm_info ar_yvarid) l ty_yvarid';
-    check_istype_real (tm_info t0) l ty_t0;
-    check_istype_real (tm_info tstep) l ty_tstep;
-    (TyUnit(NoInfo,l),
-     [tmres';tstep;t0';ar_yy';ar_yyfix';ar_yvarid';ar_yynew';ar_ypnew'])
 
   | _ -> raise (Mkl_type_error
 	          (TYPE_UNEXPECTED_NO_ARGS,ERROR,fi,

@@ -209,9 +209,6 @@ def elaborate(m: Equations) -> Set(Equations) = {
 }
 
 def combineImpIVApp(imp: VMap, iva: VMap, ii: (<Real> -> Bool)) -> VMap = {
-  // def big_number = 1.e15;
-  // def big_neg_number = -1.e15;
-
   def big_number = INFINITE;
   def big_neg_number = NEG_INFINITE;
 

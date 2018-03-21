@@ -198,6 +198,15 @@ let eval_daesolver_op eval op arg_lst =
     into_tm (Nvector_serial.unwrap yp) tm_ypout;
     TmTuple([TmConst(Ast.ConstReal(tret));TmConst(Ast.ConstInt(rc))])
 
+  | Ast.DAESolverOpSolveOneStep,
+    [TmDAESolver(st,yy,yp);TmArray(tm_yyout);
+     TmArray(tm_ypout)] ->
+    let tret, r = Ida.solve_one_step st 0. yy yp in
+    let rc = solver_result_to_rccode r in
+    into_tm (Nvector_serial.unwrap yy) tm_yyout;
+    into_tm (Nvector_serial.unwrap yp) tm_ypout;
+    TmTuple([TmConst(Ast.ConstReal(tret));TmConst(Ast.ConstInt(rc))])
+
   | Ast.DAESolverOpReinit,
     [TmDAESolver(st,yy,yp);TmConst(Ast.ConstReal(t0));
      TmArray(tm_yy0);TmArray(tm_yp0)] ->
@@ -240,8 +249,8 @@ let eval_nleqsolver_op eval op arg_lst =
 
   let mk_kinsol_session sysfun uu =
     let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
-    Kinsol.set_func_norm_tol st 1.0e-5;
-    Kinsol.set_scaled_step_tol st 1.0e-5;
+    Kinsol.set_func_norm_tol st 1.0e-9;
+    Kinsol.set_scaled_step_tol st 1.0e-9;
     Kinsol.set_max_setup_calls st 1;
     st
   in

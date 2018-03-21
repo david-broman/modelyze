@@ -188,10 +188,10 @@ and daesolverop =
   | DAESolverOpInitWithRootf
   | DAESolverOpCalcICYYYP
   | DAESolverOpSolveNormal
+  | DAESolverOpSolveOneStep
   | DAESolverOpReinit
   | DAESolverOpRootInfo
   | DAESolverOpSetStopTime
-  | DAESolverOpCalcICWithFixed
 
 and nleqsolverop =
   | NLEQSolverOpInit
@@ -401,10 +401,10 @@ and pprint_daesolver_op op =
   | DAESolverOpInitWithRootf -> us"initWithRootf"
   | DAESolverOpCalcICYYYP -> us"calcIcYaYdp"
   | DAESolverOpSolveNormal -> us"solveNormal"
+  | DAESolverOpSolveOneStep -> us"solveOneStep"
   | DAESolverOpReinit -> us"reinit"
   | DAESolverOpRootInfo -> us"getRootInfo"
   | DAESolverOpSetStopTime -> us"setStopTime"
-  | DAESolverOpCalcICWithFixed -> us"calcIcWithFixed"
 
 and pprint_nleqsolver_op op =
   match op with
@@ -1172,10 +1172,10 @@ let mk_daesolverop fi sid =
   | "initWithRootf" -> DAESolverOpInitWithRootf
   | "calcIcYaYdp" -> DAESolverOpCalcICYYYP
   | "solveNormal" -> DAESolverOpSolveNormal
+  | "solveOneStep" -> DAESolverOpSolveOneStep
   | "reinit" -> DAESolverOpReinit
   | "getRootInfo" -> DAESolverOpRootInfo
   | "setStopTime" -> DAESolverOpSetStopTime
-  | "calcIcWithFixed" -> DAESolverOpCalcICWithFixed
   | _ -> raise (Mkl_lex_error (LEX_UNKNOWN_FUNCTION,ERROR, fi, [s]))
 
 let mk_nleqsolverop fi sid =

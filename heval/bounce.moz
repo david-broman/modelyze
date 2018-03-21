@@ -20,19 +20,21 @@
 
 include OSCSIM
 
+def llog = logger "bounce" DEBUG
+
 // Constants
 def g = 9.81
 def e = 0.7
 
 def freefall(y: <Real>, v: <Real>, a: <Real>) = {
-
+  def _ = llog "In the air!" ();
   der y = v;
   der v = a;
   a = -g
 }
 
 def floor(y: <Real>, v: <Real>, a: <Real>) = {
-
+  def _ = llog "On the floor!" ();
   der y = v;
   der v = a;
   v = -e*(pre v)

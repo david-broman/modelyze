@@ -51,6 +51,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   };
 
   def consCheck(ivp: IVP) -> (Bool, VMap, Real) = {
+    def llog = logger "consCheck" DEBUG;
+
     def (E, vm, t) = ivp;
     def (nvm, nt) = findiv ivp;
 
@@ -59,8 +61,12 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       if isDefined nvm x then abs ((find x nvm) - v) < CONSISTLIM else true
     };
 
-    def l = (Map.toList vm);
-    (forAll p l, nvm, nt)
+    def c = forAll p (Map.toList vm);
+    def _ = llog "guess" vm;
+    def _ = llog "actual" nvm;
+    def _ = llog "close enough?" c;
+
+    (c, nvm, nt)
   };
 
   def ctsim(ss: SimState)
@@ -160,19 +166,21 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         -> (Equations, VMap, Int) = {
 
         def work(m: Equations, imp: VMap, dia: VMap, iva: VMap) -> (Equations, VMap) = {
-          // def _ = llog "m" (fun tnk: () -> m);
-          def _ = llog "imp" (fun tnk: () -> psr imp t);
-          def _ = llog "dia" (fun tnk: () -> psr dia t);
+          def _ = llog "imp" (fun tnk: () -> imp);
+          def _ = llog "dia" (fun tnk: () -> dia);
           def _ = llog "iva" (fun tnk: () -> psr iva t);
 
-          if (stable m imp) && (stable m iva) then (m, iva)
-          else {
+          if (stable m imp) && (stable m iva) then {
+
+          def ivawd = addIEDerApprox dia iva (-dh);
+          (m, ivawd)
+          } else {
             def nm = elabsws m imp;
             def E = evalpres (elaborate nm) ll;
             def diawi = evalinits nm dia;
             def ndia = impulseApprox E ll diawi dh;
             def niva = ivApprox E ndia dh;
-            def ii = isImpulse ll ndia niva dh 3.;
+            def ii = isImpulse ll ndia niva dh 1.;
             def nimp = combineImpIVApp ndia niva ii;
             work nm nimp ndia niva
           }

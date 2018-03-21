@@ -20,7 +20,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include OSCLANGElectrical
-include Simulate
+include OSCSIM
 
 def i_L, u_L, i_V, u_V, i_R, u_R: Real
 
@@ -41,4 +41,4 @@ def monitored =
   (i_L, "i_L"), (u_L, "u_L")]
 
 def main =
-  print(pprintSimulation (simulatemebml LR 0. 0.1 4.0 monitored))
+  simulateDebug LR 0. 0.1 4.0 monitored

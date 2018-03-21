@@ -53,32 +53,3 @@ def Body(I: Real, o_B0: Real, p: Rotational, n: Rotational) = {
   def o_B: AngularVelocity;
   BodyM o_B I o_B0 p n
 }
-
-def Clutch(open: Bool, tc: Real,
-  o_1: AngularVelocity, I_1: Real, o_2: AngularVelocity, I_2: Real,
-  p: Rotational, n: Rotational) = {
-
-  def o_C: AngularVelocity;
-  def t_C: Torque;
-  def tt: Real;
-  def c(open: Bool) -> Equations = {
-    if open then
-      switch
-        (nilp ())
-        (fun t:() -> Branch o_C t_C p n)
-        ([tc - tt])
-    else
-        switch
-        (Branch o_C t_C p n)
-        (fun t:() -> nilp ())
-        ([tc - tt])
-  };
-
-  init tt 0.;
-  reinit tt tt;
-  der tt = 1.;
-  o_C = 0.;
-  reinit o_1 ((I_1*o_1 + I_2*o_2)/(I_1 + I_2));
-  reinit o_2 ((I_1*o_1 + I_2*o_2)/(I_1 + I_2));
-  c(open)
-}

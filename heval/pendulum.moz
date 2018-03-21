@@ -48,8 +48,8 @@ def pendulum(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
 def freefall(x: <Real>, y: <Real>, vx: <Real>, vy: <Real>,
   ax: <Real>, ay: <Real>) = {
 
-  // init t 0.;
-  // der t = 1.;
+  init t 0.;
+  der t = 1.;
   ax = 0.;
   ay = -g;
   ax = der vx;

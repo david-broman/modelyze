@@ -18,8 +18,8 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include MEBMLANGMechanical
-include Simulate
+include OSCLANGMechanical
+include OSCSIM
 
 def o, d, t: Real
 def o_0 = 5.
@@ -37,6 +37,4 @@ def rbody = {
 def monitored = [(o, "omega"), (t, "tau")]
 
 def main =
-  def sr = pprintSimulation (simulatemebml rbody 0. 0.1 6.0 monitored);
-  // print("done\n")
-  print(sr)
+  simulateDebug rbody 0. 0.1 6.0 monitored

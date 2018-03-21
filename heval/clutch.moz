@@ -18,25 +18,23 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include MEBMLANGMechanical
-include Simulate
+include OSCLANGMechanical
+include OSCSIM
 
-def o_1, t: Real
+def o_1, t_1: Real
 def o_1_0 = 5.
 
 def rbody = {
-  def I = 2.5
-  def D = 0.5
+  def I = 2.5;
+  def D = 0.5;
   def ref, r1, r2, r3: Dyn;
   Body I o_1_0 r1 r2;
-  Damper D o_1_0 r2 r3;
-  TorqueSensor t r1 r2;
+  Damper D r2 r3;
+  TorqueSensor t_1 r1 r2;
   AngularVelocitySensor o_1 r3 r1
 }
 
-def monitored = [(o_1, "omega"), (t, "tau")]
+def monitored = [(o_1, "omega"), (t_1, "tau")]
 
 def main =
-  def sr = pprintSimulation (simulatemebml rbody 0. 0.1 6.0 monitored);
-  // print("done\n")
-  print(sr)
+  simulateDebug rbody 0. 0.1 6.0 monitored

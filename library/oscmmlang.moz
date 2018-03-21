@@ -183,15 +183,6 @@ def impulseApprox(E: Set(Equations), ll: VMap, rl: VMap, h: Real) -> VMap = {
   nrl
 }
 
-def containsImps(dma: VMap, tresh: Real) -> Bool = {
-  def p(e: (<Real>, Real)) -> Bool = {
-    def (x, v) = e;
-    (abs v) > tresh
-  };
-
-  exists p (Map.toList dma)
-}
-
 def ivApprox(E: Set(Equations), rl: VMap, h: Real) -> VMap = {
   // def IEDE = gatherIEulerDefEquations E rl;
   def IEDE = E;
@@ -209,6 +200,7 @@ def elaborate(m: Equations) -> Set(Equations) = {
 def combineImpIVApp(imp: VMap, iva: VMap, ii: (<Real> -> Bool)) -> VMap = {
   def big_number = 1.e15;
   def big_neg_number = -1.e15;
+
   def f(e: (<Real>, Real)) -> (<Real>, Real) = {
     def getinf(v: Real) -> Real = {
       if v > 0. then big_number else big_neg_number
@@ -221,8 +213,12 @@ def combineImpIVApp(imp: VMap, iva: VMap, ii: (<Real> -> Bool)) -> VMap = {
 }
 
 def isImpulse(ll: VMap, dia: VMap, rla: VMap, h: Real, k: Real, x: <Real>) -> Bool = {
+  def llog = logger "isImpulse" DEBUG;
+
   def d(x: <Real>) -> Real = {
-    abs ((find x ll) + 2. * (find x dia) - (find x rla)) / h^2.
+    if (isDefined ll x) && (isDefined dia x) && (isDefined rla x) then
+      abs ((find x ll) + 2. * (find x dia) - (find x rla)) / h^2.
+    else 0.
   };
 
   def f(e: (<Real>, Real)) -> Real = {
@@ -230,13 +226,11 @@ def isImpulse(ll: VMap, dia: VMap, rla: VMap, h: Real, k: Real, x: <Real>) -> Bo
     d(x)
   };
 
-  def avg = (sum (map f (Map.toList dia))) / int2real ((Map.size dia) + 1);
+  def avg = k * (sum (map f (Map.toList dia))) / int2real ((Map.size dia) + 1);
+
+  def _ = llog "var" x;
+  def _ = llog "d2" (d x);
+  def _ = llog "avg" avg;
 
   (d x) > avg
 }
-
-// def addDerivApprox(ll: VMap, rl: VMap, h: Real) -> VMap = {
-//   def f(e: (<Real>, Real)) -> (<Real>, Real) = {
-//     def (x, v)
-//   };
-// }

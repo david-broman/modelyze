@@ -206,7 +206,7 @@ def elaborate(m: Equations) -> Set(Equations) = {
   union E Et
 }
 
-def combineImpIVApp(imp: VMap, iva: VMap, co: Real) -> VMap = {
+def combineImpIVApp(imp: VMap, iva: VMap, ii: (<Real> -> Bool)) -> VMap = {
   def big_number = 1.e15;
   def big_neg_number = -1.e15;
   def f(e: (<Real>, Real)) -> (<Real>, Real) = {
@@ -214,10 +214,25 @@ def combineImpIVApp(imp: VMap, iva: VMap, co: Real) -> VMap = {
       if v > 0. then big_number else big_neg_number
     };
     def (x, v) = e;
-    if (abs v) > abs ((find x iva)*co) then (x, getinf v) else (x, find x iva)
+    if ii x then (x, getinf v) else (x, find x iva)
   };
 
   listToMap (map f (Map.toList imp))
+}
+
+def isImpulse(ll: VMap, dia: VMap, rla: VMap, h: Real, k: Real, x: <Real>) -> Bool = {
+  def d(x: <Real>) -> Real = {
+    abs ((find x ll) + 2. * (find x dia) - (find x rla)) / h^2.
+  };
+
+  def f(e: (<Real>, Real)) -> Real = {
+    def (x, _) = e;
+    d(x)
+  };
+
+  def avg = (sum (map f (Map.toList dia))) / int2real ((Map.size dia) + 1);
+
+  (d x) > avg
 }
 
 // def addDerivApprox(ll: VMap, rl: VMap, h: Real) -> VMap = {

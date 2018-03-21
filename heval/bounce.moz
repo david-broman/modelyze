@@ -34,7 +34,7 @@ def freefall(y: <Real>, v: <Real>, a: <Real>) = {
 def floor(y: <Real>, v: <Real>, a: <Real>) = {
 
   der y = v;
-  der v = a;
+  // der v = a;
   v = -e*(pre v)
 }
 
@@ -48,7 +48,7 @@ def bb(y: <Real>, v: <Real>, a: <Real>) -> Equations = {
         sw
           (floor y v a)
           (fun t: () -> bb y v a)
-          (a > 0.)
+          (y < 0.00001)
     )
     (y > 0.)
 }

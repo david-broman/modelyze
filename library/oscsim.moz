@@ -54,9 +54,6 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def (E, vm, t) = ivp;
     def (nvm, nt) = findiv ivp;
 
-    def _ = dprint(vm);
-    def _ = dprint(nvm);
-
     def p(e: (<Real>, Real)) -> Bool = {
       def (x, v) = e;
       if isDefined nvm x then abs ((find x nvm) - v) < CONSISTLIM else true
@@ -175,7 +172,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
             def diawi = evalinits nm dia;
             def ndia = impulseApprox E ll diawi dh;
             def niva = ivApprox E ndia dh;
-            def nimp = combineImpIVApp ndia niva (10./ dh);
+            def nimp = combineImpIVApp ndia niva (isImpulse ll ndia niva dh 1.e10);
+            // def nimp = niva;
             work nm nimp ndia niva
           }
         };

@@ -34,7 +34,7 @@ def freefall(y: <Real>, v: <Real>, a: <Real>) = {
 def floor(y: <Real>, v: <Real>, a: <Real>) = {
 
   der y = v;
-  // der v = a;
+  der v = a;
   v = -e*(pre v)
 }
 

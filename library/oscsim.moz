@@ -172,8 +172,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
             def diawi = evalinits nm dia;
             def ndia = impulseApprox E ll diawi dh;
             def niva = ivApprox E ndia dh;
-            def nimp = combineImpIVApp ndia niva (isImpulse ll ndia niva dh 1.e10);
-            // def nimp = niva;
+            def ii = isImpulse ll ndia niva dh 3.;
+            def nimp = combineImpIVApp ndia niva ii;
             work nm nimp ndia niva
           }
         };

@@ -333,6 +333,9 @@ def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
   t0: Real, yy0: {Real}, yp0: {Real}, t1: Real, yy1: {Real}, yp1: {Real})
   -> Real = {
 
+
+  def llog = logger "ipolZCTime" DEBUG;
+
   def eval(e: <Real>, t: Real) -> Real = {
     def f(a0: {Real}, a1: {Real}, t: Real, x: <Real>) -> <Real> = {
       def i = (fst (Map.find x ukm));
@@ -360,6 +363,10 @@ def ipolZCTime(zcm: ZCMap, zca: {Root}, ukm: UkMap,
 
     mapi f candidates
   };
+
+  def _ = llog "zca" zca;
+  def _ = llog "yy0" yy0;
+  def _ = llog "yy1" yy1;
 
   def tt = (Array.make (length candidates) ((t1 - t0) / 2.));
   def s = (NLEQSolver.init sysf tt);

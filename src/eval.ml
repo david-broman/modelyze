@@ -240,8 +240,8 @@ let eval_nleqsolver_op eval op arg_lst =
 
   let mk_kinsol_session sysfun uu =
     let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
-    Kinsol.set_func_norm_tol st 1.0e-9;
-    Kinsol.set_scaled_step_tol st 1.0e-9;
+    Kinsol.set_func_norm_tol st 1.0e-5;
+    Kinsol.set_scaled_step_tol st 1.0e-5;
     Kinsol.set_max_setup_calls st 1;
     st
   in

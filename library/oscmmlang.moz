@@ -176,6 +176,17 @@ def mapToImplEuler(E: Set(Equations), ll: VMap, h: Real) -> Set(Equations) = {
   listToSet (map work (Set.toList E))
 }
 
+def addIEDerApprox(vm0: VMap, vm1: VMap, h: Real) -> VMap = {
+  def f(a: VMap, e: (<Real>, Real)) -> VMap = {
+    def (x, _) = e;
+    if (isDefined vm0 x) && (isDefined vm1 x) then
+      add (der x) (((find x vm1) - (find x vm0)) / h) a
+    else a
+  };
+
+  foldLeft f vm1 (Map.toList vm1)
+}
+
 def impulseApprox(E: Set(Equations), ll: VMap, rl: VMap, h: Real) -> VMap = {
   def IEDE = gatherIEulerDefEquations E ll;
   def EIE = mapToImplEuler IEDE ll h;

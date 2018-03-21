@@ -18,7 +18,7 @@ syn match   modelyzeNumber    "\.\d\+\(e[+-]\=\d\+\)\=\>" display
 syn match   modelyzeNumber     "\<\d\+e[+-]\=\d\+\>" display
 syn match   modelyzeNumber     "\<\d\+\.\d*\(e[+-]\=\d\+\)\=" display
 
-" syn match modelyzeBlockComment '\/\*\_.*\*\/'
+syn match modelyzeBlockComment '\/\*\_.*\*\/'
 syn match modelyzeLineComment '\/\/.*'
 
 let b:current_syntax = "modelyze"

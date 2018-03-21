@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include MEBMLANGElectrical
+include OSCLANGElectrical
 include Simulate
 
 def i_L, u_L, i_V, u_V, i_R, u_R: Real
@@ -42,4 +42,3 @@ def monitored =
 
 def main =
   print(pprintSimulation (simulatemebml LR 0. 0.1 4.0 monitored))
-

@@ -28,7 +28,7 @@ written by Oscar Eriksson oerikss@kth.se
            - +
 */
 
-include MEBMLANGElectrical
+include OSCLANGElectrical
 include OSCSIM
 
 def C = 1.

@@ -26,15 +26,21 @@ def pre: <Real> -> <Real>
 def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 
 def evalReal(e: <Real>, vm: VMap) -> Real = {
-  evalRealFromVMap e vm
+  def llog = logger "evalReal" DEBUG;
+  def _ = llog "expr" e;
+  def _ = llog "variable map" vm;
+  def v = evalRealFromVMap e vm;
+  def _ = llog "evals to:" v;
+  v
 }
 
 def evalBool(e: <Bool>, vm: VMap) -> Bool = {
-  def llog = logger "evalBool" TRACE;
+  def llog = logger "evalBool" DEBUG;
   def _ = llog "expr" e;
   def _ = llog "variable map" vm;
-  def _ = llog "evals to:" (evalBoolFromVMap e vm);
-  evalBoolFromVMap e vm
+  def b = evalBoolFromVMap e vm;
+  def _ = llog "evals to:" b;
+  b
 }
 
 def stable(es: Equations, vm: VMap) -> Bool = {
@@ -194,12 +200,11 @@ def impulseApprox(E: Set(Equations), ll: VMap, rl: VMap, h: Real) -> VMap = {
   nrl
 }
 
-def ivApprox(E: Set(Equations), rl: VMap, h: Real) -> VMap = {
-  // def IEDE = gatherIEulerDefEquations E rl;
-  def IEDE = E;
-  def EIE = mapToImplEuler IEDE rl (-h);
-  def nrl = solveNLEQ EIE rl 0.;
-  nrl
+def ivApprox(E: Set(Equations), dia: VMap, h: Real) -> VMap = {
+  def IEDE = gatherIEulerDefEquations E dia;
+  def EIE = mapToImplEuler IEDE dia (-h);
+  def iva = solveNLEQ EIE dia 0.;
+  iva
 }
 
 def elaborate(m: Equations) -> Set(Equations) = {

@@ -96,8 +96,8 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       t1: Real, yy1: {Real}, yp1: {Real})
         -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
 
-      def findLimits(nyy0: {Real}, nyp0: {Real}) -> Real = {
-        def llog = logger "findLimits" DEBUG;
+      def findLeftLimit(nyy0: {Real}, nyp0: {Real}) -> Real = {
+        def llog = logger "findLeftLimit" DEBUG;
         def e = 1.e-10;
         def _ = (DAESolver.reinit s t0 yy0 yp0);
 
@@ -126,7 +126,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
           def nyy0 = (Array.make (Array.length yy0) 0.);
           def nyp0 = (Array.make (Array.length yp0) 0.);
-          def nt0 = findLimits nyy0 nyp0;
+          def nt0 = findLeftLimit nyy0 nyp0;
           def _ = psr nyy0 nyp0 nt0;
           (sr, t1, nyy0, nyp0, yy1, yp1)
         } else {
@@ -175,7 +175,6 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
           def _ = llog "iva" (fun tnk: () -> psr iva t);
 
           if (stable m imp) && (stable m iva) then {
-
           def ivawd = addIEDerApprox dia iva (-dh);
           (m, ivawd)
           } else {

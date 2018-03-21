@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include OSCLANGElectrical
-include Simulate
+include OSCSIM
 
 def C = 1.
 def L = 1.
@@ -37,4 +37,4 @@ def LC = {
 def monitored = [(i, "i"), (u_C, "u_C"), (u_L, "u_L")]
 
 def main =
-  print(pprintSimulation (simulatemebml LC 0. 0.1 4.0 monitored))
+  simulateDebug LC 0. 0.1 4.0 monitored

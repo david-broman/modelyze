@@ -307,3 +307,13 @@ def min(a: {Dyn}) -> Dyn = {
 
   foldLeft f (Array.get a 0) a;
 }
+
+def sum(l: [Dyn]) -> Dyn = {
+  def f(a: Dyn, e: Dyn) -> Dyn = {
+    a + e
+  };
+
+  match l with
+  | e::[] -> e
+  | _ -> foldLeft f (hd l) (tl l)
+}

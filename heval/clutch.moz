@@ -24,27 +24,32 @@ include OSCSIM
 def o_1, o_2: AngularVelocity
 def t_1, t_2: Torque
 def o_1_0 = 5.
-def o_2_0 = 3.
+def o_2_0 = 5.
 def I_1 = 2.5
 def D_1 = 0.5
 def I_2 = 1.5
 def D_2 = 0.5
+def t_break = 2.
 
-def DBody(I: Real, D: Real, o_0: Real, t: Torque,
-  l: Rotational, r: Rotational) = {
+def DBody(I: Real, D: Real, o_0: Real, p: Rotational, n: Rotational,
+  t_DB: Torque, o_DB: AngularVelocity) = {
 
-  def m: Dyn;
-  Body I o_0 l m;
-  Damper D m r;
-  TorqueSensor t r m
+  BodyDebug I o_0 p n t_DB o_DB;
+  Damper D p n
 }
 
 def model = {
-  def n1, n2, n3, n4: Rotational;
-  DBody I_1 D_1 o_1_0 t_1 n1 n2;
-  DBody I_2 D_2 o_2_0 t_2 n3 n4;
-  AngularVelocitySensor o_1 n2 n1;
-  AngularVelocitySensor o_2 n4 n3
+  def n1, n2, n3, n4, n5: Rotational;
+  def t_t_1, t_t_2: Torque;
+  def t: Time;
+  def s: Signal;
+  Clock 0. t;
+  StepSignal t_break t s;
+  DBody I_1 D_1 o_1_0 n1 n2 t_t_1 o_1;
+  DBody I_2 D_2 o_2_0 n1 n5 t_t_2 o_2;
+  TorqueSensor t_1 n2 n3;
+  TorqueSensor t_2 n5 n4;
+  TimedClutch true s n3 n4
 }
 
 def monitored =

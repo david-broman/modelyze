@@ -20,7 +20,7 @@
 
 include OSCSIM
 
-def llog = logger "bounce" DEBUG
+def llog = logger "bounce" TRACE
 
 // Constants
 def g = 9.81

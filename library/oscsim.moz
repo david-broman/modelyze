@@ -76,6 +76,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     def (m, E, ll, rl, (nt1, _)) = ss;
     def _ = llog DEBUG "here we are in continous land!" rl;
+    def _ = llog DEBUG "with the following model" (setToCont E);
     def _ = llog DEBUG "and the time is" nt1;
     def P = gatherregs m;
 
@@ -97,7 +98,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
         -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
 
       def findLeftLimit(nyy0: {Real}, nyp0: {Real}) -> Real = {
-        def llog = logger "findLeftLimit" DEBUG;
+        def llog = logger "findLeftLimit" TRACE;
         def e = 1.e-10;
         def _ = (DAESolver.reinit s t0 yy0 yp0);
 
@@ -146,7 +147,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   def dtsim(ss: SimState)
     -> SimState = {
 
-    def llog = dlogger "dtsim" DEBUG;
+    def llog = dlogger "dtsim" TRACE;
 
     def psr(vm: VMap, t: Real) -> () = {
       printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t
@@ -169,7 +170,9 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       def propgimp(m: Equations, rl: VMap, n: Int)
         -> (Equations, VMap, Int) = {
 
-        def work(m: Equations, imp: VMap, dia: VMap, iva: VMap) -> (Equations, VMap) = {
+        def work(m: Equations, imp: VMap, dia: VMap, iva: VMap)
+          -> (Equations, VMap) = {
+
           def _ = llog "imp" (fun tnk: () -> imp);
           def _ = llog "dia" (fun tnk: () -> dia);
           def _ = llog "iva" (fun tnk: () -> psr iva t);

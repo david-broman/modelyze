@@ -21,40 +21,50 @@
 include OSCLANGPhysical
 
 def AngularVelocitySensor(o: AngularVelocity, p: Rotational, n: Rotational) = {
-  ThroughSensor o p n
+  AcrossSensor o p n
 }
 
 def TorqueSensor(t: Torque, p: Rotational, n: Rotational) = {
-  AcrossSensor t p n
+  ThroughSensor t p n
 }
 
 def Free(p: Rotational, n: Rotational) = {
   def o_F: AngularVelocity;
   def t_F: Torque;
-  Branch o_F t_F p n;
+  Branch t_F o_F p n;
   t_F = 0.
+}
+
+def Fixed(p: Rotational, n: Rotational) = {
+  def o_F: AngularVelocity;
+  def t_F: Torque;
+  Branch t_F o_F p n;
+  o_F = 0.
 }
 
 def Damper(D: Real, p: Rotational, n: Rotational) = {
   def o_D: AngularVelocity;
   def t_D: Torque;
-  Branch o_D t_D p n;
+  Branch t_D o_D p n;
   D*o_D = t_D
+}
+
+def BodyDebug(I: Real, o_B0: Real, p: Rotational, n: Rotational,
+  t_B: Torque, o_B: AngularVelocity) = {
+
+  init o_B o_B0;
+  Branch t_B o_B p n;
+  I*der(o_B) = t_B
 }
 
 def Body(I: Real, o_B0: Real, p: Rotational, n: Rotational) = {
   def o_B: AngularVelocity;
   def t_B: Torque;
-  init o_B o_B0;
-  Branch o_B t_B p n;
-  I*der(o_B) = t_B
+  BodyDebug I o_B0 p n t_B o_B
 }
 
 def Clutch(open: Bool, p: Rotational, n: Rotational) = {
-  def t_C: Torque;
-  def o_C: AngularVelocity;
-  def c(open: Bool) = { if open then t_C = 0. else o_C = 0. };
-  Branch t_C o_C p n;
+  def c(open: Bool) = { if open then nilp () else Fixed p n };
   c(open)
 }
 

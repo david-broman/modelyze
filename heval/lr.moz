@@ -19,8 +19,8 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include OSCLANGElectrical
-include OSCSIM
+include MEBMLANGElectrical
+include MEBMLANGSIM
 
 def i_L, u_L, i_V, u_V, i_R, u_R: Real
 

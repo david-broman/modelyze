@@ -18,7 +18,7 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include OSCLANGDefs
+include MEBMLANGDefs
 
 type Signal = <Real>
 type Time = <Real>

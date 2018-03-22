@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include ModelyzeDAE
-include OSCLANGDefs
+include MEBMLANGDefs
 
 type VMap = (<Real> => Real)
 type ZCMap = (Int => <Real>)

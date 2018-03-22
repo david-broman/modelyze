@@ -18,8 +18,8 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include OSCLANGMechanical
-include OSCSIM
+include MEBMLANGMechanical
+include MEBMLANGSIM
 
 def o_1, o_2: AngularVelocity
 def t_1, t_2: Torque

@@ -28,8 +28,8 @@ written by Oscar Eriksson oerikss@kth.se
            - +
 */
 
-include OSCLANGElectrical
-include OSCSIM
+include MEBMLANGElectrical
+include MEBMLANGSIM
 
 def C = 1.
 def L = 1.

@@ -25,15 +25,15 @@ def AngularVelocitySensor(o: AngularVelocity, p: Rotational, n: Rotational) = {
 }
 
 def TorqueSensor(t: Torque, p: Rotational, n: Rotational) = {
- EffortSensor t p n
+  EffortSensor t p n
 }
 
-// def Free(p: Rotational, n: Rotational) = {
-//   def o_F: AngularVelocity;
-//   def t_F: Torque;
-//   Branch o_F t_F p n;
-//   t_F = 0.
-// }
+def Free(p: Rotational, n: Rotational) = {
+  def o_F: AngularVelocity;
+  def t_F: Torque;
+  Branch o_F t_F p n;
+  t_F = 0.
+}
 
 def Damper(D: Real, p: Rotational, n: Rotational) = {
   def o_D: AngularVelocity;
@@ -42,14 +42,10 @@ def Damper(D: Real, p: Rotational, n: Rotational) = {
   D*o_D = t_D
 }
 
-def BodyM(o_B: AngularVelocity, I: Real, o_B0: Real, p: Rotational, n: Rotational) = {
+def Body(I: Real, o_B0: Real, p: Rotational, n: Rotational) = {
+  def o_B: AngularVelocity;
   def t_B: Torque;
   init o_B o_B0;
   Branch o_B t_B p n;
-  I*(der o_B) = t_B
-}
-
-def Body(I: Real, o_B0: Real, p: Rotational, n: Rotational) = {
-  def o_B: AngularVelocity;
-  BodyM o_B I o_B0 p n
+  I*der(o_B) = t_B
 }

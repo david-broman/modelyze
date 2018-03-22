@@ -19,6 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include OSCLANGPhysical
+include OSCMMLANG
 
 // Positive current is defined to be moving from the positive to the negative node
 def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {

@@ -20,7 +20,13 @@
 
 include Equation
 
+def nilp: () -> Equations
+def pre: <Real> -> <Real>
+def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 def Branch : Real -> Real -> Dyn -> Dyn -> Equations
+
+type Signal = <Real>
+type Time = <Real>
 
 type Electrical
 type Voltage = <Real>
@@ -40,4 +46,13 @@ def EffortSensor(e: <Real>, p: Dyn, n: Dyn) = {
   def f: <Real>;
   Branch f e p n;
   f = 0.
+}
+
+def Clock(t_0: Real, t: Time) = {
+  init t t_0;
+  der t = 1.
+}
+
+def Timer(co: Real, t: Time, s: Signal) = {
+  sw (s = 1.) (fun a: () -> s = 0.) (t < co)
 }

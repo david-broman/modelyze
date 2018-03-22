@@ -19,7 +19,6 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include OSCLANGPhysical
-include OSCMMLANG
 
 // Positive current is defined to be moving from the positive to the negative node
 def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
@@ -91,28 +90,25 @@ def DiodeDebug(forward: Bool, fbias: Real,
 
 def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
 
-  def t: Real;
+  def t: Time;
+  def s: Signal;
 
-  def Clock(t: <Real>) = {
-    init t 0.;
-    der t = 1.
-  };
-
-  def s(is_closed: Bool) -> Equations = {
+  def f(is_closed: Bool) -> Equations = {
     if is_closed then
       sw
         (Conductor p n)
         (fun t: () -> nilp ())
-        (t < tflip)
+        (s > 0.)
     else
       sw
         (nilp ())
         (fun t: () -> Conductor p n)
-        (t < tflip)
+        (s > 0.)
   };
 
-  Clock(t);
-  s(is_closed)
+  Clock 0. t;
+  Timer tflip t s;
+  f(is_closed)
 }
 
 def Resistor(R: Real, p: Electrical, n: Electrical) = {

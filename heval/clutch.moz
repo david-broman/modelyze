@@ -21,20 +21,29 @@
 include OSCLANGMechanical
 include OSCSIM
 
-def o_1, t_1: Real
+def o_1, o_2: AngularVelocity
+def t_1, t_2: Torque
 def o_1_0 = 5.
+def o_2_0 = 3.
 
-def rbody = {
+def rbody(t: Torque, l: Rotational, r: Rotational) = {
   def I = 2.5;
   def D = 0.5;
-  def ref, r1, r2, r3: Dyn;
-  Body I o_1_0 r1 r2;
-  Damper D r2 r3;
-  TorqueSensor t_1 r1 r2;
-  AngularVelocitySensor o_1 r3 r1
+  def m: Dyn;
+  Body I o_1_0 l m;
+  Damper D m r;
+  TorqueSensor t r m
+}
+
+def model = {
+  def ref, l, r: Dyn;
+  rbody t_1 l r;
+  Free ref r;
+  AngularVelocitySensor o_1 ref l
 }
 
 def monitored = [(o_1, "omega"), (t_1, "tau")]
 
-def main =
-  simulateDebug rbody 0. 0.1 6.0 monitored
+def main = {
+  simulateDebug model 0. 0.1 6.0 monitored
+}

@@ -18,9 +18,15 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include Physical
-include OSCMMLANG
+include Equation
 
+def Branch : Real -> Real -> Dyn -> Dyn -> Equations
+
+type Electrical
+type Voltage = <Real>
+type Current = <Real>
+
+type Rotational
 type AngularVelocity = <Real>
 type Torque = <Real>
 

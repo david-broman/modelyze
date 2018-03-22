@@ -234,7 +234,7 @@ def isImpulse(ll: VMap, dia: VMap, rla: VMap, h: Real, k: Real, x: <Real>) -> Bo
   def d(x: <Real>) -> Real = {
     if (isDefined ll x) && (isDefined dia x) && (isDefined rla x) then
       abs ((find x ll) + 2. * (find x dia) - (find x rla)) / h^2.
-    else 0.
+    else NEG_INFINITE
   };
 
   def f(e: (<Real>, Real)) -> Real = {
@@ -245,7 +245,7 @@ def isImpulse(ll: VMap, dia: VMap, rla: VMap, h: Real, k: Real, x: <Real>) -> Bo
   def avg = k * (sum (map f (Map.toList dia))) / int2real ((Map.size dia) + 1);
 
   def _ = llog "var" x;
-  def _ = llog "d2" (d x);
+  def _ = llog "d2/dt2" (d x);
   def _ = llog "avg" avg;
 
   (d x) > avg

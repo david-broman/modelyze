@@ -31,26 +31,29 @@ def I_2 = 1.5
 def D_2 = 0.5
 def t_break = 3.
 
-def DBody(I: Real, D: Real, o_0: Real, p: Rotational, n: Rotational) = {
-
+def DampBody(I: Real, D: Real, o_0: Real, p: Rotational, n: Rotational) = {
   Body I o_0 p n;
   Damper D p n
 }
 
-def model = {
+def ClutchModel(s: Signal) = {
   def n1, n2, n3, n4, n5: Rotational;
-  def t_t_1, t_t_2: Torque;
-  def t: Time;
-  def s: Signal;
-  Clock 0. t;
-  StepSignal t_break t s;
-  DBody I_1 D_1 o_1_0 n1 n2;
-  DBody I_2 D_2 o_2_0 n1 n5;
+  DampBody I_1 D_1 o_1_0 n1 n2;
+  DampBody I_2 D_2 o_2_0 n1 n5;
   TimedClutch true s n3 n4;
   AngularVelocitySensor o_1 n1 n2;
   AngularVelocitySensor o_2 n1 n5;
   TorqueSensor t_1 n2 n3;
   TorqueSensor t_2 n5 n4
+}
+
+def model = {
+  def n1, n2, n3, n4, n5: Rotational;
+  def t: Time;
+  def s: Signal;
+  Clock 0. t;
+  StepSignal t_break t s;
+  ClutchModel s
 }
 
 def monitored =

@@ -18,7 +18,7 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include OSCSIM
+include MEBMLANGSIM
 
 def llog = logger "bounce" TRACE
 

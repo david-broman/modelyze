@@ -18,7 +18,7 @@
    written by Oscar Eriksson oerikss@kth.se
  */
 
-include OSCLANGPhysical
+include MEBMLANGPhysical
 
 def AngularVelocitySensor(o: AngularVelocity, p: Rotational, n: Rotational) = {
   AcrossSensor o p n

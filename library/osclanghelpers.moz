@@ -19,6 +19,8 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include ModelyzeDAE
+include OSCLANGPhysical
+
 type VMap = (<Real> => Real)
 type ZCMap = (Int => <Real>)
 type IVP = (Set(Equations), VMap, Real)

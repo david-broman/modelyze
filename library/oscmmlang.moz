@@ -21,10 +21,6 @@ written by Oscar Eriksson oerikss@kth.se
 include OSCLANGHelpers
 include GraphElaboration
 
-def nilp: () -> Equations
-def pre: <Real> -> <Real>
-def sw: Equations -> (() -> ?) -> <Bool> -> Equations
-
 def evalReal(e: <Real>, vm: VMap) -> Real = {
   def llog = logger "evalReal" DEBUG;
   def _ = llog "expr" e;

@@ -27,10 +27,10 @@ def o_1_0 = 5.
 def o_2_0 = 3.
 def I_1 = 2.5
 def D_1 = 0.5
-def I_2 = 2.5
+def I_2 = 1.5
 def D_2 = 0.5
 
-def rbody(I: Real, D: Real, o_0: Real, t: Torque,
+def DBody(I: Real, D: Real, o_0: Real, t: Torque,
   l: Rotational, r: Rotational) = {
 
   def m: Dyn;
@@ -41,8 +41,8 @@ def rbody(I: Real, D: Real, o_0: Real, t: Torque,
 
 def model = {
   def n1, n2, n3, n4: Rotational;
-  rbody I_1 D_1 o_1_0 t_1 n1 n2;
-  rbody I_2 D_2 o_2_0 t_2 n3 n4;
+  DBody I_1 D_1 o_1_0 t_1 n1 n2;
+  DBody I_2 D_2 o_2_0 t_2 n3 n4;
   AngularVelocitySensor o_1 n2 n1;
   AngularVelocitySensor o_2 n4 n3
 }

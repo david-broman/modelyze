@@ -43,17 +43,24 @@ def t_break = 3.
 def i_L0 = 0.
 def fbias = 0.7
 
-def flybackDiode = {
+def flybackDiode(s: Signal) = {
   def n1, n2, n3, n4, n5, n6: Electrical;
   ConstantVoltageSource V n1 n5;
   Resistor R n1 n2;
-  TimedSwitch true t_break n2 n3;
+  Switch true s n2 n3;
   CurrentSensor i n3 n4;
   Inductor L i_L0 n4 n5;
   VoltageSensor u_L n4 n5;
   CurrentSensor i_D n5 n6;
   DiodeDebug false fbias n6 n3 i_Dd u_Dd
+}
 
+def model = {
+  def t: Time;
+  def s: Signal;
+  Clock 0. t;
+  Timer t_break t s;
+  flybackDiode s
 }
 
 def monitored =
@@ -61,4 +68,4 @@ def monitored =
      // [(i_Dd, "i_D"), (u_Dd, "u_D")]
 
 def main =
-  simulateDebug flybackDiode 0. 0.1 6. monitored
+  simulateDebug model 0. 0.1 6. monitored

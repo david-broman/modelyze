@@ -88,10 +88,7 @@ def DiodeDebug(forward: Bool, fbias: Real,
   d(forward)
 }
 
-def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
-
-  def t: Time;
-  def s: Signal;
+def Switch(is_closed: Bool, s: Signal, p: Electrical, n: Electrical) = {
 
   def f(is_closed: Bool) -> Equations = {
     if is_closed then
@@ -106,8 +103,6 @@ def TimedSwitch(is_closed: Bool, tflip: Real, p: Electrical, n: Electrical) = {
         (s > 0.)
   };
 
-  Clock 0. t;
-  Timer tflip t s;
   f(is_closed)
 }
 

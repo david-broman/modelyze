@@ -32,15 +32,15 @@ type AngularVelocity = <Real>
 type Torque = <Real>
 
 def ThroughSensor(t: <Real>, p: Dyn, n: Dyn) = {
-  def a: <Real>;
-  Branch t a p n;
-  a = 0.
+  def a_S: <Real>;
+  Branch t a_S p n;
+  a_S = 0.
 }
 
 def AcrossSensor(a: <Real>, p: Dyn, n: Dyn) = {
-  def t: <Real>;
-  Branch t a p n;
-  t = 0.
+  def t_S: <Real>;
+  Branch t_S a p n;
+  t_S = 0.
 }
 
 def Clock(t_0: Real, t: Time) = {

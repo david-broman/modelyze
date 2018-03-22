@@ -168,7 +168,7 @@ def updArr(x: <Real>, vm: VMap, i: Int, a: {Real}) -> () = {
 
 def eVMapToUkMapYyYp(E: Set(Equations), vm: VMap, udfv: Real) ->
   (UkMap, {Real}, {Real}) = {
-  def llog = logger "eVMapToUkMapYyYp" DEBUG;
+  def llog = logger "eVMapToUkMapYyYp" TRACE;
   def (n, ukm) = realUnknowns (setToCont E);
   def yy = (Array.make n udfv);
   def yp = (Array.make n udfv);

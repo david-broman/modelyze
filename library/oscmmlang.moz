@@ -22,7 +22,7 @@ include OSCLANGHelpers
 include GraphElaboration
 
 def evalReal(e: <Real>, vm: VMap) -> Real = {
-  def llog = logger "evalReal" DEBUG;
+  def llog = logger "evalReal" TRACE;
   def _ = llog "expr" e;
   def _ = llog "variable map" vm;
   def v = evalRealFromVMap e vm;
@@ -31,7 +31,7 @@ def evalReal(e: <Real>, vm: VMap) -> Real = {
 }
 
 def evalBool(e: <Bool>, vm: VMap) -> Bool = {
-  def llog = logger "evalBool" DEBUG;
+  def llog = logger "evalBool" TRACE;
   def _ = llog "expr" e;
   def _ = llog "variable map" vm;
   def b = evalBoolFromVMap e vm;
@@ -225,7 +225,7 @@ def combineImpIVApp(imp: VMap, iva: VMap, ii: (<Real> -> Bool)) -> VMap = {
 }
 
 def isImpulse(ll: VMap, dia: VMap, rla: VMap, h: Real, k: Real, x: <Real>) -> Bool = {
-  def llog = logger "isImpulse" DEBUG;
+  def llog = logger "isImpulse" TRACE;
 
   def d(x: <Real>) -> Real = {
     if (isDefined ll x) && (isDefined dia x) && (isDefined rla x) then

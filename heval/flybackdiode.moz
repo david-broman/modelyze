@@ -59,7 +59,7 @@ def model = {
   def t: Time;
   def s: Signal;
   Clock 0. t;
-  Timer t_break t s;
+  StepSignal t_break t s;
   flybackDiode s
 }
 

@@ -48,6 +48,6 @@ def Clock(t_0: Real, t: Time) = {
   der t = 1.
 }
 
-def Timer(co: Real, t: Time, s: Signal) = {
-  sw (s = 1.) (fun a: () -> s = 0.) (t < co)
+def StepSignal(t0: Real, t: Time, s: Signal) = {
+  sw (s = 0.) (fun a: () -> s = 1.) (t < t0)
 }

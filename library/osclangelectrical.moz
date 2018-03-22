@@ -95,12 +95,12 @@ def Switch(is_closed: Bool, s: Signal, p: Electrical, n: Electrical) = {
       sw
         (Conductor p n)
         (fun t: () -> nilp ())
-        (s > 0.)
+        (s < 1.)
     else
       sw
         (nilp ())
         (fun t: () -> Conductor p n)
-        (s > 0.)
+        (s < 1.)
   };
 
   f(is_closed)

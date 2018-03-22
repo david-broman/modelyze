@@ -144,7 +144,7 @@ def enumerateEdges(Tl: [Equations])
     -> [(Node, Node, <Real>, <Real>)] = {
 
     match e with
-    | Branch f e p n -> (p, n, f, e)::em
+    | Branch t a p n -> (p, n, t, a)::em
     | _ -> error "Unrecognized element type in topological description"
   };
 
@@ -181,10 +181,10 @@ def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))
      -> (IMatrix, (Int => (<Real>, <Real>)), Int) = {
 
      def (IM, vm, j) = IMj;
-     def (n_in, n_out, f, e) = ee;
+     def (n_in, n_out, t, a) = ee;
      def i_in = (Map.find n_in nm);
      def i_out = (Map.find n_out nm);
-     (set (set IM i_in j in_edge) i_out j out_edge, Map.add j (f, e) vm, j + 1)
+     (set (set IM i_in j in_edge) i_out j out_edge, Map.add j (t, a) vm, j + 1)
    };
 
   def (IM, vm, _) = foldLeft f (emptyIMatrix n m, Map.empty, 0) el;
@@ -393,17 +393,17 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
 }
 
 def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
-  def llog = logger "elaboratetopology" TRACE;
+  def llog = logger "elaboratetopology" DEBUG;
   if (Set.size T) == 0 then Set.empty
   else {
     def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
-      def (i, (f, _)) = ee;
-      (i, f)
+      def (i, (t, _)) = ee;
+      (i, t)
     };
 
     def fe(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
-      def (i, (_, e)) = ee;
-      (i, e)
+      def (i, (_, a)) = ee;
+      (i, a)
     };
 
     def el = enumerateEdges (Set.toList T);

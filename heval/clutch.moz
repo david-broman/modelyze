@@ -25,24 +25,30 @@ def o_1, o_2: AngularVelocity
 def t_1, t_2: Torque
 def o_1_0 = 5.
 def o_2_0 = 3.
+def I_1 = 2.5
+def D_1 = 0.5
+def I_2 = 2.5
+def D_2 = 0.5
 
-def rbody(t: Torque, l: Rotational, r: Rotational) = {
-  def I = 2.5;
-  def D = 0.5;
+def rbody(I: Real, D: Real, o_0: Real, t: Torque,
+  l: Rotational, r: Rotational) = {
+
   def m: Dyn;
-  Body I o_1_0 l m;
+  Body I o_0 l m;
   Damper D m r;
   TorqueSensor t r m
 }
 
 def model = {
-  def ref, l, r: Dyn;
-  rbody t_1 l r;
-  Free ref r;
-  AngularVelocitySensor o_1 ref l
+  def n1, n2, n3, n4: Rotational;
+  rbody I_1 D_1 o_1_0 t_1 n1 n2;
+  rbody I_2 D_2 o_2_0 t_2 n3 n4;
+  AngularVelocitySensor o_1 n2 n1;
+  AngularVelocitySensor o_2 n4 n3
 }
 
-def monitored = [(o_1, "omega"), (t_1, "tau")]
+def monitored =
+  [(o_1, "omega_1"), (t_1, "tau_1"), (o_2, "omega_2"), (t_2, "tau_2")]
 
 def main = {
   simulateDebug model 0. 0.1 6.0 monitored

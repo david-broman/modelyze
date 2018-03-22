@@ -31,16 +31,16 @@ type Rotational
 type AngularVelocity = <Real>
 type Torque = <Real>
 
-def FlowSensor(f: <Real>, p: Dyn, n: Dyn) = {
-  def e: <Real>;
-  Branch f e p n;
-  e = 0.
+def ThroughSensor(t: <Real>, p: Dyn, n: Dyn) = {
+  def a: <Real>;
+  Branch t a p n;
+  a = 0.
 }
 
-def EffortSensor(e: <Real>, p: Dyn, n: Dyn) = {
-  def f: <Real>;
-  Branch f e p n;
-  f = 0.
+def AcrossSensor(a: <Real>, p: Dyn, n: Dyn) = {
+  def t: <Real>;
+  Branch t a p n;
+  t = 0.
 }
 
 def Clock(t_0: Real, t: Time) = {

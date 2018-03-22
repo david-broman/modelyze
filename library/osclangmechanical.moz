@@ -21,11 +21,11 @@
 include OSCLANGPhysical
 
 def AngularVelocitySensor(o: AngularVelocity, p: Rotational, n: Rotational) = {
-  FlowSensor o p n
+  ThroughSensor o p n
 }
 
 def TorqueSensor(t: Torque, p: Rotational, n: Rotational) = {
-  EffortSensor t p n
+  AcrossSensor t p n
 }
 
 def Free(p: Rotational, n: Rotational) = {
@@ -48,4 +48,16 @@ def Body(I: Real, o_B0: Real, p: Rotational, n: Rotational) = {
   init o_B o_B0;
   Branch o_B t_B p n;
   I*der(o_B) = t_B
+}
+
+def Clutch(open: Bool, p: Rotational, n: Rotational) = {
+  def t_C: Torque;
+  def o_C: AngularVelocity;
+  def c(open: Bool) = { if open then t_C = 0. else o_C = 0. };
+  Branch t_C o_C p n;
+  c(open)
+}
+
+def TimedClutch(open: Bool, s: Signal, p: Rotational, n: Rotational) = {
+  sw (Clutch open p n) (fun t: () -> Clutch (!open) p n) (s < 1.)
 }

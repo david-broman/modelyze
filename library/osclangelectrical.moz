@@ -22,12 +22,12 @@ include OSCLANGPhysical
 
 // Positive current is defined to be moving from the positive to the negative node
 def CurrentSensor(i: Current, p: Electrical, n: Electrical) = {
-  FlowSensor i p n
+  ThroughSensor i p n
 }
 
 // The potential difference between n and p is pot at p minus pot at n
 def VoltageSensor(u: Voltage, p: Electrical, n: Electrical) = {
-  EffortSensor u p n
+  AcrossSensor u p n
 }
 
 def Conductor(p: Electrical, n: Electrical) = {
@@ -68,7 +68,7 @@ def InductorDebug(L: Real, i0: Real, p: Electrical, n: Electrical,
 
 def DiodeDebug(forward: Bool, fbias: Real,
   p: Electrical, n: Electrical, i_D: Current, u_D: Voltage) = {
-  def llog = logger "Diode" DEBUG;
+  def llog = logger "Diode" TRACE;
 
   def d(forward: Bool) -> Equations = {
     def _ = llog "is forward biased" forward;

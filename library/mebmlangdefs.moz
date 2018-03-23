@@ -22,5 +22,6 @@ include Equation
 
 def nilp: () -> Equations
 def pre: <Real> -> <Real>
+def integ: <Real> -> <Real>
 def sw: Equations -> (() -> ?) -> <Bool> -> Equations
 def Branch : Real -> Real -> Dyn -> Dyn -> Equations

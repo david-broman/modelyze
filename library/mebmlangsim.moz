@@ -22,7 +22,7 @@ include MEBMLANG
 include Numsolvers
 include simoutput
 
-type SimState = (Equations, Set(Equations), VMap, VMap, (Real, Int))
+type SimState = (Equations, Set(Equations), VMap, VMap, Real)
 
 def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
   monitored: [(<Real>, String)]) -> () = {
@@ -74,7 +74,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
 
     def llog = logger "ctsim";
 
-    def (m, E, ll, rl, (nt1, _)) = ss;
+    def (m, E, ll, rl, nt1) = ss;
     def _ = llog DEBUG "here we are in continous land!" rl;
     def _ = llog DEBUG "with the following model" (setToCont E);
     def _ = llog DEBUG "and the time is" nt1;
@@ -141,13 +141,13 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
       go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1;
     def nll = ukMapYyYpToVMap ukm nyy0 nyp0;
     def nrl = ukMapYyYpToVMap ukm nyy1 nyp1;
-    (m, E, nll, nrl, (t, 0))
+    (m, E, nll, nrl, t)
   };
 
   def dtsim(ss: SimState) -> SimState = {
-    def llog = dlogger "dtsim" TRACE;
+    def llog = logger "dtsim";
 
-    def (m, _, ll, rl, (t, n)) = ss;
+    def (m, _, ll, rl, t) = ss;
 
     def psr(vm: VMap, t: Real) -> () = {
       printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t
@@ -174,7 +174,11 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def (m, rl) = go (elabsws m rl) rl 0;
     def E = indexred (evalpres (elaborate m) ll);
     def (c, rl, t) = consCheck (E, rl, t);
-    (m, E, ll, rl, (t, n))
+    if c then (m, E, ll, rl, t)
+    else {
+      def _ = llog INFO "Inconsistent intial values after index reduction";
+      dtsim (m, E, ll, rl, t)
+    }
   };
 
   def sim(m: Equations) -> () = {
@@ -182,7 +186,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def chain(first: (SimState -> SimState),
       second: (SimState -> SimState), ss: SimState) -> SimState = {
 
-      def (_, _, _, _, (t, _)) = ss;
+      def (_, _, _, _, t) = ss;
       if t >= tend then ss
       else {
         def nss = first ss;
@@ -193,7 +197,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     def E = indexred (elaborate m);
     def g = evalinits m (Map.empty);
     def (_, iv, nt0) = consCheck (E, g, t0);
-    def ss = (m, E, Map.empty, iv, (nt0, 0));
+    def ss = (m, E, Map.empty, iv, nt0);
     def _  = chain ctsim dtsim ss;
     ()
   };

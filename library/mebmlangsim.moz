@@ -144,77 +144,37 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     (m, E, nll, nrl, (t, 0))
   };
 
-  def dtsim(ss: SimState)
-    -> SimState = {
-
+  def dtsim(ss: SimState) -> SimState = {
     def llog = dlogger "dtsim" TRACE;
+
+    def (m, _, ll, rl, (t, n)) = ss;
 
     def psr(vm: VMap, t: Real) -> () = {
       printSimResult (isDefined vm) (fun e: <Real> -> evalRealFromVMap e vm) t
     };
 
-    def go(ss: SimState)
-      -> SimState = {
+    def go(m: Equations, rl: VMap, n: Int) -> (Equations, VMap) = {
 
       def dh = 0.001;
+      def k = 3.;
+      def _ = (if n > 10 then error "Number of ticks exceeds 10" else ());
 
-      def (m, E, ll, rl, (t, n)) = ss;
+      def rl = evalinits m rl;
+      def E = evalpres (elaborate m) ll;
+      def ia = impulseApprox E ll rl dh;
+      def rl = ivApprox E ia dh;
+      def irl = combineImpIVApp ia rl (isImpulse ll ia rl dh k);
 
-      def elab(m: Equations, rl: VMap) -> (Equations, Set(Equations), VMap) = {
-        def nm = elabsws m rl;
-        def E = evalpres (elaborate nm) ll;
-        def nrl = evalinits nm rl;
-        (nm, E, nrl)
-      };
-
-      def propgimp(m: Equations, rl: VMap, n: Int)
-        -> (Equations, VMap, Int) = {
-
-        def work(m: Equations, imp: VMap, dia: VMap, iva: VMap)
-          -> (Equations, VMap) = {
-
-          def _ = llog "imp" (fun tnk: () -> imp);
-          def _ = llog "dia" (fun tnk: () -> dia);
-          def _ = llog "iva" (fun tnk: () -> psr iva t);
-
-          if (stable m imp) && (stable m iva) then {
-          def ivawd = addIEDerApprox dia iva (-dh);
-          (m, ivawd)
-          } else {
-            def nm = elabsws m imp;
-            def E = evalpres (elaborate nm) ll;
-            def diawi = evalinits nm dia;
-            def ndia = impulseApprox E ll diawi dh;
-            def niva = ivApprox E ndia dh;
-            def ii = isImpulse ll ndia niva dh 3.;
-            def nimp = combineImpIVApp ndia niva ii;
-            work nm nimp ndia niva
-          }
-        };
-
-        def (nm, nrl) = work m rl rl rl;
-        (nm, nrl, n)
-      };
-
-      def _ = llog "left limit" (fun thk: () -> psr ll t);
-      def _ = llog "right limit" (fun thk: () -> psr rl t);
-
-      def (nm, E, nrl) = elab m rl;
-      def Eir = indexred E;
-      def (c, nnrl, nt) =  consCheck (Eir, nrl, t);
-
-      def _ = llog "right limit after cs" (fun thk: () -> psr nnrl t);
-      def _ = llog "c after cs" (fun thk: () -> c);
-
-      if c && (stable nm nnrl) then (nm, Eir, ll, nnrl, (nt, n))
-      else {
-        def (nnm, nnrl, nn) = propgimp m rl n;
-        def _ = llog "right limit after propgimp" (fun thk: () -> psr nnrl t);
-        go (nnm, Set.empty, ll, nnrl, (t, nn))
-      }
+      if stable m irl then {
+        if stable m rl then (m, addIEDerApprox ia rl (-dh))
+        else go (elabsws m rl) rl (n + 1)
+      } else go (elabsws m irl) ia (n + 1)
     };
 
-    go ss
+    def (m, rl) = go (elabsws m rl) rl 0;
+    def E = indexred (evalpres (elaborate m) ll);
+    def (c, rl, t) = consCheck (E, rl, t);
+    (m, E, ll, rl, (t, n))
   };
 
   def sim(m: Equations) -> () = {

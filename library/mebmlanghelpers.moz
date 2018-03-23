@@ -70,29 +70,28 @@ def add(x: <Real>, v: Real, vmap: VMap) -> VMap = {
   Map.add x v vmap
 }
 
-def eval(expr:<?>, yy: Varvals, yp: Varvals, yi: Varvals) -> ? = {
+def eval(expr:<?>, vm: VMap) -> ? = {
     match expr with
     | integ x ->
         (match x with
-         | sym: Real -> eval(yi(x), yy, yp, yi)
-         | der xx -> eval(yy(xx), yy, yp, yi)
-         | _ -> error "Derivatives only allowed on unknowns")
+         | sym: Real -> find x vm
+         | der xx -> find xx vm
+         | lift xx: Real -> 0.
+         | _ -> error "Unsupported model construct")
     | der x ->
         (match x with
-         | sym: Real -> eval(yp(x), yy, yp, yi)
-         | integ xx -> eval(yy(xx), yy, yp, yi)
-         | _ -> 0.)
-    | sym: Real -> eval(yy(expr), yy, yp, yi)
-    | f e -> (eval(f, yy, yp, yi)) (eval(e, yy, yp, yi))
+         | sym: Real -> find x vm
+         | integ xx -> find xx vm
+         | lift xx: Real -> 0.
+         | _ -> error "Unsupported model construct")
+    | sym: Real -> find expr vm
+    | f e -> (eval f vm) (eval e vm)
     | lift v: ? -> v
     | _ ->  error "Unsupported model construct"
 }
 
-def evalRealFromVMap(a: <?>, mu: VMap) -> Real = {
-  def yyfun(x: <Real>) -> <Real> = { (find x mu) };
-  def ypfun(x: <Real>) -> <Real> = { (find x mu) };
-  def yifun(x: <Real>) -> <Real> = { (find x mu) };
-  eval a yyfun ypfun yifun
+def evalRealFromVMap(a: <?>, vm: VMap) -> Real = {
+  eval a vm
 }
 
 def isDefined(map: VMap, e: <?>) -> Bool = {

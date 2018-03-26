@@ -17,15 +17,15 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
         Diode-Inductor Circuit
 
-        + -                  +  -
-    1 -- R -- 2 -- TS -- 3 -- CS -- 4
-    |                   -|          |
-    |                    D          |
-   +|                   +|          |+
-    V                    6          L
-   -|                   -|          |-
-    |                    CS         |
-    |                   +|          |
+                             +  -
+    --------- 1 -- TS -- 2 -- CS -- 3
+    |                   -|          |+
+    |                    D          R
+   +|                   +|          |-
+    V                    6          4
+   -|                   -|          |+
+    |                    CS         L
+    |                   +|          |-
     ---------------------5-----------
 
 written by Oscar Eriksson oerikss@kth.se
@@ -34,8 +34,8 @@ written by Oscar Eriksson oerikss@kth.se
 include MEBMLANGElectrical
 include MEBMLANGSIM
 
-def u_L, i_D, i: Real
-def u_Dd, i_Dd: Real
+def u_L: Voltage
+def i_D, i: Current
 def V = 1.
 def R = 1.
 def L = 1.
@@ -46,13 +46,13 @@ def fbias = 0.7
 def flybackDiode(s: Signal) = {
   def n1, n2, n3, n4, n5, n6: Electrical;
   ConstantVoltageSource V n1 n5;
-  Resistor R n1 n2;
-  Switch true s n2 n3;
-  CurrentSensor i n3 n4;
+  Switch true s n1 n2;
+  CurrentSensor i n2 n3;
+  Resistor R n3 n4;
   Inductor L i_L0 n4 n5;
   VoltageSensor u_L n4 n5;
   CurrentSensor i_D n5 n6;
-  DiodeDebug false fbias n6 n3 i_Dd u_Dd
+  Diode false fbias n6 n2
 }
 
 def model = {
@@ -64,8 +64,7 @@ def model = {
 }
 
 def monitored =
-  [(i_Dd, "i_D"), (u_Dd, "u_D"), (u_L, "u_L"), (i, "i")]
-     // [(i_Dd, "i_D"), (u_Dd, "u_D")]
+  [(i_D, "i_D"), (u_L, "u_L"), (i, "i")]
 
 def main =
   simulateDebug model 0. 0.1 6. monitored

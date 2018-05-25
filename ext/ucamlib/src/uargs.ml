@@ -8,6 +8,7 @@ type argtype =
 | Str     (* Argument is a normal string *)
 | Int     (* The argument is an integer that can be both postive and negative *)
 | StrList (* The argument can be a list of strings. The list can be empty. *)
+| IntList (* The argument is a list of integers. The list can be empty. *) 
 
 exception Error of ustring
 
@@ -32,7 +33,7 @@ let parse argv options =
         
         (* We have found an option *)
         (match exp_argtype with
-        | No | StrList -> work al k opargty (insert acc_ops k []) acc_args
+        | No | StrList | IntList -> work al k opargty (insert acc_ops k []) acc_args
         | Str | Int -> 
            let (_,_,x,_,_) = List.find (fun (k,_,_,_,_) -> k = last_op) options  in 
            raise (Error (us"Option " ^. x ^. us" needs an option argument.")))
@@ -58,8 +59,16 @@ let parse argv options =
               with _ -> raise (Error (us"Option argument '" ^. 
                                             a ^. us"' is not an integer.")))
           | StrList ->
-              (* We have string argument of list. *)
-              work al last_op exp_argtype (insert acc_ops last_op [a]) acc_args))
+              (* We have an argument as a list of strings. *)
+              work al last_op exp_argtype (insert acc_ops last_op [a]) acc_args
+
+          | IntList ->
+              (* We have an argument as a list of integers. *)
+              (try let _ = int_of_string (Ustring.to_utf8 a) in
+                work al last_op exp_argtype (insert acc_ops last_op [a]) acc_args
+              with _ -> raise (Error (us"Option argument '" ^. 
+                                        a ^. us"' is not an integer."))))
+        )
     
       | [] -> (acc_ops,List.rev acc_args)
             
@@ -94,7 +103,7 @@ let optionstext ?(indent=2) ?(max_op_len=25) ?(line_length=80) options =
   
     (* Format description text. Split new line if space *)
     (snd (List.fold_left (fun (col,acc) s ->
-      let len_s = Ustring.length s + 1in
+      let len_s = Ustring.length s + 1 in
       if col + len_s < line_length then
         (col + len_s, acc ^. s ^. us" ")
       else
@@ -122,11 +131,24 @@ let str_op op oplst =
 
 
 (* ---------------------------------------------------------------------*)
-let strlst_op op oplst = 
-  List.assoc op oplst
+let strlist_op op oplst = 
+  try List.assoc op oplst
+  with _ -> []
         
 
+(* ---------------------------------------------------------------------*)
+let int_op op oplst = 
+  try List.assoc op oplst |> List.hd |> Ustring.to_utf8 |> int_of_string
+  with _ -> raise Not_found
 
+
+(* ---------------------------------------------------------------------*)
+let intlist_op op oplst = 
+  try List.assoc op oplst |> List.map (fun x -> int_of_string (Ustring.to_utf8 x))
+  with _ -> []
+
+
+    
 
 
 

@@ -9,6 +9,7 @@ type argtype =
 | Str     (* Argument is a normal string *)
 | Int     (* The argument is an integer that can be both postive and negative *)
 | StrList (* The argument can be a list of strings. The list can be empty. *)
+| IntList (* The argument is a list of integers. The list can be empty. *) 
 
 exception Error of ustring
 
@@ -42,11 +43,22 @@ val str_op : 'a -> ('a * ustring list) list -> ustring
     option [op]. If no such argument is found, exception [Not_found]
     is raised. *)
 
-val strlst_op : 'a -> ('a * ustring list) list -> ustring list
-(** [strlst_op op oplst] returns a ustring list of the option argument for
+val strlist_op : 'a -> ('a * ustring list) list -> ustring list
+(** [strlist_op op oplst] returns a ustring list of the option argument for
     option [op]. If no such argument is found, exception [Not_found]
     is raised. *)
 
+
+val int_op : 'a -> ('a * ustring list) list -> int
+(** [int_op op oplst] returns an integer of the option argument for
+    option [op]. If no such argument is found, exception [Not_found]
+    is raised. *)
+
+val intlist_op : 'a -> ('a * ustring list) list -> int list
+(** [intlist_op op oplst] returns an integer list of the option argument for
+    option [op]. If no such argument is found, exception [Not_found]
+    is raised. *)
+  
   
 
 

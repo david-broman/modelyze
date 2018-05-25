@@ -751,3 +751,10 @@ let write_file ?(encode_type=Utf8) fn s =
     | _ -> failwith "Encoding not supported."
   in
   Utils.write_binfile fn (Bytes.of_string data)
+
+
+let rec spaces_before s n =
+  if length s < n then spaces_before (Op.(^.) (Op.us" ")  s) n else s
+
+let rec spaces_after s n =
+  if length s < n then spaces_after (Op.(^.) s  (Op.us" ")) n else s

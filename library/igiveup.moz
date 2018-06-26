@@ -1,0 +1,351 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include Equation
+include MEBMLANGhelpers
+
+def pre : <Real> -> <Real>
+def (<=) : <Real> -> <Real> -> Equations
+
+type TopolElem
+def topol : <Real> -> <Real> -> Dyn -> Dyn -> TopolElem
+
+type MModel
+def switch : MModel -> <Real> -> (() -> MModel) -> MModel
+def init : <Real> -> <Real> -> MModel
+def model: Equations -> MModel 
+def top :  TopolElem -> MModel
+def (--) : MModel -> MModel -> MModel 
+
+type State = (<Real> => Real)
+type Topology = Set(TopolElem)
+type Interval = (Int, Int)
+type MState = (MModel, State, State, Interval)
+
+// ======= HELPERS =======
+
+def _state_check_elem(v: <Real>) -> () = {
+  match v with
+  | der x -> (
+      match x with
+      | sym: Real -> ()
+      | _ -> error "state only allows state variables"
+    )
+  | sym: Real -> ()
+  | _ -> error "state only allows state variables"
+}
+
+def state_find(v: <Real>, z: State) -> Real = {
+  def _ = _state_check_elem v;
+  if (Map.mem v z) then (Map.find v z) else error "undefined state variable"
+}
+
+// Test
+// def x, y: <Real>
+// def _ = state_find (x + y) (Map.empty) // state only allows state variables
+// def _ = state_find (der (der x)) (Map.empty) // state only allows state variables
+
+def printSimHeader(labels: [String]) -> () = {
+  def _ = print "time";
+  def _ = map (fun l: String -> print ("\t" ++ l)) labels;
+  print "\n"
+}
+
+def printTime(t: Real, n: Int) -> () = {
+  def _ = print (real2string t);
+  if n == -1 then def _ = print(", "); print(n)
+  else ()
+}
+
+def printSimResult(isDefined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
+
+  def f(e: <Real>) -> () = {
+    def _ =  print "\t";
+    if isDefined e then print (real2string (ev e))
+    else print "?"
+  };
+
+  def _ = map f probes;
+  print "\n"
+}
+
+def updArr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
+  if !(isDefined z x) then ()
+  else (Array.set a i (find x z))
+}
+
+def eVMapToUkMapYyYp(d: Equations, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
+  def (n, ukm) = realUnknowns d;
+  def yy = (Array.make n udfv);
+  def yp = (Array.make n udfv);
+  def _ = map
+    (fun e: (<Real>, (Int, Bool)) ->
+      { def (x, (i, _)) = e; updArr x z i yy })
+    (Map.toList ukm);
+  def _ = map
+    (fun e: (<Real>, (Int, Bool)) ->
+      { def (x, (i, _)) = e; updArr (der x) z i yp })
+    (Map.toList ukm);
+  (ukm, yy, yp)
+}
+
+def eVMapToUkMapYy(d: Equations, z: State, udfv: Real) -> (UkMap, {Real}) = {
+  def (n, ukm) = realUnknowns d;
+  def yy = (Array.make n udfv);
+  def _ = map
+    (fun e: (<Real>, (Int, Bool)) ->
+      { def (x, (i, _)) = e; updArr x z i yy })
+    (Map.toList ukm);
+  (ukm, yy)
+}
+
+def ukMapYyYpToVMap(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
+  def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+    def (x, (i, _)) = e;
+    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
+  };
+
+  foldLeft f (Map.empty) (Map.toList ukm)
+}
+
+
+def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> State = {
+  def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+    def (x, (i, _)) = e;
+    Map.add x (Array.get yy i) acc
+  };
+
+  foldLeft f (Map.empty) (Map.toList ukm)
+}
+
+def indexred(d: Equations) -> Equations = {
+  def (dr, dmap) = indexReducationPantelides d (Map.empty);
+  dr
+}
+
+def getDAESolverInput(d: Equations, z_0: State, t_0: Real, undefval: Real)
+  -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
+
+  def (ukm, yy, yp) = eVMapToUkMapYyYp (cdae_to_dae d) z_0 undefval;
+
+  def mkRootExpr(P: Set(<Bool>)) -> [<Real>] = {
+    def f(p: <Bool>) -> <Real> = {
+      match p with
+      | e_1 == e_2 -> error "Equality not allowed in root functions"
+      | e_1 != e_2 -> error "Inequality not allowed in root functions"
+      // | e_1 >= e_2 -> e_1 - e_2
+      | e_1 >  e_2 -> e_1 - e_2
+      // | e_1 <= e_2 -> e_2 - e_1
+      | e_1 <  e_2 -> e_2 - e_1
+      // | _ -> error "We only allow operators <, <=, > and >="
+      | _ -> error "We only allow operators < and >"
+    };
+
+    map f (Set.toList P)
+  };
+
+  def mkRootFuns(re: [<Real>], ukm: UkMap, t: Real, yy: {Real}, yp: {Real})
+    ->   [Real] = {
+
+    def f(e: <Real>) -> Real = { (evalFromArrays e ukm yy yp) };
+    map f re
+  };
+
+  def splitAndAndOrs(P: Set(<Bool>)) -> Set(<Bool>) = {
+
+    def f(P: Set(<Bool>), e: <Bool>) -> Set(<Bool>) = {
+      match e with
+      | e_1 && e_2 -> f (f P e_1) e_2
+      | e_1 || e_2 -> error "We only allow && operator"
+      | _ -> Set.add e P
+    };
+
+    foldLeft f (Set.empty) (Set.toList P)
+  };
+
+
+  def mkZCMap(re: [<Real>]) -> ZCMap = {
+    def f(i: Int, e: <Real>) -> (Int, <Real>) = { (i, e) };
+    listToMap (mapi f re)
+  };
+
+  def vids = initConditionCorrection ukm;
+  def resf = makeResidual ukm (setToCont d);
+  def re = mkRootExpr (splitAndAndOrs P);
+  def rootf = mkRootFuns re ukm;
+  def zcm = mkZCMap re;
+  def nroots = (Map.size zcm);
+  (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
+}
+
+def findiv(ivp: IVP) -> (State, Real) = {
+  def dt = 0.00001;
+  def (_, _, t0) = ivp;
+  def (resf, yy0, yp0, vids, ukm) = getDAEFindICInput ivp 0.;
+  def s = (DAESolver.init resf t0 yy0 yp0);
+  def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 (t0 + dt));
+  (ukMapYyYpToVMap ukm yy0 yp0, t0 +  dt)
+}
+
+// ======= SEMANTICS ==========
+
+def eval_expr(e: <Real>, z: State) -> Real = {
+  def work(e: <?>) -> ? = {
+    match e with
+    | pre _ -> error "pres not allowed in expr"
+    | der x -> state_find e z
+    | sym: Real -> state_find e z
+    | f a -> (work f) (work a)
+    | lift v: ? -> v
+    | _ -> error "unsupported model construct"  
+    };
+  work e    
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 1.), (y, 2.), (der x, 3.)]
+// def _ = dprint(eval_expr (x + y * x / y) z) // 2
+// def _ = dprint(eval_expr (x + y * (der x) / y) z) // 4
+
+def cdae_to_eqs(d: Equations) -> Equations = {
+  match d with
+  | d_1; d_2 -> (cdae_to_eqs d_1); (cdae_to_eqs d_2)
+  | lhs = rhs -> d
+  | _ -> NoEqn
+}
+
+// Test
+// def x, y: <Real>
+// def _ = dprint(cdae_to_eqs (x = y; x <= y; x + y = 2.))
+// x_1 = y_1;
+// NoEqn_1;
+// x_1 + y_1 = sval(2)
+
+def cdae_to_ieqs(d: Equations) -> Equations = {
+  match d with
+  | d_1; d_2 -> (cdae_to_ieqs d_1); (cdae_to_ieqs d_2)
+  | lhs <= rhs -> d
+  | _ -> NoEqn
+}
+
+// Test
+// def x, y: <Real>
+// def _ = dprint(cdae_to_ieqs (x = y; x <= y; x + y = 2.))
+// NoEqn_1;
+// x_1 <= y_1;
+// NoEqn_1
+
+def stable(d: Equations, z: State) -> Bool = {
+  match d with
+  | d_1; d_2 -> (stable d_1 z) && (stable d_2 z)
+  | lhs <= rhs -> (eval_expr lhs z) < (eval_expr rhs z)
+  | _ -> error "expected a DAC in stable"
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 2.), (y, 3.)]
+// def _ = dprint(stable (x <= y;1. <= y) z) // true
+// def _ = dprint(stable (x <= y;4. <= y) z) // false
+// def _ = dprint(stable (x <= y;1. = y) z) // expected a DAC in stable
+
+def consistent_w_dae(d: Equations, z: State) -> Bool = {
+  def epsilon = 1e-8;
+  match d with
+  | d_1; d_2 -> (consistent_w_dae d_1 z) && (consistent_w_dae d_2 z)
+  | lhs = rhs -> abs((eval_expr lhs z) - (eval_expr rhs z)) < epsilon
+  | _ -> error "expected a DAE in consistent_w_dae"
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 2.), (y, 1.)]
+// def _ = dprint(consistent_w_dae (x = 2. * y;1. = y) z) // true
+// def _ = dprint(consistent_w_dae (x = 2. * y;4. = y) z) // false
+// def _ = dprint(consistent_w_dae (x <= y;1. = y) z) // expected a DAE in consistent_w_dae
+
+def solve(d: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interval, State, State) = {
+  def (nt1, tend) = I;
+  def (m, d, ll, rl, nt1) = ss;
+  def P = gatherregs m;
+
+  // Setup the DAE Solver
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm, zcm) =
+    getDAESolverInput (d, rl, nt1) P INFINITE;
+  def yy0 = (Array.make (Array.length yy1) INFINITE);
+  def yp0 = (Array.make (Array.length yp1) INFINITE);
+  def t0 = INFINITE;
+  def s = (DAESolver.initWithRootf resf nroots rootf nt1 yy1 yp1);
+  def _ = (DAESolver.setStopTime s tend);
+
+  def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm)
+    (fun e: <Real> -> evalFromArrays e ukm yy yp);
+
+  // And then solve!
+  def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
+    t1: Real, yy1: {Real}, yp1: {Real})
+      -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
+
+    def findLeftLimit(nyy0: {Real}, nyp0: {Real}) -> Real = {
+      def e = 1.e-10;
+      def _ = (DAESolver.reinit s t0 yy0 yp0);
+
+      def work(t: Real) -> Real = {
+        def _ = llog "t" t;
+        if (t1 - t > e) then {
+          def (tc, sr) = (DAESolver.solveNormal s t nyy0 nyp0);
+          if sr != DAE_SOLVER_RESULT_ROOTS_FOUND then {
+            work (t + (t1 - t) / 2.)
+          } else {
+            def _ = (DAESolver.reinit s t0 yy0 yp0);
+            def (pt, _) = (DAESolver.solveNormal s (2. * t - t1) nyy0 nyp0);
+            pt
+          }
+        } else t
+      };
+
+      work (t0 + (t1 - t0) / 2.)
+    };
+
+    if sr == DAE_SOLVER_RESULT_SUCCESS then {
+      def _ = psr yy1 yp1 t1;
+      def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
+      go nsr t1 yy1 yp1 nt0 yy0 yp0
+    } else {
+      if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
+        def nyy0 = (Array.make (Array.length yy0) 0.);
+        def nyp0 = (Array.make (Array.length yp0) 0.);
+        def nt0 = findLeftLimit nyy0 nyp0;
+        def _ = psr nyy0 nyp0 nt0;
+        (sr, t1, nyy0, nyp0, yy1, yp1)
+      } else {
+        def _ = psr yy1 yp1 t1;
+        (sr, t1, yy0, yp0, yy1, yp1)
+      }
+    }
+  };
+
+  def (sr, t, nyy0, nyp0, nyy1, nyp1) =
+    go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1;
+  def nll = ukMapYyYpToVMap ukm nyy0 nyp0;
+  def nrl = ukMapYyYpToVMap ukm nyy1 nyp1;
+  (m, d, nll, nrl, t)
+}

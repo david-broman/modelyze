@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 */
 
 include Equation
-include MEBMLANGhelpers
+include ModelyzeDAE
 
 def pre : <Real> -> <Real>
 def (<=) : <Real> -> <Real> -> Equations
@@ -140,68 +140,27 @@ def indexred(d: Equations) -> Equations = {
   dr
 }
 
-def getDAESolverInput(d: Equations, z_0: State, t_0: Real, undefval: Real)
+def getDAESolverInput(dae: Equations, dac: Equations, z_0: State, t_0: Real, undefval: Real)
   -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
 
-  def (ukm, yy, yp) = eVMapToUkMapYyYp (cdae_to_dae d) z_0 undefval;
-
-  def mkRootExpr(P: Set(<Bool>)) -> [<Real>] = {
-    def f(p: <Bool>) -> <Real> = {
-      match p with
-      | e_1 == e_2 -> error "Equality not allowed in root functions"
-      | e_1 != e_2 -> error "Inequality not allowed in root functions"
-      // | e_1 >= e_2 -> e_1 - e_2
-      | e_1 >  e_2 -> e_1 - e_2
-      // | e_1 <= e_2 -> e_2 - e_1
-      | e_1 <  e_2 -> e_2 - e_1
-      // | _ -> error "We only allow operators <, <=, > and >="
-      | _ -> error "We only allow operators < and >"
+  def (ukm, yy, yp) = eVMapToUkMapYyYp dae z_0 undefval;
+  
+  def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
+    def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
+    def work (d: Equations, acc: [Real]) -> [Real] = {
+      match d with
+      | e1; e2 -> work e2 (work e1 acc)
+      | e1 <= e2 -> (eval(e2) - eval(e1))::acc
+      | _ -> acc
     };
-
-    map f (Set.toList P)
-  };
-
-  def mkRootFuns(re: [<Real>], ukm: UkMap, t: Real, yy: {Real}, yp: {Real})
-    ->   [Real] = {
-
-    def f(e: <Real>) -> Real = { (evalFromArrays e ukm yy yp) };
-    map f re
-  };
-
-  def splitAndAndOrs(P: Set(<Bool>)) -> Set(<Bool>) = {
-
-    def f(P: Set(<Bool>), e: <Bool>) -> Set(<Bool>) = {
-      match e with
-      | e_1 && e_2 -> f (f P e_1) e_2
-      | e_1 || e_2 -> error "We only allow && operator"
-      | _ -> Set.add e P
-    };
-
-    foldLeft f (Set.empty) (Set.toList P)
-  };
-
-
-  def mkZCMap(re: [<Real>]) -> ZCMap = {
-    def f(i: Int, e: <Real>) -> (Int, <Real>) = { (i, e) };
-    listToMap (mapi f re)
+    work dac [];
   };
 
   def vids = initConditionCorrection ukm;
-  def resf = makeResidual ukm (setToCont d);
-  def re = mkRootExpr (splitAndAndOrs P);
-  def rootf = mkRootFuns re ukm;
-  def zcm = mkZCMap re;
-  def nroots = (Map.size zcm);
-  (resf, nroots, rootf, yy, yp, vids, ukm, zcm)
-}
-
-def findiv(ivp: IVP) -> (State, Real) = {
-  def dt = 0.00001;
-  def (_, _, t0) = ivp;
-  def (resf, yy0, yp0, vids, ukm) = getDAEFindICInput ivp 0.;
-  def s = (DAESolver.init resf t0 yy0 yp0);
-  def _ = (DAESolver.calcIcYaYdp s vids yy0 yp0 (t0 + dt));
-  (ukMapYyYpToVMap ukm yy0 yp0, t0 +  dt)
+  def resf = makeResidual ukm dae;
+  def rootf = mkRootFuns ukm dac;
+  def nroots = length (rootf 0. yy yp);
+  (resf, nroots, rootf, yy, yp, vids, ukm)
 }
 
 // ======= SEMANTICS ==========
@@ -225,30 +184,30 @@ def eval_expr(e: <Real>, z: State) -> Real = {
 // def _ = dprint(eval_expr (x + y * x / y) z) // 2
 // def _ = dprint(eval_expr (x + y * (der x) / y) z) // 4
 
-def cdae_to_eqs(d: Equations) -> Equations = {
-  match d with
-  | d_1; d_2 -> (cdae_to_eqs d_1); (cdae_to_eqs d_2)
-  | lhs = rhs -> d
+def cdae_to_dae(cdae: Equations) -> Equations = {
+  match cdae with
+  | d_1; d_2 -> (cdae_to_dae d_1); (cdae_to_dae d_2)
+  | lhs = rhs -> cdae
   | _ -> NoEqn
 }
 
 // Test
 // def x, y: <Real>
-// def _ = dprint(cdae_to_eqs (x = y; x <= y; x + y = 2.))
+// def _ = dprint(cdae_to_dae (x = y; x <= y; x + y = 2.))
 // x_1 = y_1;
 // NoEqn_1;
 // x_1 + y_1 = sval(2)
 
-def cdae_to_ieqs(d: Equations) -> Equations = {
-  match d with
-  | d_1; d_2 -> (cdae_to_ieqs d_1); (cdae_to_ieqs d_2)
-  | lhs <= rhs -> d
+def cdae_to_dac(c: Equations) -> Equations = {
+  match c with
+  | d_1; d_2 -> (cdae_to_dac d_1); (cdae_to_dac d_2)
+  | lhs <= rhs -> c
   | _ -> NoEqn
 }
 
 // Test
 // def x, y: <Real>
-// def _ = dprint(cdae_to_ieqs (x = y; x <= y; x + y = 2.))
+// def _ = dprint(cdae_to_dac (x = y; x <= y; x + y = 2.))
 // NoEqn_1;
 // x_1 <= y_1;
 // NoEqn_1
@@ -282,22 +241,24 @@ def consistent_w_dae(d: Equations, z: State) -> Bool = {
 // def _ = dprint(consistent_w_dae (x = 2. * y;4. = y) z) // false
 // def _ = dprint(consistent_w_dae (x <= y;1. = y) z) // expected a DAE in consistent_w_dae
 
-def solve(d: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interval, State, State) = {
-  def (nt1, tend) = I;
-  def (m, d, ll, rl, nt1) = ss;
-  def P = gatherregs m;
+def solve(cdae: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interval, State, State) = {
+    
+  // Index reduction
+  def dt = 0.00001;
+  def (t_0, t_f) = I;
+  def dae = indexred (cdae_to_dae cdae);
+  def dac = (cdae_to_dac cdae);
 
   // Setup the DAE Solver
-  def (resf, nroots, rootf, yy1, yp1, vids, ukm, zcm) =
-    getDAESolverInput (d, rl, nt1) P INFINITE;
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = getDAESolverInput dae dac z_0 t_0 0.;
   def yy0 = (Array.make (Array.length yy1) INFINITE);
   def yp0 = (Array.make (Array.length yp1) INFINITE);
   def t0 = INFINITE;
-  def s = (DAESolver.initWithRootf resf nroots rootf nt1 yy1 yp1);
-  def _ = (DAESolver.setStopTime s tend);
+  def s = (DAESolver.initWithRootf resf nroots rootf t_0 yy1 yp1);
+  def _ = (DAESolver.setStopTime s t_f);
+  def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 (t_0 + dt));
 
-  def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm)
-    (fun e: <Real> -> evalFromArrays e ukm yy yp);
+  def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm) (fun e: <Real> -> evalFromArrays e ukm yy yp) probes;
 
   // And then solve!
   def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
@@ -344,8 +305,8 @@ def solve(d: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interval,
   };
 
   def (sr, t, nyy0, nyp0, nyy1, nyp1) =
-    go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 nt1 yy1 yp1;
+    go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 t_0 yy1 yp1;
   def nll = ukMapYyYpToVMap ukm nyy0 nyp0;
   def nrl = ukMapYyYpToVMap ukm nyy1 nyp1;
-  (m, d, nll, nrl, t)
+  (nll, nrl, t)
 }

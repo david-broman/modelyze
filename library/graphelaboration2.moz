@@ -1,0 +1,485 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include Equation
+def Branch : Real -> Real -> Dyn -> Dyn -> Equations
+
+def contToSet(cont: ?) -> Set(?) = {
+  def work(cont: ?, acc: Set(?)) -> Set(?) = {
+    match cont with
+    | this; that -> work that (work this acc)
+    | last -> (Set.add last acc)
+  };
+  work cont (Set.empty)
+}
+
+def contToList(cont: ?) -> [?] = {
+  reverse (Set.toList (contToSet cont))
+}
+
+def setToContImpl(set: Set(?)) -> ? = {
+   def work(l: [?], acc: ?) -> ? = {
+      match l with
+      | e::es -> work es (acc;e)
+      | [] -> acc
+   };
+   def l = (Set.toList set);
+   if (length l) == 0 then error "Empty set" else
+   if (length l) == 1 then (hd l) else work (tl l) (hd l)
+}
+
+def setToCont(set: Set(?)) -> ? = {
+  setToContImpl set
+}
+
+def setToCont(set: Set(Equations)) -> Equations = {
+  if (Set.size set) == 0 then NoEqn else setToContImpl set
+}
+
+type Node = ?
+type IMatrix = ((Int => (Int => Int)), Int, Int)
+
+def in_edge = -1
+def out_edge = 1
+def no_edge = 0
+
+def emptyIMatrix(n: Int, m: Int) -> IMatrix = {
+  if n < 0 || m < 0 then error "n and m needs to be positive integers"
+  else (Map.empty, n, m)
+}
+def checkDim(IM: IMatrix, i: Int, j: Int) -> () = {
+  def (M, n, m) = IM;
+  if (i >= n || j >= m) then error "Index out of range"
+  else ()
+}
+
+def get(IM: IMatrix, i: Int, j: Int) -> Int = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i j;
+  if (Map.mem i M) then
+    if (Map.mem j (Map.find i M)) then (Map.find j (Map.find i M))
+    else no_edge
+  else no_edge
+}
+
+def set(IM: IMatrix, i: Int, j: Int, v: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i j;
+  if v == no_edge then
+    if (Map.mem i M) then
+      if (Map.mem j (Map.find i M)) then
+        (Map.add i (Map.remove j (Map.find i M)) M, n, m)
+      else (M, n, m)
+    else (M, n, m)
+  else
+    if !(Map.mem i M) then (Map.add i (Map.add j v (Map.empty)) M, n, m)
+    else (Map.add i (Map.add j v (Map.find i M)) M, n, m)
+}
+
+def identityIMatrix(n: Int) -> IMatrix = {
+  def work(IM: IMatrix, i: Int, j: Int) -> IMatrix = {
+    if i >= n then IM
+    else work (set IM i j 1) (i + 1) (j + 1)
+  };
+
+  work (emptyIMatrix n n) 0 0
+}
+
+def isEqual(lhs: IMatrix, rhs: IMatrix) -> Bool = {
+  def (lM, ln, lm) = lhs;
+  def (rH, rn, rm) = rhs;
+  if ln != rn || lm != rm then false
+  else {
+    def work(i: Int, j: Int) -> Bool = {
+      if i >= ln then true
+      else
+        if j >= lm then work (i + 1) 0
+        else (get lhs i j) == (get rhs i j) && work i (j + 1)
+    };
+    work 0 0
+  }
+}
+
+def pp(IM: IMatrix) -> String = {
+  def (_, n, m) = IM;
+  def work(i: Int, j: Int) -> String = {
+    if i >= n then ""
+    else {
+      if j >= m then "\n" ++ (work (i + 1) 0)
+      else int2string (get IM i j) ++ ", " ++ (work i (j + 1))
+    }
+  };
+  "---\n" ++ (work 0 0) ++ "---\n"
+}
+
+def concat(lhs: IMatrix, rhs: IMatrix) -> IMatrix = {
+  def (_, ln, lm) = lhs;
+  def (_, rn, rm) = rhs;
+
+  def getv(i: Int, j: Int) -> Int = {
+    if j < lm then get lhs i j
+    else get rhs i (j - lm)
+  };
+
+  def work(IM: IMatrix, i: Int, j: Int) -> IMatrix = {
+    def (_, n, m) = IM;
+    if i >= n then IM
+    else
+      if j >= m then work IM (i + 1) 0
+      else work (set IM i j (getv i j)) i (j + 1)
+  };
+
+  if ln != rn then error "Matrix dimensions do not match"
+  else work (emptyIMatrix ln (lm + rm)) 0 0
+}
+
+def listToIMatrix(l: [[Int]]) -> IMatrix = {
+  def n = length l;
+  def m = length (nth l 0);
+
+  def f(IMij: (IMatrix, Int, Int), e: Int) -> (IMatrix, Int, Int) = {
+    def (IM, i, j) = IMij;
+    if j >= m then error "Invalid row length"
+    else (set IM i j e, i, j + 1)
+  };
+
+  def ff(IMi: (IMatrix, Int), e: [Int]) -> (IMatrix, Int) = {
+    def (IM, i) = IMi;
+    def (IM, _, _) = foldLeft f (IM, i, 0) e;
+    (IM, i + 1)
+  };
+
+  def (IM, _) = foldLeft ff (emptyIMatrix n m, 0) l;
+  IM
+}
+
+def enumerateEdges(Tl: [Equations])
+  -> [(Node, Node, <Real>, <Real>)] = {
+
+  def f(em: [(Node, Node, <Real>, <Real>)], e: Equations)
+    -> [(Node, Node, <Real>, <Real>)] = {
+
+    match e with
+    | Branch t a p n -> (p, n, t, a)::em
+    | _ -> error "Unrecognized element type in topological description"
+  };
+
+  foldLeft f [] Tl
+}
+
+def enumerateNodes(el: [(Node, Node, <Real>, <Real>)])
+  -> (Node => Int) = {
+
+  def f(mi: ((Node => Int), Int), e: (Node, Node, <Real>, <Real>))
+    -> ((Node => Int), Int) = {
+
+    def (m, i) = mi;
+    def (p, n, _, _) = e;
+    if (Map.mem p m) && (Map.mem n m) then (m, i)
+    else
+      if (Map.mem n m) then (Map.add p i m, i + 1)
+      else
+        if (Map.mem p m) then (Map.add n i m, i + 1)
+        else (Map.add n (i + 1) (Map.add p i m), i + 2)
+  };
+
+  def (m, _) = foldLeft f (Map.empty, 0) el;
+  m
+}
+
+def buildIndcidenceMatrix(el: [(Node, Node, <Real>, <Real>)], nm: (Node => Int))
+  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+
+  def n = (Map.size nm);
+  def m = length el;
+  def f(IMj: (IMatrix, (Int => (<Real>, <Real>)), Int),
+        ee: (Node, Node, <Real>, <Real>))
+     -> (IMatrix, (Int => (<Real>, <Real>)), Int) = {
+
+     def (IM, vm, j) = IMj;
+     def (n_in, n_out, t, a) = ee;
+     def i_in = (Map.find n_in nm);
+     def i_out = (Map.find n_out nm);
+     (set (set IM i_in j in_edge) i_out j out_edge, Map.add j (t, a) vm, j + 1)
+   };
+
+  def (IM, vm, _) = foldLeft f (emptyIMatrix n m, Map.empty, 0) el;
+  (IM, vm)
+}
+
+def addsubrow(IM: IMatrix, fi: Int, ti: Int, add: Bool) -> IMatrix = {
+  def (M, n, m) = IM;
+  def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
+    def (j, v) = e;
+    if add then set IM ti j ((get IM ti j) + v)
+    else set IM ti j ((get IM ti j) - v)
+  };
+  def _ = checkDim IM fi 0;
+  def _ = checkDim IM ti 0;
+  foldLeft f IM (Map.toList (Map.find fi M))
+}
+
+def addrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
+  addsubrow IM fi ti true
+}
+
+def subrow(IM: IMatrix, fi: Int, ti: Int) -> IMatrix = {
+  addsubrow IM fi ti false
+}
+
+def chsignrow(IM: IMatrix, i: Int) -> IMatrix = {
+  def (M, n, m) = IM;
+  def _ = checkDim IM i 0;
+  def f(IM: IMatrix, e: (Int, Int)) -> IMatrix = {
+    def (j, v) = e;
+    set IM i j ((get IM i j) * (-1))
+  };
+  foldLeft f IM (Map.toList (Map.find i M))
+}
+
+def chsign(IM: IMatrix) -> IMatrix = {
+  def (_, n, m) = IM;
+  def work(IM: IMatrix, i: Int) -> IMatrix = {
+    if i >= n then IM
+    else work (chsignrow IM i) (i + 1)
+  };
+  work IM 0
+}
+
+def transpose(IM: IMatrix) -> IMatrix = {
+  def (M, n, m) = IM;
+  def IMt = emptyIMatrix m n;
+  def work(IMt: IMatrix, i: Int, j: Int) -> IMatrix = {
+    if i >= n then IMt
+    else
+      if j >= m then work IMt (i + 1) 0
+      else work (set IMt j i (get IM i j)) i (j + 1)
+  };
+  work IMt 0 0
+}
+
+def swrows(IM: IMatrix, i1: Int, i2: Int) -> IMatrix = {
+  if i1 == i2 then IM else {
+    def (M, n, m) = IM;
+    def _ = checkDim IM i1 0;
+    def _ = checkDim IM i2 0;
+    (Map.add i1 (Map.find i2 M) (Map.add i2 (Map.find i1 M) M), n, m)
+  }
+}
+
+def swcols(IM: IMatrix, vm: (Int => (<Real>, <Real>)), j1: Int, j2: Int)
+  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+
+  def nvm = (Map.add j1 (Map.find j2 vm) (Map.add j2 (Map.find j1 vm) vm));
+  (transpose (swrows (transpose IM) j1 j2), nvm)
+}
+
+def leadingcol(IM: IMatrix, i: Int) -> Int = {
+  def f(leadc: Int, e: (Int, Int)) -> Int = {
+    def (j,_) = e;
+    if leadc > j then j else leadc
+  };
+
+  def _ = checkDim IM i 0;
+  def (M, n, m) = IM;
+  if !(Map.mem i M) then m
+  else {
+    def l = (Map.toList (Map.find i M));
+    match l with
+    | [] -> m
+    | _ -> foldLeft f m l
+  }
+}
+
+def rowreduce(IM: IMatrix) -> IMatrix = {
+  def (_, n, m) = IM;
+
+  def findpivotelem(IM: IMatrix, imin: Int) -> (Int, Int) = {
+    def work(i: Int, p: (Int, Int)) -> (Int, Int) = {
+      if i >= n then p
+      else {
+        def (pr, pc) = p;
+        def npc = leadingcol IM i;
+        if npc > pc then work (i + 1) (pr, pc)
+        else work (i + 1) (i, npc)
+      }
+    };
+    work imin (imin, m)
+  };
+
+  def zerocolumn(IM: IMatrix, ip: Int, jp: Int) -> IMatrix = {
+    if jp < m then {
+      def pv = get IM ip jp;
+      def work(IM: IMatrix, i: Int) -> IMatrix = {
+        if i < n then {
+          def v = get IM i jp;
+          if v == no_edge || i == ip then work IM (i + 1)
+          else
+            if v == out_edge then work (subrow IM ip i) (i + 1)
+            else work (addrow IM ip i) (i + 1)
+        } else IM
+      };
+
+      if pv == out_edge then work IM 0
+      else work (chsignrow IM ip) 0
+    } else IM
+  };
+
+  def work(IM: IMatrix, imin: Int) -> IMatrix = {
+    if imin < n then {
+      def (pr, pc) = findpivotelem IM imin;
+      if pc < m then
+        work (zerocolumn (swrows IM imin pr) imin pc) (imin + 1)
+      else work IM (imin + 1)
+    } else IM
+  };
+
+  work IM 0
+}
+
+def trim(IM: IMatrix, si: Int, ei: Int, sj: Int, ej: Int) -> IMatrix = {
+  def (_, n, m) = IM;
+  def _ = checkDim IM si sj;
+  def _ = checkDim IM ei ej;
+  def work(IMr: IMatrix, i: Int, j: Int) -> IMatrix = {
+    if i > ei then IMr
+    else
+      if j > ej then work IMr (i + 1) sj
+      else work (set IMr (i - si) (j - sj) (get IM i j)) i (j + 1)
+  };
+  work (emptyIMatrix (ei - si + 1) (ej - sj + 1)) si sj
+}
+
+def getThroughMatrix(IM: IMatrix, vm: (Int => (<Real>, <Real>)))
+  -> (IMatrix, (Int => (<Real>, <Real>))) = {
+
+  def (_, n, m) = IM;
+  def aligncols(IMvm: (IMatrix, (Int => (<Real>, <Real>))), nn: Int, i: Int)
+    -> (IMatrix, (Int => (<Real>, <Real>)), Int) = {
+      def (IM, vm) = IMvm;
+      if i >= n then (IM, vm, nn)
+      else {
+        def lc = leadingcol IM i;
+        if lc >= m then (IM, vm, nn)
+        else aligncols (swcols IM vm i lc) (i + 1) (i + 1)
+      }
+    };
+
+  def (nIM, nvm, nn) = aligncols (IM, vm) 0 0;
+  (trim nIM 0 (nn - 1) 0 (m - 1), nvm)
+}
+
+def getAcrossMatrix(TM: IMatrix) -> IMatrix = {
+  def (_, n, m) = TM;
+  def lhs = chsign (transpose (trim TM 0 (n - 1) n (m - 1)));
+  concat lhs (identityIMatrix (m - n))
+}
+
+def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
+  -> Set(Equations) = {
+  def (M, n, m) = IM;
+
+  def vmapElmToSReal(e: (Int, Int)) -> <Real> = {
+    def (i, c) = e;
+    (int2real c)*(Map.find i vm)
+  };
+
+  def f(exp: <Real>, e: (Int, Int)) -> <Real> = { exp + (vmapElmToSReal e) };
+
+  def work(i: Int, acc: Set(Equations)) -> Set(Equations) = {
+    if i >= n then acc
+    else {
+      def r = (Map.find i M);
+      if (Map.size r) < 1 then
+        error "Did not expect a zero row here"
+      else
+        def rl = (Map.toList r);
+        def h = vmapElmToSReal (hd rl);
+        if (Map.size r) < 2 then work (i + 1) (Set.add (h = 0.) acc)
+        else {
+          def eq = (foldLeft f h (tl rl)) = 0.;
+          work (i + 1) (Set.add eq acc)
+        }
+    }
+  };
+
+  if m != (Map.size vm) then
+    error "The number of columns and variables doesn't match"
+  else work 0 (Set.empty)
+}
+
+def elaboratetopology(T: Set(Equations)) -> Equations = {
+  def llog = logger "elaboratetopology" DEBUG;
+  if (Set.size T) == 0 then NoEqn
+  else {
+    def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
+      def (i, (t, _)) = ee;
+      (i, t)
+    };
+
+    def fe(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
+      def (i, (_, a)) = ee;
+      (i, a)
+    };
+
+    def el = enumerateEdges (Set.toList T);
+    def _ = llog "edge list" el;
+
+    def nm = enumerateNodes el;
+    def _ = llog "node list" nm;
+
+    // TODO: handle self loops
+    def (IM, vm) = buildIndcidenceMatrix el nm;
+    def _ = llog "Incidence Matrix" (pp IM);
+    def _ = llog "Variable Map" vm;
+
+    def IMr = rowreduce IM;
+    def (A, nvm) = getThroughMatrix IMr vm;
+    def _ = llog "Cutset Matrix (A)" (pp A);
+    def _ = llog "modified Variable Map" nvm;
+
+    def fvec = listToMap (map ff (Map.toList nvm));
+    def _ = llog "we have flow vec:" fvec;
+
+    def floweqs = matrixVMapToEquations A fvec;
+    def _ = llog "flow eqs:" floweqs;
+
+    def (_, n, m) = A;
+    if (m > 1) then {
+      def B = getAcrossMatrix A;
+      def _ = llog "Circuit Matrix (B)" (pp B);
+
+      def evec = listToMap (map fe (Map.toList nvm));
+      def _ = llog "and effort vec:" evec;
+
+      def circeqs = matrixVMapToEquations B evec;
+      def _ = llog "circ eqs:" circeqs;
+
+      def E = union floweqs circeqs;
+      def _ = llog "topological equations" (setToCont E);
+
+      setToCont E
+    } else {
+      def _ =
+        llog "We only have one edge, topological equations" (setToCont floweqs);
+      setToCont floweqs
+    }
+  }
+}

@@ -20,10 +20,11 @@ written by Oscar Eriksson oerikss@kth.se
 
 include Equation
 include ModelyzeDAE
+include Graphelaboration2
 
-def Branch : Real -> Real -> Dyn -> Dyn -> Equations
 def pre : <Real> -> <Real>
 def (<=) : <Real> -> <Real> -> Equations
+def mnil : () -> Equations
 
 type Model = Equations
 type Eqs = Equations
@@ -33,7 +34,8 @@ type CDAE = (Eqs, Ieqs)
 type MModel
 def switch : MModel -> <Real> -> (() -> ?) -> MModel
 def init : <Real> -> <Real> -> MModel
-def model: Equations -> MModel 
+def model: Equations -> MModel
+def mmnil : () -> MModel
 def (++) : MModel -> MModel -> MModel 
 
 type State = (<Real> => Real)
@@ -67,6 +69,11 @@ def state_find(v: <Real>, z: State) -> Real = {
 def state_mem(v: <Real>, z: State) -> Bool = {
   def _ = _state_check_elem(v);
   Map.mem v z
+}
+
+def state_add(v: <Real>, r: Real, z: State) -> State = {
+  def _ = _state_check_elem(v);
+  Map.add v r z
 }
 
 def _print_sim_headers(labels: [String]) -> () = {
@@ -164,7 +171,7 @@ def _get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, t_0: Real, undefval: R
   (resf, nroots, rootf, yy, yp, vids, ukm)
 }
 
-// ======= SEMANTICS ==========
+// ======= SEMANTICS IMPLEMENTAION ==========
 
 def indexred(d: Eqs) -> Eqs = {
   def (dr, dmap) = indexReducationPantelides d (Map.empty);
@@ -324,12 +331,11 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
 }
 
 // Test
-def x: <Real>
-def z_0 = listToMap [(x, 0.)]
-def eqs = der x = 1.
-def ieqs = x <= 3.
-
-def _ = dprint(solve (eqs,ieqs) z_0 (0., 10.) 0.1 [x])
+// def x: <Real>
+// def z_0 = listToMap [(x, 0.)]
+// def eqs = der x = 1.
+// def ieqs = x <= 3.
+// def _ = dprint(solve (eqs,ieqs) z_0 (0., 10.) 0.1 [x])
 
 def eval_mexpr(e: <Real>, z_ll: State, z_0: State) -> Real = {
   def work(e: <?>) -> ? = {
@@ -398,4 +404,33 @@ def get_topology(m: Model) -> Topology = {
 
 // Test
 // def x, y: <Real>
-// def m = 
+// def m = der x = 2.;Branch x y x y;y = 2.;Branch y x y x
+// def _ = dprint(get_topology m) // {Branch_1(y_1, x_1, y_1, x_1), Branch_1(x_1, y_1, x_1, y_1)}
+
+def elab_topology(T: Topology) -> Eqs = {
+  elaboratetopology T
+}
+
+// Test
+// def x, y, z: <Real>
+// def n1, n2, n3: Node
+// def m = Branch x x n1 n2;Branch y y n2 n3;Branch z z n3 n1
+// def _ = dprint(elab_topology (get_topology m))
+// -1 * z_1 + 1 * y_1 = sval(0);
+// -1 * z_1 + 1 * x_1 = sval(0);
+// 1 * z_1 + 1 * y_1 + 1 * x_1 = sval(0)
+
+def eval_inits(m: MModel, s: (<Real> -> Real), z :State) -> State = {
+  match m with
+  | m_1 ++ m_2 -> eval_inits m_2 s (eval_inits m_1 s z)
+  | switch m_1 _ _ -> eval_inits m_1 s z
+  | init v e -> state_add v (s e) z
+  | _ -> z
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 0.), (der x, 0.), (y, 0.), (der y, 0.)]
+// def z_ll = listToMap [(x, 3.), (der x, 4.)]
+// def m = init x 1. ++ switch (init (der x) 2. ++ init y (pre x) ++ init (der y) (pre (der x))) x (fun t:() -> mmnil ())
+// def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}

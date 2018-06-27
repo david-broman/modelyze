@@ -114,7 +114,7 @@ def _dae_state_to_ukmap_yy_yp(d: DAE, z: State, udfv: Real) -> (UkMap, {Real}, {
   (ukm, yy, yp)
 }
 
-def eVMapToUkMapYy(d: Equations, z: State, udfv: Real) -> (UkMap, {Real}) = {
+def eVMapToUkMapYy(d: DAE, z: State, udfv: Real) -> (UkMap, {Real}) = {
   def (n, ukm) = realUnknowns d;
   def yy = (Array.make n udfv);
   def _ = map
@@ -142,7 +142,7 @@ def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> State = {
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def _get_DAESolver_input(dae: Equations, dac: Equations, z_0: State, t_0: Real, undefval: Real)
+def _get_DAESolver_input(dae: DAE, dac: DAC, z_0: State, t_0: Real, undefval: Real)
   -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
 
   def (ukm, yy, yp) = _dae_state_to_ukmap_yy_yp dae z_0 undefval;

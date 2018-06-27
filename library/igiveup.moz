@@ -36,7 +36,7 @@ def (--) : MModel -> MModel -> MModel
 
 type State = (<Real> => Real)
 type Topology = Set(TopolElem)
-type Interval = (Int, Int)
+type Interval = (Real, Real)
 type MState = (MModel, State, State, Interval)
 
 // ======= HELPERS =======
@@ -62,6 +62,11 @@ def state_find(v: <Real>, z: State) -> Real = {
 // def _ = state_find (x + y) (Map.empty) // state only allows state variables
 // def _ = state_find (der (der x)) (Map.empty) // state only allows state variables
 
+def state_mem(v: <Real>, z: State) -> Bool = {
+  def _ = _state_check_elem(v);
+  Map.mem v z
+}
+
 def printSimHeader(labels: [String]) -> () = {
   def _ = print "time";
   def _ = map (fun l: String -> print ("\t" ++ l)) labels;
@@ -70,7 +75,7 @@ def printSimHeader(labels: [String]) -> () = {
 
 def printTime(t: Real, n: Int) -> () = {
   def _ = print (real2string t);
-  if n == -1 then def _ = print(", "); print(n)
+  if n != -1 then def _ = print(", "); print(n)
   else ()
 }
 
@@ -87,8 +92,8 @@ def printSimResult(isDefined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<
 }
 
 def updArr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
-  if !(isDefined z x) then ()
-  else (Array.set a i (find x z))
+  if !(state_mem x z) then ()
+  else (Array.set a i (state_find x z))
 }
 
 def eVMapToUkMapYyYp(d: Equations, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
@@ -124,7 +129,6 @@ def ukMapYyYpToVMap(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
 
   foldLeft f (Map.empty) (Map.toList ukm)
 }
-
 
 def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> State = {
   def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
@@ -241,7 +245,7 @@ def consistent_w_dae(d: Equations, z: State) -> Bool = {
 // def _ = dprint(consistent_w_dae (x = 2. * y;4. = y) z) // false
 // def _ = dprint(consistent_w_dae (x <= y;1. = y) z) // expected a DAE in consistent_w_dae
 
-def solve(cdae: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interval, State, State) = {
+def solve(cdae: Equations, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
     
   // Index reduction
   def dt = 0.00001;
@@ -258,7 +262,10 @@ def solve(cdae: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interv
   def _ = (DAESolver.setStopTime s t_f);
   def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 (t_0 + dt));
 
-  def psr(yy: {Real}, yp: {Real}) = printSimResult (isDefinedUkMap ukm) (fun e: <Real> -> evalFromArrays e ukm yy yp) probes;
+  def psr(yy: {Real}, yp: {Real}, t: Real) = {
+    def _ = printTime t (-1);
+    printSimResult (fun v: <Real> -> Map.mem v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
+  };
 
   // And then solve!
   def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
@@ -270,7 +277,6 @@ def solve(cdae: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interv
       def _ = (DAESolver.reinit s t0 yy0 yp0);
 
       def work(t: Real) -> Real = {
-        def _ = llog "t" t;
         if (t1 - t > e) then {
           def (tc, sr) = (DAESolver.solveNormal s t nyy0 nyp0);
           if sr != DAE_SOLVER_RESULT_ROOTS_FOUND then {
@@ -308,5 +314,11 @@ def solve(cdae: Equations, z_0: State, I: Interval, probes: [<Real>]) -> (Interv
     go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 t_0 yy1 yp1;
   def nll = ukMapYyYpToVMap ukm nyy0 nyp0;
   def nrl = ukMapYyYpToVMap ukm nyy1 nyp1;
-  (nll, nrl, t)
+  ((t_0, t), nll, nrl)
 }
+
+// Test
+def x: <Real>
+def z_0 = listToMap [(x, 0.)]
+def cdae = der x = 1.;x <= 3.
+def _ = dprint(solve cdae z_0 (0., 10.) 0.1 [x])

@@ -347,4 +347,5 @@ def eval_mexpr(e: <Real>, z_ll: State, z_0: State) -> Real = {
 // def x, y: <Real>
 // def z_0 = listToMap [(x, 1.), (der x, 2.), (y, 1.)]
 // def z_ll = listToMap [(x, 2.)]
-// def _ = dprint(eval_mexpr (der x + 1. - (pre x) * y) z_0 z_ll)
+// def _ = dprint(eval_mexpr ((der x) + 1. - (pre x) * y) z_ll z_0) // 1
+// def _ = dprint(eval_mexpr ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr

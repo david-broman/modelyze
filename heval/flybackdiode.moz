@@ -36,6 +36,7 @@ include MEBMLANGSIM
 
 def u_L, i_D, i: Real
 def u_Dd, i_Dd: Real
+def i_R, u_R: Real
 def V = 1.
 def R = 1.
 def L = 1.
@@ -47,6 +48,7 @@ def flybackDiode(s: Signal) = {
   def n1, n2, n3, n4, n5, n6: Electrical;
   ConstantVoltageSource V n1 n5;
   Resistor R n1 n2;
+  VoltageSensor u_R n1 n2;
   Switch true s n2 n3;
   CurrentSensor i n3 n4;
   Inductor L i_L0 n4 n5;
@@ -65,6 +67,7 @@ def model = {
 
 def monitored =
   [(i_Dd, "i_D"), (u_Dd, "u_D"), (u_L, "u_L"), (i, "i")]
+  // [(i_Dd, "i_D"), (u_Dd, "u_D"), (u_L, "u_L"), (i, "i"), (u_R, "u_R")]
      // [(i_Dd, "i_D"), (u_Dd, "u_D")]
 
 def main =

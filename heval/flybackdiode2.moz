@@ -34,7 +34,7 @@ written by Oscar Eriksson oerikss@kth.se
 include MEBMLANGElectrical
 include MEBMLANGSIM
 
-def u_L: Voltage
+def u_L, u_D: Voltage
 def i_D, i: Current
 def V = 1.
 def R = 1.
@@ -44,15 +44,14 @@ def i_L0 = 0.
 def fbias = 0.7
 
 def flybackDiode(s: Signal) = {
-  def n1, n2, n3, n4, n5, n6: Electrical;
+  def n1, n2, n3, n4, n5: Electrical;
   ConstantVoltageSource V n1 n5;
   Switch true s n1 n2;
   CurrentSensor i n2 n3;
   Resistor R n3 n4;
   Inductor L i_L0 n4 n5;
   VoltageSensor u_L n4 n5;
-  CurrentSensor i_D n5 n6;
-  Diode false fbias n6 n2
+  DiodeDebug false fbias n5 n2 i_D u_D
 }
 
 def model = {
@@ -64,7 +63,7 @@ def model = {
 }
 
 def monitored =
-  [(i_D, "i_D"), (u_L, "u_L"), (i, "i")]
+  [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i, "i")]
 
 def main =
   simulateDebug model 0. 0.1 6. monitored

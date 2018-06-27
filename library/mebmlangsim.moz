@@ -172,6 +172,7 @@ def simulateDebug(m: Equations, t0: Real, h: Real, tend: Real,
     };
 
     def (m, rl) = go (elabsws m rl) rl 0;
+
     def E = indexred (evalpres (elaborate m) ll);
     def (c, rl, t) = consCheck (E, rl, t);
     if c then (m, E, ll, rl, t)

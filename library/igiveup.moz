@@ -22,7 +22,7 @@ include Equation
 include ModelyzeDAE
 include Graphelaboration2
 
-def pre : <Real> -> <Real>
+def pre : Real -> Real
 def (<=) : <Real> -> <Real> -> Equations
 def mnil : () -> Equations
 
@@ -337,24 +337,27 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
 // def ieqs = x <= 3.
 // def _ = dprint(solve (eqs,ieqs) z_0 (0., 10.) 0.1 [x])
 
-def eval_mexpr(e: <Real>, z_ll: State, z_0: State) -> Real = {
-  def work(e: <?>) -> ? = {
+def eval_left_limit(e: <Real>, z_ll: State) -> <Real> = {
+  def work(e: <?>) -> <?> = {
     match e with
     | pre x -> eval_expr x z_ll
-    | der x -> eval_expr e z_0
-    | sym: Real -> eval_expr e z_0
     | f a -> (work f) (work a)
-    | lift v: ? -> v
-    | _ -> error "unsupported model construct"  
+    | _ -> e
     };
   work e    
 }
 
 // Test
 // def x, y: <Real>
+// def z_ll = listToMap [(x, 1.)]
+// def _ = dprint(eval_left_limit (x * y + (pre x) / 2.) z_ll)
+
+// Test
+// def x, y: <Real>
 // def z_0 = listToMap [(x, 1.), (der x, 2.), (y, 1.)]
 // def z_ll = listToMap [(x, 2.)]
-// def _ = dprint(eval_mexpr ((der x) + 1. - (pre x) * y) z_ll z_0) // 1
+// def e = eval_left_limit ((der x) + 1. - (pre x) * y) z_ll
+// def _ = dprint(eval_expr e z_0) // 1
 // def _ = dprint(eval_mexpr ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr
 
 def elab_switches(m: MModel, s: (<Real> -> Real)) -> MModel = {
@@ -434,3 +437,7 @@ def eval_inits(m: MModel, s: (<Real> -> Real), z :State) -> State = {
 // def z_ll = listToMap [(x, 3.), (der x, 4.)]
 // def m = init x 1. ++ switch (init (der x) 2. ++ init y (pre x) ++ init (der y) (pre (der x))) x (fun t:() -> mmnil ())
 // def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}
+
+// def eval_left_limits(m: Model, z_ll: State) -> Model = {
+
+// }

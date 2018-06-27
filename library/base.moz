@@ -107,8 +107,8 @@ def DEBUG = (2, "DEBUG")
 def TRACE = (3, "TRACE")
 
 // def loglevel = DEBUG
-// def loglevel = OFF
-def loglevel = INFO
+def loglevel = OFF
+// def loglevel = INFO
 
 def dlogger(frum: String, level: (Int, String), msg: String, thing: (() -> Dyn))
   -> () = {

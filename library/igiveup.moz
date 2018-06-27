@@ -57,7 +57,7 @@ def _state_check_elem(v: <Real>) -> () = {
 
 def state_find(v: <Real>, z: State) -> Real = {
   def _ = _state_check_elem v;
-  if (Map.mem v z) then (Map.find v z) else error "undefined state variable"
+  if (Map.mem v z) then (Map.find v z) else def _ = dprint(v); error " :undefined state variable"
 }
 
 // Test
@@ -325,7 +325,26 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
 }
 
 // Test
-def x: <Real>
-def z_0 = listToMap [(x, 0.)]
-def cdae = der x = 1.;x <= 3.
-def _ = dprint(solve cdae z_0 (0., 10.) 0.1 [x])
+// def x: <Real>
+// def z_0 = listToMap [(x, 0.)]
+// def cdae = der x = 1.;x <= 3.
+// def _ = dprint(solve cdae z_0 (0., 10.) 0.1 [x])
+
+def eval_mexpr(e: <Real>, z_ll: State, z_0: State) -> Real = {
+  def work(e: <?>) -> ? = {
+    match e with
+    | pre x -> eval_expr x z_ll
+    | der x -> eval_expr e z_0
+    | sym: Real -> eval_expr e z_0
+    | f a -> (work f) (work a)
+    | lift v: ? -> v
+    | _ -> error "unsupported model construct"  
+    };
+  work e    
+}
+
+// Test
+// def x, y: <Real>
+// def z_0 = listToMap [(x, 1.), (der x, 2.), (y, 1.)]
+// def z_ll = listToMap [(x, 2.)]
+// def _ = dprint(eval_mexpr (der x + 1. - (pre x) * y) z_0 z_ll)

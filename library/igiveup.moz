@@ -21,26 +21,23 @@ written by Oscar Eriksson oerikss@kth.se
 include Equation
 include ModelyzeDAE
 
+def Branch : Real -> Real -> Dyn -> Dyn -> Equations
 def pre : <Real> -> <Real>
 def (<=) : <Real> -> <Real> -> Equations
 
 type Model = Equations
-type DAE = Equations
-type DAC = Equations
-type CDAE = Equations
-
-type TopolElem
-def topol : <Real> -> <Real> -> Dyn -> Dyn -> TopolElem
+type Eqs = Equations
+type Ieqs = Equations
+type CDAE = (Eqs, Ieqs)
 
 type MModel
 def switch : MModel -> <Real> -> (() -> ?) -> MModel
 def init : <Real> -> <Real> -> MModel
 def model: Equations -> MModel 
-def top :  TopolElem -> MModel
 def (++) : MModel -> MModel -> MModel 
 
 type State = (<Real> => Real)
-type Topology = Set(TopolElem)
+type Topology = Set(Equations)
 type Interval = (Real, Real)
 type MState = (MModel, State, State, Interval)
 
@@ -101,7 +98,7 @@ def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
   else (Array.set a i (state_find x z))
 }
 
-def _dae_state_to_ukmap_yy_yp(d: DAE, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
+def _dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
   def (n, ukm) = realUnknowns d;
   def yy = (Array.make n udfv);
   def yp = (Array.make n udfv);
@@ -116,7 +113,7 @@ def _dae_state_to_ukmap_yy_yp(d: DAE, z: State, udfv: Real) -> (UkMap, {Real}, {
   (ukm, yy, yp)
 }
 
-def eVMapToUkMapYy(d: DAE, z: State, udfv: Real) -> (UkMap, {Real}) = {
+def eVMapToUkMapYy(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}) = {
   def (n, ukm) = realUnknowns d;
   def yy = (Array.make n udfv);
   def _ = map
@@ -144,7 +141,7 @@ def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> State = {
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def _get_DAESolver_input(dae: DAE, dac: DAC, z_0: State, t_0: Real, undefval: Real)
+def _get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, t_0: Real, undefval: Real)
   -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
 
   def (ukm, yy, yp) = _dae_state_to_ukmap_yy_yp dae z_0 undefval;
@@ -169,7 +166,7 @@ def _get_DAESolver_input(dae: DAE, dac: DAC, z_0: State, t_0: Real, undefval: Re
 
 // ======= SEMANTICS ==========
 
-def indexred(d: DAE) -> DAE = {
+def indexred(d: Eqs) -> Eqs = {
   def (dr, dmap) = indexReducationPantelides d (Map.empty);
   dr
 }
@@ -193,39 +190,39 @@ def eval_expr(e: <Real>, z: State) -> Real = {
 // def _ = dprint(eval_expr (x + y * x / y) z) // 2
 // def _ = dprint(eval_expr (x + y * (der x) / y) z) // 4
 
-def cdae_to_dae(cdae: CDAE) -> DAE = {
-  match cdae with
-  | d_1; d_2 -> (cdae_to_dae d_1); (cdae_to_dae d_2)
-  | lhs = rhs -> cdae
+def model_to_eqs(m: Model) -> Eqs = {
+  match m with
+  | m_1; m_2 -> (model_to_eqs m_1); (model_to_eqs m_2)
+  | lhs = rhs -> m
   | _ -> NoEqn
 }
 
 // Test
 // def x, y: <Real>
-// def _ = dprint(cdae_to_dae (x = y; x <= y; x + y = 2.))
+// def _ = dprint(model_to_eqs (x = y; x <= y; x + y = 2.))
 // x_1 = y_1;
 // NoEqn_1;
 // x_1 + y_1 = sval(2)
 
-def cdae_to_dac(c: CDAE) -> DAC = {
-  match c with
-  | d_1; d_2 -> (cdae_to_dac d_1); (cdae_to_dac d_2)
-  | lhs <= rhs -> c
+def model_to_ieqs(m: Model) -> Ieqs = {
+  match m with
+  | m_1; m_2 -> (model_to_ieqs m_1); (model_to_ieqs m_2)
+  | lhs <= rhs -> m
   | _ -> NoEqn
 }
 
 // Test
 // def x, y: <Real>
-// def _ = dprint(cdae_to_dac (x = y; x <= y; x + y = 2.))
+// def _ = dprint(model_to_ieqs (x = y; x <= y; x + y = 2.))
 // NoEqn_1;
 // x_1 <= y_1;
 // NoEqn_1
 
-def stable(d: DAC, z: State) -> Bool = {
+def stable(d: Ieqs, z: State) -> Bool = {
   match d with
   | d_1; d_2 -> (stable d_1 z) && (stable d_2 z)
   | lhs <= rhs -> (eval_expr lhs z) < (eval_expr rhs z)
-  | _ -> error "expected a DAC in stable"
+  | _ -> error "expected a Ieqs in stable"
 }
 
 // Test
@@ -233,22 +230,22 @@ def stable(d: DAC, z: State) -> Bool = {
 // def z = listToMap [(x, 2.), (y, 3.)]
 // def _ = dprint(stable (x <= y;1. <= y) z) // true
 // def _ = dprint(stable (x <= y;4. <= y) z) // false
-// def _ = dprint(stable (x <= y;1. = y) z) // expected a DAC in stable
+// def _ = dprint(stable (x <= y;1. = y) z) // expected a Ieqs in stable
 
-def consistent_w_dae(d: DAE, z: State) -> Bool = {
+def consistent_w_eqs(d: Eqs, z: State) -> Bool = {
   def epsilon = 1e-8;
   match d with
-  | d_1; d_2 -> (consistent_w_dae d_1 z) && (consistent_w_dae d_2 z)
+  | d_1; d_2 -> (consistent_w_eqs d_1 z) && (consistent_w_eqs d_2 z)
   | lhs = rhs -> abs((eval_expr lhs z) - (eval_expr rhs z)) < epsilon
-  | _ -> error "expected a DAE in consistent_w_dae"
+  | _ -> error "expected a Eqs in consistent_w_eqs"
 }
 
 // Test
 // def x, y: <Real>
 // def z = listToMap [(x, 2.), (y, 1.)]
-// def _ = dprint(consistent_w_dae (x = 2. * y;1. = y) z) // true
-// def _ = dprint(consistent_w_dae (x = 2. * y;4. = y) z) // false
-// def _ = dprint(consistent_w_dae (x <= y;1. = y) z) // expected a DAE in consistent_w_dae
+// def _ = dprint(consistent_w_eqs (x = 2. * y;1. = y) z) // true
+// def _ = dprint(consistent_w_eqs (x = 2. * y;4. = y) z) // false
+// def _ = dprint(consistent_w_eqs (x <= y;1. = y) z) // expected a Eqs in consistent_w_eqs
 
 def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
 
@@ -258,11 +255,11 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
   def (t_0, t_f) = I;
 
   // Preapare for solving
-  def dae = indexred (cdae_to_dae cdae);
-  def dac = (cdae_to_dac cdae);
+  def (eqs, ieqs) = cdae;
+  def eqsp = indexred (model_to_eqs eqs);
 
-  // Setup the DAE Solver
-  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = _get_DAESolver_input dae dac z_0 t_0 0.;
+  // Setup the Eqs Solver
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = _get_DAESolver_input eqsp ieqs z_0 t_0 0.;
   def yy0 = (Array.make (Array.length yy1) INFINITE);
   def yp0 = (Array.make (Array.length yp1) INFINITE);
   def t0 = INFINITE;
@@ -327,10 +324,12 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
 }
 
 // Test
-// def x: <Real>
-// def z_0 = listToMap [(x, 0.)]
-// def cdae = der x = 1.;x <= 3.
-// def _ = dprint(solve cdae z_0 (0., 10.) 0.1 [x])
+def x: <Real>
+def z_0 = listToMap [(x, 0.)]
+def eqs = der x = 1.
+def ieqs = x <= 3.
+
+def _ = dprint(solve (eqs,ieqs) z_0 (0., 10.) 0.1 [x])
 
 def eval_mexpr(e: <Real>, z_ll: State, z_0: State) -> Real = {
   def work(e: <?>) -> ? = {
@@ -386,3 +385,17 @@ def mmodel_to_model(m: MModel) -> Model = {
 // pre_1(x_1) = sval(2);
 // sval(0) <= x_1 + sval(1);
 // y_1 = sval(3)
+
+def get_topology(m: Model) -> Topology = {
+  def work(m: Model, acc: Topology) -> Topology = {
+    match m with
+    | m_1; m_2 -> work m_2 (work m_1 acc)
+    | Branch _ _ _ _ -> Set.add m acc
+    | _ -> acc
+  };
+  work m (Set.empty)
+}
+
+// Test
+// def x, y: <Real>
+// def m = 

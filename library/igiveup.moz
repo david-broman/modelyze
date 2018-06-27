@@ -23,6 +23,8 @@ include ModelyzeDAE
 
 def pre : <Real> -> <Real>
 def (<=) : <Real> -> <Real> -> Equations
+
+type Model = Equations
 type DAE = Equations
 type DAC = Equations
 type CDAE = Equations
@@ -31,11 +33,11 @@ type TopolElem
 def topol : <Real> -> <Real> -> Dyn -> Dyn -> TopolElem
 
 type MModel
-def switch : MModel -> <Real> -> (() -> MModel) -> MModel
+def switch : MModel -> <Real> -> (() -> ?) -> MModel
 def init : <Real> -> <Real> -> MModel
 def model: Equations -> MModel 
 def top :  TopolElem -> MModel
-def (--) : MModel -> MModel -> MModel 
+def (++) : MModel -> MModel -> MModel 
 
 type State = (<Real> => Real)
 type Topology = Set(TopolElem)
@@ -191,7 +193,7 @@ def eval_expr(e: <Real>, z: State) -> Real = {
 // def _ = dprint(eval_expr (x + y * x / y) z) // 2
 // def _ = dprint(eval_expr (x + y * (der x) / y) z) // 4
 
-def cdae_to_dae(cdae: Equations) -> Equations = {
+def cdae_to_dae(cdae: CDAE) -> DAE = {
   match cdae with
   | d_1; d_2 -> (cdae_to_dae d_1); (cdae_to_dae d_2)
   | lhs = rhs -> cdae
@@ -205,7 +207,7 @@ def cdae_to_dae(cdae: Equations) -> Equations = {
 // NoEqn_1;
 // x_1 + y_1 = sval(2)
 
-def cdae_to_dac(c: Equations) -> Equations = {
+def cdae_to_dac(c: CDAE) -> DAC = {
   match c with
   | d_1; d_2 -> (cdae_to_dac d_1); (cdae_to_dac d_2)
   | lhs <= rhs -> c
@@ -219,7 +221,7 @@ def cdae_to_dac(c: Equations) -> Equations = {
 // x_1 <= y_1;
 // NoEqn_1
 
-def stable(d: Equations, z: State) -> Bool = {
+def stable(d: DAC, z: State) -> Bool = {
   match d with
   | d_1; d_2 -> (stable d_1 z) && (stable d_2 z)
   | lhs <= rhs -> (eval_expr lhs z) < (eval_expr rhs z)
@@ -233,7 +235,7 @@ def stable(d: Equations, z: State) -> Bool = {
 // def _ = dprint(stable (x <= y;4. <= y) z) // false
 // def _ = dprint(stable (x <= y;1. = y) z) // expected a DAC in stable
 
-def consistent_w_dae(d: Equations, z: State) -> Bool = {
+def consistent_w_dae(d: DAE, z: State) -> Bool = {
   def epsilon = 1e-8;
   match d with
   | d_1; d_2 -> (consistent_w_dae d_1 z) && (consistent_w_dae d_2 z)
@@ -349,3 +351,38 @@ def eval_mexpr(e: <Real>, z_ll: State, z_0: State) -> Real = {
 // def z_ll = listToMap [(x, 2.)]
 // def _ = dprint(eval_mexpr ((der x) + 1. - (pre x) * y) z_ll z_0) // 1
 // def _ = dprint(eval_mexpr ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr
+
+def elab_switches(m: MModel, s: (<Real> -> Real)) -> MModel = {
+  match m with
+  | m_1 ++ m_2 -> (elab_switches m_1 s) ++ (elab_switches m_2 s)
+  | switch m_1 e (lift m_2 :(() -> ?)) ->
+    if (s e) > 0. then switch (elab_switches m_1 s) e m_2
+    else m_2 ()
+  | _ -> m
+}
+
+def mmodel_to_model(m: MModel) -> Model = {
+  match m with
+  | m_1 ++ m_2 -> (mmodel_to_model m_1); (mmodel_to_model m_2)
+  | switch m_1 e _ -> (mmodel_to_model m_1); (0. <= e)
+  | model m_1 -> m_1
+  | _ -> NoEqn
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 0.), (y, 2.)]
+// def m = switch
+//           (switch
+//             (model (pre x = 1.))
+//             (x)
+//             (fun t: () -> model (pre x = 2.))
+//           )
+//           (x + 1.)
+//           (fun t:() -> model (y = 1.)) ++ model (y = 3.)
+                                         
+// def mp = elab_switches m (fun e: <Real> -> eval_expr e z)
+// def _ = dprint(mmodel_to_model mp)
+// pre_1(x_1) = sval(2);
+// sval(0) <= x_1 + sval(1);
+// y_1 = sval(3)

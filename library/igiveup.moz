@@ -23,6 +23,9 @@ include ModelyzeDAE
 
 def pre : <Real> -> <Real>
 def (<=) : <Real> -> <Real> -> Equations
+type DAE = Equations
+type DAC = Equations
+type CDAE = Equations
 
 type TopolElem
 def topol : <Real> -> <Real> -> Dyn -> Dyn -> TopolElem
@@ -67,19 +70,19 @@ def state_mem(v: <Real>, z: State) -> Bool = {
   Map.mem v z
 }
 
-def printSimHeader(labels: [String]) -> () = {
+def _print_sim_headers(labels: [String]) -> () = {
   def _ = print "time";
   def _ = map (fun l: String -> print ("\t" ++ l)) labels;
   print "\n"
 }
 
-def printTime(t: Real, n: Int) -> () = {
+def _print_time(t: Real, n: Int) -> () = {
   def _ = print (real2string t);
   if n != -1 then def _ = print(", "); print(n)
   else ()
 }
 
-def printSimResult(isDefined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
+def _print_sim_results(isDefined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
 
   def f(e: <Real>) -> () = {
     def _ =  print "\t";
@@ -91,22 +94,22 @@ def printSimResult(isDefined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<
   print "\n"
 }
 
-def updArr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
+def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
   if !(state_mem x z) then ()
   else (Array.set a i (state_find x z))
 }
 
-def eVMapToUkMapYyYp(d: Equations, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
+def _dae_state_to_ukmap_yy_yp(d: DAE, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
   def (n, ukm) = realUnknowns d;
   def yy = (Array.make n udfv);
   def yp = (Array.make n udfv);
   def _ = map
     (fun e: (<Real>, (Int, Bool)) ->
-      { def (x, (i, _)) = e; updArr x z i yy })
+      { def (x, (i, _)) = e; _upd_arr x z i yy })
     (Map.toList ukm);
   def _ = map
     (fun e: (<Real>, (Int, Bool)) ->
-      { def (x, (i, _)) = e; updArr (der x) z i yp })
+      { def (x, (i, _)) = e; _upd_arr (der x) z i yp })
     (Map.toList ukm);
   (ukm, yy, yp)
 }
@@ -116,12 +119,12 @@ def eVMapToUkMapYy(d: Equations, z: State, udfv: Real) -> (UkMap, {Real}) = {
   def yy = (Array.make n udfv);
   def _ = map
     (fun e: (<Real>, (Int, Bool)) ->
-      { def (x, (i, _)) = e; updArr x z i yy })
+      { def (x, (i, _)) = e; _upd_arr x z i yy })
     (Map.toList ukm);
   (ukm, yy)
 }
 
-def ukMapYyYpToVMap(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
+def _ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
   def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
     def (x, (i, _)) = e;
     Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
@@ -139,15 +142,10 @@ def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> State = {
   foldLeft f (Map.empty) (Map.toList ukm)
 }
 
-def indexred(d: Equations) -> Equations = {
-  def (dr, dmap) = indexReducationPantelides d (Map.empty);
-  dr
-}
-
-def getDAESolverInput(dae: Equations, dac: Equations, z_0: State, t_0: Real, undefval: Real)
+def _get_DAESolver_input(dae: Equations, dac: Equations, z_0: State, t_0: Real, undefval: Real)
   -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
 
-  def (ukm, yy, yp) = eVMapToUkMapYyYp dae z_0 undefval;
+  def (ukm, yy, yp) = _dae_state_to_ukmap_yy_yp dae z_0 undefval;
   
   def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
     def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
@@ -168,6 +166,11 @@ def getDAESolverInput(dae: Equations, dac: Equations, z_0: State, t_0: Real, und
 }
 
 // ======= SEMANTICS ==========
+
+def indexred(d: DAE) -> DAE = {
+  def (dr, dmap) = indexReducationPantelides d (Map.empty);
+  dr
+}
 
 def eval_expr(e: <Real>, z: State) -> Real = {
   def work(e: <?>) -> ? = {
@@ -245,16 +248,19 @@ def consistent_w_dae(d: Equations, z: State) -> Bool = {
 // def _ = dprint(consistent_w_dae (x = 2. * y;4. = y) z) // false
 // def _ = dprint(consistent_w_dae (x <= y;1. = y) z) // expected a DAE in consistent_w_dae
 
-def solve(cdae: Equations, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
-    
-  // Index reduction
+def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
+
+  // Step taken when finding consistent initial values
   def dt = 0.00001;
+
   def (t_0, t_f) = I;
+
+  // Preapare for solving
   def dae = indexred (cdae_to_dae cdae);
   def dac = (cdae_to_dac cdae);
 
   // Setup the DAE Solver
-  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = getDAESolverInput dae dac z_0 t_0 0.;
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = _get_DAESolver_input dae dac z_0 t_0 0.;
   def yy0 = (Array.make (Array.length yy1) INFINITE);
   def yp0 = (Array.make (Array.length yp1) INFINITE);
   def t0 = INFINITE;
@@ -262,9 +268,10 @@ def solve(cdae: Equations, z_0: State, I: Interval, h: Real, probes: [<Real>]) -
   def _ = (DAESolver.setStopTime s t_f);
   def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 (t_0 + dt));
 
+  // Function for printing simulation results
   def psr(yy: {Real}, yp: {Real}, t: Real) = {
-    def _ = printTime t (-1);
-    printSimResult (fun v: <Real> -> Map.mem v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
+    def _ = _print_time t (-1);
+    _print_sim_results (fun v: <Real> -> Map.mem v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
   };
 
   // And then solve!
@@ -272,7 +279,7 @@ def solve(cdae: Equations, z_0: State, I: Interval, h: Real, probes: [<Real>]) -
     t1: Real, yy1: {Real}, yp1: {Real})
       -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
 
-    def findLeftLimit(nyy0: {Real}, nyp0: {Real}) -> Real = {
+    def find_left_limit(nyy0: {Real}, nyp0: {Real}) -> Real = {
       def e = 1.e-10;
       def _ = (DAESolver.reinit s t0 yy0 yp0);
 
@@ -300,7 +307,7 @@ def solve(cdae: Equations, z_0: State, I: Interval, h: Real, probes: [<Real>]) -
       if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
         def nyy0 = (Array.make (Array.length yy0) 0.);
         def nyp0 = (Array.make (Array.length yp0) 0.);
-        def nt0 = findLeftLimit nyy0 nyp0;
+        def nt0 = find_left_limit nyy0 nyp0;
         def _ = psr nyy0 nyp0 nt0;
         (sr, t1, nyy0, nyp0, yy1, yp1)
       } else {
@@ -310,11 +317,11 @@ def solve(cdae: Equations, z_0: State, I: Interval, h: Real, probes: [<Real>]) -
     }
   };
 
-  def (sr, t, nyy0, nyp0, nyy1, nyp1) =
+  def (_, t_fp, yy0p, yp0p, yy1p, yp1p) =
     go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 t_0 yy1 yp1;
-  def nll = ukMapYyYpToVMap ukm nyy0 nyp0;
-  def nrl = ukMapYyYpToVMap ukm nyy1 nyp1;
-  ((t_0, t), nll, nrl)
+  def z_ll = _ukmap_yy_yp_to_state ukm yy0p yp0p;
+  def z_0p = _ukmap_yy_yp_to_state ukm yy1p yp1p;
+  ((t_0, t_fp), z_ll, z_0p)
 }
 
 // Test

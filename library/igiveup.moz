@@ -76,6 +76,15 @@ def state_add(v: <Real>, r: Real, z: State) -> State = {
   Map.add v r z
 }
 
+def is_defined(e: <?>, z: State) -> Bool = {
+  match e with
+  | sym: Real -> (state_mem e z)
+  | der x -> (state_mem e z)
+  | e_1 e_2 -> (is_defined e_1 z) && (is_defined e_2 z)
+  | lift v: ? -> true
+  | _ -> error "Unsupported model construct"
+}
+
 def _print_sim_headers(labels: [String]) -> () = {
   def _ = print "time";
   def _ = map (fun l: String -> print ("\t" ++ l)) labels;
@@ -88,11 +97,11 @@ def _print_time(t: Real, n: Int) -> () = {
   else ()
 }
 
-def _print_sim_results(isDefined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
+def _print_sim_results(is_defined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
 
   def f(e: <Real>) -> () = {
     def _ =  print "\t";
-    if isDefined e then print (real2string (ev e))
+    if is_defined e then print (real2string (ev e))
     else print "?"
   };
 
@@ -120,29 +129,10 @@ def _dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {
   (ukm, yy, yp)
 }
 
-def eVMapToUkMapYy(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}) = {
-  def (n, ukm) = realUnknowns d;
-  def yy = (Array.make n udfv);
-  def _ = map
-    (fun e: (<Real>, (Int, Bool)) ->
-      { def (x, (i, _)) = e; _upd_arr x z i yy })
-    (Map.toList ukm);
-  (ukm, yy)
-}
-
 def _ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
   def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
     def (x, (i, _)) = e;
     Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
-  };
-
-  foldLeft f (Map.empty) (Map.toList ukm)
-}
-
-def ukMapYyToVMap(ukm: UkMap, yy: {Real}) -> State = {
-  def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
-    def (x, (i, _)) = e;
-    Map.add x (Array.get yy i) acc
   };
 
   foldLeft f (Map.empty) (Map.toList ukm)
@@ -438,6 +428,124 @@ def eval_inits(m: MModel, s: (<Real> -> Real), z :State) -> State = {
 // def m = init x 1. ++ switch (init (der x) 2. ++ init y (pre x) ++ init (der y) (pre (der x))) x (fun t:() -> mmnil ())
 // def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}
 
-// def eval_left_limits(m: Model, z_ll: State) -> Model = {
+def eval_left_limits(m: Model, z_ll: State) -> Model = {
+  match m with
+  | m_1; m_2 -> (eval_left_limits m_1 z_ll); (eval_left_limits m_2 z_ll)
+  | e_1 = e_2 -> (eval_left_limit e_1 z_ll) = (eval_left_limit e_2 z_ll)
+  | e_1 <= e_2 -> (eval_left_limit e_1 z_ll) <= (eval_left_limit e_2 z_ll)
+  | _ -> m
+}
 
-// }
+// Test
+// def x, y: <Real>
+// def z_ll = listToMap [(x, 1.), (der x, 2.)]
+// def m = pre x = y; pre (der x) <= der y
+// def _ = dprint(eval_left_limits m z_ll)
+// sval(1) = y_1;
+// sval(2) <= y_1'
+
+def mmodel_to_cdae(m: MModel, z_ll: State) -> CDAE = {
+  def mp = eval_left_limits (mmodel_to_model m) z_ll;
+  ((model_to_eqs mp); (elab_topology (get_topology mp)), model_to_ieqs mp)
+}
+
+def impulse_analysis(e: Eqs, z_ll: State) -> (State, State, State) = {
+
+  def h = 0.01;
+  def k = 3.;
+
+  def get_defined_eqs(e: Eqs) -> Eqs = {
+    match e with
+    | e_1; e_1 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
+    | e_1 = e_2 ->
+      if (is_defined e_1 z_ll) && (is_defined e_2 z_ll)
+      then e else NoEqn
+    | _ -> error "Expected equations"
+  };
+
+  def map_expr_to_impl_euler(e: <?>, z_ll: State, h: Real) -> <?> = {
+    match e with
+    | der x -> (x - (eval_expr x z_ll)) / h
+    | f a -> (map_expr_to_impl_euler f) (map_expr_to_impl_euler f)
+    | _ -> e
+  };
+
+  def map_eqs_to_impl_euler(e: Eqn, z_ll: State, h: Real) -> Eqn = {
+    match e with
+    | e_1 = e_2 -> (map_expr_to_impl_euler e_1) = (map_expr_to_impl_euler e_1)
+    | _ -> error "Expected equations"
+  };
+
+  def solve(e: Eqn, z: State, udfv: Real) -> State = {
+
+    def eqs_state_to_ukm_yy(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}) = {
+      def (n, ukm) = realUnknowns d;
+      def yy = (Array.make n udfv);
+      def _ = map
+      (fun e: (<Real>, (Int, Bool)) ->
+        { def (x, (i, _)) = e; _upd_arr x z i yy })
+        (Map.toList ukm);
+      (ukm, yy)
+    };
+
+    def ukm_yy_to_state(ukm: UkMap, yy: {Real}) -> State = {
+      def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+        def (x, (i, _)) = e;
+        Map.add x (Array.get yy i) acc
+      };
+    
+      foldLeft f (Map.empty) (Map.toList ukm)
+    };
+  
+    def get_solver_input(e: Eqn, z: State, udfv: Real) -> (Sysfun, UkMap, {Real}) = {
+      def (ukm, yy) = eqs_state_to_ukm_yy e z udfv;
+      def sysfun(yy: {Real}) -> [Real] = {
+        def dummyYp = (Array.make 0 0.);
+        def dummyt = 0.;
+        makeResidual ukm (setToCont e) dummyt yy dummyYp
+      };
+
+      (sysfun, ukm, yy)
+    };
+    
+    def (sysfun, ukm, yy) = get_solver_input e z udfv;
+    def s = (NLEQSolver.init sysfun yy);
+    def _ = (NLEQSolver.solve s yy);
+    ukm_yy_to_state ukm yy
+  };
+
+  def is_impulse(z_0: State, z_rl: State, x: <Real>) -> Bool = {
+
+    def d(x: <Real>) -> Real = {
+      abs ((state_find x z_ll) + 2. * (state_find x z_0) - (state_find x z_rl)) / h^2.
+    };
+  
+    def f(e: (<Real>, Real)) -> Real = {
+      def (x, _) = e;
+      d(x)
+    };
+  
+    def avg = k * (sum (map f (Map.toList z_0))) / int2real ((Map.size z_0) + 1);
+
+    (d x) > avg
+  };  
+
+  def mk_impulse(z_0: State, z_rl: State) -> State = {
+    def big_number = INFINITE;
+    def big_neg_number = NEG_INFINITE;
+
+    def f(e: (<Real>, Real)) -> (<Real>, Real) = {
+      def getinf(v: Real) -> Real = {
+        if v > 0. then big_number else big_neg_number
+      };
+      def (x, v) = e;
+      if is_impulse z_0 z_rl x then (x, getinf v) else (x, state_find x z_ll)
+    };
+  
+    listToMap (map f (Map.toList z_0))
+  };
+
+  def ep = get_defined e;
+  def epp = map_eqs_to_impl_euler 
+
+}

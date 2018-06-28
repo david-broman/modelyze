@@ -45,6 +45,30 @@ type MState = (MModel, State, State, Interval)
 
 // ======= HELPERS =======
 
+def _print_sim_headers(labels: [String]) -> () = {
+  def _ = print "time";
+  def _ = map (fun l: String -> print ("\t" ++ l)) labels;
+  print "\n"
+}
+
+def _print_time(t: Real, n: Int) -> () = {
+  def _ = print (real2string t);
+  if n != -1 then def _ = print(", "); print(n)
+  else ()
+}
+
+def _print_sim_results(is_defined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
+
+  def f(e: <Real>) -> () = {
+    def _ =  print "\t";
+    if is_defined e then print (real2string (ev e))
+    else print "?"
+  };
+
+  def _ = map f probes;
+  print "\n"
+}
+
 def _state_check_elem(v: <Real>) -> () = {
   match v with
   | der x -> (
@@ -94,80 +118,9 @@ def is_defined(e: <?>, z: State, euler: Bool) -> Bool = {
   | _ -> error "Unsupported model construct"
 }
 
-def _print_sim_headers(labels: [String]) -> () = {
-  def _ = print "time";
-  def _ = map (fun l: String -> print ("\t" ++ l)) labels;
-  print "\n"
-}
-
-def _print_time(t: Real, n: Int) -> () = {
-  def _ = print (real2string t);
-  if n != -1 then def _ = print(", "); print(n)
-  else ()
-}
-
-def _print_sim_results(is_defined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
-
-  def f(e: <Real>) -> () = {
-    def _ =  print "\t";
-    if is_defined e then print (real2string (ev e))
-    else print "?"
-  };
-
-  def _ = map f probes;
-  print "\n"
-}
-
 def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
   if !(state_mem x z) then ()
   else (Array.set a i (state_find x z))
-}
-
-def _dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
-  def (n, ukm) = realUnknowns d;
-  def yy = (Array.make n udfv);
-  def yp = (Array.make n udfv);
-  def _ = map
-    (fun e: (<Real>, (Int, Bool)) ->
-      { def (x, (i, _)) = e; _upd_arr x z i yy })
-    (Map.toList ukm);
-  def _ = map
-    (fun e: (<Real>, (Int, Bool)) ->
-      { def (x, (i, _)) = e; _upd_arr (der x) z i yp })
-    (Map.toList ukm);
-  (ukm, yy, yp)
-}
-
-def _ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
-  def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
-    def (x, (i, _)) = e;
-    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
-  };
-
-  foldLeft f (Map.empty) (Map.toList ukm)
-}
-
-def _get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, t_0: Real, undefval: Real)
-  -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
-
-  def (ukm, yy, yp) = _dae_state_to_ukmap_yy_yp dae z_0 undefval;
-  
-  def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
-    def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
-    def work (d: Equations, acc: [Real]) -> [Real] = {
-      match d with
-      | e1; e2 -> work e2 (work e1 acc)
-      | e1 <= e2 -> (eval(e2) - eval(e1))::acc
-      | _ -> acc
-    };
-    work dac [];
-  };
-
-  def vids = initConditionCorrection ukm;
-  def resf = makeResidual ukm dae;
-  def rootf = mkRootFuns ukm dac;
-  def nroots = length (rootf 0. yy yp);
-  (resf, nroots, rootf, yy, yp, vids, ukm)
 }
 
 // ======= SEMANTICS IMPLEMENTAION ==========
@@ -255,6 +208,52 @@ def consistent_w_eqs(d: Eqs, z: State) -> Bool = {
 
 def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
 
+  def get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, t_0: Real, undefval: Real) -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
+  
+    def dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
+      def (n, ukm) = realUnknowns d;
+      def yy = (Array.make n udfv);
+      def yp = (Array.make n udfv);
+      def _ = map
+        (fun e: (<Real>, (Int, Bool)) ->
+          { def (x, (i, _)) = e; _upd_arr x z i yy })
+        (Map.toList ukm);
+      def _ = map
+        (fun e: (<Real>, (Int, Bool)) ->
+          { def (x, (i, _)) = e; _upd_arr (der x) z i yp })
+        (Map.toList ukm);
+      (ukm, yy, yp)
+    };
+    
+    def (ukm, yy, yp) = dae_state_to_ukmap_yy_yp dae z_0 undefval;
+    
+    def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
+      def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
+      def work (d: Equations, acc: [Real]) -> [Real] = {
+        match d with
+        | e1; e2 -> work e2 (work e1 acc)
+        | e1 <= e2 -> (eval(e2) - eval(e1))::acc
+        | _ -> acc
+      };
+      work dac [];
+    };
+  
+    def vids = initConditionCorrection ukm;
+    def resf = makeResidual ukm dae;
+    def rootf = mkRootFuns ukm dac;
+    def nroots = length (rootf 0. yy yp);
+    (resf, nroots, rootf, yy, yp, vids, ukm)
+  };
+
+  def ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
+    def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+      def (x, (i, _)) = e;
+      Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
+    };
+  
+    foldLeft f (Map.empty) (Map.toList ukm)
+  };
+
   // Step taken when finding consistent initial values
   def dt = 0.00001;
 
@@ -265,7 +264,7 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
   def eqsp = indexred (model_to_eqs eqs);
 
   // Setup the Eqs Solver
-  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = _get_DAESolver_input eqsp ieqs z_0 t_0 0.;
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = get_DAESolver_input eqsp ieqs z_0 t_0 0.;
   def yy0 = (Array.make (Array.length yy1) INFINITE);
   def yp0 = (Array.make (Array.length yp1) INFINITE);
   def t0 = INFINITE;
@@ -324,8 +323,8 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
 
   def (_, t_fp, yy0p, yp0p, yy1p, yp1p) =
     go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 t_0 yy1 yp1;
-  def z_ll = _ukmap_yy_yp_to_state ukm yy0p yp0p;
-  def z_0p = _ukmap_yy_yp_to_state ukm yy1p yp1p;
+  def z_ll = ukmap_yy_yp_to_state ukm yy0p yp0p;
+  def z_0p = ukmap_yy_yp_to_state ukm yy1p yp1p;
   ((t_0, t_fp), z_ll, z_0p)
 }
 

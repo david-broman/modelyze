@@ -427,7 +427,7 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
 
 def elaboratetopology(T: Set(Equations)) -> Equations = {
   def llog = logger "elaboratetopology" DEBUG;
-  if (Set.size T) == 0 then NoEqn
+  if (Set.size T) == 0 then mnil ()
   else {
     def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
       def (i, (t, _)) = ee;

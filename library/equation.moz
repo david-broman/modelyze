@@ -27,6 +27,7 @@ type Equations
 def (=) : Real -> Real -> Equations
 def (;) : Equations -> Equations -> Equations
 def NoEqn : Equations
+def mnil : () -> Equations
 
 def init : Real -> Real -> Equations
 def (<-)  = init

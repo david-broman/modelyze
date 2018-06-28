@@ -24,7 +24,6 @@ include Graphelaboration2
 
 def pre : Real -> Real
 def (<=) : <Real> -> <Real> -> Equations
-def mnil : () -> Equations
 
 type Model = Equations
 type Eqs = Equations
@@ -245,16 +244,17 @@ def stable(d: Ieqs, z: State) -> Bool = {
 // def _ = dprint(stable (x <= y;1. = y) z) // expected a Ieqs in stable
 
 def consistent_w_eqs(d: Eqs, z: State) -> Bool = {
-  def epsilon = 1e-9;
+  def epsilon = 1e-7;
   match d with
   | d_1; d_2 -> (consistent_w_eqs d_1 z) && (consistent_w_eqs d_2 z)
   | lhs = rhs -> {
       def v = abs((eval_expr lhs z) - (eval_expr rhs z));
+      // def _ = dprint(d);
       // def _ = dprint(v);
       v < epsilon
     }
   | mnil () -> true
-  | _ -> error "expected a Eqs in consistent_w_eqs"
+  | _ -> { def _ = dprint(d); error "expected Eqs in consistent_w_eqs" }
 }
 
 // Test
@@ -388,8 +388,8 @@ def mmodel_to_model(m: MModel) -> Model = {
 }
 
 // Test
-def x, y: <Real>
-def z = listToMap [(x, 0.), (y, 2.)]
+// def x, y: <Real>
+// def z = listToMap [(x, 0.), (y, 2.)]
 // def m = switch
 //           (switch
 //             (model (pre x = 1.))
@@ -480,8 +480,8 @@ def mmodel_to_cdae(m: MModel, z_ll: State) -> CDAE = {
 
 def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
 
-  def h = 0.01;
-  def k = 2.5;
+  def h = 0.001;
+  def k = 2.999;
 
   def get_defined_eqs(e: Eqs) -> Eqs = {
     match e with
@@ -625,8 +625,10 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     _print_sim_results (fun v: <Real> -> state_mem v z) (fun v: <Real> -> state_find v z) probes
   };
 
-  def eval_mexpr_fun(z_ll: State, z_0: State) =
-    (fun e: <Real> -> eval_expr (eval_left_limit e z_ll) z_0);
+  def eval_mexpr_fun(z_ll: State, z_0: State, e: <Real>) -> Real =
+    {
+      eval_expr (eval_left_limit e z_ll) z_0
+    };
 
   def search_civs(e: Eqs, z: State, t_0: Real, undefval: Real) -> (State, Real) = {
     def dt = 0.00001;
@@ -650,10 +652,13 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
   def sim(s: MState) -> () = {
     def (m, z_ll, z_0, (t_0, t_f), n) = s;
 
+    def _ = (if n > 10 then error "too many ticks!" else ());
+
     if t_0 >= t_f then () else {
       def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
-      def z_0p = eval_inits m (eval_mexpr_fun z_ll z_0) z_0;
+      def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0;
       def (eqs, ieqs) = mmodel_to_cdae mp z_ll;
+      // def _ = dprint(consistent_w_eqs eqs z_0p);
       def (z_0pp, z_rl) =
         (if consistent_w_eqs eqs z_0p then (z_0p, z_0p) else  
            impulse_analysis eqs z_ll z_ll);

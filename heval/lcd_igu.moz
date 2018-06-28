@@ -1,0 +1,51 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include IGIVEUP
+
+def i_L, u_L, i_D, u_D, i_C, u_C: Real
+
+def L = 1.0
+def C = 1.0
+
+def LCD = {
+  def n1, n2, n3: Node;
+  init i_L 1. ++
+  init u_C (-1.) ++
+  init i_D 1. ++
+  switch (model (u_D = 0.)) i_D (fun t: () -> model (i_D = 0.)) ++
+  model (
+  i_C = C * der u_C;
+  u_L = L * der i_L;
+  Branch i_C u_C n1 n2;
+  Branch i_D u_D n2 n3;
+  Branch i_L u_L n3 n1
+  )
+}
+
+def monitored =
+  [(i_C, "i_C"), (u_C, "u_C"),
+  (i_D, "i_D"), (u_D, "u_D"),
+  (i_L, "i_L"), (u_L, "u_L")]
+
+def main = {
+  simulate LCD (0.,4.0) 0.1 monitored false
+  }

@@ -31,6 +31,7 @@ def init : <Real->Real->Equations>
 
 def (<-)  = init
 def NoEqn : Equations
+def mnil : () -> Equations
 
 // Ukmap maps an unknown (signal type) to an integer value
 // representing a unique integer number for the unknown in

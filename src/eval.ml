@@ -156,7 +156,7 @@ let eval_daesolver_op eval op arg_lst =
   in
 
   let mk_ida_session resf (nroots, rootf) t0 yy yp =
-    Ida.(init (Dls.dense ()) (SStolerances (1e-5, 1e-5))
+    Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9))
            resf ~roots:(nroots, rootf) t0 yy yp)
   in
 

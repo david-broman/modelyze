@@ -76,6 +76,15 @@ def state_add(v: <Real>, r: Real, z: State) -> State = {
   Map.add v r z
 }
 
+def state_union(z_1: State, z_2: State) -> State = {
+  def f(a: State, e: (<Real>, Real)) -> State = {
+    def (v, r) = e;
+    def _ = (if (state_mem v a) then if (state_find v a) != r then error "ambigous union" else () else ());
+    state_add v r a
+  };
+  foldLeft f z_1 (Map.toList z_2)
+}
+
 def is_defined(e: <?>, z: State, euler: Bool) -> Bool = {
   match e with
   | sym: Real -> (state_mem e z)
@@ -452,7 +461,7 @@ def mmodel_to_cdae(m: MModel, z_ll: State) -> CDAE = {
 def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
 
   def h = 0.01;
-  def k = 3.;
+  def k = 2.5;
 
   def get_defined_eqs(e: Eqs) -> Eqs = {
     match e with
@@ -510,6 +519,7 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
     };
     
     def (sysfun, ukm, yy) = get_solver_input e z udfv;
+    def _ = (if (Map.size ukm) != (length (sysfun yy)) then error "The number of variables and equations does not match" else ()); 
     def s = (NLEQSolver.init sysfun yy);
     def _ = (NLEQSolver.solve s yy);
     ukm_yy_to_state ukm yy
@@ -531,6 +541,10 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
       };
     
       def avg = k * (sum (map f (Map.toList z_0))) / int2real ((Map.size z_0) + 1);
+
+      // def _ = dprint(x);
+      // def _ = dprint(d x);
+      // def _ = dprint(avg);
     
       (d x) > avg
     };
@@ -546,21 +560,38 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
     listToMap (map f (Map.toList z_0))
   };
 
+  def approx_derivatives(z_0: State, z_1: State, h: Real) -> State = {
+    def f(a: State, e: (<Real>, Real)) -> State = {
+      def (x, _) = e;
+      state_add (der x) (((state_find x z_1) - (state_find x z_0)) / h) a
+    };
+    
+    foldLeft f (Map.empty) (Map.toList z_1)
+  };
+
   def ep = get_defined_eqs e;
 
+  // Step forward
   def ef = map_eqs_to_impl_euler ep z_ll h;
   def z_f = solve ef z_g 0.;
+  def z_fd = approx_derivatives z_ll z_f h;
 
+  // Step backwards
   def eb = map_eqs_to_impl_euler ep z_f (-h); 
   def z_b = solve eb z_g 0.;
+  def z_bd = approx_derivatives z_f z_b (-h);
 
+  // Make impulse behaviour
   def z_0 = mk_impulse z_f z_b;
+  def z_0d = mk_impulse z_fd z_bd;
 
-  (z_0, z_f)
+  (state_union z_0 z_0d, state_union z_b z_bd)
 }
 
 // Test
-def x, y, z: <Real>
-def z_ll = listToMap [(x, 0.), (y, 1.)]
-def m = y = der x;x = 1.;z = 2.
-def _ = dprint(impulse_analysis m z_ll z_ll)
+// def x, y, z: <Real>
+// def z_ll = listToMap [(x, 0.), (der x, 0.), (y, 1.), (der y, 0.)]
+// def m = y = der x;x = 1.;z = 2.
+// def _ = dprint(impulse_analysis m z_ll z_ll) // ({y_1' => inf, x_1' => 0, y_1 => inf, x_1 => 0}, {y_1' => 10000, x_1' => 0, y_1 => 0, x_1 => 1}
+
+

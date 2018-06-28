@@ -76,11 +76,11 @@ def state_add(v: <Real>, r: Real, z: State) -> State = {
   Map.add v r z
 }
 
-def is_defined(e: <?>, z: State) -> Bool = {
+def is_defined(e: <?>, z: State, euler: Bool) -> Bool = {
   match e with
   | sym: Real -> (state_mem e z)
-  | der x -> (state_mem e z)
-  | e_1 e_2 -> (is_defined e_1 z) && (is_defined e_2 z)
+  | der x -> if !euler then (state_mem e z) else (state_mem x z)
+  | e_1 e_2 -> (is_defined e_1 z euler) && (is_defined e_2 z euler)
   | lift v: ? -> true
   | _ -> error "Unsupported model construct"
 }
@@ -449,16 +449,16 @@ def mmodel_to_cdae(m: MModel, z_ll: State) -> CDAE = {
   ((model_to_eqs mp); (elab_topology (get_topology mp)), model_to_ieqs mp)
 }
 
-def impulse_analysis(e: Eqs, z_ll: State) -> (State, State, State) = {
+def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
 
   def h = 0.01;
   def k = 3.;
 
   def get_defined_eqs(e: Eqs) -> Eqs = {
     match e with
-    | e_1; e_1 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
+    | e_1; e_2 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
     | e_1 = e_2 ->
-      if (is_defined e_1 z_ll) && (is_defined e_2 z_ll)
+      if (is_defined e_1 z_ll true) && (is_defined e_2 z_ll true)
       then e else NoEqn
     | _ -> error "Expected equations"
   };
@@ -466,17 +466,18 @@ def impulse_analysis(e: Eqs, z_ll: State) -> (State, State, State) = {
   def map_expr_to_impl_euler(e: <?>, z_ll: State, h: Real) -> <?> = {
     match e with
     | der x -> (x - (eval_expr x z_ll)) / h
-    | f a -> (map_expr_to_impl_euler f) (map_expr_to_impl_euler f)
+    | f a -> (map_expr_to_impl_euler f z_ll h) (map_expr_to_impl_euler a z_ll h)
     | _ -> e
   };
 
-  def map_eqs_to_impl_euler(e: Eqn, z_ll: State, h: Real) -> Eqn = {
+  def map_eqs_to_impl_euler(e: Eqs, z_ll: State, h: Real) -> Eqs = {
     match e with
-    | e_1 = e_2 -> (map_expr_to_impl_euler e_1) = (map_expr_to_impl_euler e_1)
+    | e_1; e_2 ->  (map_expr_to_impl_euler e_1 z_ll h); (map_expr_to_impl_euler e_2 z_ll h)
+    | e_1 = e_2 -> (map_expr_to_impl_euler e_1 z_ll h) = (map_expr_to_impl_euler e_2 z_ll h)
     | _ -> error "Expected equations"
   };
 
-  def solve(e: Eqn, z: State, udfv: Real) -> State = {
+  def solve(e: Eqs, z: State, udfv: Real) -> State = {
 
     def eqs_state_to_ukm_yy(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}) = {
       def (n, ukm) = realUnknowns d;
@@ -497,12 +498,12 @@ def impulse_analysis(e: Eqs, z_ll: State) -> (State, State, State) = {
       foldLeft f (Map.empty) (Map.toList ukm)
     };
   
-    def get_solver_input(e: Eqn, z: State, udfv: Real) -> (Sysfun, UkMap, {Real}) = {
+    def get_solver_input(e: Eqs, z: State, udfv: Real) -> ({Real} -> [Real], UkMap, {Real}) = {
       def (ukm, yy) = eqs_state_to_ukm_yy e z udfv;
       def sysfun(yy: {Real}) -> [Real] = {
         def dummyYp = (Array.make 0 0.);
         def dummyt = 0.;
-        makeResidual ukm (setToCont e) dummyt yy dummyYp
+        makeResidual ukm e dummyt yy dummyYp
       };
 
       (sysfun, ukm, yy)
@@ -513,39 +514,53 @@ def impulse_analysis(e: Eqs, z_ll: State) -> (State, State, State) = {
     def _ = (NLEQSolver.solve s yy);
     ukm_yy_to_state ukm yy
   };
-
-  def is_impulse(z_0: State, z_rl: State, x: <Real>) -> Bool = {
-
-    def d(x: <Real>) -> Real = {
-      abs ((state_find x z_ll) + 2. * (state_find x z_0) - (state_find x z_rl)) / h^2.
-    };
   
-    def f(e: (<Real>, Real)) -> Real = {
-      def (x, _) = e;
-      d(x)
-    };
-  
-    def avg = k * (sum (map f (Map.toList z_0))) / int2real ((Map.size z_0) + 1);
-
-    (d x) > avg
-  };  
-
   def mk_impulse(z_0: State, z_rl: State) -> State = {
     def big_number = INFINITE;
     def big_neg_number = NEG_INFINITE;
+
+    def is_impulse(x: <Real>) -> Bool = {
+    
+      def d(x: <Real>) -> Real = {
+        abs ((state_find x z_ll) + 2. * (state_find x z_0) - (state_find x z_rl)) / h^2.
+      };
+    
+      def f(e: (<Real>, Real)) -> Real = {
+        def (x, _) = e;
+        d(x)
+      };
+    
+      def avg = k * (sum (map f (Map.toList z_0))) / int2real ((Map.size z_0) + 1);
+    
+      (d x) > avg
+    };
 
     def f(e: (<Real>, Real)) -> (<Real>, Real) = {
       def getinf(v: Real) -> Real = {
         if v > 0. then big_number else big_neg_number
       };
       def (x, v) = e;
-      if is_impulse z_0 z_rl x then (x, getinf v) else (x, state_find x z_ll)
+      if is_impulse x then (x, getinf v) else (x, state_find x z_ll)
     };
   
     listToMap (map f (Map.toList z_0))
   };
 
-  def ep = get_defined e;
-  def epp = map_eqs_to_impl_euler 
+  def ep = get_defined_eqs e;
 
+  def ef = map_eqs_to_impl_euler ep z_ll h;
+  def z_f = solve ef z_g 0.;
+
+  def eb = map_eqs_to_impl_euler ep z_f (-h); 
+  def z_b = solve eb z_g 0.;
+
+  def z_0 = mk_impulse z_f z_b;
+
+  (z_0, z_f)
 }
+
+// Test
+def x, y, z: <Real>
+def z_ll = listToMap [(x, 0.), (y, 1.)]
+def m = y = der x;x = 1.;z = 2.
+def _ = dprint(impulse_analysis m z_ll z_ll)

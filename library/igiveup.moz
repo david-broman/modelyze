@@ -41,7 +41,7 @@ def (++) : MModel -> MModel -> MModel
 type State = (<Real> => Real)
 type Topology = Set(Equations)
 type Interval = (Real, Real)
-type MState = (MModel, State, State, Interval)
+type MState = (MModel, State, State, Interval, Int)
 
 // ======= HELPERS =======
 
@@ -109,18 +109,70 @@ def state_union(z_1: State, z_2: State) -> State = {
   foldLeft f z_1 (Map.toList z_2)
 }
 
-def is_defined(e: <?>, z: State, euler: Bool) -> Bool = {
+def state_empty = Map.empty
+
+def _is_defined(e: <?>, z: State, euler: Bool) -> Bool = {
   match e with
   | sym: Real -> (state_mem e z)
   | der x -> if !euler then (state_mem e z) else (state_mem x z)
-  | e_1 e_2 -> (is_defined e_1 z euler) && (is_defined e_2 z euler)
+  | e_1 e_2 -> (_is_defined e_1 z euler) && (_is_defined e_2 z euler)
   | lift v: ? -> true
   | _ -> error "Unsupported model construct"
 }
 
+def is_defined(e: <?>, z: State) -> Bool = _is_defined e z false
+
+def is_ie_defined(e: <?>, z: State) -> Bool = _is_defined e z true
+
 def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
   if !(state_mem x z) then ()
   else (Array.set a i (state_find x z))
+}
+
+def get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, undefval: Real) -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
+
+  def dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
+    def (n, ukm) = realUnknowns d;
+    def yy = (Array.make n udfv);
+    def yp = (Array.make n udfv);
+    def _ = map
+      (fun e: (<Real>, (Int, Bool)) ->
+        { def (x, (i, _)) = e; _upd_arr x z i yy })
+      (Map.toList ukm);
+    def _ = map
+      (fun e: (<Real>, (Int, Bool)) ->
+        { def (x, (i, _)) = e; _upd_arr (der x) z i yp })
+      (Map.toList ukm);
+    (ukm, yy, yp)
+  };
+  
+  def (ukm, yy, yp) = dae_state_to_ukmap_yy_yp dae z_0 undefval;
+  
+  def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
+    def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
+    def work (d: Equations, acc: [Real]) -> [Real] = {
+      match d with
+      | e1; e2 -> work e2 (work e1 acc)
+      | e1 <= e2 -> (eval(e2) - eval(e1))::acc
+      | _ -> acc
+    };
+    work dac [];
+  };
+
+  def vids = initConditionCorrection ukm;
+  def resf = makeResidual ukm dae;
+  def rootf = mkRootFuns ukm dac;
+  def nroots = length (rootf 0. yy yp);
+  (resf, nroots, rootf, yy, yp, vids, ukm)
+}
+
+def ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
+  def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+    def (x, (i, _)) = e;
+    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
+  };
+
+  foldLeft f (Map.empty) (Map.toList ukm)
 }
 
 // ======= SEMANTICS IMPLEMENTAION ==========
@@ -153,7 +205,7 @@ def model_to_eqs(m: Model) -> Eqs = {
   match m with
   | m_1; m_2 -> (model_to_eqs m_1); (model_to_eqs m_2)
   | lhs = rhs -> m
-  | _ -> NoEqn
+  | _ -> mnil ()
 }
 
 // Test
@@ -167,7 +219,7 @@ def model_to_ieqs(m: Model) -> Ieqs = {
   match m with
   | m_1; m_2 -> (model_to_ieqs m_1); (model_to_ieqs m_2)
   | lhs <= rhs -> m
-  | _ -> NoEqn
+  | _ -> mnil ()
 }
 
 // Test
@@ -181,6 +233,7 @@ def stable(d: Ieqs, z: State) -> Bool = {
   match d with
   | d_1; d_2 -> (stable d_1 z) && (stable d_2 z)
   | lhs <= rhs -> (eval_expr lhs z) < (eval_expr rhs z)
+  | mnil _ -> true
   | _ -> error "expected a Ieqs in stable"
 }
 
@@ -192,10 +245,15 @@ def stable(d: Ieqs, z: State) -> Bool = {
 // def _ = dprint(stable (x <= y;1. = y) z) // expected a Ieqs in stable
 
 def consistent_w_eqs(d: Eqs, z: State) -> Bool = {
-  def epsilon = 1e-8;
+  def epsilon = 1e-9;
   match d with
   | d_1; d_2 -> (consistent_w_eqs d_1 z) && (consistent_w_eqs d_2 z)
-  | lhs = rhs -> abs((eval_expr lhs z) - (eval_expr rhs z)) < epsilon
+  | lhs = rhs -> {
+      def v = abs((eval_expr lhs z) - (eval_expr rhs z));
+      // def _ = dprint(v);
+      v < epsilon
+    }
+  | mnil () -> true
   | _ -> error "expected a Eqs in consistent_w_eqs"
 }
 
@@ -208,52 +266,6 @@ def consistent_w_eqs(d: Eqs, z: State) -> Bool = {
 
 def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
 
-  def get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, t_0: Real, undefval: Real) -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
-  
-    def dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
-      def (n, ukm) = realUnknowns d;
-      def yy = (Array.make n udfv);
-      def yp = (Array.make n udfv);
-      def _ = map
-        (fun e: (<Real>, (Int, Bool)) ->
-          { def (x, (i, _)) = e; _upd_arr x z i yy })
-        (Map.toList ukm);
-      def _ = map
-        (fun e: (<Real>, (Int, Bool)) ->
-          { def (x, (i, _)) = e; _upd_arr (der x) z i yp })
-        (Map.toList ukm);
-      (ukm, yy, yp)
-    };
-    
-    def (ukm, yy, yp) = dae_state_to_ukmap_yy_yp dae z_0 undefval;
-    
-    def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
-      def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
-      def work (d: Equations, acc: [Real]) -> [Real] = {
-        match d with
-        | e1; e2 -> work e2 (work e1 acc)
-        | e1 <= e2 -> (eval(e2) - eval(e1))::acc
-        | _ -> acc
-      };
-      work dac [];
-    };
-  
-    def vids = initConditionCorrection ukm;
-    def resf = makeResidual ukm dae;
-    def rootf = mkRootFuns ukm dac;
-    def nroots = length (rootf 0. yy yp);
-    (resf, nroots, rootf, yy, yp, vids, ukm)
-  };
-
-  def ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
-    def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
-      def (x, (i, _)) = e;
-      Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
-    };
-  
-    foldLeft f (Map.empty) (Map.toList ukm)
-  };
-
   // Step taken when finding consistent initial values
   def dt = 0.00001;
 
@@ -264,7 +276,7 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
   def eqsp = indexred (model_to_eqs eqs);
 
   // Setup the Eqs Solver
-  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = get_DAESolver_input eqsp ieqs z_0 t_0 0.;
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = get_DAESolver_input eqsp ieqs z_0 0.;
   def yy0 = (Array.make (Array.length yy1) INFINITE);
   def yp0 = (Array.make (Array.length yp1) INFINITE);
   def t0 = INFINITE;
@@ -272,8 +284,8 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
   def _ = (DAESolver.setStopTime s t_f);
   def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 (t_0 + dt));
 
-  // Function for printing simulation results
-  def psr(yy: {Real}, yp: {Real}, t: Real) = {
+  // Function for printing simulation trace
+  def pst(yy: {Real}, yp: {Real}, t: Real) = {
     def _ = _print_time t (-1);
     _print_sim_results (fun v: <Real> -> Map.mem v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
   };
@@ -304,7 +316,7 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
     };
 
     if sr == DAE_SOLVER_RESULT_SUCCESS then {
-      def _ = psr yy1 yp1 t1;
+      def _ = pst yy1 yp1 t1;
       def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
       go nsr t1 yy1 yp1 nt0 yy0 yp0
     } else {
@@ -312,10 +324,10 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
         def nyy0 = (Array.make (Array.length yy0) 0.);
         def nyp0 = (Array.make (Array.length yp0) 0.);
         def nt0 = find_left_limit nyy0 nyp0;
-        def _ = psr nyy0 nyp0 nt0;
+        def _ = pst nyy0 nyp0 nt0;
         (sr, t1, nyy0, nyp0, yy1, yp1)
       } else {
-        def _ = psr yy1 yp1 t1;
+        def _ = pst yy1 yp1 t1;
         (sr, t1, yy0, yp0, yy1, yp1)
       }
     }
@@ -356,7 +368,7 @@ def eval_left_limit(e: <Real>, z_ll: State) -> <Real> = {
 // def z_ll = listToMap [(x, 2.)]
 // def e = eval_left_limit ((der x) + 1. - (pre x) * y) z_ll
 // def _ = dprint(eval_expr e z_0) // 1
-// def _ = dprint(eval_mexpr ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr
+// def _ = dprint(eval_mexpr_fun ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr
 
 def elab_switches(m: MModel, s: (<Real> -> Real)) -> MModel = {
   match m with
@@ -372,12 +384,12 @@ def mmodel_to_model(m: MModel) -> Model = {
   | m_1 ++ m_2 -> (mmodel_to_model m_1); (mmodel_to_model m_2)
   | switch m_1 e _ -> (mmodel_to_model m_1); (0. <= e)
   | model m_1 -> m_1
-  | _ -> NoEqn
+  | _ -> mnil ()
 }
 
 // Test
-// def x, y: <Real>
-// def z = listToMap [(x, 0.), (y, 2.)]
+def x, y: <Real>
+def z = listToMap [(x, 0.), (y, 2.)]
 // def m = switch
 //           (switch
 //             (model (pre x = 1.))
@@ -392,6 +404,15 @@ def mmodel_to_model(m: MModel) -> Model = {
 // pre_1(x_1) = sval(2);
 // sval(0) <= x_1 + sval(1);
 // y_1 = sval(3)
+// def m = (model (x = 1.;Branch x x x x)) ++ (init x 1.)
+// def _ = dprint(elab_switches m (fun e: <Real> -> eval_expr e z))
+// def _ = dprint(mmodel_to_model m)
+// model_1(x_1 = sval(1);
+// Branch_1(x_1, x_1, x_1, x_1))++
+// init_2(x_1, sval(1))
+// x_1 = sval(1);
+// Branch_1(x_1, x_1, x_1, x_1);
+// NoEqn_1
 
 def get_topology(m: Model) -> Topology = {
   def work(m: Model, acc: Topology) -> Topology = {
@@ -434,7 +455,7 @@ def eval_inits(m: MModel, s: (<Real> -> Real), z :State) -> State = {
 // def z = listToMap [(x, 0.), (der x, 0.), (y, 0.), (der y, 0.)]
 // def z_ll = listToMap [(x, 3.), (der x, 4.)]
 // def m = init x 1. ++ switch (init (der x) 2. ++ init y (pre x) ++ init (der y) (pre (der x))) x (fun t:() -> mmnil ())
-// def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}
+// def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr_fun e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}
 
 def eval_left_limits(m: Model, z_ll: State) -> Model = {
   match m with
@@ -466,8 +487,9 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
     match e with
     | e_1; e_2 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
     | e_1 = e_2 ->
-      if (is_defined e_1 z_ll true) && (is_defined e_2 z_ll true)
-      then e else NoEqn
+      if (is_ie_defined e_1 z_ll) && (is_ie_defined e_2 z_ll)
+      then e else mnil ()
+    | mnil _ -> e  
     | _ -> error "Expected equations"
   };
 
@@ -593,4 +615,64 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
 // def m = y = der x;x = 1.;z = 2.
 // def _ = dprint(impulse_analysis m z_ll z_ll) // ({y_1' => inf, x_1' => 0, y_1 => inf, x_1 => 0}, {y_1' => 10000, x_1' => 0, y_1 => 0, x_1 => 1}
 
+def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtrace: Bool) = {
+
+  def probes = map (fun e: (<Real>, String) -> fst e) monitored;
+  def labels = map (fun e: (<Real>, String) -> snd e) monitored;
+  
+  def pst(t: Real, n: Int, z: State) = {
+    def _ = _print_time t n;
+    _print_sim_results (fun v: <Real> -> state_mem v z) (fun v: <Real> -> state_find v z) probes
+  };
+
+  def eval_mexpr_fun(z_ll: State, z_0: State) =
+    (fun e: <Real> -> eval_expr (eval_left_limit e z_ll) z_0);
+
+  def search_civs(e: Eqs, z: State, t_0: Real, undefval: Real) -> (State, Real) = {
+    def dt = 0.00001;
+    def (resf, _, _, yy, yp, vids, ukm) = get_DAESolver_input e (mnil ()) z undefval;
+    def s = (DAESolver.init resf t_0 yy yp);
+    def _ = (DAESolver.calcIcYaYdp s vids yy yp (t_0 + dt));
+    (ukmap_yy_yp_to_state ukm yy yp, t_0 + dt)
+  };
+
+  def initialize = (fun t: () -> {
+    def (t_0, t_f) = I;
+    def z_ll = state_empty;
+    def z_0 = eval_inits m (eval_mexpr_fun z_ll state_empty) state_empty;
+    def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
+    def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0; 
+    def (eqs, ieqs) = mmodel_to_cdae mp z_ll;
+    def (z_0pp, t_0p) = search_civs eqs z_0p t_0 0.;
+    (z_0pp, (t_0p, t_f))
+  }); 
+
+  def sim(s: MState) -> () = {
+    def (m, z_ll, z_0, (t_0, t_f), n) = s;
+
+    if t_0 >= t_f then () else {
+      def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
+      def z_0p = eval_inits m (eval_mexpr_fun z_ll z_0) z_0;
+      def (eqs, ieqs) = mmodel_to_cdae mp z_ll;
+      def (z_0pp, z_rl) =
+        (if consistent_w_eqs eqs z_0p then (z_0p, z_0p) else  
+           impulse_analysis eqs z_ll z_ll);
+      if !(stable ieqs z_0pp) then {
+        def _ = pst t_0 n z_0pp;
+        sim (mp, z_ll, z_0pp, (t_0, t_f), n + 1)
+      } else if !(stable ieqs z_rl) then {
+        def _ = pst t_0 n z_0pp;
+        def _ = pst t_0 (n + 1) z_rl;
+        sim (mp, z_rl, z_rl, (t_0, t_f), n + 2)
+      } else {
+        def ((t_0, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_rl (t_0, t_f) h probes;
+        sim (mp, z_llp, z_0ppp, (t_fp, t_f), 0)
+      }
+    }
+  };
+
+  def (z_0, Ip) = initialize ();
+  def _ = _print_sim_headers(labels);
+  sim (m, state_empty, z_0, Ip, 0)
+}
 

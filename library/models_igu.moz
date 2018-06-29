@@ -1,0 +1,69 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include IGIVEUP
+
+type Through = <Real>
+type Across = <Real>
+type Current = Through
+type Voltage = Across
+type Torque = Through
+type AngularVelocity = Across
+
+def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  model (
+    Branch t a p n;
+    C * a = t
+  )
+}
+
+def Damper = Dissipator
+def Resistor = (fun R: Real -> Dissipator (1. / R))
+
+def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  model (
+    Branch t a p n;
+    a = C
+  )
+}
+
+def VoltageSource = AcrossGenerator
+def Motor = AcrossGenerator
+
+def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  model (
+    Branch t a p n;
+    C * (der a) = t
+  )  
+}
+
+def Mass = AcrossStorage
+def Capacitor = AcrossStorage
+
+def ThroughStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  model (
+    Branch t a p n;
+    C * (der t) = a
+  )  
+}
+
+def Spring =  ThroughStorage
+def Inductor = ThroughStorage

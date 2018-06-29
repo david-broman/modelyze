@@ -1,0 +1,13 @@
+#!/bin/bash
+
+test_local_file()
+{
+  echo "Test" $1".moz"
+  ../bin/moz --libpaths=../library/ $1".moz" > test.out
+  diff test.out "testdata2/"$1".txt"
+}
+
+test_local_file "bounce2_igu"
+test_local_file "lcd_igu"
+test_local_file "lr_igu"
+rm -f test.out

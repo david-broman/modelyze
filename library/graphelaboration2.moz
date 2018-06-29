@@ -462,7 +462,7 @@ def elaboratetopology(T: Set(Equations)) -> Equations = {
     def _ = llog "flow eqs:" floweqs;
 
     def (_, n, m) = A;
-    if (m > 1) then {
+    if (m != n) then {
       def B = getAcrossMatrix A;
       def _ = llog "Circuit Matrix (B)" (pp B);
 

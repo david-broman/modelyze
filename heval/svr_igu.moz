@@ -19,29 +19,31 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include IGIVEUP
+include MODELS_IGU
 
-def y, v: <Real>
-def g = 9.81
-def e = 0.7
+def i_V, i_R: Current
+def u_V, u_R: Voltage
+def s: Signal
+def t: Time
 
-def fall(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) = {
-  reinit y y_0 ++ 
-  reinit v v_0 ++
-  reinit (der y) v_0 ++
-  model (
-    der y = v;
-    der v = -g
-  )
+def R = 0.5
+def V = 1.
+def t_0 = 0.
+def t_s = 2.
+
+def SVR = {
+  def n1, n2, n3: Node;
+  init i_R 0. ++
+  Clock t_0 t ++
+  UnitStep t_s t s ++
+  VoltageSource V i_V u_V n1 n2 ++
+  Resistor R i_R u_R n2 n3 ++
+  ElectricalSwitch s n3 n1
 }
 
-def bouncing_ball(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) -> MModel = {
-  switch (fall y v y_0 v_0) (y) (fun t: () -> bouncing_ball y v (pre y) (-e * pre v))
-}
-
-def monitored = [(y, "y"), (v, "v")]
+def monitored =
+  [(i_R, "i_R"), (u_R, "u_R")]
 
 def main = {
-  def m = bouncing_ball y v 10. 0.;
-  simulate m (0.,7.0) 0.1 monitored false
+  simulate SVR (0.,4.0) 0.1 monitored false
   }

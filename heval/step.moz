@@ -19,29 +19,18 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include IGIVEUP
+include MODELS_IGU
 
-def y, v: <Real>
-def g = 9.81
-def e = 0.7
+def t: Time
+def s: Signal
+def t_0 = 0.
+def t_s = 1.
 
-def fall(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) = {
-  reinit y y_0 ++ 
-  reinit v v_0 ++
-  reinit (der y) v_0 ++
-  model (
-    der y = v;
-    der v = -g
-  )
+def m = {
+  Clock t_0 t ++
+  UnitStep t_s t s
 }
 
-def bouncing_ball(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) -> MModel = {
-  switch (fall y v y_0 v_0) (y) (fun t: () -> bouncing_ball y v (pre y) (-e * pre v))
-}
+def monitored = [(s, "s")]
 
-def monitored = [(y, "y"), (v, "v")]
-
-def main = {
-  def m = bouncing_ball y v 10. 0.;
-  simulate m (0.,7.0) 0.1 monitored false
-  }
+def main = simulate m (0., 2.) 0.01 monitored false

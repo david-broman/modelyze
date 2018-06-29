@@ -23,10 +23,26 @@ include IGIVEUP
 
 type Through = <Real>
 type Across = <Real>
+type Time = <Real>
+type Signal = <Real>
 type Current = Through
 type Voltage = Across
 type Torque = Through
 type AngularVelocity = Across
+
+def Clock(t_0: Real, t: Time) = {
+  init t t_0 ++
+  model (
+    der t = 1.
+  )
+}
+
+def UnitStep(t_s: Real, t: Time, s: Signal) = {
+  switch
+    (init s 0. ++ model (s = 0.))
+    (t_s - t)
+    (fun thk: () -> (init s 1. ++ model (s = 1.)))
+}
 
 def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -47,6 +63,20 @@ def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
 
 def VoltageSource = AcrossGenerator
 def Motor = AcrossGenerator
+def Conductor = AcrossGenerator 0.
+def FixedAxis = AcrossGenerator 0.
+
+def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  model (
+    Branch t a p n;
+    t = C
+  )
+}
+
+def CurrentSource = ThroughGenerator
+def ConstantForceSpring = ThroughGenerator
+def Insulator = ThroughGenerator 0.
+def FreeAxis = ThroughGenerator 0.
 
 def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -67,3 +97,27 @@ def ThroughStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
 
 def Spring =  ThroughStorage
 def Inductor = ThroughStorage
+
+def OneWayThroughStop(bias: Real, t: Through, a: Across, p: Node, n: Node) = {
+  def d(open: Bool) -> MModel = {
+    if open then switch (AcrossGenerator bias t a p n) (t) (fun thnk: () -> d (!open))
+    else switch (ThroughGenerator 0. t a p n) (bias - a) (fun thnk: () -> d (!open))
+  };
+  d true
+}
+
+def Diode = OneWayThroughStop
+
+def Switch(s: Signal, p: Node, n: Node) = {
+  def t: Through;
+  def a: Across;
+  def sw(open: Bool) -> MModel = {
+    if open then switch (model (mnil ())) (s) (fun thk: () -> sw (!open))
+    // if open then switch (ThroughGenerator 0. t a p n) (s) (fun thk: () -> sw (!open))
+    else switch (AcrossGenerator 0. t a p n) (1. - s) (fun thk: () -> sw (!open))
+  };
+  sw true
+}
+
+def ElectricalSwitch = Switch
+def Clutch = Switch

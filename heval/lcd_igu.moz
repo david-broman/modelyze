@@ -19,26 +19,23 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include IGIVEUP
+include MODELS_IGU
 
-def i_L, u_L, i_D, u_D, i_C, u_C: Real
+def i_L, i_D, i_C: Current
+def u_L, u_D, u_C: Voltage
 
 def L = 1.0
 def C = 1.0
+def bias = 0.
 
 def LCD = {
   def n1, n2, n3: Node;
   init i_L 1. ++
   init u_C (-1.) ++
   init i_D 1. ++
-  switch (model (u_D = 0.)) i_D (fun t: () -> model (i_D = 0.)) ++
-  model (
-  i_C = C * der u_C;
-  u_L = L * der i_L;
-  Branch i_C u_C n1 n2;
-  Branch i_D u_D n2 n3;
-  Branch i_L u_L n3 n1
-  )
+  Inductor L i_L u_L n1 n2 ++
+  Diode bias i_D u_D n2 n3 ++
+  Capacitor C i_C u_C n3 n1
 }
 
 def monitored =
@@ -47,5 +44,5 @@ def monitored =
   (i_L, "i_L"), (u_L, "u_L")]
 
 def main = {
-  simulate LCD (0.,4.0) 0.1 monitored true
+  simulate LCD (0.,4.0) 0.1 monitored false
   }

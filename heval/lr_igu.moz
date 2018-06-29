@@ -19,9 +19,10 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include IGIVEUP
+include MODELS_IGU
 
-def i_L, u_L, i_V, u_V, i_R, u_R: Real
+def i_L, i_V, i_R: Current
+def u_L, u_V, u_R: Voltage
 
 def L = 0.3
 def R = 0.6
@@ -30,14 +31,9 @@ def V = 1.
 def LR = {
   def n1, n2, n3: Node;
   init i_L 0. ++
-  model (
-  u_V = V;
-  u_R = R * i_R;
-  u_L = L * der i_L;
-  Branch i_V u_V n1 n2;
-  Branch i_R u_R n2 n3;
-  Branch i_L u_L n3 n1
-  )
+  VoltageSource V i_V u_V n1 n2 ++
+  Resistor R i_R u_R n2 n3 ++
+  Inductor L i_L u_L n3 n1
 }
 
 def monitored =

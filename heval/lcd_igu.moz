@@ -47,5 +47,5 @@ def monitored =
   (i_L, "i_L"), (u_L, "u_L")]
 
 def main = {
-  simulate LCD (0.,4.0) 0.1 monitored false
+  simulate LCD (0.,4.0) 0.1 monitored true
   }

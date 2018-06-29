@@ -33,6 +33,7 @@ type CDAE = (Eqs, Ieqs)
 type MModel
 def switch : MModel -> <Real> -> (() -> ?) -> MModel
 def init : <Real> -> <Real> -> MModel
+def reinit : <Real> -> <Real> -> MModel
 def model: Equations -> MModel
 def mmnil : () -> MModel
 def (++) : MModel -> MModel -> MModel 
@@ -446,7 +447,8 @@ def eval_inits(m: MModel, s: (<Real> -> Real), z :State) -> State = {
   match m with
   | m_1 ++ m_2 -> eval_inits m_2 s (eval_inits m_1 s z)
   | switch m_1 _ _ -> eval_inits m_1 s z
-  | init v e -> state_add v (s e) z
+  | init v e -> if !(state_mem v z) then state_add v (s e) z else z
+  | reinit v e -> state_add v (s e) z
   | _ -> z
 }
 
@@ -655,6 +657,7 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     def _ = (if n > 10 then error "too many ticks!" else ());
 
     if t_0 >= t_f then () else {
+      // def _ = dprint(m);
       def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
       def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0;
       def (eqs, ieqs) = mmodel_to_cdae mp z_ll;

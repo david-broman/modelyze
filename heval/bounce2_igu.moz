@@ -26,9 +26,9 @@ def g = 9.81
 def e = 0.7
 
 def fall(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) = {
-  init y y_0 ++
-  init v v_0 ++
-  init (der y) v_0 ++
+  reinit y y_0 ++ 
+  reinit v v_0 ++
+  reinit (der y) v_0 ++
   model (
     der y = v;
     der v = -g

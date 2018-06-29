@@ -10,4 +10,7 @@ test_local_file()
 test_local_file "bounce2_igu"
 test_local_file "lcd_igu"
 test_local_file "lr_igu"
+test_local_file "step"
+test_local_file "svr_igu"
+test_local_file "lrd_igu"
 rm -f test.out

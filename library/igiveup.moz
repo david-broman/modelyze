@@ -656,9 +656,11 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
   def labels = map (fun e: (<Real>, String) -> snd e) monitored;
   
   def pstdebug(msg: String, t: Real, n: Int, z: State) = {
-    def _ = _print_time t n;
-    def _ = print(msg);
-    _print_sim_results (fun v: <Real> -> state_mem v z) (fun v: <Real> -> state_find v z) probes
+    if dtrace then
+      def _ = _print_time t n;
+      def _ = print(msg);
+      _print_sim_results (fun v: <Real> -> state_mem v z) (fun v: <Real> -> state_find v z) probes
+    else ()
   };
 
   def pst = pstdebug "";

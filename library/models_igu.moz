@@ -51,8 +51,16 @@ def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   )
 }
 
+def ADissipator(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  Dissipator C t a p n
+}
+
 def Damper = Dissipator
 def Resistor = (fun R: Real -> Dissipator (1. / R))
+def ADamper = ADissipator
+def AResistor = (fun R: Real -> ADissipator (1. / R))
 
 def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -61,10 +69,20 @@ def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   )
 }
 
+def AAcrossGenerator(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  AcrossGenerator C t a p n
+}
+
 def VoltageSource = AcrossGenerator
 def Motor = AcrossGenerator
 def Conductor = AcrossGenerator 0.
 def FixedAxis = AcrossGenerator 0.
+def AVoltageSource = AAcrossGenerator
+def AMotor = AAcrossGenerator
+def AConductor = AAcrossGenerator 0.
+def AFixedAxis = AAcrossGenerator 0.
 
 def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -73,10 +91,20 @@ def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   )
 }
 
+def AThroughGenerator(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  ThroughGenerator C t a p n
+}
+
 def CurrentSource = ThroughGenerator
 def ConstantForceSpring = ThroughGenerator
 def Insulator = ThroughGenerator 0.
 def FreeAxis = ThroughGenerator 0.
+def ACurrentSource = AThroughGenerator
+def AConstantForceSpring = AThroughGenerator
+def AInsulator = AThroughGenerator 0.
+def AFreeAxis = AThroughGenerator 0.
 
 def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -85,8 +113,16 @@ def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   )  
 }
 
+def AAcrossStorage(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  AcrossStorage C t a p n
+}
+
 def Mass = AcrossStorage
 def Capacitor = AcrossStorage
+def AMass = AAcrossStorage
+def ACapacitor = AAcrossStorage
 
 def ThroughStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -95,8 +131,16 @@ def ThroughStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   )  
 }
 
+def AThroughStorage(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  ThroughStorage C t a p n
+}
+
 def Spring =  ThroughStorage
 def Inductor = ThroughStorage
+def ASpring =  AThroughStorage
+def AInductor = AThroughStorage
 
 def OneWayThroughStop(bias: Real, t: Through, a: Across, p: Node, n: Node) = {
   def d(open: Bool) -> MModel = {
@@ -106,15 +150,19 @@ def OneWayThroughStop(bias: Real, t: Through, a: Across, p: Node, n: Node) = {
   d true
 }
 
-def Diode = OneWayThroughStop
-
-def Switch(s: Signal, p: Node, n: Node) = {
+def AOneWayThroughStop(bias: Real, p: Node, n:Node) = {
   def t: Through;
   def a: Across;
+  OneWayThroughStop bias t a p n
+}
+
+def Diode = OneWayThroughStop
+def ADiode = AOneWayThroughStop
+
+def Switch(s: Signal, p: Node, n: Node) = {
   def sw(open: Bool) -> MModel = {
     if open then switch (model (mnil ())) (s) (fun thk: () -> sw (!open))
-    // if open then switch (ThroughGenerator 0. t a p n) (s) (fun thk: () -> sw (!open))
-    else switch (AcrossGenerator 0. t a p n) (1. - s) (fun thk: () -> sw (!open))
+    else switch (AAcrossGenerator 0. p n) (1. - s) (fun thk: () -> sw (!open))
   };
   sw true
 }

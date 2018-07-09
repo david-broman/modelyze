@@ -70,9 +70,9 @@ def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
 }
 
 def AAcrossGenerator(C: Real, p: Node, n:Node) = {
-  def t: Through;
-  def a: Across;
-  AcrossGenerator C t a p n
+  def t_AG: Through;
+  def a_AG: Across;
+  AcrossGenerator C t_AG a_AG p n
 }
 
 def VoltageSource = AcrossGenerator
@@ -84,6 +84,14 @@ def AMotor = AAcrossGenerator
 def AConductor = AAcrossGenerator 0.
 def AFixedAxis = AAcrossGenerator 0.
 
+def ThroughSensor(t: Through, p: Node, n: Node) = {
+  def a: Across;
+  AcrossGenerator 0. t a p n
+}
+
+def CurrentSensor = ThroughSensor
+def TorqueSensor = ThroughSensor
+
 def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
     Branch t a p n;
@@ -92,9 +100,9 @@ def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
 }
 
 def AThroughGenerator(C: Real, p: Node, n:Node) = {
-  def t: Through;
-  def a: Across;
-  ThroughGenerator C t a p n
+  def t_TG: Through;
+  def a_TG: Across;
+  ThroughGenerator C t_TG a_TG p n
 }
 
 def CurrentSource = ThroughGenerator
@@ -105,6 +113,14 @@ def ACurrentSource = AThroughGenerator
 def AConstantForceSpring = AThroughGenerator
 def AInsulator = AThroughGenerator 0.
 def AFreeAxis = AThroughGenerator 0.
+
+def AcrossSensor(a: Across, p: Node, n: Node) = {
+  def t: Through;
+  ThroughGenerator 0. t a p n
+}
+
+def VoltageSensor = AcrossSensor
+def AngularVelocitySensor = AcrossSensor
 
 def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -161,8 +177,17 @@ def ADiode = AOneWayThroughStop
 
 def Switch(s: Signal, p: Node, n: Node) = {
   def sw(open: Bool) -> MModel = {
-    if open then switch (model (mnil ())) (s) (fun thk: () -> sw (!open))
-    else switch (AAcrossGenerator 0. p n) (1. - s) (fun thk: () -> sw (!open))
+    // if open then switch (model (mnil ())) (s) (fun thk: () -> sw (!open))
+    if open then
+    {
+      // def _ = dprint("open");
+      switch (AThroughGenerator 0. p n) (s) (fun thk: () -> sw (!open))    
+    }
+    else
+    {
+      // def _ = dprint("closed");
+      switch (AAcrossGenerator 0. p n) (1. - s) (fun thk: () -> sw (!open))
+    }
   };
   sw true
 }

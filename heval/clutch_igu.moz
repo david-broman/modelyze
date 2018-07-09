@@ -52,7 +52,8 @@ def ClutchModel = {
   UnitStep t_s t s ++
   DampMass I_1 D_1 t_1a t_1b o_1 n1 n2 ++
   DampMass I_2 D_2 t_2a t_2b o_2 n1 n3
-  ++ switch  (model (mnil ())) (2. - t) (fun thk: () -> model (o_ss = 0.; Branch t_ss o_ss n2 n3))
+  // ++ switch  (model (mnil ())) (2. - t) (fun thk: () -> model (o_ss = 0.; Branch t_ss o_ss n2 n3))
+  ++ Clutch (1. - s) n2 n3
   ++ model (t_1 = t_1a + t_1b; t_2 = t_2a + t_2b)
 }
 
@@ -60,7 +61,7 @@ def monitored =
   // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1, "tau_1"), (s, "Signal")]
   // [(t_1a, "tau_1m"), (t_1b, "tau_1d"), (t_2a, "tau_2m"), (t_2b, "tau_2d")]
   // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a, "tau_1m"), (t_1b, "tau_1d"), (t_2a, "tau_2m"), (t_2b, "tau_2d")]
-  [(o_1, "omega_1"), (o_2, "omega_2"), (t_1, "tau_1"), (t_2, "tau_2")]  
+  [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a + t_1b, "tau_1"), (t_2a + t_2b, "tau_2")]  
     
 
 def main = {

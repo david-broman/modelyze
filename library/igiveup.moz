@@ -125,18 +125,23 @@ def state_union(z_1: State, z_2: State) -> State = {
 
 def state_empty = Map.empty
 
-def _is_defined(e: <?>, z: State, euler: Bool) -> Bool = {
+def is_defined(e: <?>, z: State) -> Bool = {
   match e with
   | sym: Real -> (state_mem e z)
-  | der x -> if !euler then (state_mem e z) else (state_mem x z)
-  | e_1 e_2 -> (_is_defined e_1 z euler) && (_is_defined e_2 z euler)
+  | der x -> (state_mem x z)
+  | e_1 e_2 -> (is_defined e_1 z) && (is_defined e_2 z)
   | lift v: ? -> true
   | _ -> error "Unsupported model construct"
 }
 
-def is_defined(e: <?>, z: State) -> Bool = _is_defined e z false
-
-def is_ie_defined(e: <?>, z: State) -> Bool = _is_defined e z true
+def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
+  match e with
+  | sym: Real -> if snd (Map.find e ukm) then state_mem e z else true
+  | der x -> state_mem e z
+  | e_1 e_2 -> (is_ie_defined e_1 z ukm) && (is_ie_defined e_2 z ukm)
+  | lift v: ? -> true
+  | _ -> error "Unsupported model construct"
+}
 
 def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
   if !(state_mem x z) then ()
@@ -509,13 +514,16 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
   def k = 4.;
 
   def get_defined_eqs(e: Eqs) -> Eqs = {
-    match e with
-    | e_1; e_2 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
-    | e_1 = e_2 ->
-      if (is_ie_defined e_1 z_ll) && (is_ie_defined e_2 z_ll)
-      then e else mnil ()
-    | mnil _ -> e  
-    | _ -> error "Expected equations"
+    def work(e: Eqs, ukm: UkMap) -> Eqs = {
+      match e with
+      | e_1; e_2 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
+      | e_1 = e_2 ->
+        if (is_ie_defined e_1 z_ll ukm) && (is_ie_defined e_2 z_ll ukm)
+        then e else { def _ = dprint(e); mnil () }
+      | mnil _ -> e  
+      | _ -> error "Expected equations"
+    };
+    work e (makeUkMap e)
   };
 
   def map_expr_to_impl_euler(e: <?>, z_ll: State, h: Real) -> <?> = {
@@ -565,8 +573,9 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
     };
     
     def (sysfun, ukm, yy) = get_solver_input e z udfv;
-    def _ = (if (Map.size ukm) != (length (sysfun yy)) then
-      error "The number of variables and equations does not match" else ());
+    def _ = (if (Map.size ukm) != (length (sysfun yy)) then {
+      def _ = dprint(Map.size ukm);
+      error "The number of variables and equations does not match" } else ());
     def _ = (if (Map.size ukm) == 0 then
      error "No system of equations" else ());      
     def s = (NLEQSolver.init sysfun yy);
@@ -574,14 +583,20 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
     ukm_yy_to_state ukm yy
   };
   
-  def mk_impulse(z_0: State, z_rl: State) -> State = {
+  def mk_impulse(z_f: State, z_b: State) -> State = {
     def big_number = INFINITE;
     def big_neg_number = NEG_INFINITE;
+
+    def p(e: (<Real>, Real)) -> Bool = {
+      def (x, _) = e;
+      (state_mem x z_ll) && (state_mem x z_b)
+    };
+    def z_f = listToMap (filter p (Map.toList z_f));
 
     def is_impulse(x: <Real>) -> Bool = {
     
       def d(x: <Real>) -> Real = {
-        abs ((state_find x z_ll) + 2. * (state_find x z_0) - (state_find x z_rl)) / h^2.
+        abs ((state_find x z_ll) + 2. * (state_find x z_f) - (state_find x z_b)) / h^2.
       };
     
       def f(e: (<Real>, Real)) -> Real = {
@@ -589,7 +604,7 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
         d(x)
       };
     
-      def avg = k * (sum (map f (Map.toList z_0))) / int2real ((Map.size z_0) + 1);
+      def avg = k * (sum (map f (Map.toList z_f))) / int2real ((Map.size z_f) + 1);
 
       // def _ = dprint(x);
       // def _ = dprint(d x);
@@ -603,16 +618,18 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
         if v > 0. then big_number else big_neg_number
       };
       def (x, v) = e;
-      if is_impulse x then (x, getinf v) else (x, state_find x z_rl)
+      if is_impulse x then (x, getinf v) else (x, state_find x z_b)
     };
-  
-    listToMap (map f (Map.toList z_0))
+
+    listToMap (map f (Map.toList z_f))
   };
 
   def approx_derivatives(z_0: State, z_1: State, h: Real) -> State = {
     def f(a: State, e: (<Real>, Real)) -> State = {
       def (x, _) = e;
-      state_add (der x) (((state_find x z_1) - (state_find x z_0)) / h) a
+      if (state_mem x z_0) && (state_mem x z_1) then
+        state_add (der x) (((state_find x z_1) - (state_find x z_0)) / h) a
+      else a
     };
     
     foldLeft f (Map.empty) (Map.toList z_1)
@@ -627,20 +644,19 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
     // Step forward
     def ef = map_eqs_to_impl_euler ep z_ll h;
     def z_f = solve ef z_g 0.;
-    def z_fd = approx_derivatives z_ll z_f h;
-
-    // def _ = dprint(z_f);
+    // def z_fd = approx_derivatives z_ll z_f h;
 
     // Step backwards
     def eb = map_eqs_to_impl_euler ep z_f (-h); 
     def z_b = solve eb z_g 0.;
     def z_bd = approx_derivatives z_f z_b (-h);
-    
+
     // Make impulse behaviour
     def z_0 = mk_impulse z_f z_b;
-    def z_0d = mk_impulse z_fd z_bd;
+    // def z_0d = mk_impulse z_fd z_bd;
 
-  (state_union z_0 z_0d, state_union z_b z_bd)
+  // (state_union z_0 z_0d, state_union z_b z_bd)
+  (z_0, state_union z_b z_bd)  
   } else (z_g, z_g)
 }
 
@@ -685,8 +701,9 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
     def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0; 
     def (eqs, ieqs) = mmodel_to_cdae mp z_ll;
-    def (z_0pp, t_0p) = search_civs eqs z_0p t_0 0.;
-    (z_0pp, (t_0p, t_f))
+    def (z_0pp, t_0p) = search_civs (indexred eqs) z_0p t_0 0.;
+    def ((t_0pp, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_0pp (t_0p, t_f) h probes;
+    (z_llp, z_0ppp, (t_fp, t_f))
   }); 
 
   def sim(s: MState) -> () = {
@@ -695,7 +712,6 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     def _ = (if n > 10 then error "too many ticks!" else ());
 
     if t_0 >= t_f then () else {
-      // def _ = dprint(m);
       def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
       def (eqs, ieqs) = mmodel_to_cdae mp z_ll;
       // def _ = _print_model eqs;
@@ -723,9 +739,9 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
       }
     }
   };
-
-  def (z_0, Ip) = initialize ();
+  
   def _ = _print_sim_headers(labels);
-  sim (m, state_empty, z_0, z_0, Ip, 0)
+  def (z_ll, z_0, Ip) = initialize ();
+  sim (m, z_ll, z_0, z_0, Ip, 0)
 }
 

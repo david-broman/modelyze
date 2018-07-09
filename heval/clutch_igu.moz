@@ -22,6 +22,7 @@ written by Oscar Eriksson oerikss@kth.se
 include MODELS_IGU
 
 def o_1, o_2: AngularVelocity
+def t_1a, t_2a, t_1b, t_2b: Torque
 def t_1, t_2: Torque
 def t: Time
 def s: Signal
@@ -36,28 +37,32 @@ def t_0 = 0.
 def t_s = 2.
 
 
-def DampMass(I: Real, D: Real, o: AngularVelocity, p: Node, n: Node) = {
-  def t: Torque;
-  Mass I t o p n ++
-  ADamper D p n 
+def DampMass(I: Real, D: Real, t_a: Torque, t_b: Torque, o: AngularVelocity, p: Node, n: Node) = {
+  def o_b: AngularVelocity;
+  Mass I t_a o p n ++
+  Damper D t_b o_b p n 
 }
 
 def ClutchModel = {
   def n1, n2, n3, n4, n5: Node;
+  def t_ss, o_ss: <Real>;
   init o_1 o_1_0 ++
   init o_2 o_2_0 ++
   Clock t_0 t ++
   UnitStep t_s t s ++
-  DampMass I_1 D_1 o_1 n1 n2 ++
-  DampMass I_2 D_2 o_2 n1 n5 ++
-  Clutch (s - 1.) n3 n4 ++
-  TorqueSensor t_1 n2 n3 ++
-  TorqueSensor t_2 n5 n4  
+  DampMass I_1 D_1 t_1a t_1b o_1 n1 n2 ++
+  DampMass I_2 D_2 t_2a t_2b o_2 n1 n3
+  ++ switch  (model (mnil ())) (2. - t) (fun thk: () -> model (o_ss = 0.; Branch t_ss o_ss n2 n3))
+  ++ model (t_1 = t_1a + t_1b; t_2 = t_2a + t_2b)
 }
 
 def monitored =
-  [(o_1, "omega_1"), (t_1, "tau_1"), (o_2, "omega_2"), (t_2, "tau_2"), (s, "Signal")]
+  // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1, "tau_1"), (s, "Signal")]
+  // [(t_1a, "tau_1m"), (t_1b, "tau_1d"), (t_2a, "tau_2m"), (t_2b, "tau_2d")]
+  // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a, "tau_1m"), (t_1b, "tau_1d"), (t_2a, "tau_2m"), (t_2b, "tau_2d")]
+  [(o_1, "omega_1"), (o_2, "omega_2"), (t_1, "tau_1"), (t_2, "tau_2")]  
+    
 
 def main = {
-  simulate ClutchModel (0., 4.) 0.1 monitored true
+  simulate ClutchModel (0., 4.) 0.1 monitored false
 }

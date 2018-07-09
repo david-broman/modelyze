@@ -63,6 +63,7 @@ def ADamper = ADissipator
 def AResistor = (fun R: Real -> ADissipator (1. / R))
 
 def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  init a C ++
   model (
     Branch t a p n;
     a = C
@@ -181,7 +182,7 @@ def Switch(s: Signal, p: Node, n: Node) = {
     if open then
     {
       // def _ = dprint("open");
-      switch (AThroughGenerator 0. p n) (s) (fun thk: () -> sw (!open))    
+      switch (model (mnil ())) (s) (fun thk: () -> sw (!open))    
     }
     else
     {

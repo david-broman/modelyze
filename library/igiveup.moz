@@ -701,6 +701,9 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
     def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0; 
     def (eqs, ieqs) = mmodel_to_cdae mp z_ll;
+    // def _ = _print_model eqs;
+    // def _ = dprint("after ir");
+    // def _ = _print_model (indexred eqs);
     def (z_0pp, t_0p) = search_civs (indexred eqs) z_0p t_0 0.;
     def ((t_0pp, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_0pp (t_0p, t_f) h probes;
     (z_llp, z_0ppp, (t_fp, t_f))

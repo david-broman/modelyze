@@ -134,6 +134,15 @@ def is_defined(e: <?>, z: State) -> Bool = {
   | _ -> error "Unsupported model construct"
 }
 
+def is_defined_ukm(e: <?>, ukm: UkMap) -> Bool = {
+  match e with
+  | sym: Real -> (Map.mem e ukm)
+  | der x -> (Map.mem x ukm)
+  | e_1 e_2 -> (is_defined_ukm e_1 ukm) && (is_defined_ukm e_2 ukm)
+  | lift v: ? -> true
+  | _ -> error "Unsupported model construct"
+}
+
 def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
   match e with
   | sym: Real -> if snd (Map.find e ukm) then state_mem e z else true
@@ -315,7 +324,7 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
   // Function for printing simulation trace
   def pst(yy: {Real}, yp: {Real}, t: Real) = {
     def _ = _print_time t (-1);
-    _print_sim_results (fun v: <Real> -> Map.mem v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
+    _print_sim_results (fun v: <Real> -> is_defined_ukm v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
   };
 
   // And then solve!
@@ -675,7 +684,7 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     if dtrace then
       def _ = _print_time t n;
       def _ = print(msg);
-      _print_sim_results (fun v: <Real> -> state_mem v z) (fun v: <Real> -> state_find v z) probes
+      _print_sim_results (fun v: <Real> -> is_defined v z) (fun v: <Real> -> eval_expr v z) probes
     else ()
   };
 

@@ -23,7 +23,6 @@ include MODELS_IGU
 
 def i_V, i_L, i_D, i_R: Current
 def u_V, u_L, u_D, u_R: Voltage
-def t: Time
 def s: Signal
 
 def L = 1.
@@ -37,8 +36,7 @@ def LRD = {
   def n1, n2, n3, n4: Node;
   init i_L 0. ++
   init i_D 0. ++
-  Clock t_0 t ++
-  UnitStep t_s t s ++
+  UnitStep t_0 t_s s ++
   VoltageSource V i_V u_V n1 n4 ++
   Resistor R i_R u_R n1 n2 ++
   ElectricalSwitch s n2 n3 ++

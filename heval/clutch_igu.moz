@@ -23,8 +23,6 @@ include MODELS_IGU
 
 def o_1, o_2: AngularVelocity
 def t_1a, t_2a, t_1b, t_2b: Torque
-def t_1, t_2: Torque
-def t: Time
 def s: Signal
 
 def o_1_0 = 3.
@@ -45,22 +43,15 @@ def DampMass(I: Real, D: Real, t_a: Torque, t_b: Torque, o: AngularVelocity, p: 
 
 def ClutchModel = {
   def n1, n2, n3, n4, n5: Node;
-  def t_ss, o_ss: <Real>;
   init o_1 o_1_0 ++
   init o_2 o_2_0 ++
-  Clock t_0 t ++
-  UnitStep t_s t s ++
+  UnitStep t_0 t_s s ++
   DampMass I_1 D_1 t_1a t_1b o_1 n1 n2 ++
-  DampMass I_2 D_2 t_2a t_2b o_2 n1 n3
-  // ++ switch  (model (mnil ())) (2. - t) (fun thk: () -> model (o_ss = 0.; Branch t_ss o_ss n2 n3))
-  ++ Clutch (1. - s) n2 n3
-  ++ model (t_1 = t_1a + t_1b; t_2 = t_2a + t_2b)
+  DampMass I_2 D_2 t_2a t_2b o_2 n1 n3 ++
+  Clutch (1. - s) n2 n3
 }
 
 def monitored =
-  // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1, "tau_1"), (s, "Signal")]
-  // [(t_1a, "tau_1m"), (t_1b, "tau_1d"), (t_2a, "tau_2m"), (t_2b, "tau_2d")]
-  // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a, "tau_1m"), (t_1b, "tau_1d"), (t_2a, "tau_2m"), (t_2b, "tau_2d")]
   [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a + t_1b, "tau_1"), (t_2a + t_2b, "tau_2")]  
     
 

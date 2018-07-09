@@ -21,14 +21,12 @@ written by Oscar Eriksson oerikss@kth.se
 
 include MODELS_IGU
 
-def t: Time
 def s: Signal
 def t_0 = 0.
 def t_s = 1.
 
 def m = {
-  Clock t_0 t ++
-  UnitStep t_s t s
+  UnitStep t_0 t_s s
 }
 
 def monitored = [(s, "s")]

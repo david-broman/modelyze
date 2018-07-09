@@ -24,7 +24,6 @@ include MODELS_IGU
 def i_V, i_R: Current
 def u_V, u_R: Voltage
 def s: Signal
-def t: Time
 
 def R = 0.5
 def V = 1.
@@ -34,8 +33,7 @@ def t_s = 2.
 def SVR = {
   def n1, n2, n3: Node;
   init i_R 0. ++
-  Clock t_0 t ++
-  UnitStep t_s t s ++
+  UnitStep t_0 t_s s ++
   VoltageSource V i_V u_V n1 n2 ++
   Resistor R i_R u_R n2 n3 ++
   ElectricalSwitch s n3 n1

@@ -32,17 +32,21 @@ type AngularVelocity = Across
 
 def Clock(t_0: Real, t: Time) = {
   init t t_0 ++
-  model (
-    der t = 1.
-  )
+  model (der t = 1.)
 }
 
-def UnitStep(t_s: Real, t: Time, s: Signal) = {
+def UnitStep(t_0: Real, t_s: Real, s: Signal) = {
+  def t: Time;
+  Clock t_0 t ++
   switch
     (init s 0. ++ model (s = 0.))
     (t_s - t)
     (fun thk: () -> (init s 1. ++ model (s = 1.)))
 }
+
+// def SquareUnitWave(p: Real, t: Time, s: Signal) = {
+
+// }
 
 def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (

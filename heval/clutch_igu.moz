@@ -27,6 +27,7 @@ def s: Signal
 
 def o_1_0 = 3.
 def o_2_0 = 5.
+// def o_2_0 = 3.
 def I_1 = 2.5
 def D_1 = 0.7
 def I_2 = 1.5
@@ -46,9 +47,12 @@ def ClutchModel = {
   init o_1 o_1_0 ++
   init o_2 o_2_0 ++
   UnitStep t_0 t_s s ++
+  // PeriodicUnitStep t_0 t_s s ++
+  // TwoUnitSteps t_0 t_s (2. * t_s) s ++
   DampMass I_1 D_1 t_1a t_1b o_1 n1 n2 ++
   DampMass I_2 D_2 t_2a t_2b o_2 n1 n3 ++
-  Clutch (1. - s) n2 n3
+  Clutch true (1. - s) n2 n3
+  // Clutch s n2 n3
 }
 
 def monitored =

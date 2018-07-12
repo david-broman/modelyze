@@ -36,7 +36,7 @@ def SVR = {
   UnitStep t_0 t_s s ++
   VoltageSource V i_V u_V n1 n2 ++
   Resistor R i_R u_R n2 n3 ++
-  ElectricalSwitch s n3 n1
+  ElectricalSwitch false s n3 n1
 }
 
 def monitored =

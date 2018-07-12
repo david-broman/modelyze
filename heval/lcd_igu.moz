@@ -34,7 +34,7 @@ def LCD = {
   init u_C (-1.) ++
   init i_D 1. ++
   Inductor L i_L u_L n1 n2 ++
-  Diode bias i_D u_D n2 n3 ++
+  Diode bias true i_D u_D n2 n3 ++
   Capacitor C i_C u_C n3 n1
 }
 

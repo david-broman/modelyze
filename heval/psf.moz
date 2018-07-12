@@ -21,32 +21,17 @@ written by Oscar Eriksson oerikss@kth.se
 
 include MODELS_IGU
 
-def i_V, i_L, i_D, i_R: Current
-def u_V, u_L, u_D, u_R: Voltage
 def s: Signal
-
-def L = 1.
-def R = 1.
-def V = 1.
-def bias = 0.7
 def t_0 = 0.
-def t_s = 3.
+def t_s = 1.
+def p = 1.
+def t: Time
 
-def LRD = {
-  def n1, n2, n3, n4: Node;
-  init i_L 0. ++
-  init u_D (-1.) ++
-  UnitStep t_0 t_s s ++
-  VoltageSource V i_V u_V n1 n4 ++
-  Resistor R i_R u_R n1 n2 ++
-  ElectricalSwitch false s n2 n3 ++
-  Inductor L i_L u_L n3 n4 ++
-  Diode bias false i_D u_D n4 n3
+def m = {
+  Clock t_0 t ++  
+  PeriodicUnitStep t_0 p s
 }
 
-def monitored =
-  [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")]
+def monitored = [(s, "s"), (sin (3. * t / p - t_0), "sw")]
 
-def main = {
-  simulate LRD (0.,6.) 0.1 monitored false
-  }
+def main = simulate m (0., 6.) 0.01 monitored true

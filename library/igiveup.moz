@@ -34,8 +34,7 @@ type MModel
 def switch : MModel -> <Real> -> (() -> ?) -> MModel
 def init : <Real> -> <Real> -> MModel
 def reinit : <Real> -> <Real> -> MModel
-def model: Equations -> MModel
-// def mmnil : () -> MModel
+def model: Model -> MModel
 def (++) : MModel -> MModel -> MModel 
 
 type State = (<Real> => Real)

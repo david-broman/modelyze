@@ -44,9 +44,27 @@ def UnitStep(t_0: Real, t_s: Real, s: Signal) = {
     (fun thk: () -> (init s 1. ++ model (s = 1.)))
 }
 
-// def SquareUnitWave(p: Real, t: Time, s: Signal) = {
+def TwoUnitSteps(t_0: Real, t_s1: Real, t_s2: Real, s: Signal) = {
+  def t: Time;
+  Clock t_0 t ++
+  switch
+    (init s (-1.) ++ model (s = -1.))
+    (t_s1 - t)
+    (fun thk: () ->   switch
+         (init s 1. ++ model (s = 1.))
+         (t_s2 - t)
+         (fun thk: () -> (init s (-1.) ++ model (s = -1.))))  
+}
 
-// }
+def PeriodicUnitStep(t_0: Real, p: Real, s: Signal) = {
+  def t: Time;
+  def f(up: Bool) -> MModel = {
+    if up then switch (init s 1. ++ model (s = 1.)) (sin (3. * t / p - t_0)) (fun tnk: () -> f (!up))
+    else switch (init s 0. ++ model (s = 0.)) (1.e-5 - sin (3. * t / p - t_0)) (fun tnk: () -> f (!up))
+  };
+  Clock t_0 t ++
+  f true
+}
 
 def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   model (
@@ -163,24 +181,24 @@ def Inductor = ThroughStorage
 def ASpring =  AThroughStorage
 def AInductor = AThroughStorage
 
-def OneWayThroughStop(bias: Real, t: Through, a: Across, p: Node, n: Node) = {
+def OneWayThroughStop(bias: Real, open: Bool, t: Through, a: Across, p: Node, n: Node) = {
   def d(open: Bool) -> MModel = {
     if open then switch (AcrossGenerator bias t a p n) (t) (fun thnk: () -> d (!open))
     else switch (ThroughGenerator 0. t a p n) (bias - a) (fun thnk: () -> d (!open))
   };
-  d true
+  d open
 }
 
-def AOneWayThroughStop(bias: Real, p: Node, n:Node) = {
+def AOneWayThroughStop(bias: Real, open: Bool, p: Node, n:Node) = {
   def t: Through;
   def a: Across;
-  OneWayThroughStop bias t a p n
+  OneWayThroughStop bias open t a p n
 }
 
 def Diode = OneWayThroughStop
 def ADiode = AOneWayThroughStop
 
-def Switch(s: Signal, p: Node, n: Node) = {
+def Switch(open: Bool, s: Signal, p: Node, n: Node) = {
   def sw(open: Bool) -> MModel = {
     // if open then switch (model (mnil ())) (s) (fun thk: () -> sw (!open))
     if open then
@@ -194,7 +212,7 @@ def Switch(s: Signal, p: Node, n: Node) = {
       switch (AAcrossGenerator 0. p n) (1. - s) (fun thk: () -> sw (!open))
     }
   };
-  sw true
+  sw open
 }
 
 def ElectricalSwitch = Switch

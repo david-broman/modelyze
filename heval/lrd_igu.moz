@@ -48,5 +48,5 @@ def monitored =
   [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")]
 
 def main = {
-  simulate LRD (0.,6.) 0.01 monitored 2.9 0.001 false false
+  simulate LRD (0.,6.) 0.1 monitored 2.9 0.001 false false
   }

@@ -60,5 +60,5 @@ def monitored =
     
 
 def main = {
-  simulate ClutchModel (0., 6.) 0.01 monitored 2.999 0.001 false false
+  simulate ClutchModel (0., 6.) 0.1 monitored 2.9 0.001 false false
 }

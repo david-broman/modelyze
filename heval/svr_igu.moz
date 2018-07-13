@@ -43,5 +43,5 @@ def monitored =
   [(i_R, "i_R"), (u_R, "u_R")]
 
 def main = {
-  simulate SVR (0.,4.0) 0.1 monitored false
+  simulate SVR (0.,4.0) 0.01 monitored 2.9 0.001 false false
   }

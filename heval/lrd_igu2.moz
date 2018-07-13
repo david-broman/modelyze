@@ -21,28 +21,32 @@ written by Oscar Eriksson oerikss@kth.se
 
 include MODELS_IGU
 
-def i_L, i_D, i_C: Current
-def u_L, u_D, u_C: Voltage
+def i_V, i_L, i_D, i_R: Current
+def u_V, u_L, u_D, u_R: Voltage
+def s: Signal
 
-def L = 1.0
-def C = 1.0
-def bias = 0.
+def L = 1.
+def R = 1.
+def V = 1.
+def bias = 0.7
+def t_0 = 0.
+def t_s = 3.
 
-def LCD = {
-  def n1, n2, n3: Node;
-  init i_L 1. ++
-  init u_C (-1.) ++
-  init i_D 1. ++
-  Inductor L i_L u_L n1 n2 ++
-  Diode bias true i_D u_D n2 n3 ++
-  Capacitor C i_C u_C n3 n1
+def LRD2 = {
+  def n1, n2, n3, n4: Node;
+  init i_L 0. ++
+  init u_D (-1.) ++
+  UnitStep t_0 t_s s ++
+  VoltageSource V i_V u_V n1 n4 ++
+  ElectricalSwitch false s n1 n2 ++
+  Resistor R i_R u_R n2 n3 ++
+  Inductor L i_L u_L n3 n4 ++
+  Diode bias false i_D u_D n4 n2
 }
 
 def monitored =
-  [(i_C, "i_C"), (u_C, "u_C"),
-  (i_D, "i_D"), (u_D, "u_D"),
-  (i_L, "i_L"), (u_L, "u_L")]
+  [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")]
 
 def main = {
-  simulate LCD (0.,4.0) 0.01 monitored 2.9 0.001 false false // plot
+  simulate LRD2 (0.,6.) 0.01 monitored 2.9 0.001 false false
   }

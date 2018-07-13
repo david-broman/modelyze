@@ -204,7 +204,7 @@ def Switch(open: Bool, s: Signal, p: Node, n: Node) = {
     if open then
     {
       // def _ = dprint("open");
-      switch (model (mnil ())) (s) (fun thk: () -> sw (!open))    
+      switch (model nil) (s) (fun thk: () -> sw (!open))    
     }
     else
     {

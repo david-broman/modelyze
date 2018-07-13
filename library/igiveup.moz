@@ -743,7 +743,7 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: 
       } else if !(stable ieqs z_rlpp) then {
         def _ = pst t_0 n z_0pp;
         def _ = pst t_0 (n + 1) z_rlpp;
-        sim (mp, z_rlp, z_rlpp, z_rlpp, (t_0, t_f), n + 2)
+        sim (mp, z_rlpp, z_rlpp, z_rlpp, (t_0, t_f), n + 2)
       } else {
         def ((t_0, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_rlpp (t_0, t_f) h probes sll;
         sim (mp, z_llp, z_0ppp, z_0ppp, (t_fp, t_f), 0)

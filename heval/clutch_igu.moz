@@ -36,29 +36,29 @@ def t_0 = 0.
 def t_s = 2.
 
 
-def DampMass(I: Real, D: Real, t_a: Torque, t_b: Torque, o: AngularVelocity, p: Node, n: Node) = {
+def Body(I: Real, D: Real, t_a: Torque, t_b: Torque, o: AngularVelocity, p: Node, n: Node) = {
   def o_b: AngularVelocity;
   Mass I t_a o p n ++
   Damper D t_b o_b p n 
 }
 
 def ClutchModel = {
-  def n1, n2, n3, n4, n5: Node;
+  def n1, n2, n3: Node;
   init o_1 o_1_0 ++
   init o_2 o_2_0 ++
-  UnitStep t_0 t_s s ++
+  // UnitStep t_0 t_s s ++
   // PeriodicUnitStep t_0 t_s s ++
-  // TwoUnitSteps t_0 t_s (2. * t_s) s ++
-  DampMass I_1 D_1 t_1a t_1b o_1 n1 n2 ++
-  DampMass I_2 D_2 t_2a t_2b o_2 n1 n3 ++
+  TwoUnitSteps t_0 t_s (2. * t_s) s ++
+  Body I_1 D_1 t_1a t_1b o_1 n1 n2 ++
+  Body I_2 D_2 t_2a t_2b o_2 n1 n3 ++
   Clutch true (1. - s) n2 n3
   // Clutch s n2 n3
 }
 
 def monitored =
-  [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a + t_1b, "tau_1"), (t_2a + t_2b, "tau_2")]  
+  [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a + t_1b, "tau_1"), (t_2a + t_2b, "tau_2"), ((I_1 * o_1 + I_2 * o_2) / (I_1 + I_2), "armean")]
     
 
 def main = {
-  simulate ClutchModel (0., 4.) 0.1 monitored false
+  simulate ClutchModel (0., 6.) 0.01 monitored 2.999 0.001 false false
 }

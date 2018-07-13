@@ -25,6 +25,8 @@ include Graphelaboration2
 def pre : Real -> Real
 def (<=) : <Real> -> <Real> -> Equations
 
+def nil = mnil ()
+
 type Model = Equations
 type Eqs = Equations
 type Ieqs = Equations
@@ -300,7 +302,7 @@ def consistent_w_eqs(d: Eqs, z: State) -> Bool = {
 // def _ = dprint(consistent_w_eqs (x = 2. * y;4. = y) z) // false
 // def _ = dprint(consistent_w_eqs (x <= y;1. = y) z) // expected a Eqs in consistent_w_eqs
 
-def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (Interval, State, State) = {
+def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>], sll: Bool) -> (Interval, State, State) = {
 
   // Step taken when finding consistent initial values
   def dt = 0.00001;
@@ -357,11 +359,13 @@ def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>]) -> (In
       go nsr t1 yy1 yp1 nt0 yy0 yp0
     } else {
       if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
-        def nyy0 = (Array.make (Array.length yy0) 0.);
-        def nyp0 = (Array.make (Array.length yp0) 0.);
-        def nt0 = find_left_limit nyy0 nyp0;
-        def _ = pst nyy0 nyp0 nt0;
-        (sr, t1, nyy0, nyp0, yy1, yp1)
+        if sll then {
+          def nyy0 = (Array.make (Array.length yy0) 0.);
+          def nyp0 = (Array.make (Array.length yp0) 0.);
+          def nt0 = find_left_limit nyy0 nyp0;
+          def _ = pst nyy0 nyp0 nt0;
+          (sr, t1, nyy0, nyp0, yy1, yp1)
+        } else (sr, t1, yy1, yp1, yy1, yp1)
       } else {
         def _ = pst yy1 yp1 t1;
         (sr, t1, yy0, yp0, yy1, yp1)
@@ -515,11 +519,7 @@ def mmodel_to_cdae(m: MModel, z_ll: State) -> CDAE = {
   ((model_to_eqs mp); (elab_topology (get_topology mp)), model_to_ieqs mp)
 }
 
-def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
-
-  def h = 0.001;
-  // def k = 2.999;
-  def k = 4.;
+def impulse_analysis(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (State, State) = {
 
   def get_defined_eqs(e: Eqs) -> Eqs = {
     def work(e: Eqs, ukm: UkMap) -> Eqs = {
@@ -674,7 +674,7 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State) -> (State, State) = {
 // def m = y = der x;x = 1.;z = 2.
 // def _ = dprint(impulse_analysis m z_ll z_ll) // ({y_1' => inf, x_1' => 0, y_1 => inf, x_1 => 0}, {y_1' => 10000, x_1' => 0, y_1 => 0, x_1 => 1}
 
-def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtrace: Bool) = {
+def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: Real, ieh: Real, sll: Bool, dtrace: Bool) = {
 
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;
   def labels = map (fun e: (<Real>, String) -> snd e) monitored;
@@ -713,7 +713,7 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
     // def _ = dprint("after ir");
     // def _ = _print_model (indexred eqs);
     def (z_0pp, t_0p) = search_civs (indexred eqs) z_0p t_0 0.;
-    def ((t_0pp, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_0pp (t_0p, t_f) h probes;
+    def ((t_0pp, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_0pp (t_0p, t_f) h probes sll;
     (z_llp, z_0ppp, (t_fp, t_f))
   }); 
 
@@ -730,7 +730,7 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
       // def (z_0pp, z_rl) =
       //   (if consistent_w_eqs eqs z_0p then (z_0p, z_0p) else  
       //      impulse_analysis eqs z_ll z_ll);
-      def (z_0p, z_rlp) = impulse_analysis eqs z_ll z_rl;
+      def (z_0p, z_rlp) = impulse_analysis eqs z_ll z_rl k ieh;
       // def _ = pstdebug " impulse " t_0 n z_0p;
       // def _ = pstdebug " right limit " t_0 n z_rlp;
       def z_0pp = eval_inits mp (eval_mexpr_fun z_ll z_0p) z_0p;
@@ -745,7 +745,7 @@ def simulate(m: MModel, I: Interval, h: Real, monitored: [(<Real>, String)], dtr
         def _ = pst t_0 (n + 1) z_rlpp;
         sim (mp, z_rlp, z_rlpp, z_rlpp, (t_0, t_f), n + 2)
       } else {
-        def ((t_0, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_rlpp (t_0, t_f) h probes;
+        def ((t_0, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_rlpp (t_0, t_f) h probes sll;
         sim (mp, z_llp, z_0ppp, z_0ppp, (t_fp, t_f), 0)
       }
     }

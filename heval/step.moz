@@ -31,4 +31,4 @@ def m = {
 
 def monitored = [(s, "s")]
 
-def main = simulate m (0., 2.) 0.01 monitored false
+def main = simulate m (0., 2.) 0.01 monitored 2.9 0.001 false false

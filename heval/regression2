@@ -13,5 +13,6 @@ test_local_file "lr_igu"
 test_local_file "step"
 test_local_file "svr_igu"
 test_local_file "lrd_igu"
+test_local_file "lrd_igu2"
 test_local_file "clutch_igu"
 rm -f test.out

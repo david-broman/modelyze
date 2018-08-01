@@ -26,7 +26,7 @@ def g = 9.81
 def e = 0.7
 
 def fall(y: <Real>, v: <Real>, a: <Real>) = {
-  model (
+  mode (
     der y = v;
     der v = a;
     a = -g
@@ -34,14 +34,14 @@ def fall(y: <Real>, v: <Real>, a: <Real>) = {
 }
 
 def floor(y: <Real>, v: <Real>, a: <Real>) = {
-  model (
+  mode (
     v = -e * pre v;
     der y = v;
     der v = a
   )
 }
 
-def bouncing_ball(y: <Real>, v: <Real>, a: <Real>) -> MModel = {
+def bouncing_ball(y: <Real>, v: <Real>, a: <Real>) -> MMModel = {
   switch (fall y v a) (y) (fun t:() -> switch (floor y v a) (a) (fun t: () -> bouncing_ball y v a))
 }
 

@@ -23,6 +23,8 @@ include MODELS_IGU
 
 def i_V, i_L, i_D, i_R: Current
 def u_V, u_L, u_D, u_R: Voltage
+def P_V, P_R, P_L, P_D: <Real>
+def W_V, W_R, W_L, W_D: <Real>
 def s: Signal
 
 def L = 1.
@@ -45,8 +47,10 @@ def LRD = {
 }
 
 def monitored =
-  [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")]
+  // [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")] //plot
+  // [(i_V*u_V, "P_V"), (i_R*u_R, "P_R"), (i_L*u_L, "P_L"), (i_D*u_D, "P_D"), (i_V*u_V + i_R*u_R + i_L*u_L + i_D*u_D, "P_{tot}")]
+  [(i_D, "i_D"), (u_D, "u_D"), (i_L, "i_L"), (u_L, "u_L"), (i_R, "i_R"), (u_R, "u_R"), (i_V, "i_V"), (u_V, "u_V")]
 
 def main = {
-  simulate LRD (0.,6.) 0.1 monitored 2.9 0.001 false false
+  simulate LRD (0.,6.) 0.01 monitored 2.9 0.001 false false
   }

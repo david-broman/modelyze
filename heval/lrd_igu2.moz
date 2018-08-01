@@ -45,8 +45,9 @@ def LRD2 = {
 }
 
 def monitored =
-  [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")]
+  // [(i_D, "i_D"), (u_D, "u_D"), (u_L, "u_L"), (i_L, "i_L")]
+  [(i_D, "i_D"), (u_D, "u_D"), (i_L, "i_L"), (u_L, "u_L"), (i_R, "i_R"), (u_R, "u_R"), (i_V, "i_V"), (u_V, "u_V")]  
 
 def main = {
-  simulate LRD2 (0.,6.) 0.1 monitored 2.9 0.001 false false
+  simulate LRD2 (0.,6.) 0.01 monitored 2.9 0.001 false false
   }

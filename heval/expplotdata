@@ -1,0 +1,11 @@
+#!/bin/sh
+cp lcd.dat ~/Documents/src/MThesis/
+cp lcd_p.dat ~/Documents/src/MThesis/
+cp lrd.dat ~/Documents/src/MThesis/
+cp lrd_p.dat ~/Documents/src/MThesis/
+cp lrd2.dat ~/Documents/src/MThesis/
+cp lrd2_p.dat ~/Documents/src/MThesis/
+cp clutch.dat ~/Documents/src/MThesis/
+cp clutch_p.dat ~/Documents/src/MThesis/
+./moz bounce2_igu.moz > bounce.dat
+cp bounce.dat ~/Documents/src/MThesis/

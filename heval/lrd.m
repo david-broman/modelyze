@@ -1,5 +1,5 @@
 %% import data
-data = importdata('lrd2.dat');
+data = importdata('lrd.dat');
 t = data.data(:,1);
 d = data.data(:,2:end);
 
@@ -22,6 +22,6 @@ function myplot(t, d, l)
     hold on
     plot(t,d)
     legend(l)
-    xlabel('t')
+    xlabel('time')
     hold off
 end

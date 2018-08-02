@@ -39,10 +39,8 @@ def LCD = {
 }
 
 def monitored =
-  [(i_C, "i_C"), (u_C, "u_C"),
-  (i_D, "i_D"), (u_D, "u_D"),
-  (i_L, "i_L"), (u_L, "u_L")]
+  [(i_C, "i_C"), (u_C, "u_C"), (i_D, "i_D"), (u_D, "u_D"), (i_L, "i_L"), (u_L, "u_L")]
 
 def main = {
-  simulate LCD (0.,4.0) 0.1 monitored 2.9 0.001 false false // plot
+  simulate LCD (0.,4.0) 0.01 monitored 2.9 0.001 false false // plot
   }

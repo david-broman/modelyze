@@ -1,0 +1,301 @@
+#+TITLE: Evaluation of MEBMLANG
+#+AUTHOR: Oscar Eriksson
+
+#+RESULTS:
+
+* Setup IPython
+#+BEGIN_SRC ipython :session :results raw drawer
+  %matplotlib inline
+  %config InlineBackend.figure_format = 'svg'
+  import matplotlib.pyplot as plt
+  import numpy as np
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[230]:
+:END:
+
+* Functions
+#+BEGIN_SRC ipython :session :results raw drawer
+  def import_data(file):
+      data = np.genfromtxt(file + '.dat', names=True)
+      return data
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[231]:
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  def export_data(fname, data):
+      headers = ' '.join(list(data.dtype.names))
+      np.savetxt(fname + '.dat', data, header=headers, comments='')
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[232]:
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer
+  def myplot(data):
+      labels = list(data.dtype.names)
+      fig = plt.figure()
+      ax = plt.subplot(111)
+      plt.xlabel(labels[0])
+      for l in labels[1:]:
+          ax.plot(data[labels[0]], data[l], label='$' + l + '$')
+
+      # Shrink current axis's height by 10% on the bottom
+      box = ax.get_position()
+      ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+       # Put a legend below current axis
+      ax.legend(loc='center left', bbox_to_anchor=(1, 0.5),
+                fancybox=True, shadow=True)
+      plt.show()
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[233]:
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  def get_powers(data):
+      labels = list(data.dtype.names)
+      p_labels = [ 'P_' + labels[i].split('_')[1]  for i in range(1,len(labels),2)]
+      f_labels = [labels[i] for i in range(1, len(labels), 2)]
+      t_labels = [labels[i] for i in range(2, len(labels), 2)]
+      my_dtype = [(labels[0], '<f8')] + [ (l, '<f8') for l in p_labels ] + [ ('P_{tot}', '<f8')]
+      res = np.zeros((data.shape[0],), dtype=my_dtype)
+      res[labels[0]] += data[labels[0]]
+      for i in range(len(f_labels)):
+          res[p_labels[i]] += data[f_labels[i]] * data[t_labels[i]]
+          res[p_labels[-1]] += data[f_labels[i]] * data[t_labels[i]]
+      return res  
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[234]:
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  def get_work(data):
+      labels = list(data.dtype.names)
+      w_labels = [ 'W_' + labels[i].split('_')[1]  for i in range(1,len(labels) - 1,2)]
+      my_dtype = [(labels[0], '<f8')] + [ (l, '<f8') for l in w_labels ] + [ ('W_{tot}', '<f8')]
+      res = np.zeros((data.shape[0],), dtype=my_dtype)
+      res[labels[0]] += data[labels[0]]
+      for i in range(len(labels) - 1):
+          res[p_labels[i]] += data[f_labels[i]] * data[t_labels[i]]
+          res[p_labels[-1]] += data[f_labels[i]] * data[t_labels[i]]
+      return res  
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[235]:
+:END:
+
+* LCD Circuit
+** Create Data
+#+BEGIN_SRC sh
+  ./moz lcd_igu.moz > lcd.dat
+#+END_SRC
+
+#+RESULTS:
+
+** import Data
+#+BEGIN_SRC ipython :session :results raw drawer
+  lcd_data = import_data('lcd')
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[236]:
+:END:
+
+** Plot Currents and Voltages
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(lcd_data)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[237]:
+[[file:./obipy-resources/njrxsr.svg]]
+:END:
+
+** Plot Power
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(get_powers(lcd_data))
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[238]:
+[[file:./obipy-resources/YPUlx2.svg]]
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  export_data('lcd_p', get_powers(lcd_data))
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[239]:
+:END:
+
+* LRD Circuit
+** Create Data
+#+BEGIN_SRC sh
+  ./moz lrd_igu.moz > lrd.dat
+#+END_SRC
+
+#+RESULTS:
+
+** import Data
+#+BEGIN_SRC ipython :session :results raw drawer
+  lrd_data = import_data('lrd')
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[240]:
+:END:
+
+** Plot Currents and Voltages
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(lrd_data)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[241]:
+[[file:./obipy-resources/Pcj4Zh.svg]]
+:END:
+
+
+** Plot Power
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(get_powers(lrd_data))
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[242]:
+[[file:./obipy-resources/R8c9s6.svg]]
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  export_data('lrd_p', get_powers(lrd_data))
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[243]:
+:END:
+
+* LRD2 Circuit
+** Create Data
+#+BEGIN_SRC sh
+./moz lrd_igu2.moz > lrd2.dat
+#+END_SRC
+
+#+RESULTS:
+
+** import Data
+#+BEGIN_SRC ipython :session :results raw drawer
+  lrd2_data = import_data('lrd2')
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[244]:
+:END:
+
+** Plot Currents and Voltages
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(lrd2_data)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[245]:
+[[file:./obipy-resources/y3kC4Z.svg]]
+:END:
+
+
+** Plot Power
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(get_powers(lrd2_data))
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[246]:
+[[file:./obipy-resources/YWJmqz.svg]]
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  export_data('lrd2_p', get_powers(lrd2_data))
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[247]:
+:END:
+
+* Clutch
+** Create Data
+#+BEGIN_SRC sh
+./moz clutch_igu.moz > clutch.dat
+#+END_SRC
+
+#+RESULTS:
+
+** import Data
+#+BEGIN_SRC ipython :session :results raw drawer
+  clutch_data = import_data('clutch')
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[248]:
+:END:
+
+** Plot Torques and Angular Velocities
+#+BEGIN_SRC ipython :session :results raw drawer
+  myplot(clutch_data)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[249]:
+[[file:./obipy-resources/O45Yv9.svg]]
+:END:
+
+** Plot Power
+#+BEGIN_SRC ipython :session :results raw drawer
+clutch_p_data = get_powers(clutch_data[['time', 't_1', 'o_1', 't_2', 'o_2']])
+myplot(clutch_p_data)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[255]:
+[[file:./obipy-resources/uuopF3.svg]]
+:END:
+
+#+BEGIN_SRC ipython :session :results raw drawer 
+  export_data('clutch_p', clutch_p_data)
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+# Out[256]:
+:END:

@@ -13,7 +13,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[230]:
+# Out[1]:
 :END:
 
 * Functions
@@ -25,7 +25,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[231]:
+# Out[2]:
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer 
@@ -36,7 +36,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[232]:
+# Out[3]:
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer
@@ -60,7 +60,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[233]:
+# Out[4]:
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer 
@@ -80,7 +80,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[234]:
+# Out[5]:
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer 
@@ -98,7 +98,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[235]:
+# Out[6]:
 :END:
 
 * LCD Circuit
@@ -116,7 +116,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[236]:
+# Out[7]:
 :END:
 
 ** Plot Currents and Voltages
@@ -126,8 +126,8 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[237]:
-[[file:./obipy-resources/njrxsr.svg]]
+# Out[8]:
+[[file:./obipy-resources/1QCS7W.svg]]
 :END:
 
 ** Plot Power
@@ -137,8 +137,8 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[238]:
-[[file:./obipy-resources/YPUlx2.svg]]
+# Out[9]:
+[[file:./obipy-resources/zvq4qE.svg]]
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer 
@@ -147,7 +147,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[239]:
+# Out[13]:
 :END:
 
 * LRD Circuit
@@ -165,7 +165,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[240]:
+# Out[14]:
 :END:
 
 ** Plot Currents and Voltages
@@ -175,8 +175,8 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[241]:
-[[file:./obipy-resources/Pcj4Zh.svg]]
+# Out[15]:
+[[file:./obipy-resources/O15ks6.svg]]
 :END:
 
 
@@ -187,8 +187,8 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[242]:
-[[file:./obipy-resources/R8c9s6.svg]]
+# Out[16]:
+[[file:./obipy-resources/gWduuA.svg]]
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer 
@@ -197,7 +197,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[243]:
+# Out[17]:
 :END:
 
 * LRD2 Circuit
@@ -215,7 +215,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[244]:
+# Out[18]:
 :END:
 
 ** Plot Currents and Voltages
@@ -225,8 +225,8 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[245]:
-[[file:./obipy-resources/y3kC4Z.svg]]
+# Out[19]:
+[[file:./obipy-resources/Zx6Mh6.svg]]
 :END:
 
 
@@ -237,8 +237,8 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[246]:
-[[file:./obipy-resources/YWJmqz.svg]]
+# Out[20]:
+[[file:./obipy-resources/LbXGmC.svg]]
 :END:
 
 #+BEGIN_SRC ipython :session :results raw drawer 
@@ -247,7 +247,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[247]:
+# Out[21]:
 :END:
 
 * Clutch
@@ -265,7 +265,7 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[248]:
+# Out[22]:
 :END:
 
 ** Plot Torques and Angular Velocities
@@ -275,27 +275,11 @@
 
 #+RESULTS:
 :RESULTS:
-# Out[249]:
-[[file:./obipy-resources/O45Yv9.svg]]
+# Out[23]:
+[[file:./obipy-resources/H8NCTQ.svg]]
 :END:
 
-** Plot Power
-#+BEGIN_SRC ipython :session :results raw drawer
-clutch_p_data = get_powers(clutch_data[['time', 't_1', 'o_1', 't_2', 'o_2']])
-myplot(clutch_p_data)
-#+END_SRC
-
-#+RESULTS:
-:RESULTS:
-# Out[255]:
-[[file:./obipy-resources/uuopF3.svg]]
-:END:
-
-#+BEGIN_SRC ipython :session :results raw drawer 
-  export_data('clutch_p', clutch_p_data)
-#+END_SRC
-
-#+RESULTS:
-:RESULTS:
-# Out[256]:
-:END:
+* Smooth Step Function
+ #+BEGIN_SRC ipython :session :results raw drawer
+ 
+ #+END_SRC

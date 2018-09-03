@@ -29,13 +29,13 @@ def fall(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) = {
   reinit y y_0 ++ 
   reinit v v_0 ++
   reinit (der y) v_0 ++
-  mode (
+  eande (
     der y = v;
     der v = -g
   )
 }
 
-def bouncing_ball(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) -> MMModel = {
+def bouncing_ball(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) -> HModel = {
   switch (fall y v y_0 v_0) (y) (fun t: () -> bouncing_ball y v (pre y) (-e * pre v))
 }
 

@@ -26,37 +26,35 @@ def pre : Real -> Real
 def (<=) : <Real> -> <Real> -> Equations
 
 def nil = mnil ()
-
-type Mode = Equations
-type Eqs = Mode
-type Ieqs = Mode
+type Eqs = Equations
+type Ieqs = Equations
 type CDAE = (Eqs, Ieqs)
 
-type MMModel
-def switch : MMModel -> <Real> -> (() -> ?) -> MMModel
-def init : <Real> -> <Real> -> MMModel
-def reinit : <Real> -> <Real> -> MMModel
-def mode: Mode -> MMModel
-def (++) : MMModel -> MMModel -> MMModel 
+type HModel
+def switch : HModel -> <Real> -> (() -> ?) -> HModel
+def init : <Real> -> <Real> -> HModel
+def reinit : <Real> -> <Real> -> HModel
+def eande: Equations -> HModel
+def (++) : HModel -> HModel -> HModel 
 
 type State = (<Real> => Real)
 type Topology = Set(Equations)
 type Interval = (Real, Real)
-type MState = (MMModel, State, State, State, Interval, Int)
+type MState = (HModel, State, State, State, Interval, Int)
 
 // ======= HELPERS =======
 
-def _print_model(m: Mode) -> () = {
+def _print_model(m: Equations) -> () = {
   match m with
   | e_1; e_2 -> def _ = _print_model e_1; _print_model e_2
   | mnil _ -> ()
   | _ -> def _ = dprint(m); ()
 }
 
-def _print_mmodel(m: MMModel) -> () = {
+def _print_mmodel(m: HModel) -> () = {
   match m with
   | m_1 ++ m_2 -> def _ = _print_mmodel m_1; _print_mmodel m_2
-  | mode m_1 -> _print_model m_1
+  | eande m_1 -> _print_model m_1
   | _ -> def _ = dprint(m); ()
 }
 
@@ -132,7 +130,7 @@ def is_defined(e: <?>, z: State) -> Bool = {
   | der x -> (state_mem x z)
   | e_1 e_2 -> (is_defined e_1 z) && (is_defined e_2 z)
   | lift v: ? -> true
-  | _ -> error "Unsupported mode construct"
+  | _ -> error "Unsupported eande construct"
 }
 
 def is_defined_ukm(e: <?>, ukm: UkMap) -> Bool = {
@@ -141,7 +139,7 @@ def is_defined_ukm(e: <?>, ukm: UkMap) -> Bool = {
   | der x -> (Map.mem x ukm)
   | e_1 e_2 -> (is_defined_ukm e_1 ukm) && (is_defined_ukm e_2 ukm)
   | lift v: ? -> true
-  | _ -> error "Unsupported mode construct"
+  | _ -> error "Unsupported eande construct"
 }
 
 def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
@@ -150,7 +148,7 @@ def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
   | der x -> state_mem e z
   | e_1 e_2 -> (is_ie_defined e_1 z ukm) && (is_ie_defined e_2 z ukm)
   | lift v: ? -> true
-  | _ -> error "Unsupported mode construct"
+  | _ -> error "Unsupported eande construct"
 }
 
 def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
@@ -227,7 +225,7 @@ def eval_expr(e: <Real>, z: State) -> Real = {
     | sym: Real -> state_find e z
     | f a -> (work f) (work a)
     | lift v: ? -> v
-    | _ -> error "unsupported mode construct"  
+    | _ -> error "unsupported eande construct"  
     };
   work e    
 }
@@ -238,7 +236,7 @@ def eval_expr(e: <Real>, z: State) -> Real = {
 // def _ = dprint(eval_expr (x + y * x / y) z) // 2
 // def _ = dprint(eval_expr (x + y * (der x) / y) z) // 4
 
-def model_to_eqs(m: Mode) -> Eqs = {
+def model_to_eqs(m: Equations) -> Eqs = {
   match m with
   | m_1; m_2 -> (model_to_eqs m_1); (model_to_eqs m_2)
   | lhs = rhs -> m
@@ -252,7 +250,7 @@ def model_to_eqs(m: Mode) -> Eqs = {
 // NoEqn_1;
 // x_1 + y_1 = sval(2)
 
-def model_to_ieqs(m: Mode) -> Ieqs = {
+def model_to_ieqs(m: Equations) -> Ieqs = {
   match m with
   | m_1; m_2 -> (model_to_ieqs m_1); (model_to_ieqs m_2)
   | lhs <= rhs -> m
@@ -410,7 +408,7 @@ def eval_left_limit(e: <Real>, z_ll: State) -> <Real> = {
 // def _ = dprint(eval_expr e z_0) // 1
 // def _ = dprint(eval_mexpr_fun ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr
 
-def elab_switches(m: MMModel, s: (<Real> -> Real)) -> MMModel = {
+def elab_switches(m: HModel, s: (<Real> -> Real)) -> HModel = {
   match m with
   | m_1 ++ m_2 -> (elab_switches m_1 s) ++ (elab_switches m_2 s)
   | switch m_1 e (lift m_2 :(() -> ?)) ->
@@ -419,11 +417,11 @@ def elab_switches(m: MMModel, s: (<Real> -> Real)) -> MMModel = {
   | _ -> m
 }
 
-def mmodel_to_model(m: MMModel) -> Mode = {
+def mmodel_to_model(m: HModel) -> Equations = {
   match m with
   | m_1 ++ m_2 -> (mmodel_to_model m_1); (mmodel_to_model m_2)
   | switch m_1 e _ -> (mmodel_to_model m_1); (0. <= e)
-  | mode m_1 -> m_1
+  | eande m_1 -> m_1
   | _ -> mnil ()
 }
 
@@ -432,19 +430,19 @@ def mmodel_to_model(m: MMModel) -> Mode = {
 // def z = listToMap [(x, 0.), (y, 2.)]
 // def m = switch
 //           (switch
-//             (mode (pre x = 1.))
+//             (eande (pre x = 1.))
 //             (x)
-//             (fun t: () -> mode (pre x = 2.))
+//             (fun t: () -> eande (pre x = 2.))
 //           )
 //           (x + 1.)
-//           (fun t:() -> mode (y = 1.)) ++ mode (y = 3.)
+//           (fun t:() -> eande (y = 1.)) ++ eande (y = 3.)
                                          
 // def mp = elab_switches m (fun e: <Real> -> eval_expr e z)
 // def _ = dprint(mmodel_to_model mp)
 // pre_1(x_1) = sval(2);
 // sval(0) <= x_1 + sval(1);
 // y_1 = sval(3)
-// def m = (mode (x = 1.;Branch x x x x)) ++ (init x 1.)
+// def m = (eande (x = 1.;Branch x x x x)) ++ (init x 1.)
 // def _ = dprint(elab_switches m (fun e: <Real> -> eval_expr e z))
 // def _ = dprint(mmodel_to_model m)
 // model_1(x_1 = sval(1);
@@ -454,8 +452,8 @@ def mmodel_to_model(m: MMModel) -> Mode = {
 // Branch_1(x_1, x_1, x_1, x_1);
 // NoEqn_1
 
-def get_topology(m: Mode) -> Topology = {
-  def work(m: Mode, acc: Topology) -> Topology = {
+def get_topology(m: Equations) -> Topology = {
+  def work(m: Equations, acc: Topology) -> Topology = {
     match m with
     | m_1; m_2 -> work m_2 (work m_1 acc)
     | Branch _ _ _ _ -> Set.add m acc
@@ -482,7 +480,7 @@ def elab_topology(T: Topology) -> Eqs = {
 // -1 * z_1 + 1 * x_1 = sval(0);
 // 1 * z_1 + 1 * y_1 + 1 * x_1 = sval(0)
 
-def eval_inits(m: MMModel, s: (<Real> -> Real), z :State) -> State = {
+def eval_inits(m: HModel, s: (<Real> -> Real), z :State) -> State = {
   match m with
   | m_1 ++ m_2 -> eval_inits m_2 s (eval_inits m_1 s z)
   | switch m_1 _ _ -> eval_inits m_1 s z
@@ -498,7 +496,7 @@ def eval_inits(m: MMModel, s: (<Real> -> Real), z :State) -> State = {
 // def m = init x 1. ++ switch (init (der x) 2. ++ init y (pre x) ++ init (der y) (pre (der x))) x (fun t:() -> mmnil ())
 // def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr_fun e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}
 
-def eval_left_limits(m: Mode, z_ll: State) -> Mode = {
+def eval_left_limits(m: Equations, z_ll: State) -> Equations = {
   match m with
   | m_1; m_2 -> (eval_left_limits m_1 z_ll); (eval_left_limits m_2 z_ll)
   | e_1 = e_2 -> (eval_left_limit e_1 z_ll) = (eval_left_limit e_2 z_ll)
@@ -514,7 +512,7 @@ def eval_left_limits(m: Mode, z_ll: State) -> Mode = {
 // sval(1) = y_1;
 // sval(2) <= y_1'
 
-def elaborate(m: MMModel, z_ll: State) -> CDAE = {
+def elaborate(m: HModel, z_ll: State) -> CDAE = {
   def mp = eval_left_limits (mmodel_to_model m) z_ll;
   ((model_to_eqs mp); (elab_topology (get_topology mp)), model_to_ieqs mp)
 }
@@ -674,12 +672,12 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (Stat
 // def m = y = der x;x = 1.;z = 2.
 // def _ = dprint(impulse_analysis m z_ll z_ll) // ({y_1' => inf, x_1' => 0, y_1 => inf, x_1 => 0}, {y_1' => 10000, x_1' => 0, y_1 => 0, x_1 => 1}
 
-def simulate(m: MMModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: Real, ieh: Real, sll: Bool, dtrace: Bool) = {
+def simulate(m: HModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: Real, ieh: Real, sll: Bool, dtrace: Bool) = {
 
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;
   def labels = map (fun e: (<Real>, String) -> snd e) monitored;
   
-  def pstdebug(msg: String, t: Real, n: Int, z: State) = {
+  def pstdebug(dt: Bool, msg: String, t: Real, n: Int, z: State) = {
     if dtrace then
       def _ = _print_time t n;
       def _ = print(msg);
@@ -687,7 +685,12 @@ def simulate(m: MMModel, I: Interval, h: Real, monitored: [(<Real>, String)], k:
     else ()
   };
 
-  def pst = pstdebug "";
+  def pstd = pstdebug dtrace "";
+
+  def pst(t: Real, z: State) = {
+    def _ = _print_time t (-1);
+    _print_sim_results (fun v: <Real> -> is_defined v z) (fun v: <Real> -> eval_expr v z) probes  
+  };
 
   def eval_mexpr_fun(z_ll: State, z_0: State, e: <Real>) -> Real =
     {
@@ -738,13 +741,14 @@ def simulate(m: MMModel, I: Interval, h: Real, monitored: [(<Real>, String)], k:
       // def _ = pstdebug " impulse after reinit " t_0 n z_0pp;
       // def _ = pstdebug " right limit after reinit " t_0 n z_rlpp;
       if !(stable ieqs z_0pp) then {
-        def _ = pst t_0 n z_0pp;
+        def _ = pstd t_0 n z_0pp;  
         sim (mp, z_ll, z_0pp, z_rlpp, (t_0, t_f), n + 1)
       } else if !(stable ieqs z_rlpp) then {
-        def _ = pst t_0 n z_0pp;
-        def _ = pst t_0 (n + 1) z_rlpp;
-        sim (mp, z_0pp, z_rlpp, z_rlpp, (t_0, t_f), n + 2)
+        def _ = pst t_0 z_0pp;  
+        def _ = pstd t_0 (n + 1) z_rlpp;
+        sim (mp, z_rlpp, z_rlpp, z_rlpp, (t_0, t_f), n + 2)
       } else {
+        def _ = pst t_0 z_0pp;
         def ((t_0, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_rlpp (t_0, t_f) h probes sll;
         sim (mp, z_llp, z_0ppp, z_0ppp, (t_fp, t_f), 0)
       }

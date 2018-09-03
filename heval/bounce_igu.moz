@@ -49,5 +49,5 @@ def monitored = [(y, "y"), (v, "v"), (a, "a")]
 
 def main = {
   def m = bouncing_ball y v a ++ init y 10. ++ init v 0.;
-  simulate m (0.,4.0) 0.1 monitored 2.9 0.01 true true
+  simulate m (0.,4.0) 0.1 monitored 2.9 0.05 true true
   }

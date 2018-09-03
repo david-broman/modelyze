@@ -21,8 +21,9 @@ written by Oscar Eriksson oerikss@kth.se
 
 include MODELS_IGU
 
-def o_1m, o_2m, o_1d, o_2d: AngularVelocity
-def t_1m, t_2m, t_1d, t_2d: Torque
+def o_1, o_2: AngularVelocity
+def L_1, L_2: AngularMomentum
+def t_1, t_2: Torque
 def s: Signal
 
 def o_1_0 = 3.
@@ -35,27 +36,29 @@ def D_2 = 0.5
 def t_0 = 0.
 def t_s = 2.
 
-
-def Body(I: Real, D: Real, t_m: Torque, t_d: Torque, o_m: AngularVelocity, o_d: AngularVelocity, p: Node, n: Node) = {
+def Body(I: Real, D: Real, o_0: Real, t: Torque, o: AngularVelocity, L: AngularMomentum, p: Node, n: Node) = {
+  def t_m, t_d: Torque;
+  def o_m, o_d: AngularVelocity;
+  init o_m o_0 ++
+  eande(
+    t = t_m + t_d;
+    der L = t;
+    o = o_m
+  ) ++
   Mass I t_m o_m p n ++
   Damper D t_d o_d p n 
 }
 
 def ClutchModel = {
   def n1, n2, n3: Node;
-  init o_1m o_1_0 ++
-  init o_2m o_2_0 ++
   TwoUnitSteps t_0 t_s (2. * t_s) s ++
-  Body I_1 D_1 t_1m t_1d o_1m o_1d n1 n2 ++
-  Body I_2 D_2 t_2m t_2d o_2m o_2d n1 n3 ++
+  Body I_1 D_1 o_1_0 t_1 o_1 L_1 n1 n2 ++
+  Body I_2 D_2 o_2_0 t_2 o_2 L_2 n1 n3 ++
   Clutch true (1. - s) n2 n3
 }
 
 def monitored =
-  // [(o_1, "omega_1"), (o_2, "omega_2"), (t_1a + t_1b, "tau_1"), (t_2a + t_2b, "tau_2"), ((I_1 * o_1 + I_2 * o_2) / (I_1 + I_2), "armean")]
-  // [(t_1m, "t_1m"), (o_1m, "o_1m"), (t_1d, "t_1d"), (o_1d, "o_1d"), (t_2m, "t_2m"), (o_2m, "o_2m"), (t_2d, "t_2d"), (o_2d, "o_2d")]
-  [(t_1m + t_1d, "t_1"), (o_1m, "o_1"), (t_2m + t_2d, "t_2"), (o_2m, "o_2"), ((I_1 * o_1m + I_2 * o_2m) / (I_1 + I_2), "armean")]
-    
+  [(L_1, "L_1"), (L_2, "L_2"), (L_1 + L_2, "L_{tot}"), (t_1, "t_1"), (t_2, "t_2"), (o_1, "o_1"), (o_2, "o_2"), ((I_1 * o_1 + I_2 * o_2) / (I_1 + I_2), "armean")]
 
 def main = {
   simulate ClutchModel (0., 8.) 0.01 monitored 2.9 0.001 false false

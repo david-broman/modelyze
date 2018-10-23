@@ -155,8 +155,9 @@ let eval_daesolver_op eval op arg_lst =
     | Ida.StopTimeReached -> 2
   in
 
-  let mk_ida_session resf (nroots, rootf) t0 yy yp =
-    Ida.(init (Dls.dense ()) (SStolerances (1e-9, 1e-9))
+  let mk_ida_session resf (nroots, rootf) t0 yy yp n =
+    let m = Sundials.Matrix.dense n in
+    Ida.(init Dls.(solver (dense yy m)) (SStolerances (1e-9, 1e-9))
            resf ~roots:(nroots, rootf) t0 yy yp)
   in
 
@@ -166,7 +167,8 @@ let eval_daesolver_op eval op arg_lst =
     let resf = mk_resrootfun tmres in
     let yy = Nvector_serial.wrap (from_tm tm_yy0) in
     let yp = Nvector_serial.wrap (from_tm tm_yp0) in
-    let st = mk_ida_session resf Ida.no_roots t0 yy yp in
+    let n = Array.length tm_yy0 in
+    let st = mk_ida_session resf Ida.no_roots t0 yy yp n in
     TmDAESolver(st,yy,yp)
 
   | Ast.DAESolverOpInitWithRootf,
@@ -176,7 +178,8 @@ let eval_daesolver_op eval op arg_lst =
     let rootf = mk_resrootfun tmroot in
     let yy = Nvector_serial.wrap (from_tm tm_yy0) in
     let yp = Nvector_serial.wrap (from_tm tm_yp0) in
-    let st = mk_ida_session resf (nroots, rootf) t0 yy yp in
+    let n = Array.length tm_yy0 in
+    let st = mk_ida_session resf (nroots, rootf) t0 yy yp n in
     TmDAESolver(st,yy,yp)
 
   | Ast.DAESolverOpCalcICYYYP,
@@ -247,8 +250,9 @@ let eval_nleqsolver_op eval op arg_lst =
     | Kinsol.StoppedOnStepTol -> 2
   in
 
-  let mk_kinsol_session sysfun uu =
-    let st = Kinsol.(init ~linsolv:(Dls.dense ()) sysfun uu) in
+  let mk_kinsol_session sysfun uu n =
+    let m = Sundials.Matrix.dense n in
+    let st = Kinsol.(init ~linsolv:(Dls.(solver (dense uu m))) sysfun uu) in
     Kinsol.set_func_norm_tol st 1.0e-9;
     Kinsol.set_scaled_step_tol st 1.0e-9;
     Kinsol.set_max_setup_calls st 1;
@@ -260,7 +264,8 @@ let eval_nleqsolver_op eval op arg_lst =
     let sysfun = mk_sysfun tmsysfun
     and uu = Nvector_serial.wrap (from_tm tm_uu)
     in
-    let st = mk_kinsol_session sysfun uu in
+    let n = Array.length tm_uu in
+    let st = mk_kinsol_session sysfun uu n in
     TmNLEQSolver(st, uu)
 
   | Ast.NLEQSolverOpInitWithConstrs,
@@ -269,7 +274,8 @@ let eval_nleqsolver_op eval op arg_lst =
     and uu = Nvector_serial.wrap (from_tm tm_uu)
     and cc = Nvector_serial.wrap (from_tm tm_cc)
     in
-    let st = mk_kinsol_session sysfun uu in
+    let n = Array.length tm_uu in
+    let st = mk_kinsol_session sysfun uu n in
     Kinsol.set_constraints st cc;
     TmNLEQSolver(st, uu)
 

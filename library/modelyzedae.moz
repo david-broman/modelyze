@@ -25,29 +25,16 @@ type Residual = Real -> {Real} -> {Real} -> [Real]
 type Vars = <Real> -> <Real>
 
 // General expression evaluation
-<<<<<<< HEAD
 def eval(e:<Dyn>,yy:Vars,yp:Vars) -> Dyn = {
     match e with
     | der x -> 
         (match x with 
          | sym:Real -> eval(yp(x),yy,yp)  
-=======
-def eval(expr:<?>, yy:Varvals, yp:Varvals) -> ? = {
-    match expr with
-    | der x ->
-        (match x with
-         | sym:Real -> eval(yp(x), yy, yp)
->>>>>>> 75cd7cabf99e776ef531fc372742954d087cb127
          | _ -> error "Derivatives only allowed on unknowns")
     | sym:Real -> eval(yy(e),yy,yp)
     | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
-<<<<<<< HEAD
     | sval v:Dyn -> v
     | _ ->  error "Unsupported construct" 
-=======
-    | lift v:? -> v
-    | _ ->  error "Unsupported model construct"
->>>>>>> 75cd7cabf99e776ef531fc372742954d087cb127
 }
 
 // Evaluate an expression of real type. The unknowns in the
@@ -79,13 +66,8 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
   def setvals(initvals:[(Signal,Signal)]) -> {Real} = {
     match initvals with
     | (u,e)::xs -> {
-<<<<<<< HEAD
         def v = (match e with 
                  | sval v:Real -> v 
-=======
-        def v = (match e with
-                 | lift v:Real -> v
->>>>>>> 75cd7cabf99e776ef531fc372742954d087cb127
                  | _ -> error "Cannot initialize a variable with a variable.");
         def _ = (Array.set yy (fst (Map.find u ukmap)) v);
         setvals xs;

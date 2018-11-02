@@ -20,7 +20,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 include Equation
 include ModelyzeDAE
-include Graphelaboration2
+include Graphelaboration
 
 def pre : Real -> Real
 def (<=) : <Real> -> <Real> -> Equations
@@ -34,7 +34,7 @@ type HModel
 def switch : HModel -> <Real> -> (() -> ?) -> HModel
 def init : <Real> -> <Real> -> HModel
 def reinit : <Real> -> <Real> -> HModel
-def eande: Equations -> HModel
+def eqs_and_edges: Equations -> HModel
 def (++) : HModel -> HModel -> HModel 
 
 type State = (<Real> => Real)
@@ -54,7 +54,7 @@ def _print_model(m: Equations) -> () = {
 def _print_mmodel(m: HModel) -> () = {
   match m with
   | m_1 ++ m_2 -> def _ = _print_mmodel m_1; _print_mmodel m_2
-  | eande m_1 -> _print_model m_1
+  | eqs_and_edges m_1 -> _print_model m_1
   | _ -> def _ = dprint(m); ()
 }
 
@@ -130,7 +130,7 @@ def is_defined(e: <?>, z: State) -> Bool = {
   | der x -> (state_mem x z)
   | e_1 e_2 -> (is_defined e_1 z) && (is_defined e_2 z)
   | lift v: ? -> true
-  | _ -> error "Unsupported eande construct"
+  | _ -> error "Unsupported eqs_and_edges construct"
 }
 
 def is_defined_ukm(e: <?>, ukm: UkMap) -> Bool = {
@@ -139,7 +139,7 @@ def is_defined_ukm(e: <?>, ukm: UkMap) -> Bool = {
   | der x -> (Map.mem x ukm)
   | e_1 e_2 -> (is_defined_ukm e_1 ukm) && (is_defined_ukm e_2 ukm)
   | lift v: ? -> true
-  | _ -> error "Unsupported eande construct"
+  | _ -> error "Unsupported eqs_and_edges construct"
 }
 
 def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
@@ -148,7 +148,7 @@ def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
   | der x -> state_mem e z
   | e_1 e_2 -> (is_ie_defined e_1 z ukm) && (is_ie_defined e_2 z ukm)
   | lift v: ? -> true
-  | _ -> error "Unsupported eande construct"
+  | _ -> error "Unsupported eqs_and_edges construct"
 }
 
 def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
@@ -225,7 +225,7 @@ def eval_expr(e: <Real>, z: State) -> Real = {
     | sym: Real -> state_find e z
     | f a -> (work f) (work a)
     | lift v: ? -> v
-    | _ -> error "unsupported eande construct"  
+    | _ -> error "unsupported eqs_and_edges construct"  
     };
   work e    
 }
@@ -421,7 +421,7 @@ def mmodel_to_model(m: HModel) -> Equations = {
   match m with
   | m_1 ++ m_2 -> (mmodel_to_model m_1); (mmodel_to_model m_2)
   | switch m_1 e _ -> (mmodel_to_model m_1); (0. <= e)
-  | eande m_1 -> m_1
+  | eqs_and_edges m_1 -> m_1
   | _ -> mnil ()
 }
 
@@ -430,19 +430,19 @@ def mmodel_to_model(m: HModel) -> Equations = {
 // def z = listToMap [(x, 0.), (y, 2.)]
 // def m = switch
 //           (switch
-//             (eande (pre x = 1.))
+//             (eqs_and_edges (pre x = 1.))
 //             (x)
-//             (fun t: () -> eande (pre x = 2.))
+//             (fun t: () -> eqs_and_edges (pre x = 2.))
 //           )
 //           (x + 1.)
-//           (fun t:() -> eande (y = 1.)) ++ eande (y = 3.)
+//           (fun t:() -> eqs_and_edges (y = 1.)) ++ eqs_and_edges (y = 3.)
                                          
 // def mp = elab_switches m (fun e: <Real> -> eval_expr e z)
 // def _ = dprint(mmodel_to_model mp)
 // pre_1(x_1) = sval(2);
 // sval(0) <= x_1 + sval(1);
 // y_1 = sval(3)
-// def m = (eande (x = 1.;Branch x x x x)) ++ (init x 1.)
+// def m = (eqs_and_edges (x = 1.;Branch x x x x)) ++ (init x 1.)
 // def _ = dprint(elab_switches m (fun e: <Real> -> eval_expr e z))
 // def _ = dprint(mmodel_to_model m)
 // model_1(x_1 = sval(1);
@@ -612,10 +612,6 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (Stat
     
       def avg = k * (sum (map f (Map.toList z_f))) / int2real ((Map.size z_f) + 1);
 
-      // def _ = dprint(x);
-      // def _ = dprint(d x);
-      // def _ = dprint(avg);
-    
       (d x) > avg
     };
 
@@ -659,9 +655,7 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (Stat
 
     // Make impulse behaviour
     def z_0 = mk_impulse z_f z_b;
-    // def z_0d = mk_impulse z_fd z_bd;
 
-  // (state_union z_0 z_0d, state_union z_b z_bd)
   (z_0, state_union z_b z_bd)  
   } else (z_g, z_g)
 }
@@ -672,6 +666,17 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (Stat
 // def m = y = der x;x = 1.;z = 2.
 // def _ = dprint(impulse_analysis m z_ll z_ll) // ({y_1' => inf, x_1' => 0, y_1 => inf, x_1 => 0}, {y_1' => 10000, x_1' => 0, y_1 => 0, x_1 => 1}
 
+
+// Simulation function for DILL
+// parameters:
+// m: Hybrid Model
+// I: Simulation interval
+// h: Stepsize
+// monitored: A list of (unkown, "name") to print simulation results for.
+// k: Parameter that is part of the numerical impulse detection function.
+// ieh: The stepsize of the implicit Euler scheme during impulse approximation.
+// sll: Denotes whether a left-limit consistent with the predecessor mode should be found (currently buggy).
+// dtrace: Denotes whether the simulation results for micro-steps should be printed.
 def simulate(m: HModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: Real, ieh: Real, sll: Bool, dtrace: Bool) = {
 
   def probes = map (fun e: (<Real>, String) -> fst e) monitored;
@@ -712,9 +717,6 @@ def simulate(m: HModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: 
     def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
     def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0; 
     def (eqs, ieqs) = elaborate mp z_ll;
-    // def _ = _print_model eqs;
-    // def _ = dprint("after ir");
-    // def _ = _print_model (indexred eqs);
     def (z_0pp, t_0p) = search_civs (indexred eqs) z_0p t_0 0.;
     def ((t_0pp, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_0pp (t_0p, t_f) h probes sll;
     (z_llp, z_0ppp, (t_fp, t_f))
@@ -728,18 +730,9 @@ def simulate(m: HModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: 
     if t_0 >= t_f then () else {
       def mp = elab_switches m (eval_mexpr_fun z_ll z_0);
       def (eqs, ieqs) = elaborate mp z_ll;
-      // def _ = _print_model eqs;
-      // def _ = dprint(consistent_w_eqs eqs z_0p);
-      // def (z_0pp, z_rl) =
-      //   (if consistent_w_eqs eqs z_0p then (z_0p, z_0p) else  
-      //      impulse_analysis eqs z_ll z_ll);
       def (z_0p, z_rlp) = impulse_analysis eqs z_ll z_rl k ieh;
-      // def _ = pstdebug " impulse " t_0 n z_0p;
-      // def _ = pstdebug " right limit " t_0 n z_rlp;
       def z_0pp = eval_inits mp (eval_mexpr_fun z_ll z_0p) z_0p;
       def z_rlpp = eval_inits mp (eval_mexpr_fun z_ll z_rlp) z_rlp;
-      // def _ = pstdebug " impulse after reinit " t_0 n z_0pp;
-      // def _ = pstdebug " right limit after reinit " t_0 n z_rlpp;
       if !(stable ieqs z_0pp) then {
         def _ = pstd t_0 n z_0pp;  
         sim (mp, z_ll, z_0pp, z_rlpp, (t_0, t_f), n + 1)

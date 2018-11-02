@@ -675,7 +675,7 @@ def impulse_analysis(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (Stat
 // monitored: A list of (unkown, "name") to print simulation results for.
 // k: Parameter that is part of the numerical impulse detection function.
 // ieh: The stepsize of the implicit Euler scheme during impulse approximation.
-// sll: Denotes whether a left-limit consistent with the predecessor mode should be found (currently buggy).
+// sll: Denotes whether a left-limit consistent with the predecessor mode should be found (currently buggy and very naive).
 // dtrace: Denotes whether the simulation results for micro-steps should be printed.
 def simulate(m: HModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: Real, ieh: Real, sll: Bool, dtrace: Bool) = {
 

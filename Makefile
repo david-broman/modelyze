@@ -16,22 +16,6 @@
 # along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-OS = $(shell uname)
-
-
-#Check if Sundials is installed using MacPort
-ifneq (,$(wildcard /opt/local/include/ida/ida.h))
-C_LIBS = /opt/local/lib
-export CPATH = /opt/local/include
-# Check if MacOS. If so, use the path to standard C libraries.
-else ifeq ($(OS), Darwin)
-C_LIBS = /usr/local/lib
-export CPATH = /usr/local/include
-# If Linux (Ubuntu), use the path to standard C libraries.
-else ifeq ($(OS), Linux)
-C_LIBS = /usr/lib
-endif
-
 # Directories where ocamlbuild can find source code.
 # DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
 DIRS = src,ext/ucamlib/src,ext/extlib

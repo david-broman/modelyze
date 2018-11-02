@@ -197,7 +197,7 @@ def isTransitionFired(expr:Expr, roots:{Int}, index:Int) -> (Int,Bool) = {
 // after transition.
 def makeEventActions(daesolv:DAESolver, trans:Transitions, newModes:Modes,
       ukmap:UkMap, yy:{Real}, yp:{Real}) -> ([Expr],Modes) = {
-  def roots = (DAESolver.roots daesolv);
+  def roots = (DAESolver.getRootInfo daesolv);
   def travTrans(trans:Transitions, acc:[Expr], newModes:Modes, idx:Int) -> ([Expr],Modes) = {
     match trans with
      | (id,s1,s2,g,i)::ts -> 
@@ -325,8 +325,19 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
     // Create the root function for detecting zero crossings
     def rootfun = (specialize (makeRootFun ukmap) transitions);
 
+    // Count the number of roots
+    def nroots = length (rootfun 0. yy yp);
+
     // Create the simulation instance for continuous-time simulation using IDA
-    def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
+    // def mode = (DAESolver.makehybrid currtime yy yp id residual rootfun);
+    def mode = (DAESolver.initWithRootf residual nroots rootfun currtime yy yp);
+
+    // Set simulaiton stop time
+    // def _ = (DAESolver.setStopTime endtime);
+
+    // Calculate consistent initial values
+    def dt = 0.00001;
+    def _ = (DAESolver.calcIcYaYdp mode id yy yp (currtime + dt));
 
     // Return the init values after an event or start of simulation (time 0)
     def firststepval = makeStepVal(currtime,yy,probelist,ukmap);
@@ -337,7 +348,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
             (acc,currtime,[],newModes2)
         else {
             // Compute the next step using numerical integration
-            def newtime = (DAESolver.step steptime mode);
+            def (newtime, _) = (DAESolver.solveNormal mode (currtime + steptime) yy yp);
             // Save the step value
             def stepval = makeStepVal(newtime,yy,probelist,ukmap);
             // Check if there are event actions
@@ -354,7 +365,7 @@ def simulate(model:Equations, steptime:Real, endtime:Real,
       def (acc2,newtime,transInits,newModes) = ctloop(currtime, firststepval::acc);
 
       // Close the continuous-time DAE solver instance.
-      def _ = (DAESolver.close mode);
+      // def _ = (DAESolver.close mode);
 
       // Perform another round of CT simulation?
       if newtime > endtime then

@@ -17,9 +17,9 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-//include ModelyzeDAE
-//include Elaboration
-include Hybrid
+include ModelyzeDAE
+include Elaboration
+include ModelyzeHC
 
 def printsim(model:Equations, steptime:Real, endtime:Real) = {
      print(pprintSimulation(ctSim(elaborateConnections(model),steptime,endtime))) 

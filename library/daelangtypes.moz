@@ -1,4 +1,0 @@
-type VMap = (<Real> => Real)
-type VMapElm = (<Real>, Real)
-type Sigma = (Real, Set Equations, VMap)
-type SigmaT = (Real, Set Equation, VMap)

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+f=$(basename $1 .moz)
+./moz $1 > "expected-output-"$f".txt"
+

@@ -156,5 +156,4 @@ def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
 
 
 def printsim(model:Equations, steptime:Real, endtime:Real) =
-    ctSim(model,steptime,endtime)
-    // print(pprintSimulation(ctSim(model,steptime,endtime)))
+    print(pprintSimulation(ctSim(model,steptime,endtime)))

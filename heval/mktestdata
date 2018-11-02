@@ -1,9 +1,0 @@
-#!/bin/bash
-./moz lrd_igu.moz > testdata2/lrd_igu.txt
-./moz lrd_igu2.moz > testdata2/lrd_igu2.txt
-./moz clutch_igu.moz > testdata2/clutch_igu.txt
-./moz lcd_igu.moz > testdata2/lcd_igu.txt
-./moz lr_igu.moz > testdata2/lr_igu.txt
-./moz bounce2_igu.moz > testdata2/bounce2_igu.txt
-./moz step.moz > testdata2/step.txt
-./moz svr_igu.moz > testdata2/svr_igu.txt

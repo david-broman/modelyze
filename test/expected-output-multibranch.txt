@@ -1,9 +1,9 @@
--i2b_1 = 0;
--i2a_1 = 0;
-i1b_1 + i3b_1 = 0;
-i1a_1 + i3a_1 = 0;
-i2b_1 - i1b_1 = 0;
-i2a_1 - i1a_1 = 0;
+-i2b_1 = sval(0);
+-i2a_1 = sval(0);
+i1b_1 + i3b_1 = sval(0);
+i1a_1 + i3a_1 = sval(0);
+i2b_1 - i1b_1 = sval(0);
+i2a_1 - i1a_1 = sval(0);
 v1a_1 = u_1 - u_2;
 v1b_1 = u_3 - u_4;
 v2a_1 = u_2 - u_5;

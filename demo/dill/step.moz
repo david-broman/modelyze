@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include MODELS_IGU
+include DILLMODELS
 
 def s: Signal
 def t_0 = 0.

@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include MODELS_IGU
+include DILLMODELS
 
 def i_L, i_V, i_R: Current
 def u_L, u_V, u_R: Voltage

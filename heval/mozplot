@@ -1,7 +1,0 @@
-#!/bin/bash
-BASEDIR=$(dirname "$BASH_SOURCE")
-
-$BASEDIR/../bin/moz --libpaths=$BASEDIR/../library/ $1 > mozplot.dat && gnuplot -persist $BASEDIR/mozplot.cfg
-rm -f mozplot.dat
-
-

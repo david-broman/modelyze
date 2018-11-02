@@ -18,8 +18,7 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 
 include ExportModelica
 include MechsysBasics
-//include ModelyzeHC
-include ModelyzeEOO
+include ModelyzeHC
 
 def MechSys = {
   def r1:Rotational;

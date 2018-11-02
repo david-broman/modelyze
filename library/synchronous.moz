@@ -138,7 +138,7 @@ def simulate(sortedSignals : [(Eq, Eq)], max_count : Int) = {
 	    | Pre e -> error "Invalid init value."
 	    | sym:Int -> evalInit(Map.find expr x, x)
 	    | f e -> (evalInit(f, x)) (evalInit(e, x))
-	    | lift v:? -> v
+	    | sval v:? -> v
 	    | e -> e
     };
 
@@ -157,7 +157,7 @@ def simulate(sortedSignals : [(Eq, Eq)], max_count : Int) = {
 	    | Pre e -> eval(e, preX, Map.empty)
 	    | sym:Int -> eval(Map.find expr x, x, preX)
 	    | f e -> (eval(f, x, preX)) (eval(e, x, preX))
-	    | lift v:? -> v
+	    | sval v:? -> v
 	    | e -> e
     };
 
@@ -196,7 +196,7 @@ def generateCode(signalList : [(Eq, Eq)], maxCount : Int, loopDelay : Int, showA
 	    | Pre e -> error "Invalid init value."
 	    | sym:Int -> evalInit(Map.find expr x, x)
 	    | f e -> (evalInit(f, x)) (evalInit(e, x))
-	    | lift v:? -> v
+	    | sval v:? -> v
 	    | e -> e
     };
 
@@ -232,7 +232,7 @@ def generateCode(signalList : [(Eq, Eq)], maxCount : Int, loopDelay : Int, showA
 	    | e1 - e2 -> "(" ++ genExprCode(e1) ++ " - " ++ genExprCode(e2) ++ ")"
 	    | e1 + e2 -> "(" ++ genExprCode(e1) ++ " + " ++ genExprCode(e2) ++ ")"
 	    | f e -> "(" ++ genExprCode(f) ++ genExprCode(e)
-	    | lift v:? -> int2string(v)
+	    | sval v:? -> int2string(v)
 	    | e -> symstr(e)
     };
 

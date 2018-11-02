@@ -20,16 +20,18 @@ include Base
 
 type Signal = <Real>
 
-def der : Real -> Real
-def (')  = der
-
 type Equations
-def (=) : Real -> Real -> Equations
-def (;) : Equations -> Equations -> Equations
+
+def (=) : <Real->Real->Equations>
+def (;) : <Equations->Equations->Equations>
+
+def der : <Real->Real>
+def (')  = der
+def init : <Real->Real->Equations>
+
+def (<-)  = init
 def NoEqn : Equations
 
-def init : Real -> Real -> Equations 
-def (<-)  = init
 
 
 // Ukmap maps an unknown (signal type) to an integer value
@@ -41,7 +43,7 @@ type UkList = [(Signal,(Int,Bool))]
 
 type InitValMap = (<Real> => <Real>)
 type InitValList = [(<Real>,<Real>)]
-type UkSet = (Set <Real>)
+type UkSet = Set <Real>
 
 type Expr = <>
 
@@ -70,19 +72,16 @@ def initValues(eqs:Equations) -> InitValMap = {
 }
   
 
+def uk(e:<Dyn>,acc:UkSet) -> UkSet = {
+  match e with
+  | e1 e2 -> uk(e2,uk(e1,acc))
+  | sym:<Real> -> Set.add e acc
+  | _ -> acc
+} 
 
-def unknowns(eqs:Equations) -> UkSet = {
-  def get(e:<?>, acc:UkSet) ->  UkSet = {
-     match e with
-     | e1 e2 -> get e2 (get e1 acc)
-     | sym:<Real> -> Set.add e acc
-     | _ -> acc
-  }; 
-  get(eqs,Set.empty);
-}
 
 def noUnknowns(eqs:Equations) -> Int =
-  Set.size (unknowns(eqs))
+  Set.size (uk(eqs,Set.empty))
 
 def noEquations(eqs:Equations) -> Int = {
   match eqs with

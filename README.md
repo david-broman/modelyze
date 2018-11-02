@@ -1,21 +1,10 @@
+
+Modelyze toolchain, version 1.14 
+------------------------------------
 Modelyze toolchain
-Copyright (C) 2010-2015 David Broman
+Copyright (C) 2010-2017 David Broman
 
-Modelyze toolchain is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-Modelyze toolchain is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
-
-Modelyze toolchain, version 1.14 BETA (under development)
-----------------------------------------------------------
 This project contains a simple interpreter for the 
 Modelyze language. For a detailed overview of the
 Modelyze language, please see the technical report:
@@ -26,32 +15,31 @@ UCB/EECS-2012-173, University of California, Berkeley, June 30, 2012.
 Available at: http://www.eecs.berkeley.edu/Pubs/TechRpts/2012/EECS-2012-173.html
 
 A comprehensive description of Modelyze's predecessor, called MKL, is available
-in David Broman's PhD Thesis:
-http://www.bromans.com/david/publ/thesis-2010-david-broman.pdf
+in [David Broman's PhD Thesis](http://www.bromans.com/david/publ/thesis-2010-david-broman.pdf)
 
 If you have any comments or questions, please send an email to
-dbro@kth.se
+[dbro@kth.se](mailto:dbro@kth.se).
 
 INSTALLATION (Mac OS)
 --------------------
-The following has been tested on OS X 10.9.2, but should work on 
+The following has been tested on OS X 10.12.6, but should work on 
 other Mac OS versions as well.
 
-1. Install Macports (including X11 support)
-   http://www.macports.org/
-2. Install Objective Caml compiler, Gnuplot, and Sundials via Macports.
-   Using Macports
-   >> sudo port install ocaml gnuplot sundials
-   Using brew:
-   >> brew install ocaml opam homebrew/science/sundials
-   >> brew install gnuplot --qt
-3. If you do not have Git installed, install it. 
-   See for instance http://gitx.frim.nl/, or just install it via Macports.
-4. If you have not done it already, clone the Modelyze project from GitHub:
-   >> git clone https://github.com/david-broman/modelyze.git
+1. Install [Homebrew](https://brew.sh/).
+
+2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
+   
+   `>> brew install ocaml opam homebrew/science/sundials`
+   
+   `>> brew install gnuplot --qt`
+3. If you have not done it already, clone the Modelyze project from GitHub:
+   
+   `>> git clone https://github.com/david-broman/modelyze.git`
 5. Compile the code:
-   >> cd modelyze
-   >> make
+   
+   `>> cd modelyze`
+   
+   `>> make`
 
 INSTALLATION (Linux)
 ---------------------
@@ -59,48 +47,61 @@ The following has been tested on Ubuntu 14.04.01 LTS, but should work on
 other Linux distributions as well.
 
 1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal:
-   >> sudo apt-get install ocaml libsundials-serial-dev
+
+   `>> sudo apt-get install ocaml libsundials-serial-dev`
+   
 2. Install GNUplot if you would like to plot:
-   >> sudo apt-get install gnuplot
+
+   `>> sudo apt-get install gnuplot`
+   
    NOTE: There seems to be a problem with GNUPLOT and X11 on Ubuntu, so the 
    above might not work on all Ubuntu installations. If this is the case,
    try the following:
-   >> sudo apt-get install libx11-dev libxt-dev libreadline-gplv2-dev glib-2.0
-   >> sudo apt-get install gnuplot-x11
+   
+   `>> sudo apt-get install libx11-dev libxt-dev libreadline-gplv2-dev glib-2.0`
+   
+   `>> sudo apt-get install gnuplot-x11`
+   
 3. If you do not have git installed, install it:
-   >> sudo apt-get install git
+
+   `>> sudo apt-get install git`
+
 4. If you have not done it already, clone the Modelyze project from GitHub:
-   >> git clone https://github.com/david-broman/modelyze.git
+
+   `>> git clone https://github.com/david-broman/modelyze.git`
+   
 5. Compile the code:
-   >> cd modelyze
-   >> make
+   
+   `>> cd modelyze`
+   
+   `>> make`
 
 
 
 EXECUTING EXAMPLES
 --------------------
-Under folder "library", a simple standard library for Modelyze is provided.
-Folder "demo" contains a number of demo files that use these libraries. 
-To execute a demo example, got to folder "demo" and run for instance:
+Under folder `library`, a simple standard library for Modelyze is provided.
+Folder `demo` contains a number of demo files that use these libraries. 
+To execute a demo example, got to folder `demo` and run for instance:
 
-./moz lotkavolterra.moz
+`./moz lotkavolterra.moz`
 
 This prints the plot data to the standard output. If GnuPlot is installed,
 plotting can be done as follows:
 
-./mozplot hybrid-ball-stairs.moz
+`./mozplot hybrid-ball-stairs.moz`
 
 
 DISPLAYING ANIMATIONS FOR THE 2D-MECHANICS LIBRARY WITH MATLAB
 ---------------------------------------------------------------
-In the folder "env/matlab" there's scripts that can visualize the output from
+In the folder `env/matlab` there's scripts that can visualize the output from
 provided by the mechanical2d library. In order to use these follow these steps:
 
 1. Install MATLAB 
 2. Open MATLAB, navigate to the env/matlab folder and open the armAnim.m script
 3. Change the file path and filename to your liking and run the script
 
-There's also another MATLAB script, dataplotter.m, for plotting the output of
+There is also another MATLAB script, dataplotter.m, for plotting the output of
 any modelyze script that can be used instead of GNUplot.
 
 NOTE: currently the animation script uses the angles of each joint as input
@@ -112,10 +113,10 @@ is fixed so the script can use the position of each joint instead.
 LICENSE
 -------
 All files in the Modelyze toolchain project, excepts for files in the folders 
-"library/" and "ext/" are under the GNU General Public Licence according 
-to file COPYING. Files under folder "ext/" have specific licenses given 
-in each sub-folder. Files under folder "library/" are under the GNU Lesser
-General Public License according to file "library/COPYING.LESSER".
+`library/` and `ext/` are under the GNU General Public Licence according 
+to file COPYING. Files under folder `ext/` have specific licenses given 
+in each sub-folder. Files under folder `library/` are under the GNU Lesser
+General Public License according to file `library/COPYING.LESSER`.
 
 
 
@@ -124,24 +125,24 @@ General Public License according to file "library/COPYING.LESSER".
 REVISIONS
 ---------
 
-Version 1.14 BETA (Under development)
+* Version 1.14 
   - Improved error messages.
   - Added support for function overloading.
   - Fixed a bug when using Sundials via Macports.
 
-Version 1.13 January 13, 2015
+* Version 1.13 January 13, 2015
   - Created demo, test, and library directories
   - Added library-path parameter
   - Solved many minor issues
 
-Version 1.12 November 22, 2013
+* Version 1.12 November 22, 2013
   - Added new regression testing system
   - Added a number of new DSLs
 
-Version 1.11 September 24, 2013
+* Version 1.11 September 24, 2013
   - Minor bugfixes and cleanup.
 
-Version 1.1 December 17, 2012.
+* Version 1.1 December 17, 2012.
   - Changed the name of the project from "MKL" to "Modelyze". The rationale
     for the change is to emphasize that Modelyze is a host language for
     embedding DSLs.
@@ -180,7 +181,7 @@ Version 1.1 December 17, 2012.
     as argument, it can be called as follows (note the space)
       foo (p1,p2)
 
-Version 1.0.0 - October 1, 2010
+* Version 1.0.0 - October 1, 2010
   - First version corresponding to David Broman's PhD Thesis.
   - Changed operators for Real and Int, so that e.g., -. and +. are
     for integer operations instead of Real. The rationale is that most

@@ -69,7 +69,7 @@ def pprintModelica(name:String, probelist:[(String,[Signal])], model:Equations) 
       | log e ->   "log(" ++ pprintExpr(e) ++ ")"
       | log10 e -> "log10(" ++ pprintExpr(e) ++ ")"
       | sym:<Real> -> mkvar uks expr
-      | lift r:Real -> real2modelicaString r
+      | sval r:Real -> real2modelicaString r
   };
   def pprintEqs(model:Equations) -> String = {
     match model with

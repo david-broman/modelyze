@@ -21,19 +21,19 @@ include IndexReduction
 include SimOutput
 
 type Residual = Real -> {Real} -> {Real} -> [Real]
-type Varvals = <Real> -> <Real>
+type Vars = <Real> -> <Real>
 
 // General expression evaluation
-def eval(expr:<?>, yy:Varvals, yp:Varvals) -> ? = {
-    match expr with
+def eval(e:<Dyn>,yy:Vars,yp:Vars) -> Dyn = {
+    match e with
     | der x -> 
         (match x with 
-         | sym:Real -> eval(yp(x), yy, yp)  
+         | sym:Real -> eval(yp(x),yy,yp)  
          | _ -> error "Derivatives only allowed on unknowns")
-    | sym:Real -> eval(yy(expr), yy, yp)
+    | sym:Real -> eval(yy(e),yy,yp)
     | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
-    | lift v:? -> v
-    | _ ->  error "Unsupported model construct" 
+    | sval v:Dyn -> v
+    | _ ->  error "Unsupported construct" 
 }
 
 // Evaluate an expression of real type. The unknowns in the
@@ -66,7 +66,7 @@ def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
     match initvals with
     | (u,e)::xs -> {
         def v = (match e with 
-                 | lift v:Real -> v 
+                 | sval v:Real -> v 
                  | _ -> error "Cannot initialize a variable with a variable.");
         def _ = (Array.set yy (fst (Map.find u ukmap)) v);      
         setvals xs;

@@ -21,10 +21,10 @@ include ModelyzeDAE
 
 def g = 9.81
 
-def Pendulum(m:Real,l:Real,angle:Real) = {
+def Pendulum(m:Real,l:Real,a:Real)={
     def x,y,T:Real;
-    init x (l*sin(angle));
-    init y (-l*cos(angle));
+    init x (l*sin(a));
+    init y (-l*cos(a));
      
     -T*x/l = m*x'';
     -T*y/l - m*g = m*y'';     
@@ -39,9 +39,12 @@ def pi = 3.1415
 
 def main = 
    printsim(Pendulum(5.0, 3.0, 45.0*pi/180.0), 0.01, 10.0)
-   
+     
+//def _ = dprint (uk(Pendulum(5.0, 3.0, 0.785),Set.empty))
 
 
+//def main = 
+//   printsim(Pendulum(5.0, 3.0, 45.0*pi/180.0), 0.01, 0.01)
 
 
 

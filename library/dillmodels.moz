@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include IGIVEUP
+include DILL
 
 type Through = <Real>
 type Across = <Real>

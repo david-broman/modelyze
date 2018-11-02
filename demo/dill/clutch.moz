@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include MODELS_IGU
+include DILLMODELS
 
 def o_1, o_2: AngularVelocity
 def L_1, L_2: AngularMomentum

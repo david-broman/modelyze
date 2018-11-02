@@ -19,7 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
-include IGIVEUP
+include DILL
 
 def y, v: <Real>
 def g = 9.81

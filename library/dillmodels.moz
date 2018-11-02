@@ -33,42 +33,32 @@ type AngularVelocity = Across
 
 def Clock(t_0: Real, t: Time) = {
   init t t_0 ++
-  eande (der t = 1.)
+  eqs_and_edges (der t = 1.)
 }
 
 def UnitStep(t_0: Real, t_s: Real, s: Signal) = {
   def t: Time;
   Clock t_0 t ++
   switch
-    (init s 0. ++ eande (s = 0.))
+    (init s 0. ++ eqs_and_edges (s = 0.))
     (t_s - t)
-    (fun thk: () -> (init s 1. ++ eande (s = 1.)))
+    (fun thk: () -> (init s 1. ++ eqs_and_edges (s = 1.)))
 }
 
 def TwoUnitSteps(t_0: Real, t_s1: Real, t_s2: Real, s: Signal) = {
   def t: Time;
   Clock t_0 t ++
   switch
-    (init s (-1.) ++ eande (s = -1.))
+    (init s (-1.) ++ eqs_and_edges (s = -1.))
     (t_s1 - t)
     (fun thk: () ->   switch
-         (init s 1. ++ eande (s = 1.))
+         (init s 1. ++ eqs_and_edges (s = 1.))
          (t_s2 - t)
-         (fun thk: () -> (init s (-1.) ++ eande (s = -1.))))  
-}
-
-def PeriodicUnitStep(t_0: Real, p: Real, s: Signal) = {
-  def t: Time;
-  def f(up: Bool) -> HModel = {
-    if up then switch (init s 1. ++ eande (s = 1.)) (sin (3. * t / p - t_0)) (fun tnk: () -> f (!up))
-    else switch (init s 0. ++ eande (s = 0.)) (1.e-5 - sin (3. * t / p - t_0)) (fun tnk: () -> f (!up))
-  };
-  Clock t_0 t ++
-  f true
+         (fun thk: () -> (init s (-1.) ++ eqs_and_edges (s = -1.))))  
 }
 
 def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
-  eande (
+  eqs_and_edges (
     Branch t a p n;
     C * a = t
   )
@@ -87,7 +77,7 @@ def AResistor = (fun R: Real -> ADissipator (1. / R))
 
 def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
   init a C ++
-  eande (
+  eqs_and_edges (
     Branch t a p n;
     a = C
   )
@@ -117,7 +107,7 @@ def CurrentSensor = ThroughSensor
 def TorqueSensor = ThroughSensor
 
 def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
-  eande (
+  eqs_and_edges (
     Branch t a p n;
     t = C
   )
@@ -147,7 +137,7 @@ def VoltageSensor = AcrossSensor
 def AngularVelocitySensor = AcrossSensor
 
 def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
-  eande (
+  eqs_and_edges (
     Branch t a p n;
     C * (der a) = t
   )  
@@ -165,7 +155,7 @@ def AMass = AAcrossStorage
 def ACapacitor = AAcrossStorage
 
 def ThroughStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
-  eande (
+  eqs_and_edges (
     Branch t a p n;
     C * (der t) = a
   )  
@@ -201,15 +191,10 @@ def ADiode = AOneWayThroughStop
 
 def Switch(open: Bool, s: Signal, p: Node, n: Node) = {
   def sw(open: Bool) -> HModel = {
-    // if open then switch (eande (mnil ())) (s) (fun thk: () -> sw (!open))
-    if open then
-    {
-      // def _ = dprint("open");
-      switch (eande nil) (s) (fun thk: () -> sw (!open))    
+    if open then {
+      switch (eqs_and_edges nil) (s) (fun thk: () -> sw (!open))    
     }
-    else
-    {
-      // def _ = dprint("closed");
+    else {
       switch (AAcrossGenerator 0. p n) (1. - s) (fun thk: () -> sw (!open))
     }
   };

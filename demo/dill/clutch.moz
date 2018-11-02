@@ -40,7 +40,7 @@ def Body(I: Real, D: Real, o_0: Real, t: Torque, o: AngularVelocity, L: AngularM
   def t_m, t_d: Torque;
   def o_m, o_d: AngularVelocity;
   init o_m o_0 ++
-  eande(
+  eqs_and_edges(
     t = t_m + t_d;
     der L = t;
     o = o_m

@@ -29,7 +29,7 @@ def fall(y: <Real>, v: <Real>, y_0: <Real>, v_0: <Real>) = {
   reinit y y_0 ++ 
   reinit v v_0 ++
   reinit (der y) v_0 ++
-  eande (
+  eqs_and_edges (
     der y = v;
     der v = -g
   )

@@ -18,7 +18,40 @@ along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 written by Oscar Eriksson oerikss@kth.se
 */
 
-include MEBMLANGPhysical
+include Equation
+def Branch : Real -> Real -> Dyn -> Dyn -> Equations
+
+def contToSet(cont: ?) -> Set(?) = {
+  def work(cont: ?, acc: Set(?)) -> Set(?) = {
+    match cont with
+    | this; that -> work that (work this acc)
+    | last -> (Set.add last acc)
+  };
+  work cont (Set.empty)
+}
+
+def contToList(cont: ?) -> [?] = {
+  reverse (Set.toList (contToSet cont))
+}
+
+def setToContImpl(set: Set(?)) -> ? = {
+   def work(l: [?], acc: ?) -> ? = {
+      match l with
+      | e::es -> work es (acc;e)
+      | [] -> acc
+   };
+   def l = (Set.toList set);
+   if (length l) == 0 then error "Empty set" else
+   if (length l) == 1 then (hd l) else work (tl l) (hd l)
+}
+
+def setToCont(set: Set(?)) -> ? = {
+  setToContImpl set
+}
+
+def setToCont(set: Set(Equations)) -> Equations = {
+  if (Set.size set) == 0 then NoEqn else setToContImpl set
+}
 
 type Node = ?
 type IMatrix = ((Int => (Int => Int)), Int, Int)
@@ -392,9 +425,9 @@ def matrixVMapToEquations(IM: IMatrix, vm: (Int => <Real>))
   else work 0 (Set.empty)
 }
 
-def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
+def elaboratetopology(T: Set(Equations)) -> Equations = {
   def llog = logger "elaboratetopology" DEBUG;
-  if (Set.size T) == 0 then Set.empty
+  if (Set.size T) == 0 then mnil ()
   else {
     def ff(ee: (Int, (<Real>, <Real>))) -> (Int, <Real>) = {
       def (i, (t, _)) = ee;
@@ -429,7 +462,7 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
     def _ = llog "flow eqs:" floweqs;
 
     def (_, n, m) = A;
-    if (m > 1) then {
+    if (m != n) then {
       def B = getAcrossMatrix A;
       def _ = llog "Circuit Matrix (B)" (pp B);
 
@@ -442,11 +475,11 @@ def elaboratetopology(T: Set(Equations)) -> Set(Equations) = {
       def E = union floweqs circeqs;
       def _ = llog "topological equations" (setToCont E);
 
-      E
+      setToCont E
     } else {
       def _ =
         llog "We only have one edge, topological equations" (setToCont floweqs);
-      floweqs
+      setToCont floweqs
     }
   }
 }

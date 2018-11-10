@@ -144,7 +144,7 @@ DILL
 DILL is a DSL for modeling hybrid systems and is part of the evaluation of a
 semantics described in the master thesis:
 
-*Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson [(oerikss@kth.se)](mailto:oerikss@kth.se) (pending upload to the public domain)*
+*Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson ([oerikss@kth.se](mailto:oerikss@kth.se)) (pending upload to the public domain)*
 
 The implementation can be found in [`library/dill.moz`](library/dill.moz),
 [`library/dillmodels.moz`](library/dillmodels.moz) and

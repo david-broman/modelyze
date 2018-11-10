@@ -1,5 +1,5 @@
 
-Modelyze toolchain, version 1.14
+Modelyze toolchain, version 1.15
 ------------------------------------
 Modelyze toolchain
 Copyright (C) 2010-2017 David Broman
@@ -61,7 +61,7 @@ We install [Ocaml](https://ocaml.org/),
 sudo apt-get install opam m4 libsundials-dev
 ```
 
-  This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
+This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 
 2. Initialize `opam` by issuing:
 
@@ -134,6 +134,17 @@ and can thus not extract the length of the links so the script assumes all
 lengths are 0.5 meters. This will be fixed later when an initialization bug
 is fixed so the script can use the position of each joint instead.
 
+DILL
+----
+
+The files [library/dill.moz](library/dill.moz),
+[library/dillmodels.moz](library/dillmodels.moz) and
+[library/graphelaboration.moz](library/graphelaboration.moz) is an
+implementation, part of the evaluation of a semantics described in the master
+thesis:
+
+*Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson (pending upload to the public domain)*
+Examples using this implementation can be found in [demo/dill](demo/dill).
 
 LICENSE
 -------
@@ -149,6 +160,10 @@ General Public License according to file `library/COPYING.LESSER`.
 
 REVISIONS
 ---------
+
+* Version 1.15
+  * Use [SundialsML](https://inria-parkas.github.io/sundialsml/)
+  * Updated Makefile and build instructions
 
 * Version 1.14 
   - Improved error messages.

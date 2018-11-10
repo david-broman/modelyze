@@ -137,16 +137,15 @@ is fixed so the script can use the position of each joint instead.
 DILL
 ----
 
-Is a DSL for modeling hybrid systems and is part of the evaluation of a
+DILL is a DSL for modeling hybrid systems and is part of the evaluation of a
 semantics described in the master thesis:
 
 *Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson (pending upload to the public domain)*
 
 The implementation can be found in [`library/dill.moz`](library/dill.moz),
 [`library/dillmodels.moz`](library/dillmodels.moz) and
-[`library/graphelaboration.moz`](library/graphelaboration.moz).
-
-Examples using this implementation can be found in [`demo/dill`](demo/dill).
+[`library/graphelaboration.moz`](library/graphelaboration.moz).  Examples using
+this implementation can be found in [`demo/dill`](demo/dill).
 
 LICENSE
 -------

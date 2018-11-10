@@ -71,7 +71,7 @@ eval `opam config env`
 ```
 
 Preferably, update your `~/.profile` according to the instructions from
-`opam init` to set the correct environment at each shell session.
+`opam init` to set the correct environment at each login session.
 
 3. Install the *Ocaml* bindings for the *Sundials* solver suite together with
 `ocamlbuild`.
@@ -171,6 +171,7 @@ REVISIONS
   * Added primitive functions for calling nonlinear equation solver (KINSOL)
   * Included DILL as an alternative for modeling hybrid systems
   * Added syntax definitions for VIM
+  * Updated regression tests
   * Updated Makefile and build instructions
 
 * Version 1.14 

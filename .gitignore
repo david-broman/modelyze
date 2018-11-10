@@ -1,3 +1,4 @@
+.nvimrc
 bin
 _build
 _tags
@@ -6,3 +7,10 @@ myocamlbuild.ml
 Viktor Testar/
 *_moz_result.txt
 *#*
+/TAGS
+/tags
+/.merlin
+tmux*
+.vsocde
+/.vscode/tasks.json
+obipy-resources/

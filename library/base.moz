@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -14,7 +14,6 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 
 def (mod) : Int -> Int -> Int = @@int_mod
 def (+) : Int -> Int -> Int = @@int_add
@@ -43,7 +42,7 @@ def (||) : Bool -> Bool -> Bool = @@bool_or
 def (--) : Int -> Int = @@int_neg
 def (--) : Real -> Real = @@real_neg
 def bool2string : Bool -> String = @@bool2string
-def int2string : Int -> String = @@int2string 
+def int2string : Int -> String = @@int2string
 def real2string : Real -> String = @@real2string
 def int2real : Int -> Real = @@int2real
 def real2int : Real -> Int = @@real2int
@@ -74,6 +73,7 @@ def strlen : String -> Int = @@string_strlen
 def (++) : String -> String -> String = @@string_concat
 
 def INFINITE = 1./0.
+def NEG_INFINITE = -1./0.
 
 type RealSignal = <Real>
 type IntSignal = <Int>
@@ -101,11 +101,35 @@ def println(s:String) -> () = {
 def println(i:Int) -> () = println(int2string(i))
 def println(i:Real) -> () = println(real2string(i))
 
+def OFF = (0, "THIS SHOULD NEVER BE PRINTED!")
+def INFO = (1, "INFO")
+def DEBUG = (2, "DEBUG")
+def TRACE = (3, "TRACE")
+
+// def loglevel = DEBUG
+def loglevel = OFF
+// def loglevel = INFO
+
+def dlogger(frum: String, level: (Int, String), msg: String, thing: (() -> Dyn))
+  -> () = {
+
+  def (l, s) = level;
+  if l <= (fst loglevel) then {
+    def _ = println("=== start: " ++ msg ++ " === [in: " ++ frum ++ " - " ++ s ++ "]");
+    def _ = dprint(thing ());
+    println("=== end: " ++ msg ++ " ===")
+  } else ()
+}
+
+def logger(frum: String, level: (Int, String), msg: String, thing: Dyn)
+  -> () = {
+  dlogger frum level msg (fun t: () -> thing)
+}
 
 def reverse(lst:[Dyn]) -> [Dyn] = {
     def work(lst:[Dyn],acc:[Dyn]) -> [Dyn] = {
         match lst with
-        | l::ls -> work(ls,l::acc) 
+        | l::ls -> work(ls,l::acc)
         | [] -> acc
     };
     work(lst,[])
@@ -117,12 +141,12 @@ def append(l1:[Dyn], l2:[Dyn]) -> [Dyn] = {
         | l::ls -> l::(work(ls))
         | [] -> l2
     };
-    work(l1)        
+    work(l1)
 }
 
 def length(l:[Dyn]) -> Int = {
     match l with
-    | _::ls -> length(ls) + 1 
+    | _::ls -> length(ls) + 1
     | [] -> 0
 }
 
@@ -135,9 +159,161 @@ def nth(l:[Dyn], n:Int) -> Dyn = {
     work(l, 0)
 }
 
+def map(f: (Dyn -> Dyn), l: [Dyn]) -> [Dyn] = {
+  def work(l: [Dyn], acc: [Dyn]) -> [Dyn] = {
+    match l with
+    | e::es -> work es ((f e)::acc)
+    | [] -> acc
+  };
+  reverse (work l [])
+}
 
+def mapi(f: (Int -> Dyn -> Dyn), l: [Dyn]) -> [Dyn] = {
+  def work(l: [Dyn], i: Int, acc: [Dyn]) -> [Dyn] = {
+    match l with
+    | e::es -> work es (i+1) ((f i e)::acc)
+    | [] -> acc
+  };
+  reverse (work l 0 [])
+}
 
+def hd(l: [Dyn]) -> Dyn = {
+  match l with
+  | e::es -> e
+  | _ -> error "There is no head of an empty list"
+}
 
+def tl(l: [Dyn]) -> [Dyn] = {
+  match l with
+  | e::es -> es
+  | _ -> error "There is no tail of an empty list"
+}
 
+def iter(f: (Dyn -> ()), l: [Dyn]) -> () = {
+  def work(l: [Dyn]) -> () = {
+    match l with
+    | e::es -> {
+        def _ = f e;
+        work es
+      }
+    | _ -> ()
+  };
+  work l
+}
 
+def listToArray(l: [Dyn]) -> {Dyn} = {
+  def work(l: [Dyn], a: {Dyn}, k: Int) -> () = {
+    match l with
+    | e::es -> {
+        def _ = (Array.set a k e);
+        work es a (k + 1)
+      }
+    | _ -> ()
+  };
 
+  def n = length l;
+  def h = hd l;
+  def a = (Array.make n l);
+  def _ = work l a 0;
+  a
+}
+
+def listToSet(l : [Dyn]) -> Set(Dyn) = {
+  def work(l : [Dyn], acc: Set(Dyn)) -> Set(Dyn) = {
+    match l with
+    | e::es -> work es (Set.add e acc)
+    | _ -> acc
+  };
+  work l (Set.empty)
+}
+
+def listToMap(l: [(Dyn, Dyn)]) -> (Dyn => Dyn) = {
+  def work(l: [Dyn], acc: (Dyn => Dyn)) -> (Dyn => Dyn) = {
+    match l with
+    | (k, v)::es -> work es (Map.add k v acc)
+    | [] -> acc
+  };
+  work l (Map.empty)
+}
+
+def forAll(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
+  def work(l: [Dyn]) -> Bool = {
+    match l with
+    | e::es -> if (p e) then work es else false
+    | [] -> true
+  };
+  work l
+}
+
+def exists(p: (Dyn -> Bool), l: [Dyn]) -> Bool = {
+  def work(l: [Dyn]) -> Bool = {
+    match l with
+    | e::es -> if (p e) then true else work es
+    | [] -> false
+  };
+  work l
+}
+
+def foldLeft(f: (Dyn -> Dyn -> Dyn), a: Dyn, l: [Dyn]) -> Dyn = {
+  def work(a : Dyn, l: [Dyn]) -> Dyn = {
+    match l with
+    | e::es -> work (f a e) es
+    | [] -> a
+  };
+  work a l
+}
+
+def union(lhs: Set(?), rhs: Set(?)) -> Set(?) = {
+  def f(res: Set(?), e: ?) -> Set(?) = { Set.add e res };
+  foldLeft f lhs (Set.toList rhs)
+}
+
+def concat(lhs: [Dyn], rhs: [Dyn]) -> [Dyn] = {
+  def rlhs = reverse lhs;
+  def f(l: [Dyn], e: Dyn) -> [Dyn] = { e::l };
+  foldLeft f rhs rlhs
+}
+
+def filter(p: (Dyn -> Bool), l: [Dyn]) -> [Dyn] = {
+  def f(acc: [Dyn], e: Dyn) -> [Dyn] = { if p e then e::acc else acc };
+  foldLeft f [] l
+}
+
+def foldLeft(f: (Dyn -> Dyn -> Dyn), acc: Dyn, a: {Dyn}) -> Dyn = {
+  def work(i: Int, acc: Dyn) -> Dyn = {
+    if (Array.length a) == i then acc
+    else work (i + 1) (f acc (Array.get a i))
+  };
+
+  work 0 acc
+}
+
+def iteri(f: (Int -> Dyn -> ()), a: {Dyn}) -> () = {
+  def work(i: Int) -> () = {
+    if (Array.length a) == i then ()
+    else {
+      def _ = f i (Array.get a i);
+      work (i + 1)
+    }
+  };
+
+  work 0
+}
+
+def min(a: {Dyn}) -> Dyn = {
+  def f(min: Dyn, e: Dyn) -> Dyn = {
+    if e < min then e else min
+  };
+
+  foldLeft f (Array.get a 0) a;
+}
+
+def sum(l: [Dyn]) -> Dyn = {
+  def f(a: Dyn, e: Dyn) -> Dyn = {
+    a + e
+  };
+
+  match l with
+  | e::[] -> e
+  | _ -> foldLeft f (hd l) (tl l)
+}

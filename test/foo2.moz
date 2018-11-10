@@ -1,0 +1,23 @@
+include MEBMLANG
+
+def x, y, z: <Real>
+
+def t0 = 0.
+def y0 = listToArray [10., 2., 3.]
+def yp0 = listToArray [0., 0., 0.]
+
+def t1 = 1.
+def y1 = listToArray [-1., 0.001, -2.]
+def yp1 = listToArray [0., 0., 0.]
+
+def ukm = listToMap [(x, (0, false)), (y, (1, false)), (z, (2, false))]
+def zcm = listToMap [(0, x), (1, x + z), (2, y)]
+def zca = listToArray [1, 1, 0]
+
+def main = {
+  def t = ipolZCTime zcm zca ukm t0 y0 yp0 t1 y1 yp1;
+  def r = (Array.make 3 0.);
+  def _ = dprint(t);
+  def _ = ipolArray y0 y1 t0 t1 t r;
+  dprint(r)
+}

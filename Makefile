@@ -16,47 +16,27 @@
 # along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
-OS = $(shell uname)
-
-
-#Check if Sundials is installed using MacPort
-ifneq (,$(wildcard /opt/local/include/ida/ida.h))
-C_LIBS = /opt/local/lib
-export CPATH = /opt/local/include
-# Check if MacOS. If so, use the path to standard C libraries.
-else ifeq ($(OS), Darwin)
-C_LIBS = /usr/local/lib
-export CPATH = /usr/local/include
-# If Linux (Ubuntu), use the path to standard C libraries.
-else ifeq ($(OS), Linux)
-C_LIBS = /usr/lib
-endif
-
 # Directories where ocamlbuild can find source code.
-DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
-
-# These are the files and libraries of C code that should be linked.
-C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsundials_nvecserial.a
-
+# DIRS = src,ext/ucamlib/src,ext/extlib,ext/sundials
+DIRS = src,ext/ucamlib/src,ext/extlib
 
 .PHONY: all clean
 
-# Init submodules if needed and make native version. 
+# Init submodules if needed and make native version.
 # The resulting executable can be found under /bin and /library (symlinks)
 all:    native
 
 
 # Compile native version
-native: bytesfix comp_c_files
-	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
+native: bytesfix #comp_c_files
+	@ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS) moz.native
 	@rm -f bytes.ml
 	@rm -f moz.native
 	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz
 
-
-# C-files. Ugly treatment of error that latest ocaml generates.  
-comp_c_files:
-	@ocamlbuild ext/sundials/ida_stubs.o  > /dev/null 2>&1
+# Compile debuggable byte version
+# debug: bytesfix #comp_c_files
+       # @ocamlbuild -use-ocamlfind -pkg 'sundialsml' -Is $(DIRS)  moz.d.byte
 
 # Handling subtree for ext/ucamlib
 UCAMLIB_GIT = https://github.com/david-broman/ucamlib.git

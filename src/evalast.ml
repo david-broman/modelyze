@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Modelyze toolchain.  If not, see <http://www.gnu.org/licenses/>.
 *)
 
-open Sundials
+(* open Sundials *)
 open Info
 
 
@@ -36,64 +36,66 @@ type env = tm list
 
 
 and ty =
-  | TyBool      
-  | TyInt       
-  | TyReal      
-  | TyString    
-  | TyArrow     of ty * ty 
-  | TyUnit      
+  | TyBool
+  | TyInt
+  | TyReal
+  | TyString
+  | TyArrow     of ty * ty
+  | TyUnit
   | TyList      of ty
   | TyTuple     of ty list
-  | TySym     of ty
-  | TyDyn  
+  | TySym       of ty
+  | TyDyn
   | TySymData   of typeid
   | TyArray     of ty
   | TyMap       of ty * ty
-  | TySet       of ty 
+  | TySet       of ty
   | TyDAESolver
+  | TyNLEQSolver
   | TyEnv
 
 and tm =
-  | TmVar         of index
-  | TmSpecSym     of sym
-  | TmLam         of tm 
-  | TmClos        of tm * env * Ast.ident
-  | TmByteCode    of bcode * apiid * Ast.ident * tm list
-  | TmApp         of tm * tm * specialize
-  | TmFix         of tm
-  | TmIf          of tm * tm * tm
-  | TmConst       of Ast.const
-  | TmSym         of sym * ty 
-  | TmGenSym      of ty
-  | TmSymApp      of tm * tm 
-  | TmLift        of tm * ty
-  | TmCase        of tm * mpat * tm * tm
-  | TmEqual       of tm * tm
-  | TmLcase       of tm * tm * tm
-  | TmCons        of tm * tm
-  | TmNil         
-  | TmTuple       of tm list
-  | TmProj        of int * tm
-  | TmArray       of tm array
-  | TmArrayOp     of Ast.arrayop * tm list
-  | TmMap         of int * (tm,tm) PMap.t
-  | TmMapOp       of Ast.mapop * tm list
-  | TmSet         of int * (tm,unit) PMap.t
-  | TmSetOp       of Ast.setop * tm list
-  | TmDAESolver   of Ida.st * tm array * tm array
-  | TmDAESolverOp of Ast.daesolverop * tm list
-  | TmDPrint      of tm
-  | TmDPrintType  of tm
-  | TmSymStr      of tm
-  | TmError       of info * tm
-  | TmDebugId     of Ast.ident * tm
-  | TmPEval       of tm
-  | TmTheta       of tm
+  | TmVar           of index
+  | TmSpecSym       of sym
+  | TmLam           of tm
+  | TmClos          of tm * env * Ast.ident
+  | TmByteCode      of bcode * apiid * Ast.ident * tm list
+  | TmApp           of tm * tm * specialize
+  | TmFix           of tm
+  | TmIf            of tm * tm * tm
+  | TmConst         of Ast.const
+  | TmSym           of sym * ty
+  | TmGenSym        of ty
+  | TmSymApp        of tm * tm
+  | TmLift          of tm * ty
+  | TmCase          of tm * mpat * tm * tm
+  | TmEqual         of tm * tm
+  | TmLcase         of tm * tm * tm
+  | TmCons          of tm * tm
+  | TmNil
+  | TmTuple         of tm list
+  | TmProj          of int * tm
+  | TmArray         of tm array
+  | TmArrayOp       of Ast.arrayop * tm list
+  | TmMap           of int * (tm,tm) PMap.t
+  | TmMapOp         of Ast.mapop * tm list
+  | TmSet           of int * (tm,unit) PMap.t
+  | TmSetOp         of Ast.setop * tm list
+  | TmDAESolver     of Nvector_serial.kind Ida.serial_session * Nvector_serial.t * Nvector_serial.t
+  | TmDAESolverOp   of Ast.daesolverop * tm list
+  | TmNLEQSolver    of Nvector_serial.kind Kinsol.serial_session * Nvector_serial.t
+  | TmNLEQSolverOp  of Ast.nleqsolverop * tm list
+  | TmDPrint        of tm
+  | TmDPrintType    of tm
+  | TmSymStr        of tm
+  | TmError         of info * tm
+  | TmDebugId       of Ast.ident * tm
+  | TmPEval         of tm
+  | TmTheta         of tm
 
 
 
-and mpat = 
+and mpat =
   | MPatSym         of ty
-  | MPatSymApp     
+  | MPatSymApp
   | MPatLift        of ty
-

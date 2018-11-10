@@ -1,0 +1,34 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include DILLMODELS
+
+def s: Signal
+def t_0 = 0.
+def t_s = 1.
+
+def m = {
+  UnitStep t_0 t_s s
+}
+
+def monitored = [(s, "s")]
+
+def main = simulate m (0., 2.) 0.01 monitored 2.9 0.001 false false

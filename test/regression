@@ -14,7 +14,13 @@ test_local_file()
   diff test.out "expected-output-"$1".txt"
 }
 
-   
+test_dill_file()
+{
+  echo "Test" $1".moz"
+  ../bin/moz --libpaths=../library/ ../demo/dill/$1".moz" > test.out
+  diff test.out "expected-output-"$1".txt"
+}
+
 test_demo_file "modelica-mechsys" 
 test_demo_file "breaking-controlsys"
 test_demo_file "capacitor-switch"
@@ -29,4 +35,14 @@ test_demo_file "very-fast-fly"
 test_local_file "overloading"
 test_local_file "multibranch"
 test_local_file "regression-CapitalLetterInFilenameBugOnLinux"
+
+test_dill_file "bounce2"
+test_dill_file "lcd"
+test_dill_file "lr"
+test_dill_file "step"
+test_dill_file "svr"
+test_dill_file "lrd"
+test_dill_file "lrd2"
+test_dill_file "clutch"
+
 rm -f test.out

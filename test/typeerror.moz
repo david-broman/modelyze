@@ -1,0 +1,11 @@
+include Equation
+
+def first: (Real -> Equations) -> Real
+def second: (Real -> <Equations>) -> Real
+
+def main = {
+  def x, y: Real;
+  def IdoNotTypeCheck = (first (fun z: Real -> x = y));
+  def neitherDoI = (second (fun z: Real -> x = y));
+  println("end")
+}

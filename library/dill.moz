@@ -1,0 +1,734 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include Equation
+include ModelyzeDAE
+include Graphelaboration
+
+def pre : Real -> Real
+def (<=) : <Real> -> <Real> -> Equations
+
+def nil = mnil ()
+type Eqs = Equations
+type Ieqs = Equations
+type CDAE = (Eqs, Ieqs)
+
+type HModel
+def switch : HModel -> <Real> -> (() -> ?) -> HModel
+def init : <Real> -> <Real> -> HModel
+def reinit : <Real> -> <Real> -> HModel
+def eqs_and_edges: Equations -> HModel
+def (++) : HModel -> HModel -> HModel
+
+type State = (<Real> => Real)
+type Topology = Set(Equations)
+type Interval = (Real, Real)
+type MState = (HModel, State, State, State, Interval, Int)
+
+// ======= HELPERS =======
+
+def _print_model(m: Equations) -> () = {
+  match m with
+  | e_1; e_2 -> def _ = _print_model e_1; _print_model e_2
+  | mnil _ -> ()
+  | _ -> def _ = dprint(m); ()
+}
+
+def _print_mmodel(m: HModel) -> () = {
+  match m with
+  | m_1 ++ m_2 -> def _ = _print_mmodel m_1; _print_mmodel m_2
+  | eqs_and_edges m_1 -> _print_model m_1
+  | _ -> def _ = dprint(m); ()
+}
+
+def _print_sim_headers(labels: [String]) -> () = {
+  def _ = print "time";
+  def _ = map (fun l: String -> print ("\t" ++ l)) labels;
+  print "\n"
+}
+
+def _print_time(t: Real, n: Int) -> () = {
+  def _ = print (real2string t);
+  if n != -1 then def _ = print(", "); print(n)
+  else ()
+}
+
+def _print_sim_results(is_defined: (<Real> -> Bool), ev: (<Real> -> Real), probes: [<Real>]) -> () = {
+
+  def f(e: <Real>) -> () = {
+    def _ =  print "\t";
+    if is_defined e then print (real2string (ev e))
+    else print "?"
+  };
+
+  def _ = map f probes;
+  print "\n"
+}
+
+def _state_check_elem(v: <Real>) -> () = {
+  match v with
+  | der x -> (
+      match x with
+      | sym: Real -> ()
+      | _ -> error "state only allows state variables"
+    )
+  | sym: Real -> ()
+  | _ -> error "state only allows state variables"
+}
+
+def state_find(v: <Real>, z: State) -> Real = {
+  def _ = _state_check_elem v;
+  if (Map.mem v z) then (Map.find v z) else def _ = dprint(v); error " :undefined state variable"
+}
+
+// Test
+// def x, y: <Real>
+// def _ = state_find (x + y) (Map.empty) // state only allows state variables
+// def _ = state_find (der (der x)) (Map.empty) // state only allows state variables
+
+def state_mem(v: <Real>, z: State) -> Bool = {
+  def _ = _state_check_elem(v);
+  Map.mem v z
+}
+
+def state_add(v: <Real>, r: Real, z: State) -> State = {
+  def _ = _state_check_elem(v);
+  Map.add v r z
+}
+
+def state_union(z_1: State, z_2: State) -> State = {
+  def f(a: State, e: (<Real>, Real)) -> State = {
+    def (v, r) = e;
+    def _ = (if (state_mem v a) then if (state_find v a) != r then error "ambigous union" else () else ());
+    state_add v r a
+  };
+  foldLeft f z_1 (Map.toList z_2)
+}
+
+def state_empty = Map.empty
+
+def is_defined(e: <?>, z: State) -> Bool = {
+  match e with
+  | sym: Real -> (state_mem e z)
+  | der x -> (state_mem x z)
+  | e_1 e_2 -> (is_defined e_1 z) && (is_defined e_2 z)
+  | lift v: ? -> true
+  | _ -> error "Unsupported eqs_and_edges construct"
+}
+
+def is_defined_ukm(e: <?>, ukm: UkMap) -> Bool = {
+  match e with
+  | sym: Real -> (Map.mem e ukm)
+  | der x -> (Map.mem x ukm)
+  | e_1 e_2 -> (is_defined_ukm e_1 ukm) && (is_defined_ukm e_2 ukm)
+  | lift v: ? -> true
+  | _ -> error "Unsupported eqs_and_edges construct"
+}
+
+def is_ie_defined(e: <?>, z: State, ukm: UkMap) -> Bool = {
+  match e with
+  | sym: Real -> if snd (Map.find e ukm) then state_mem e z else true
+  | der x -> state_mem e z
+  | e_1 e_2 -> (is_ie_defined e_1 z ukm) && (is_ie_defined e_2 z ukm)
+  | lift v: ? -> true
+  | _ -> error "Unsupported eqs_and_edges construct"
+}
+
+def _upd_arr(x: <Real>, z: State, i: Int, a: {Real}) -> () = {
+  if !(state_mem x z) then ()
+  else (Array.set a i (state_find x z))
+}
+
+def get_DAESolver_input(dae: Eqs, dac: Ieqs, z_0: State, undefval: Real) -> (Residual, Int, Residual, {Real}, {Real}, {Real}, UkMap) = {
+
+  def dae_state_to_ukmap_yy_yp(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}, {Real}) = {
+    def (n, ukm) = realUnknowns d;
+    def yy = (Array.make n udfv);
+    def yp = (Array.make n udfv);
+    def _ = map
+      (fun e: (<Real>, (Int, Bool)) ->
+        { def (x, (i, _)) = e; _upd_arr x z i yy })
+      (Map.toList ukm);
+    def _ = map
+      (fun e: (<Real>, (Int, Bool)) ->
+        { def (x, (i, _)) = e; _upd_arr (der x) z i yp })
+      (Map.toList ukm);
+    (ukm, yy, yp)
+  };
+
+  def (ukm, yy, yp) = dae_state_to_ukmap_yy_yp dae z_0 undefval;
+
+  def mkRootFuns(ukm: UkMap, dac: Equations, t :Real, yy:{Real}, yp:{Real}) -> [Real] = {
+    def eval(e: <?>) = evalFromArrays(e,ukm,yy,yp);
+    def work (d: Equations, acc: [Real]) -> [Real] = {
+      match d with
+      | e1; e2 -> work e2 (work e1 acc)
+      | e1 <= e2 -> (eval(e2) - eval(e1))::acc
+      | _ -> acc
+    };
+    work dac [];
+  };
+
+  def vids = initConditionCorrection ukm;
+  def resf = makeResidual ukm dae;
+  def rootf = mkRootFuns ukm dac;
+  def nroots = length (rootf 0. yy yp);
+  (resf, nroots, rootf, yy, yp, vids, ukm)
+}
+
+def ukmap_yy_yp_to_state(ukm: UkMap, yy: {Real}, yp: {Real}) -> State = {
+  def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+    def (x, (i, _)) = e;
+    Map.add x (Array.get yy i) (Map.add (der x) (Array.get yp i) acc)
+  };
+
+  foldLeft f (Map.empty) (Map.toList ukm)
+}
+
+def number_of_equations(e: Eqs) -> Int = {
+  match e with
+  | e_1; e_2 -> (number_of_equations e_1) + (number_of_equations e_2)
+  | e_1 =  e_1 -> 1
+  | mnil _ -> 0
+  | _ -> def _ = dprint(e); error "exptected equations"
+}
+
+// ======= SEMANTICS IMPLEMENTAION ==========
+
+def indexred(d: Eqs) -> Eqs = {
+  def (dr, dmap) = indexReducationPantelides d (Map.empty);
+  dr
+}
+
+def eval_expr(e: <Real>, z: State) -> Real = {
+  def work(e: <?>) -> ? = {
+    match e with
+    | pre _ -> error "pres not allowed in expr"
+    | der x -> state_find e z
+    | sym: Real -> state_find e z
+    | f a -> (work f) (work a)
+    | lift v: ? -> v
+    | _ -> error "unsupported eqs_and_edges construct"
+    };
+  work e
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 1.), (y, 2.), (der x, 3.)]
+// def _ = dprint(eval_expr (x + y * x / y) z) // 2
+// def _ = dprint(eval_expr (x + y * (der x) / y) z) // 4
+
+def model_to_eqs(m: Equations) -> Eqs = {
+  match m with
+  | m_1; m_2 -> (model_to_eqs m_1); (model_to_eqs m_2)
+  | lhs = rhs -> m
+  | _ -> mnil ()
+}
+
+// Test
+// def x, y: <Real>
+// def _ = dprint(model_to_eqs (x = y; x <= y; x + y = 2.))
+// x_1 = y_1;
+// NoEqn_1;
+// x_1 + y_1 = sval(2)
+
+def model_to_ieqs(m: Equations) -> Ieqs = {
+  match m with
+  | m_1; m_2 -> (model_to_ieqs m_1); (model_to_ieqs m_2)
+  | lhs <= rhs -> m
+  | _ -> mnil ()
+}
+
+// Test
+// def x, y: <Real>
+// def _ = dprint(model_to_ieqs (x = y; x <= y; x + y = 2.))
+// NoEqn_1;
+// x_1 <= y_1;
+// NoEqn_1
+
+def stable(d: Ieqs, z: State) -> Bool = {
+  match d with
+  | d_1; d_2 -> (stable d_1 z) && (stable d_2 z)
+  | lhs <= rhs -> (eval_expr lhs z) < (eval_expr rhs z)
+  | mnil _ -> true
+  | _ -> error "expected a Ieqs in stable"
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 2.), (y, 3.)]
+// def _ = dprint(stable (x <= y;1. <= y) z) // true
+// def _ = dprint(stable (x <= y;4. <= y) z) // false
+// def _ = dprint(stable (x <= y;1. = y) z) // expected a Ieqs in stable
+
+def solve(cdae: CDAE, z_0: State, I: Interval, h: Real, probes: [<Real>], sll: Bool) -> (Interval, State, State) = {
+
+  // Step taken when finding consistent initial values
+  def dt = 0.00001;
+
+  def (t_0, t_f) = I;
+
+  // Preapare for solving
+  def (eqs, ieqs) = cdae;
+  def eqsp = indexred (model_to_eqs eqs);
+
+  // Setup the Eqs Solver
+  def (resf, nroots, rootf, yy1, yp1, vids, ukm) = get_DAESolver_input eqsp ieqs z_0 0.;
+  def yy0 = (Array.make (Array.length yy1) INFINITE);
+  def yp0 = (Array.make (Array.length yp1) INFINITE);
+  def t0 = INFINITE;
+  def s = (DAESolver.initWithRootf resf nroots rootf t_0 yy1 yp1);
+  def _ = (DAESolver.setStopTime s t_f);
+  def _ = (DAESolver.calcIcYaYdp s vids yy1 yp1 (t_0 + dt));
+
+  // Function for printing simulation trace
+  def pst(yy: {Real}, yp: {Real}, t: Real) = {
+    def _ = _print_time t (-1);
+    _print_sim_results (fun v: <Real> -> is_defined_ukm v ukm) (fun v: <Real> -> evalFromArrays v ukm yy yp) probes
+  };
+
+  // And then solve!
+  def go(sr: SolverResult, t0: Real, yy0: {Real}, yp0: {Real},
+    t1: Real, yy1: {Real}, yp1: {Real})
+      -> (SolverResult, Real, {Real}, {Real}, {Real}, {Real}) = {
+
+    def find_left_limit(nyy0: {Real}, nyp0: {Real}) -> Real = {
+      def e = 1.e-10;
+      def _ = (DAESolver.reinit s t0 yy0 yp0);
+
+      def work(t: Real) -> Real = {
+        if (t1 - t > e) then {
+          def (tc, sr) = (DAESolver.solveNormal s t nyy0 nyp0);
+          if sr != DAE_SOLVER_RESULT_ROOTS_FOUND then {
+            work (t + (t1 - t) / 2.)
+          } else {
+            def _ = (DAESolver.reinit s t0 yy0 yp0);
+            def (pt, _) = (DAESolver.solveNormal s (2. * t - t1) nyy0 nyp0);
+            pt
+          }
+        } else t
+      };
+
+      work (t0 + (t1 - t0) / 2.)
+    };
+
+    if sr == DAE_SOLVER_RESULT_SUCCESS then {
+      def _ = pst yy1 yp1 t1;
+      def (nt0, nsr) = (DAESolver.solveNormal s (t1 + h) yy0 yp0);
+      go nsr t1 yy1 yp1 nt0 yy0 yp0
+    } else {
+      if sr == DAE_SOLVER_RESULT_ROOTS_FOUND then {
+        if sll then {
+          def nyy0 = (Array.make (Array.length yy0) 0.);
+          def nyp0 = (Array.make (Array.length yp0) 0.);
+          def nt0 = find_left_limit nyy0 nyp0;
+          def _ = pst nyy0 nyp0 nt0;
+          (sr, t1, nyy0, nyp0, yy1, yp1)
+        } else (sr, t1, yy1, yp1, yy1, yp1)
+      } else {
+        def _ = pst yy1 yp1 t1;
+        (sr, t1, yy0, yp0, yy1, yp1)
+      }
+    }
+  };
+
+  def (_, t_fp, yy0p, yp0p, yy1p, yp1p) =
+    go DAE_SOLVER_RESULT_SUCCESS t0 yy0 yp0 t_0 yy1 yp1;
+  def z_ll = ukmap_yy_yp_to_state ukm yy0p yp0p;
+  def z_0p = ukmap_yy_yp_to_state ukm yy1p yp1p;
+  ((t_0, t_fp), z_ll, z_0p)
+}
+
+// Test
+// def x: <Real>
+// def z_0 = listToMap [(x, 0.)]
+// def eqs = der x = 1.
+// def ieqs = x <= 3.
+// def _ = dprint(solve (eqs,ieqs) z_0 (0., 10.) 0.1 [x])
+
+def eval_left_limit(e: <Real>, z_ll: State) -> <Real> = {
+  def work(e: <?>) -> <?> = {
+    match e with
+    | pre x -> eval_expr x z_ll
+    | f a -> (work f) (work a)
+    | _ -> e
+    };
+  work e
+}
+
+// Test
+// def x, y: <Real>
+// def z_ll = listToMap [(x, 1.)]
+// def _ = dprint(eval_left_limit (x * y + (pre x) / 2.) z_ll)
+
+// Test
+// def x, y: <Real>
+// def z_0 = listToMap [(x, 1.), (der x, 2.), (y, 1.)]
+// def z_ll = listToMap [(x, 2.)]
+// def e = eval_left_limit ((der x) + 1. - (pre x) * y) z_ll
+// def _ = dprint(eval_expr e z_0) // 1
+// def _ = dprint(eval_mexpr_fun ((der x) + 1. - (pre (pre x)) * y) z_ll z_0) // pres not allowed in expr
+
+def mode_switch(m: HModel, s: (<Real> -> Real)) -> HModel = {
+  match m with
+  | m_1 ++ m_2 -> (mode_switch m_1 s) ++ (mode_switch m_2 s)
+  | switch m_1 e (lift m_2 :(() -> ?)) ->
+    if (s e) > 0. then switch (mode_switch m_1 s) e m_2
+    else m_2 ()
+  | _ -> m
+}
+
+def mmodel_to_model(m: HModel) -> Equations = {
+  match m with
+  | m_1 ++ m_2 -> (mmodel_to_model m_1); (mmodel_to_model m_2)
+  | switch m_1 e _ -> (mmodel_to_model m_1); (0. <= e)
+  | eqs_and_edges m_1 -> m_1
+  | _ -> mnil ()
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 0.), (y, 2.)]
+// def m = switch
+//           (switch
+//             (eqs_and_edges (pre x = 1.))
+//             (x)
+//             (fun t: () -> eqs_and_edges (pre x = 2.))
+//           )
+//           (x + 1.)
+//           (fun t:() -> eqs_and_edges (y = 1.)) ++ eqs_and_edges (y = 3.)
+
+// def mp = mode_switch m (fun e: <Real> -> eval_expr e z)
+// def _ = dprint(mmodel_to_model mp)
+// pre_1(x_1) = sval(2);
+// sval(0) <= x_1 + sval(1);
+// y_1 = sval(3)
+// def m = (eqs_and_edges (x = 1.;Branch x x x x)) ++ (init x 1.)
+// def _ = dprint(mode_switch m (fun e: <Real> -> eval_expr e z))
+// def _ = dprint(mmodel_to_model m)
+// model_1(x_1 = sval(1);
+// Branch_1(x_1, x_1, x_1, x_1))++
+// init_2(x_1, sval(1))
+// x_1 = sval(1);
+// Branch_1(x_1, x_1, x_1, x_1);
+// NoEqn_1
+
+def get_topology(m: Equations) -> Topology = {
+  def work(m: Equations, acc: Topology) -> Topology = {
+    match m with
+    | m_1; m_2 -> work m_2 (work m_1 acc)
+    | Branch _ _ _ _ -> Set.add m acc
+    | _ -> acc
+  };
+  work m (Set.empty)
+}
+
+// Test
+// def x, y: <Real>
+// def m = der x = 2.;Branch x y x y;y = 2.;Branch y x y x
+// def _ = dprint(get_topology m) // {Branch_1(y_1, x_1, y_1, x_1), Branch_1(x_1, y_1, x_1, y_1)}
+
+def elab_topology(T: Topology) -> Eqs = {
+  elaboratetopology T
+}
+
+// Test
+// def x, y, z: <Real>
+// def n1, n2, n3: Node
+// def m = Branch x x n1 n2;Branch y y n2 n3;Branch z z n3 n1
+// def _ = dprint(elab_topology (get_topology m))
+// -1 * z_1 + 1 * y_1 = sval(0);
+// -1 * z_1 + 1 * x_1 = sval(0);
+// 1 * z_1 + 1 * y_1 + 1 * x_1 = sval(0)
+
+def eval_inits(m: HModel, s: (<Real> -> Real), z :State) -> State = {
+  match m with
+  | m_1 ++ m_2 -> eval_inits m_2 s (eval_inits m_1 s z)
+  | switch m_1 _ _ -> eval_inits m_1 s z
+  | init v e -> if !(state_mem v z) then state_add v (s e) z else z
+  | reinit v e -> state_add v (s e) z
+  | _ -> z
+}
+
+// Test
+// def x, y: <Real>
+// def z = listToMap [(x, 0.), (der x, 0.), (y, 0.), (der y, 0.)]
+// def z_ll = listToMap [(x, 3.), (der x, 4.)]
+// def m = init x 1. ++ switch (init (der x) 2. ++ init y (pre x) ++ init (der y) (pre (der x))) x (fun t:() -> mmnil ())
+// def _ = dprint(eval_inits m (fun e: <Real> -> eval_mexpr_fun e z_ll z) z) // {y_1' => 4, x_1' => 2, y_1 => 3, x_1 => 1}
+
+def eval_left_limits(m: Equations, z_ll: State) -> Equations = {
+  match m with
+  | m_1; m_2 -> (eval_left_limits m_1 z_ll); (eval_left_limits m_2 z_ll)
+  | e_1 = e_2 -> (eval_left_limit e_1 z_ll) = (eval_left_limit e_2 z_ll)
+  | e_1 <= e_2 -> (eval_left_limit e_1 z_ll) <= (eval_left_limit e_2 z_ll)
+  | _ -> m
+}
+
+// Test
+// def x, y: <Real>
+// def z_ll = listToMap [(x, 1.), (der x, 2.)]
+// def m = pre x = y; pre (der x) <= der y
+// def _ = dprint(eval_left_limits m z_ll)
+// sval(1) = y_1;
+// sval(2) <= y_1'
+
+def elaborate(m: HModel, z_ll: State) -> CDAE = {
+  def mp = eval_left_limits (mmodel_to_model m) z_ll;
+  ((model_to_eqs mp); (elab_topology (get_topology mp)), model_to_ieqs mp)
+}
+
+def impulse_solving(e: Eqs, z_ll: State, z_g: State, k: Real, h: Real) -> (State, State) = {
+
+  def get_defined_eqs(e: Eqs) -> Eqs = {
+    def work(e: Eqs, ukm: UkMap) -> Eqs = {
+      match e with
+      | e_1; e_2 -> (get_defined_eqs e_1); (get_defined_eqs e_2)
+      | e_1 = e_2 ->
+        if (is_ie_defined e_1 z_ll ukm) && (is_ie_defined e_2 z_ll ukm)
+        then e else { def _ = dprint(e); mnil () }
+      | mnil _ -> e
+      | _ -> error "Expected equations"
+    };
+    work e (makeUkMap e)
+  };
+
+  def map_expr_to_impl_euler(e: <?>, z_ll: State, h: Real) -> <?> = {
+    match e with
+    | der x -> (x - (eval_expr x z_ll)) / h
+    | f a -> (map_expr_to_impl_euler f z_ll h) (map_expr_to_impl_euler a z_ll h)
+    | _ -> e
+  };
+
+  def map_eqs_to_impl_euler(e: Eqs, z_ll: State, h: Real) -> Eqs = {
+    match e with
+    | e_1; e_2 ->  (map_expr_to_impl_euler e_1 z_ll h); (map_expr_to_impl_euler e_2 z_ll h)
+    | e_1 = e_2 -> (map_expr_to_impl_euler e_1 z_ll h) = (map_expr_to_impl_euler e_2 z_ll h)
+    | _ -> error "Expected equations"
+  };
+
+  def solve(e: Eqs, z: State, udfv: Real) -> State = {
+
+    def eqs_state_to_ukm_yy(d: Eqs, z: State, udfv: Real) -> (UkMap, {Real}) = {
+      def (n, ukm) = realUnknowns d;
+      def yy = (Array.make n udfv);
+      def _ = map
+      (fun e: (<Real>, (Int, Bool)) ->
+        { def (x, (i, _)) = e; _upd_arr x z i yy })
+        (Map.toList ukm);
+      (ukm, yy)
+    };
+
+    def ukm_yy_to_state(ukm: UkMap, yy: {Real}) -> State = {
+      def f(acc: State,  e: (<Real>, (Int, Bool))) -> State = {
+        def (x, (i, _)) = e;
+        Map.add x (Array.get yy i) acc
+      };
+
+      foldLeft f (Map.empty) (Map.toList ukm)
+    };
+
+    def get_solver_input(e: Eqs, z: State, udfv: Real) -> ({Real} -> [Real], UkMap, {Real}) = {
+      def (ukm, yy) = eqs_state_to_ukm_yy e z udfv;
+      def sysfun(yy: {Real}) -> [Real] = {
+        def dummyYp = (Array.make 0 0.);
+        def dummyt = 0.;
+        makeResidual ukm e dummyt yy dummyYp
+      };
+
+      (sysfun, ukm, yy)
+    };
+
+    def (sysfun, ukm, yy) = get_solver_input e z udfv;
+    def _ = (if (Map.size ukm) != (length (sysfun yy)) then {
+      def _ = dprint(Map.size ukm);
+      error "The number of variables and equations does not match" } else ());
+    def _ = (if (Map.size ukm) == 0 then
+     error "No system of equations" else ());
+    def s = (NLEQSolver.init sysfun yy);
+    def _ = (NLEQSolver.solve s yy);
+    ukm_yy_to_state ukm yy
+  };
+
+  def mk_impulse(z_f: State, z_b: State) -> State = {
+    def big_number = INFINITE;
+    def big_neg_number = NEG_INFINITE;
+
+    def p(e: (<Real>, Real)) -> Bool = {
+      def (x, _) = e;
+      (state_mem x z_ll) && (state_mem x z_b)
+    };
+    def z_f = listToMap (filter p (Map.toList z_f));
+
+    def is_impulse(x: <Real>) -> Bool = {
+
+      def d(x: <Real>) -> Real = {
+        abs ((state_find x z_ll) + 2. * (state_find x z_f) - (state_find x z_b)) / h^2.
+      };
+
+      def f(e: (<Real>, Real)) -> Real = {
+        def (x, _) = e;
+        d(x)
+      };
+
+      def avg = k * (sum (map f (Map.toList z_f))) / int2real ((Map.size z_f) + 1);
+
+      (d x) > avg
+    };
+
+    def f(e: (<Real>, Real)) -> (<Real>, Real) = {
+      def getinf(v: Real) -> Real = {
+        if v > 0. then big_number else big_neg_number
+      };
+      def (x, v) = e;
+      if is_impulse x then (x, getinf v) else (x, state_find x z_b)
+    };
+
+    listToMap (map f (Map.toList z_f))
+  };
+
+  def approx_derivatives(z_0: State, z_1: State, h: Real) -> State = {
+    def f(a: State, e: (<Real>, Real)) -> State = {
+      def (x, _) = e;
+      if (state_mem x z_0) && (state_mem x z_1) then
+        state_add (der x) (((state_find x z_1) - (state_find x z_0)) / h) a
+      else a
+    };
+
+    foldLeft f (Map.empty) (Map.toList z_1)
+  };
+
+  def ep = get_defined_eqs e;
+  // def _ = _print_model ep;
+  // def _ = dprint(number_of_equations ep);
+
+  if (number_of_equations ep) > 0 then {
+
+    // Step forward
+    def ef = map_eqs_to_impl_euler ep z_ll h;
+    def z_f = solve ef z_g 0.;
+    // def z_fd = approx_derivatives z_ll z_f h;
+
+    // Step backwards
+    def eb = map_eqs_to_impl_euler ep z_f (-h);
+    def z_b = solve eb z_g 0.;
+    def z_bd = approx_derivatives z_f z_b (-h);
+
+    // Make impulse behaviour
+    def z_0 = mk_impulse z_f z_b;
+
+  (z_0, state_union z_b z_bd)
+  } else (z_g, z_g)
+}
+
+// Test
+// def x, y, z: <Real>
+// def z_ll = listToMap [(x, 0.), (der x, 0.), (y, 1.), (der y, 0.)]
+// def m = y = der x;x = 1.;z = 2.
+// def _ = dprint(impulse_solving m z_ll z_ll) // ({y_1' => inf, x_1' => 0, y_1 => inf, x_1 => 0}, {y_1' => 10000, x_1' => 0, y_1 => 0, x_1 => 1}
+
+
+// Simulation function for DILL
+// parameters:
+// m: Hybrid Model
+// I: Simulation interval
+// h: Stepsize
+// monitored: A list of (unkown, "name") to print simulation results for.
+// k: Parameter that is part of the numerical impulse detection function.
+// ieh: The stepsize of the implicit Euler scheme during impulse approximation.
+// sll: Denotes whether a left-limit consistent with the predecessor mode should be found (currently buggy and very naive).
+// dtrace: Denotes whether the simulation results for micro-steps should be printed.
+def simulate(m: HModel, I: Interval, h: Real, monitored: [(<Real>, String)], k: Real, ieh: Real, sll: Bool, dtrace: Bool) = {
+
+  def probes = map (fun e: (<Real>, String) -> fst e) monitored;
+  def labels = map (fun e: (<Real>, String) -> snd e) monitored;
+
+  def pstdebug(dt: Bool, msg: String, t: Real, n: Int, z: State) = {
+    if dtrace then
+      def _ = _print_time t n;
+      def _ = print(msg);
+      _print_sim_results (fun v: <Real> -> is_defined v z) (fun v: <Real> -> eval_expr v z) probes
+    else ()
+  };
+
+  def pstd = pstdebug dtrace "";
+
+  def pst(t: Real, z: State) = {
+    def _ = _print_time t (-1);
+    _print_sim_results (fun v: <Real> -> is_defined v z) (fun v: <Real> -> eval_expr v z) probes
+  };
+
+  def eval_mexpr_fun(z_ll: State, z_0: State, e: <Real>) -> Real =
+    {
+      eval_expr (eval_left_limit e z_ll) z_0
+    };
+
+  def search_civs(e: Eqs, z: State, t_0: Real, undefval: Real) -> (State, Real) = {
+    def dt = 0.00001;
+    def (resf, _, _, yy, yp, vids, ukm) = get_DAESolver_input e (mnil ()) z undefval;
+    def s = (DAESolver.init resf t_0 yy yp);
+    def _ = (DAESolver.calcIcYaYdp s vids yy yp (t_0 + dt));
+    (ukmap_yy_yp_to_state ukm yy yp, t_0 + dt)
+  };
+
+  def initialize = (fun t: () -> {
+    def (t_0, t_f) = I;
+    def z_ll = state_empty;
+    def z_0 = eval_inits m (eval_mexpr_fun z_ll state_empty) state_empty;
+    def mp = mode_switch m (eval_mexpr_fun z_ll z_0);
+    def z_0p = eval_inits mp (eval_mexpr_fun z_ll z_0) z_0;
+    def (eqs, ieqs) = elaborate mp z_ll;
+    def (z_0pp, t_0p) = search_civs (indexred eqs) z_0p t_0 0.;
+    def ((t_0pp, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_0pp (t_0p, t_f) h probes sll;
+    (z_llp, z_0ppp, (t_fp, t_f))
+  });
+
+  def sim(s: MState) -> () = {
+    def (m, z_ll, z_0, z_rl, (t_0, t_f), n) = s;
+
+    def _ = (if n > 10 then error "too many ticks!" else ());
+
+    if t_0 >= t_f then () else {
+      def mp = mode_switch m (eval_mexpr_fun z_ll z_0);
+      def (eqs, ieqs) = elaborate mp z_ll;
+      def (z_0p, z_rlp) = impulse_solving eqs z_ll z_rl k ieh;
+      def z_0pp = eval_inits mp (eval_mexpr_fun z_ll z_0p) z_0p;
+      def z_rlpp = eval_inits mp (eval_mexpr_fun z_ll z_rlp) z_rlp;
+      if !(stable ieqs z_0pp) then {
+        def _ = pstd t_0 n z_0pp;
+        sim (mp, z_ll, z_0pp, z_rlpp, (t_0, t_f), n + 1)
+      } else if !(stable ieqs z_rlpp) then {
+        def _ = pst t_0 z_0pp;
+        def _ = pstd t_0 (n + 1) z_rlpp;
+        sim (mp, z_rlpp, z_rlpp, z_rlpp, (t_0, t_f), n + 2)
+      } else {
+        def _ = pst t_0 z_0pp;
+        def ((t_0, t_fp), z_llp, z_0ppp) = solve (eqs, ieqs) z_rlpp (t_0, t_f) h probes sll;
+        sim (mp, z_llp, z_0ppp, z_0ppp, (t_fp, t_f), 0)
+      }
+    }
+  };
+
+  def _ = _print_sim_headers(labels);
+  def (z_ll, z_0, Ip) = initialize ();
+  sim (m, z_ll, z_0, z_0, Ip, 0)
+}
+

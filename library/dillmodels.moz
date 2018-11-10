@@ -1,0 +1,205 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include DILL
+
+type Through = <Real>
+type Across = <Real>
+type Time = <Real>
+type Signal = <Real>
+type Current = Through
+type Voltage = Across
+type Torque = Through
+type AngularMomentum = Across
+type AngularVelocity = Across
+
+def Clock(t_0: Real, t: Time) = {
+  init t t_0 ++
+  eqs_and_edges (der t = 1.)
+}
+
+def UnitStep(t_0: Real, t_s: Real, s: Signal) = {
+  def t: Time;
+  Clock t_0 t ++
+  switch
+    (init s 0. ++ eqs_and_edges (s = 0.))
+    (t_s - t)
+    (fun thk: () -> (init s 1. ++ eqs_and_edges (s = 1.)))
+}
+
+def TwoUnitSteps(t_0: Real, t_s1: Real, t_s2: Real, s: Signal) = {
+  def t: Time;
+  Clock t_0 t ++
+  switch
+    (init s (-1.) ++ eqs_and_edges (s = -1.))
+    (t_s1 - t)
+    (fun thk: () ->   switch
+         (init s 1. ++ eqs_and_edges (s = 1.))
+         (t_s2 - t)
+         (fun thk: () -> (init s (-1.) ++ eqs_and_edges (s = -1.))))  
+}
+
+def Dissipator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  eqs_and_edges (
+    Branch t a p n;
+    C * a = t
+  )
+}
+
+def ADissipator(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  Dissipator C t a p n
+}
+
+def Damper = Dissipator
+def Resistor = (fun R: Real -> Dissipator (1. / R))
+def ADamper = ADissipator
+def AResistor = (fun R: Real -> ADissipator (1. / R))
+
+def AcrossGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  init a C ++
+  eqs_and_edges (
+    Branch t a p n;
+    a = C
+  )
+}
+
+def AAcrossGenerator(C: Real, p: Node, n:Node) = {
+  def t_AG: Through;
+  def a_AG: Across;
+  AcrossGenerator C t_AG a_AG p n
+}
+
+def VoltageSource = AcrossGenerator
+def Motor = AcrossGenerator
+def Conductor = AcrossGenerator 0.
+def FixedAxis = AcrossGenerator 0.
+def AVoltageSource = AAcrossGenerator
+def AMotor = AAcrossGenerator
+def AConductor = AAcrossGenerator 0.
+def AFixedAxis = AAcrossGenerator 0.
+
+def ThroughSensor(t: Through, p: Node, n: Node) = {
+  def a: Across;
+  AcrossGenerator 0. t a p n
+}
+
+def CurrentSensor = ThroughSensor
+def TorqueSensor = ThroughSensor
+
+def ThroughGenerator(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  eqs_and_edges (
+    Branch t a p n;
+    t = C
+  )
+}
+
+def AThroughGenerator(C: Real, p: Node, n:Node) = {
+  def t_TG: Through;
+  def a_TG: Across;
+  ThroughGenerator C t_TG a_TG p n
+}
+
+def CurrentSource = ThroughGenerator
+def ConstantForceSpring = ThroughGenerator
+def Insulator = ThroughGenerator 0.
+def FreeAxis = ThroughGenerator 0.
+def ACurrentSource = AThroughGenerator
+def AConstantForceSpring = AThroughGenerator
+def AInsulator = AThroughGenerator 0.
+def AFreeAxis = AThroughGenerator 0.
+
+def AcrossSensor(a: Across, p: Node, n: Node) = {
+  def t: Through;
+  ThroughGenerator 0. t a p n
+}
+
+def VoltageSensor = AcrossSensor
+def AngularVelocitySensor = AcrossSensor
+
+def AcrossStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  eqs_and_edges (
+    Branch t a p n;
+    C * (der a) = t
+  )  
+}
+
+def AAcrossStorage(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  AcrossStorage C t a p n
+}
+
+def Mass = AcrossStorage
+def Capacitor = AcrossStorage
+def AMass = AAcrossStorage
+def ACapacitor = AAcrossStorage
+
+def ThroughStorage(C: Real, t: Through, a: Across, p: Node, n: Node) = {
+  eqs_and_edges (
+    Branch t a p n;
+    C * (der t) = a
+  )  
+}
+
+def AThroughStorage(C: Real, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  ThroughStorage C t a p n
+}
+
+def Spring =  ThroughStorage
+def Inductor = ThroughStorage
+def ASpring =  AThroughStorage
+def AInductor = AThroughStorage
+
+def OneWayThroughStop(bias: Real, open: Bool, t: Through, a: Across, p: Node, n: Node) = {
+  def d(open: Bool) -> HModel = {
+    if open then switch (AcrossGenerator bias t a p n) (t) (fun thnk: () -> d (!open))
+    else switch (ThroughGenerator 0. t a p n) (bias - a) (fun thnk: () -> d (!open))
+  };
+  d open
+}
+
+def AOneWayThroughStop(bias: Real, open: Bool, p: Node, n:Node) = {
+  def t: Through;
+  def a: Across;
+  OneWayThroughStop bias open t a p n
+}
+
+def Diode = OneWayThroughStop
+def ADiode = AOneWayThroughStop
+
+def Switch(open: Bool, s: Signal, p: Node, n: Node) = {
+  def sw(open: Bool) -> HModel = {
+    if open then {
+      switch (eqs_and_edges nil) (s) (fun thk: () -> sw (!open))    
+    }
+    else {
+      switch (AAcrossGenerator 0. p n) (1. - s) (fun thk: () -> sw (!open))
+    }
+  };
+  sw open
+}
+
+def ElectricalSwitch = Switch
+def Clutch = Switch

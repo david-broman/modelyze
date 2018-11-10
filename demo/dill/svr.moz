@@ -1,0 +1,47 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include DILLMODELS
+
+def i_V, i_R: Current
+def u_V, u_R: Voltage
+def s: Signal
+
+def R = 0.5
+def V = 1.
+def t_0 = 0.
+def t_s = 2.
+
+def SVR = {
+  def n1, n2, n3: Node;
+  init i_R 0. ++
+  UnitStep t_0 t_s s ++
+  VoltageSource V i_V u_V n1 n2 ++
+  Resistor R i_R u_R n2 n3 ++
+  ElectricalSwitch false s n3 n1
+}
+
+def monitored =
+  [(i_R, "i_R"), (u_R, "u_R")]
+
+def main = {
+  simulate SVR (0.,4.0) 0.01 monitored 2.9 0.001 false false
+  }

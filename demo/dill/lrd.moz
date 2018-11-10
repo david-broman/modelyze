@@ -1,0 +1,54 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include DILLMODELS
+
+def i_V, i_L, i_D, i_R: Current
+def u_V, u_L, u_D, u_R: Voltage
+def P_V, P_R, P_L, P_D: <Real>
+def W_V, W_R, W_L, W_D: <Real>
+def s: Signal
+
+def L = 1.
+def R = 1.
+def V = 1.
+def bias = 0.7
+def t_0 = 0.
+def t_s = 3.
+
+def LRD = {
+  def n1, n2, n3, n4: Node;
+  init i_L 0. ++
+  init u_D (-1.) ++
+  UnitStep t_0 t_s s ++
+  VoltageSource V i_V u_V n1 n4 ++
+  Resistor R i_R u_R n1 n2 ++
+  ElectricalSwitch false s n2 n3 ++
+  Inductor L i_L u_L n3 n4 ++
+  Diode bias false i_D u_D n4 n3
+}
+
+def monitored =
+  [(i_D, "i_D"), (u_D, "u_D"), (i_L, "i_L"), (u_L, "u_L"), (i_R, "i_R"), (u_R, "u_R"), (i_V, "i_V"), (u_V, "u_V")]
+
+def main = {
+  simulate LRD (0.,6.) 0.01 monitored 2.9 0.001 false false
+  }

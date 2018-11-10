@@ -3,7 +3,7 @@ clear all; close all; clc
 
 %filepath = '../../demo';
 %filename = 'modular-pendulums.moz';
-filepath = '../../proj/modular-arm';
+filepath = '../../demo/proj/modular-arm';
 filename = '2d-arm-control.moz';
 
 useSaved = 0;   % Use a saved simulation instead of simulating

@@ -1,5 +1,5 @@
 
-Modelyze toolchain, version 1.14 
+Modelyze toolchain, version 1.15
 ------------------------------------
 Modelyze toolchain
 Copyright (C) 2010-2017 David Broman
@@ -20,101 +20,142 @@ in [David Broman's PhD Thesis](http://www.bromans.com/david/publ/thesis-2010-dav
 If you have any comments or questions, please send an email to
 [dbro@kth.se](mailto:dbro@kth.se).
 
-INSTALLATION (Mac OS)
---------------------
-The following has been tested on OS X 10.12.6, but should work on 
-other Mac OS versions as well.
+<!--
+ INSTALLATION (Mac OS)
+ --------------------
+ The following has been tested on OS X 10.12.6, but should work on 
+ other Mac OS versions as well.
 
-1. Install [Homebrew](https://brew.sh/).
+ 1. Install [Homebrew](https://brew.sh/).
 
-2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
-   
-   `>> brew install ocaml opam homebrew/science/sundials`
-   
-   `>> brew install gnuplot --qt`
-3. If you have not done it already, clone the Modelyze project from GitHub:
-   
-   `>> git clone https://github.com/david-broman/modelyze.git`
-5. Compile the code:
-   
-   `>> cd modelyze`
-   
-   `>> make`
-
+ 2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
+  
+    `>> brew install ocaml opam homebrew/science/sundials`
+  
+    `>> brew install gnuplot --qt`
+ 3. If you have not done it already, clone the Modelyze project from GitHub:
+  
+    `>> git clone https://github.com/david-broman/modelyze.git`
+ 5. Compile the code:
+  
+    `>> cd modelyze`
+  
+    `>> make`
+-->
 INSTALLATION (Linux)
 ---------------------
-The following has been tested on Ubuntu 14.04.01 LTS, but should work on
-other Linux distributions as well.
 
-1. Install OCaml, GnuPlot and SUNDIALS. Execute the following in the terminal:
+The following has been tested on a `ubuntu 18.04.1 LTS` minimal installation and
+version `4.05.0` of the `ocaml` compiler, but should work on other Linux
+distributions as well.
 
-   `>> sudo apt-get install ocaml libsundials-serial-dev`
-   
-2. Install GNUplot if you would like to plot:
+We install [Ocaml](https://ocaml.org/),
+[Ocamlbuild](https://ocaml.org/learn/tutorials/ocamlbuild/) and
+[SundialsML](https://inria-parkas.github.io/sundialsml/) using
+[opam](https://opam.ocaml.org/).
 
-   `>> sudo apt-get install gnuplot`
-   
-   NOTE: There seems to be a problem with GNUPLOT and X11 on Ubuntu, so the 
-   above might not work on all Ubuntu installations. If this is the case,
-   try the following:
-   
-   `>> sudo apt-get install libx11-dev libxt-dev libreadline-gplv2-dev glib-2.0`
-   
-   `>> sudo apt-get install gnuplot-x11`
-   
-3. If you do not have git installed, install it:
+1. Install `opam` along with some dependencies and the
+[Sundials](https://computation.llnl.gov/projects/sundials) libraries:
 
-   `>> sudo apt-get install git`
+```console
+sudo apt-get install opam m4 libsundials-dev
+```
 
-4. If you have not done it already, clone the Modelyze project from GitHub:
+This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 
-   `>> git clone https://github.com/david-broman/modelyze.git`
-   
-5. Compile the code:
-   
-   `>> cd modelyze`
-   
-   `>> make`
+2. Initialize `opam` by issuing:
 
+```console
+opam init
+eval `opam config env`
+```
 
+Preferably, update your `~/.profile` according to the instructions from
+`opam init` to set the correct environment at each login session.
+
+3. Install the *Ocaml* bindings for the *Sundials* solver suite together with
+`ocamlbuild`.
+
+```console
+opam install sundialsml ocamlbuild
+```
+
+If you would like to switch the version of the `ocaml` compiler, see the
+[documentation](https://opam.ocaml.org/doc/man/opam-switch.html) for `opam switch`
+
+4. Install *GNUPlot* if you would like to plot:
+
+```console
+sudo apt-get install gnuplot
+```
+
+5. If you have not done it already, clone the *Modelyze* project from *GitHub*:
+
+```console
+git clone https://github.com/david-broman/modelyze.git
+```
+
+6. Finally, compile the code:
+
+```console
+cd modelyze
+make
+```
 
 EXECUTING EXAMPLES
 --------------------
+
 Under folder `library`, a simple standard library for Modelyze is provided.
-Folder `demo` contains a number of demo files that use these libraries. 
+Folder `demo` contains a number of demo files that use these libraries.
 To execute a demo example, got to folder `demo` and run for instance:
 
-`./moz lotkavolterra.moz`
+```console
+./moz lotkavolterra.moz
+```
 
-This prints the plot data to the standard output. If GnuPlot is installed,
+This prints the plot data to the standard output. If GNUPlot is installed,
 plotting can be done as follows:
 
-`./mozplot hybrid-ball-stairs.moz`
-
+```console
+./mozplot hybrid-ball-stairs.moz
+```
 
 DISPLAYING ANIMATIONS FOR THE 2D-MECHANICS LIBRARY WITH MATLAB
 ---------------------------------------------------------------
-In the folder `env/matlab` there's scripts that can visualize the output from
+
+In the folder [`env/matlab`](env/matlab) there's scripts that can visualize the output from
 provided by the mechanical2d library. In order to use these follow these steps:
 
-1. Install MATLAB 
-2. Open MATLAB, navigate to the env/matlab folder and open the armAnim.m script
+1. Install MATLAB
+2. Open MATLAB, navigate to the [`env/matlab`](env/matlab) folder and open the `armAnim.m` script
 3. Change the file path and filename to your liking and run the script
 
-There is also another MATLAB script, dataplotter.m, for plotting the output of
-any modelyze script that can be used instead of GNUplot.
+There is also another MATLAB script, `dataplotter.m`, for plotting the output of
+any Modelyze script that can be used instead of GNUplot.
 
 NOTE: currently the animation script uses the angles of each joint as input
-and can thus not extract the length of the links so the script assumes all 
-lengths are 0.5 meters. This will be fixed later when an initialization bug 
+and can thus not extract the length of the links so the script assumes all
+lengths are 0.5 meters. This will be fixed later when an initialization bug
 is fixed so the script can use the position of each joint instead.
 
+DILL
+----
+
+DILL is a DSL for modeling hybrid systems and is part of the evaluation of a
+semantics described in the master thesis:
+
+*Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson ([oerikss@kth.se](mailto:oerikss@kth.se)) (pending upload to the public domain)*
+
+The implementation can be found in [`library/dill.moz`](library/dill.moz),
+[`library/dillmodels.moz`](library/dillmodels.moz) and
+[`library/graphelaboration.moz`](library/graphelaboration.moz).  Examples using
+this implementation can be found in [`demo/dill`](demo/dill).
 
 LICENSE
 -------
-All files in the Modelyze toolchain project, excepts for files in the folders 
-`library/` and `ext/` are under the GNU General Public Licence according 
-to file COPYING. Files under folder `ext/` have specific licenses given 
+All files in the Modelyze toolchain project, excepts for files in the folders
+`library/` and `ext/` are under the GNU General Public Licence according
+to file COPYING. Files under folder `ext/` have specific licenses given
 in each sub-folder. Files under folder `library/` are under the GNU Lesser
 General Public License according to file `library/COPYING.LESSER`.
 
@@ -124,6 +165,14 @@ General Public License according to file `library/COPYING.LESSER`.
 
 REVISIONS
 ---------
+
+* Version 1.15
+  * Use [SundialsML](https://inria-parkas.github.io/sundialsml/)
+  * Added primitive functions for calling nonlinear equation solver (KINSOL)
+  * Included DILL as an alternative for modeling hybrid systems
+  * Added syntax definitions for VIM
+  * Updated regression tests
+  * Updated Makefile and build instructions
 
 * Version 1.14 
   - Improved error messages.

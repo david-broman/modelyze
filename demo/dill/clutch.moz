@@ -1,0 +1,65 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+
+*/
+
+include DILLMODELS
+
+def o_1, o_2: AngularVelocity
+def L_1, L_2: AngularMomentum
+def t_1, t_2: Torque
+def s: Signal
+
+def o_1_0 = 3.
+def o_2_0 = 5.
+// def o_2_0 = 3.
+def I_1 = 2.5
+def D_1 = 0.7
+def I_2 = 1.5
+def D_2 = 0.5
+def t_0 = 0.
+def t_s = 2.
+
+def Body(I: Real, D: Real, o_0: Real, t: Torque, o: AngularVelocity, L: AngularMomentum, p: Node, n: Node) = {
+  def t_m, t_d: Torque;
+  def o_m, o_d: AngularVelocity;
+  init o_m o_0 ++
+  eqs_and_edges(
+    t = t_m + t_d;
+    der L = t;
+    o = o_m
+  ) ++
+  Mass I t_m o_m p n ++
+  Damper D t_d o_d p n 
+}
+
+def ClutchModel = {
+  def n1, n2, n3: Node;
+  TwoUnitSteps t_0 t_s (2. * t_s) s ++
+  Body I_1 D_1 o_1_0 t_1 o_1 L_1 n1 n2 ++
+  Body I_2 D_2 o_2_0 t_2 o_2 L_2 n1 n3 ++
+  Clutch true (1. - s) n2 n3
+}
+
+def monitored =
+  [(L_1, "L_1"), (L_2, "L_2"), (L_1 + L_2, "L_{tot}"), (t_1, "t_1"), (t_2, "t_2"), (o_1, "o_1"), (o_2, "o_2"), ((I_1 * o_1 + I_2 * o_2) / (I_1 + I_2), "armean")]
+
+def main = {
+  simulate ClutchModel (0., 8.) 0.01 monitored 2.9 0.001 false false
+}

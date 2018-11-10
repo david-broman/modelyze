@@ -1,0 +1,40 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+
+written by Oscar Eriksson oerikss@kth.se
+*/
+
+include MEBMLANGElectrical
+include MEBMLANGSIM
+
+def C = 1.
+def L = 1.
+def u_C, u_L, i: Real
+
+def LC = {
+  def n1, n2, n3: Electrical;
+  Capacitor C (-1.) n1 n2;
+  Inductor L 1. n2 n3;
+  CurrentSensor i n1 n3;
+  VoltageSensor u_C n1 n2;
+  VoltageSensor u_L n2 n3
+}
+
+def monitored = [(i, "i"), (u_C, "u_C"), (u_L, "u_L")]
+
+def main =
+  simulateDebug LC 0. 0.1 4.0 monitored

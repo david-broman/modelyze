@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ def Inertia(J:Real, flangeA:Rotational, flangeB:Rotational) = {
     phiA = phi;
     phiB = phi;
     w = der(phi);
-    a = der(w); 
+    a = der(w);
     J * a = tauA - tauB;
 }
 
@@ -57,7 +57,7 @@ def IdealGear(ratio:Real, flangeA:Rotational, flangeB:Rotational) = {
     def phiB:Angle;
     RefBranch(tauA,phiA,flangeA);
     RefBranch(-tauB,phiB,flangeB);
-    phiA = ratio * phiB;  
+    phiA = ratio * phiB;
     tauB = ratio * tauA;
 }
 
@@ -115,5 +115,3 @@ def RelAccSensor(flangeA:Rotational, flangeB:Rotational, a:Signal) = {
     w = der(phiRel);
     a = der(w);
 }
-
-

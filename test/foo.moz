@@ -1,0 +1,28 @@
+include MEBMLANG
+include Simulate
+
+def a_1 = -0.1
+def a_2 = -0.2
+def b_1 = 0.3
+def b_2 = 0.4
+def o_1, o_2, t_1, t_2: Real
+
+def clutch = {
+  der o_1 = a_1 * o_1 + b_1 * t_1;
+  der o_2 = a_2 * o_2 + b_2 * t_2;
+  t_1 + t_2 = 0.;
+  o_1 - o_2 = 0.
+}
+
+def main = {
+  def ukm =
+    listToMap [(o_1, (0, true)), (o_2, (1, true)), (t_1, (2, false)), (t_2, (3, false))];
+  def yy0 = listToArray [1., 2. , 0., 0.];
+  def yy = listToArray [1., 2. , 0., 0.];
+  def h = 0.001;
+  def sysfun = makeBEulerFuns clutch ukm h yy0;
+  def s = (NLEQSolver.init sysfun yy);
+  def rc = (NLEQSolver.solve s yy);
+  def _ = dprint(rc);
+  dprint(yy)
+}

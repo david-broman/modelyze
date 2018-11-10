@@ -19,6 +19,7 @@ written by Oscar Eriksson oerikss@kth.se
 
 */
 
+// FAILING MODEL
 include DILL
 
 def y, v, a: <Real>
@@ -26,7 +27,7 @@ def g = 9.81
 def e = 0.7
 
 def fall(y: <Real>, v: <Real>, a: <Real>) = {
-  mode (
+  eqs_and_edges (
     der y = v;
     der v = a;
     a = -g
@@ -34,14 +35,14 @@ def fall(y: <Real>, v: <Real>, a: <Real>) = {
 }
 
 def floor(y: <Real>, v: <Real>, a: <Real>) = {
-  mode (
+  eqs_and_edges (
     v = -e * pre v;
     der y = v;
     der v = a
   )
 }
 
-def bouncing_ball(y: <Real>, v: <Real>, a: <Real>) -> MMModel = {
+def bouncing_ball(y: <Real>, v: <Real>, a: <Real>) -> HModel = {
   switch (fall y v a) (y) (fun t:() -> switch (floor y v a) (a) (fun t: () -> bouncing_ball y v a))
 }
 

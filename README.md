@@ -165,7 +165,7 @@ REVISIONS
 * Version 1.15
   * Use [SundialsML](https://inria-parkas.github.io/sundialsml/)
   * Added primitive functions for calling nonlinear equation solver (KINSOL)
-  * Included DILL for modeling hybrid systems
+  * Included DILL as an alternative for modeling hybrid systems
   * Added syntax definitions for VIM
   * Updated Makefile and build instructions
 

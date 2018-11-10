@@ -1,7 +1,7 @@
 " Vim syntax file
 " Language: Modelyze
 " Maintainer: Oscar Eriksson
-" Latest Revision: 27 November 2017
+" Latest Revision: 10 November 2018
 
 if exists("b:current_syntax")
   finish

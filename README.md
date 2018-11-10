@@ -20,27 +20,28 @@ in [David Broman's PhD Thesis](http://www.bromans.com/david/publ/thesis-2010-dav
 If you have any comments or questions, please send an email to
 [dbro@kth.se](mailto:dbro@kth.se).
 
-// INSTALLATION (Mac OS)
-// --------------------
-// The following has been tested on OS X 10.12.6, but should work on 
-// other Mac OS versions as well.
-//
-// 1. Install [Homebrew](https://brew.sh/).
-//
-// 2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
-//  
-//    `>> brew install ocaml opam homebrew/science/sundials`
-//  
-//    `>> brew install gnuplot --qt`
-// 3. If you have not done it already, clone the Modelyze project from GitHub:
-//  
-//    `>> git clone https://github.com/david-broman/modelyze.git`
-// 5. Compile the code:
-//  
-//    `>> cd modelyze`
-//  
-//    `>> make`
+<!--
+ INSTALLATION (Mac OS)
+ --------------------
+ The following has been tested on OS X 10.12.6, but should work on 
+ other Mac OS versions as well.
 
+ 1. Install [Homebrew](https://brew.sh/).
+
+ 2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
+  
+    `>> brew install ocaml opam homebrew/science/sundials`
+  
+    `>> brew install gnuplot --qt`
+ 3. If you have not done it already, clone the Modelyze project from GitHub:
+  
+    `>> git clone https://github.com/david-broman/modelyze.git`
+ 5. Compile the code:
+  
+    `>> cd modelyze`
+  
+    `>> make`
+-->
 INSTALLATION (Linux)
 ---------------------
 

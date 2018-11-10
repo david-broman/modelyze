@@ -137,13 +137,14 @@ is fixed so the script can use the position of each joint instead.
 DILL
 ----
 
-The files [library/dill.moz](library/dill.moz),
+The files [`library/dill.moz`](library/dill.moz),
 [library/dillmodels.moz](library/dillmodels.moz) and
 [library/graphelaboration.moz](library/graphelaboration.moz) is an
 implementation, part of the evaluation of a semantics described in the master
 thesis:
 
 *Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson (pending upload to the public domain)*
+
 Examples using this implementation can be found in [demo/dill](demo/dill).
 
 LICENSE

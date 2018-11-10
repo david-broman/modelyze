@@ -54,70 +54,71 @@ We install [Ocaml](https://ocaml.org/),
 [SundialsML](https://inria-parkas.github.io/sundialsml/) using
 [opam](https://opam.ocaml.org/).
 
-1. Install `opam` along with some dependencies and the
-   [Sundials](https://computation.llnl.gov/projects/sundials) libraries:
+Install `opam` along with some dependencies and the
+[Sundials](https://computation.llnl.gov/projects/sundials) libraries:
 
-  ```console
-    sudo apt-get install opam m4 libsundials-dev
-  ```
+```console
+sudo apt-get install opam m4 libsundials-dev
+```
 
-  This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
+This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 
-2. Initialize `opam` by issuing:
+Initialize `opam` by issuing:
 
 ```console
   opam init -y
 ```
 
-3. Install the *Ocaml* bindings for the *Sundials* solver suite together with
-   `ocamlbuild`.
+Install the *Ocaml* bindings for the *Sundials* solver suite together with
+`ocamlbuild`.
 
 ```console
-  opam install sundialsml ocamlbuild
+opam install sundialsml ocamlbuild
 ```
 
-  If you would like to switch the version of the `ocaml` compiler, see the
-  [documentation](https://opam.ocaml.org/doc/man/opam-switch.html) for `opam switch`
+If you would like to switch the version of the `ocaml` compiler, see the
+[documentation](https://opam.ocaml.org/doc/man/opam-switch.html) for `opam switch`
 
-4. Install *GNUplot* if you would like to plot:
+Install *GNUplot* if you would like to plot:
 
 ```console
-  sudo apt-get install gnuplot
+sudo apt-get install gnuplot
 ```
 
-5. If you have not done it already, clone the *Modelyze* project from *GitHub*:
+If you have not done it already, clone the *Modelyze* project from *GitHub*:
 
 ```console
-  git clone https://github.com/david-broman/modelyze.git
+git clone https://github.com/david-broman/modelyze.git
 ```
 
-6. Finally, compile the code:
+Finally, compile the code:
 
 ```console
-  cd modelyze
-  make
+cd modelyze
+make
 ```
 
 EXECUTING EXAMPLES
 --------------------
+
 Under folder `library`, a simple standard library for Modelyze is provided.
 Folder `demo` contains a number of demo files that use these libraries.
 To execute a demo example, got to folder `demo` and run for instance:
 
 ```console
-`./moz lotkavolterra.moz`
+./moz lotkavolterra.moz
 ```
 
 This prints the plot data to the standard output. If GNUPlot is installed,
 plotting can be done as follows:
 
 ```console
-`./mozplot hybrid-ball-stairs.moz`
+./mozplot hybrid-ball-stairs.moz
 ```
-
 
 DISPLAYING ANIMATIONS FOR THE 2D-MECHANICS LIBRARY WITH MATLAB
 ---------------------------------------------------------------
+
 In the folder `env/matlab` there's scripts that can visualize the output from
 provided by the mechanical2d library. In order to use these follow these steps:
 

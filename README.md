@@ -66,8 +66,12 @@ This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 2. Initialize `opam` by issuing:
 
 ```console
-opam init -y
+opam init
+eval `opam config env`
 ```
+
+Preferably, update your `~/.profile` according to the instructions from
+`opam init` to set the correct environment at each shell session.
 
 3. Install the *Ocaml* bindings for the *Sundials* solver suite together with
 `ocamlbuild`.
@@ -79,7 +83,7 @@ opam install sundialsml ocamlbuild
 If you would like to switch the version of the `ocaml` compiler, see the
 [documentation](https://opam.ocaml.org/doc/man/opam-switch.html) for `opam switch`
 
-4. Install *GNUplot* if you would like to plot:
+4. Install *GNUPlot* if you would like to plot:
 
 ```console
 sudo apt-get install gnuplot

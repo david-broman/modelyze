@@ -20,31 +20,31 @@ in [David Broman's PhD Thesis](http://www.bromans.com/david/publ/thesis-2010-dav
 If you have any comments or questions, please send an email to
 [dbro@kth.se](mailto:dbro@kth.se).
 
-> INSTALLATION (Mac OS)
-> --------------------
-> The following has been tested on OS X 10.12.6, but should work on 
-> other Mac OS versions as well.
-
-> 1. Install [Homebrew](https://brew.sh/).
-
-> 2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
-   
->    `>> brew install ocaml opam homebrew/science/sundials`
-   
->    `>> brew install gnuplot --qt`
-> 3. If you have not done it already, clone the Modelyze project from GitHub:
-   
->    `>> git clone https://github.com/david-broman/modelyze.git`
-> 5. Compile the code:
-   
->    `>> cd modelyze`
-   
->    `>> make`
+// INSTALLATION (Mac OS)
+// --------------------
+// The following has been tested on OS X 10.12.6, but should work on 
+// other Mac OS versions as well.
+//
+// 1. Install [Homebrew](https://brew.sh/).
+//
+// 2. Install the Objective Caml compiler, Gnuplot, and Sundials via Homebew.  
+//  
+//    `>> brew install ocaml opam homebrew/science/sundials`
+//  
+//    `>> brew install gnuplot --qt`
+// 3. If you have not done it already, clone the Modelyze project from GitHub:
+//  
+//    `>> git clone https://github.com/david-broman/modelyze.git`
+// 5. Compile the code:
+//  
+//    `>> cd modelyze`
+//  
+//    `>> make`
 
 INSTALLATION (Linux)
 ---------------------
 
-The following has been tested on a Ubuntu `18.04.1` LTS minimal installation and
+The following has been tested on a `ubuntu 18.04.1 LTS` minimal installation and
 version `4.05.0` of the `ocaml` compiler, but should work on other Linux
 distributions as well.
 
@@ -56,9 +56,9 @@ We install [Ocaml](https://ocaml.org/),
 1. Install `opam` along with some dependencies and the
    [Sundials](https://computation.llnl.gov/projects/sundials) libraries:
 
-```console
-  sudo apt-get install opam m4 libsundials-dev
-```
+  ```console
+    sudo apt-get install opam m4 libsundials-dev
+  ```
 
   This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 

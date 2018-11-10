@@ -119,11 +119,11 @@ plotting can be done as follows:
 DISPLAYING ANIMATIONS FOR THE 2D-MECHANICS LIBRARY WITH MATLAB
 ---------------------------------------------------------------
 
-In the folder `env/matlab` there's scripts that can visualize the output from
+In the folder [`env/matlab`](env/matlab) there's scripts that can visualize the output from
 provided by the mechanical2d library. In order to use these follow these steps:
 
-1. Install MATLAB 
-2. Open MATLAB, navigate to the env/matlab folder and open the `armAnim.m` script
+1. Install MATLAB
+2. Open MATLAB, navigate to the [`env/matlab`](env/matlab) folder and open the `armAnim.m` script
 3. Change the file path and filename to your liking and run the script
 
 There is also another MATLAB script, `dataplotter.m`, for plotting the output of
@@ -137,15 +137,15 @@ is fixed so the script can use the position of each joint instead.
 DILL
 ----
 
-The files [`library/dill.moz`](library/dill.moz),
-[library/dillmodels.moz](library/dillmodels.moz) and
-[library/graphelaboration.moz](library/graphelaboration.moz) is an
-implementation, part of the evaluation of a semantics described in the master
-thesis:
+Is a DSL for modeling hybrid systems and is part of the evaluation of a
+semantics described in the master thesis:
 
 *Hybrid Semantics in Equation-Based Modelling - Oscar Eriksson (pending upload to the public domain)*
+The implementation can be found in [`library/dill.moz`](library/dill.moz),
+[`library/dillmodels.moz`](library/dillmodels.moz) and
+[`library/graphelaboration.moz`](library/graphelaboration.moz).
 
-Examples using this implementation can be found in [demo/dill](demo/dill).
+Examples using this implementation can be found in [`demo/dill`](demo/dill).
 
 LICENSE
 -------
@@ -164,6 +164,8 @@ REVISIONS
 
 * Version 1.15
   * Use [SundialsML](https://inria-parkas.github.io/sundialsml/)
+  * Added primitive functions for calling nonlinear equation solver (KINSOL)
+  * Included DILL for modeling hybrid systems
   * Updated Makefile and build instructions
 
 * Version 1.14 

@@ -54,7 +54,7 @@ We install [Ocaml](https://ocaml.org/),
 [SundialsML](https://inria-parkas.github.io/sundialsml/) using
 [opam](https://opam.ocaml.org/).
 
-Install `opam` along with some dependencies and the
+1. Install `opam` along with some dependencies and the
 [Sundials](https://computation.llnl.gov/projects/sundials) libraries:
 
 ```console
@@ -63,13 +63,13 @@ sudo apt-get install opam m4 libsundials-dev
 
 This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 
-Initialize `opam` by issuing:
+2. Initialize `opam` by issuing:
 
 ```console
-  opam init -y
+opam init -y
 ```
 
-Install the *Ocaml* bindings for the *Sundials* solver suite together with
+3. Install the *Ocaml* bindings for the *Sundials* solver suite together with
 `ocamlbuild`.
 
 ```console
@@ -79,19 +79,19 @@ opam install sundialsml ocamlbuild
 If you would like to switch the version of the `ocaml` compiler, see the
 [documentation](https://opam.ocaml.org/doc/man/opam-switch.html) for `opam switch`
 
-Install *GNUplot* if you would like to plot:
+4. Install *GNUplot* if you would like to plot:
 
 ```console
 sudo apt-get install gnuplot
 ```
 
-If you have not done it already, clone the *Modelyze* project from *GitHub*:
+5. If you have not done it already, clone the *Modelyze* project from *GitHub*:
 
 ```console
 git clone https://github.com/david-broman/modelyze.git
 ```
 
-Finally, compile the code:
+6. Finally, compile the code:
 
 ```console
 cd modelyze

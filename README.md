@@ -61,7 +61,7 @@ We install [Ocaml](https://ocaml.org/),
 sudo apt-get install opam m4 libsundials-dev
 ```
 
-This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
+  This will install version `4.05.0`  of the `ocaml` compiler as a dependency.
 
 2. Initialize `opam` by issuing:
 

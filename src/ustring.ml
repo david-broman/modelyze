@@ -27,8 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
 
 type uchar = int
-type len = int
-type pos = int
 type tree =
   | Uchars of uchar array
   | Branch of tree * tree
@@ -36,12 +34,8 @@ type encoding =
     Ascii | Latin1 | Utf8 | Utf16le | Utf16be | Utf32le | Utf32be | Auto
 
 exception Decode_error of (encoding * int)
-exception Unknown_sid
-
-
 
 let space_char = 0x20
-
 
 (*
   Comments state which test case the differnet functions are tested in.
@@ -158,7 +152,7 @@ let rec to_latin1 s =
 	  with
 	      Invalid_argument _ -> raise (Invalid_argument "Ustring.to_latin1")
       end
-    | Branch(s1,s2) as t -> s := Uchars(collapse t); to_latin1 s
+    | Branch(_,_) as t -> s := Uchars(collapse t); to_latin1 s
 
 
 let from_uchars a =
@@ -169,7 +163,7 @@ let from_uchars a =
 (*   Note: Function should not throw an exception, since only well defined
          unicode characters are available internally. *)
 let rec to_utf8 s =
-  let rec calc_size_to_utf8 a = Array.fold_left
+  let calc_size_to_utf8 a = Array.fold_left
     (fun n ae->
        if ae <= 0b1111111 then n+1
        else if ae <= 0b11111111111 then n+2
@@ -212,7 +206,7 @@ let rec to_utf8 s =
 	  end
 	in
 	  convert 0 0; Bytes.to_string sout
-    | Branch(s1,s2) as t -> s := Uchars(collapse t); to_utf8 s
+    | Branch(_,_) as t -> s := Uchars(collapse t); to_utf8 s
 
 
 
@@ -227,7 +221,7 @@ struct
 
   module SidSet = Set.Make(
     struct
-      let compare = Pervasives.compare
+      let compare = Stdlib.compare
       type t = sid
     end)
 
@@ -266,7 +260,6 @@ struct
   let symtab1  = USHashtbl.create 1024
   let (symtab2 : (int,ustring) Hashtbl.t) = Hashtbl.create 1024
   let idcount = ref 0
-  let empty = 0
 
   let sid_of_ustring s =
   try USHashtbl.find symtab1 s
@@ -278,6 +271,8 @@ struct
 	!idcount
 
   let ustring_of_sid i = Hashtbl.find symtab2 i
+
+  let string_of_sid i = ustring_of_sid i |> to_utf8
 
   let usid s = sid_of_ustring (us s)
 
@@ -494,7 +489,7 @@ let from_utf8 s =
 let rec to_uchars s =
   match !s with
     | Uchars(a) -> a
-    | Branch(s1,s2) as t -> s := Uchars(collapse t); to_uchars s
+    | Branch(_,_) as t -> s := Uchars(collapse t); to_uchars s
 
 let latin1_to_uchar c = Op.uc c
 
@@ -551,7 +546,7 @@ let validate_ascii_string s n =
 
 (* INTERNAL - used by lexing_from_channel
    This function is applied to Lexing.from_function.
-   Exception "Invalid_argument" from function Pervasies.input should
+   Exception "Invalid_argument" from function Stdlib.input should
    not happen. *)
 let lexing_function ic enc_type inbuf outbuf stream_pos s n =
   let pos = ref 0 in
@@ -704,7 +699,7 @@ let read_from_channel ?(encode_type=Auto) ic =
   let buf = ref Bytes.empty in
   (* Should not fail, since UTF-8 is already checked*)
   let fail() = assert false in
-  fun l -> begin
+  fun _ -> begin
     let s = Bytes.create readsize in
     let read_l = reader s readsize in
     let s2 = Bytes.cat (!buf)  (Bytes.sub s 0 read_l) in
@@ -727,6 +722,7 @@ let convert_escaped_chars s =
       | (true,0x5c::ss) -> 0x5c::(conv false ss)         (*  "\\" *)
       | (true,0x6E::ss) -> 0x0A::(conv false ss)         (*  "\n" *)
       | (true,0x74::ss) -> 0x09::(conv false ss)         (*  "\t" *)
+      | (true,0x72::ss) -> 0x0D::(conv false ss)         (*  "\r" *)
       | (true,_) -> raise (Invalid_argument "Ustring.convert_escaped_char")
   in
   let a2 = conv false (Array.to_list (collapse_ustring s)) in
@@ -751,10 +747,3 @@ let write_file ?(encode_type=Utf8) fn s =
     | _ -> failwith "Encoding not supported."
   in
   Utils.write_binfile fn (Bytes.of_string data)
-
-
-let rec spaces_before s n =
-  if length s < n then spaces_before (Op.(^.) (Op.us" ")  s) n else s
-
-let rec spaces_after s n =
-  if length s < n then spaces_after (Op.(^.) s  (Op.us" ")) n else s

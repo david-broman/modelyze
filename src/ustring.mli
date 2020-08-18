@@ -145,6 +145,9 @@ sig
       If the string identifier has not been defined, exception
       [Not_found] is raised *)
 
+  val string_of_sid : sid -> string
+  (** Returns the UTF8-encoded ocaml string of a [sid] *)
+
   val usid : string -> sid
   (** Expression [sid s] returns a unique string identifier of string [s].
       Same as expression [sid_of_ustring (us s)] *)
@@ -374,16 +377,6 @@ val starts_with : ustring -> ustring -> bool
 val ends_with : ustring -> ustring -> bool
 (** [ends_with w s] returns true if string [s] ends with [w]. For instance,
     if [s="file/"] and [w="/"], then [(ends_with w s)] is true. *)
-
-val spaces_before : ustring -> int -> ustring
-(** [spaces_before s n] adds spaces before string [s] so that the
-    length of the new string is the same as [n]. If [n] is less than the
-    length of [s], string [s] is returned. *)
-
-val spaces_after : ustring -> int -> ustring
-(** [spaces_before s n] adds spaces after string [s] so that the
-    length of the new string is the same as [n]. If [n] is less than the
-    length of [s], string [s] is returned. *)
 
 val unix2dos : string -> string
 (** Function [Ustring.unix2dos s] returns a string where newline characters in

@@ -41,20 +41,20 @@ C_FILES = ext/sundials/ida_stubs.o,$(C_LIBS)/libsundials_ida.a,$(C_LIBS)/libsund
 
 .PHONY: all clean
 
-# Init submodules if needed and make native version. 
+# Init submodules if needed and make native version.
 # The resulting executable can be found under /bin and /library (symlinks)
 all:    native
 
 
 # Compile native version
 native: bytesfix comp_c_files
-	@ocamlbuild -Is $(DIRS) moz.native -lflags $(C_FILES) 
+	@ocamlbuild -package str -Is $(DIRS) moz.native -lflags $(C_FILES)
 	@rm -f bytes.ml
 	@rm -f moz.native
 	@rm -rf bin; mkdir bin; cd bin; cp -f ../_build/src/moz.native moz
 
 
-# C-files. Ugly treatment of error that latest ocaml generates.  
+# C-files. Ugly treatment of error that latest ocaml generates.
 comp_c_files:
 	@ocamlbuild ext/sundials/ida_stubs.o  > /dev/null 2>&1
 

@@ -19,8 +19,16 @@
 OS = $(shell uname)
 
 
+# Check if Sundials is installed locally. Install Sunidals 2.7.0 using
+# the following commands:
+#   mkdir ~/.sundials27
+#   cmake ../sundials-2.7.0 -DCMAKE_INSTALL_PREFIX=~/.sundials27
+#   make install
+ifneq (,$(wildcard  $(HOME)/.sundials27/include/ida/ida.h))
+C_LIBS =  $(HOME)/.sundials27/lib
+export CPATH =  $(HOME)/.sundials27/include
 #Check if Sundials is installed using MacPort
-ifneq (,$(wildcard /opt/local/include/ida/ida.h))
+else ifneq (,$(wildcard /opt/local/include/ida/ida.h))
 C_LIBS = /opt/local/lib
 export CPATH = /opt/local/include
 # Check if MacOS. If so, use the path to standard C libraries.

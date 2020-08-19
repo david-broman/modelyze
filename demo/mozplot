@@ -3,5 +3,5 @@ BASEDIR=$(dirname "$BASH_SOURCE")
 
 $BASEDIR/../bin/moz --libpaths=$BASEDIR/../library/ $1 > mozplot.dat
 
-python3 pyplot.py > /dev/null 2>&1
+python3 pyplot.py $1 # > /dev/null 2>&1
 rm -f mozplot.dat

@@ -1,0 +1,15 @@
+
+
+include ModelyzeIPM
+
+
+// All P_i, P_t extept in serialize, which is P_s
+def Model() = {
+  def x:<Real>;
+  init x 2.;
+  der(x) = -x;
+  probe "x" = x;
+}
+
+def main =
+    printsim(Model(), 0.01, 2.0)

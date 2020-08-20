@@ -1,0 +1,283 @@
+
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include Equation
+include IndexReduction
+include Elaboration
+
+type Residual = Real -> {Real} -> {Real} -> [Real]
+type Vars = <Real> -> <Real>
+
+
+def probe : <String -> Real>
+type ProbeMap =  (String => [Signal])
+type ProbeList =  [(String, [Signal])]
+type StepVal = (Real,[Real])
+type SimulationResult = ([String],[StepVal])
+
+
+def pprintSimulation(res:SimulationResult) -> String = {
+  def (names,stepvals) = res;
+  def pnames(varnames:[String]) -> String = {
+    match varnames with
+    | n::ns -> n ++ "\t" ++ pnames(ns)
+    | [] -> "\n"
+  };
+  def psteps(step:[StepVal], first:Bool) -> String = {
+    match step with
+    | (t,x::xs)::xxs if first ->
+        real2string(t) ++ "\t" ++ psteps((t,x::xs)::xxs,false)
+    | (t,x::xs)::xxs ->
+        (if x == INFINITE then "?" else real2string x) ++
+        "\t" ++ psteps((t,xs)::xxs,false)
+    | (t,[])::xxs -> "\n" ++ psteps(xxs,true)
+    | [] -> ""
+  };
+  "time\t" ++ pnames(names) ++ psteps(stepvals,true)
+}
+
+def makeStepVal(currtime:Real,yy:{Real},probes:[(String,[Signal])], ukmap:UkMap) -> StepVal = {
+  def mkvals(probes:[(String,[Signal])]) -> [Real] = {
+    match probes with
+    | (s,u::us)::ss -> {
+         def v = (if Map.mem u ukmap then
+                    (Array.get yy (fst(Map.find u ukmap)))
+                  else INFINITE);
+         v::(mkvals((s,us)::ss))
+         }
+    | (s,[])::ss -> mkvals(ss)
+    | [] -> []
+  };
+  (currtime,reverse(mkvals probes));
+}
+
+
+def getProbeVals(probes:ProbeList, get:(<Real> -> Real)) -> [Real] = {
+  def mkvals(probes:[(String,[Signal])]) -> [Real] = {
+    match probes with
+    | (s,u::us)::ss -> (get(u))::(mkvals((s,us)::ss))
+    | (s,[])::ss -> mkvals(ss)
+    | [] -> []
+  };
+  mkvals probes;
+}
+
+
+def makeProbeNames(name:String, probes:ProbeList) -> [String] = {
+    match probes with
+    | (s,u::us)::ss -> (if name <==> "" then s else name ++ "." ++ s)::
+                       (makeProbeNames(name,(s,us)::ss))
+    | (s,[])::ss -> makeProbeNames(name,ss)
+    | [] -> []
+}
+
+def addProbe(s:String, u:Signal, ps:ProbeMap) = {
+    if Map.mem s ps then Map.add s (u::(Map.find s ps)) ps
+    else Map.add s [u] ps
+}
+
+def elabProbesAcc(e:<?>, ps:ProbeMap) -> (<?>,ProbeMap) = {
+    match e with
+    | probe (sval s:String) -> {
+        def u:Signal;
+        (u,addProbe s u ps);
+      }
+    | e1 e2 -> {
+       def (e1b,ps1) = elabProbesAcc(e1,ps);
+       def (e2b,ps2) = elabProbesAcc(e2,ps1);
+       (e1b e2b,ps2);
+      }
+    | _ -> (e,ps)
+}
+
+def elaborateProbes(model:<?>) -> (<?>,ProbeMap) = {
+  elabProbesAcc(model,Map.empty);
+}
+
+
+
+
+
+
+
+// General expression evaluation
+def eval(e:<Dyn>,yy:Vars,yp:Vars) -> Dyn = {
+    match e with
+    | der x ->
+        (match x with
+         | sym:Real -> eval(yp(x),yy,yp)
+         | _ -> error "Derivatives only allowed on unknowns")
+    | sym:Real -> eval(yy(e),yy,yp)
+    | f e -> (eval(f,yy,yp)) (eval(e,yy,yp))
+    | sval v:Dyn -> v
+    | _ ->  error "Unsupported construct"
+}
+
+// Evaluate an expression of real type. The unknowns in the
+// expression are looked up in yy and yp arrays.
+def evalFromArray(expr:Expr, ukmap:UkMap, yy:{Real}, yp:{Real}) -> Real = {
+  def yyfun(s:Signal) -> Signal = {Array.get yy (fst(Map.find s ukmap))};
+  def ypfun(s:Signal) -> Signal = {Array.get yp (fst (Map.find s ukmap))};
+  eval(expr,yyfun,ypfun);
+}
+
+// Create the residual function of the DAE. Used by IDA/Sundials.
+def makeResidual(ukmap:UkMap, model:Equations, ctime:Real, yy:{Real}, yp:{Real}) -> [Real] = {
+  def realExpr(expr:Expr) = evalFromArray(expr,ukmap,yy,yp);
+  def traverseEq(m:Equations,acc:[Real]) -> [Real] = {
+    match m with
+    | e1 ; e2 -> traverseEq(e2,traverseEq(e1,acc))
+    | e1 = e2 -> (realExpr(e1) - realExpr(e2))::acc
+    | _ -> acc
+  };
+  traverseEq(model,[]);
+}
+
+//Generate arrays of initial values
+def makeInitValues(model:Equations, ukmap:UkMap) -> ({Real},{Real}) = {
+  def initvalmap = initValues(model);
+  def size = (Map.size ukmap);
+  def yy = (Array.make size 0.);
+  def yp = (Array.make size 0.);
+  def setvals(initvals:[(Signal,Signal)]) -> {Real} = {
+    match initvals with
+    | (u,e)::xs -> {
+        def v = (match e with
+                 | sval v:Real -> v
+                 | _ -> error "Cannot initialize a variable with a variable.");
+        def _ = (Array.set yy (fst (Map.find u ukmap)) v);
+        setvals xs;
+      }
+    | [] -> yy
+  };
+  (setvals(Map.toList initvalmap), yp)
+}
+
+
+def initConditionCorrection(ukmap:UkMap) -> {Real} = {
+  def id = {Array.make (Map.size ukmap) 0.};
+  def worker(uklist:[(Signal,(Int,Bool))]) -> {Real} = {
+    match uklist with
+    | (u,(i,true))::us -> {
+         def _ = (Array.set id i 1.0);
+         worker us;
+      }
+    | _::us -> worker us
+    | [] -> id
+  };
+  worker (Map.toList ukmap);
+}
+
+
+type Time = Real
+type SolverState = ?
+type VarArray = {Real}
+
+type State = (Time, SolverState, VarArray, UkMap)
+
+def daeInit(model:Equations) -> (State,ProbeMap) = {
+    def (model1,probes) = elaborateProbes(model);
+    def (model2,_) = elaborateDerivatives(model1,Map.empty);
+    def (model3,_) = indexReducationPantelides(model2, Map.empty);
+    def ukmap = makeUkMap(model3);
+    def residual = peval (makeResidual(ukmap,model3));
+    def (yy,yp) = makeInitValues(model3, ukmap);
+    def id = initConditionCorrection(ukmap);
+    def solverState = (DAESolver.make yy yp id residual);
+    ((0.,solverState, yy, ukmap), probes);
+}
+
+
+def daeDoStep(state:State, comStepSize:Real) -> (State, Time) = {
+    def (currTime, solverState, yy, ukmap) = state;
+    def newtime = (DAESolver.step comStepSize solverState);
+    def newState = (newtime, solverState, yy, ukmap);
+    (newState, newtime);
+}
+
+
+def daeGet(state:State, var:<Real>) -> Real = {
+    def (currTime, solverState, yy, ukmap) = state;
+    if Map.mem var ukmap then
+       Array.get yy (fst(Map.find var ukmap))
+    else
+       INFINITE;
+}
+
+def daeSet(state:State, var:<Real>, value:Real) -> State = {
+    state;
+}
+
+def daeGetAsStr(state:State, var:<Real>) -> String = {
+    real2string(daeGet(state,var))
+}
+
+
+def ctSim(model:Equations, steptime:Real, endtime:Real) -> SimulationResult = {
+  def (state,probes) = daeInit(model);
+  def probelist = (Map.toList probes);
+  def stepval = (0., getProbeVals(probelist, daeGet(state)));
+
+  def simloop(currtime:Real, acc:[StepVal]) -> [StepVal] = {
+    if currtime >= endtime then acc
+    else {
+        def (state,newtime) = daeDoStep(state, steptime);
+        def stepval = (newtime, getProbeVals(probelist, daeGet(state)));
+        if newtime == 0. then acc
+        else simloop(newtime,stepval::acc);
+    }
+  };
+  (makeProbeNames("",probelist),reverse(simloop(0.,[stepval])))
+}
+
+type State = Int
+type Param = <Int>
+type Ident = <Int>
+type Model = Equations
+
+type ParamMap = (Ident => Real)
+type IdentMap = (Ident => Real)
+type IdentSet = {Ident}
+
+type InitFun   = IdentMap -> ParamMap -> State
+type TransFun  = State -> IdentMap -> ParamMap -> State
+type OutputFun = State -> IdentMap -> ParamMap -> IdentSet -> IdentMap
+
+
+
+def compile(m:Model, ps:ParamMap) -> (InitFun, TransFun, OutputFun) = {
+  def init(input:IdentMap, pi:ParamMap) -> State = {
+    1
+  };
+
+  def trans(s:State, input:IdentMap, pt:ParamMap) -> State = {
+    1
+  };
+
+  def output(s:State, u:IdentMap, po:ParamMap, ys:IdentSet) -> IdentMap = {
+    Map.empty
+  };
+
+  (init, trans, output)
+}
+
+
+def printsim(model:Equations, steptime:Real, endtime:Real) = {
+     print(pprintSimulation(ctSim(elaborateConnections(model),steptime,endtime)))
+}

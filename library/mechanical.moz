@@ -1,5 +1,5 @@
 /*
-Modeling Kernel Language (Modelyze) library 
+Modeling Kernel Language (Modelyze) library
 Copyright (C) 2010-2012 David Broman
 
 Modelyze library is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ def Inertia(J:Real, flangeA:Rotational, flangeB:Rotational) = {
     phiA = phi;
     phiB = phi;
     w = der(phi);
-    a = der(w); 
+    a = der(w);
     J * a = tauA - tauB;
 }
 
@@ -57,7 +57,7 @@ def IdealGear(ratio:Real, flangeA:Rotational, flangeB:Rotational) = {
     def phiB:Angle;
     RefBranch(tauA,phiA,flangeA);
     RefBranch(-tauB,phiB,flangeB);
-    phiA = ratio * phiB;  
+    phiA = ratio * phiB;
     tauB = ratio * tauA;
 }
 
@@ -65,6 +65,8 @@ def Fixed(angle:Real, flangeB:Rotational) = {
     def tau:Torque;
     RefBranch(tau,angle,flangeB);
 }
+
+
 
 def ConstantTorque(tau:Real, flangeB:Rotational) = {
     def phi:Angle;
@@ -88,6 +90,13 @@ def SpeedSensor(flangeB:Rotational, w:Signal) = {
     def phi:Angle;
     RefBranch(0.0,phi,flangeB);
     w = der(phi);
+}
+
+def AngleSpeedSensor(flangeB:Rotational, phi:Signal, w:Signal) = {
+    def _phi:Angle;
+    RefBranch(0.0,_phi,flangeB);
+    w = der(_phi);
+    phi = _phi;
 }
 
 def AccSensor(flangeB:Rotational, a:Signal) = {
@@ -115,5 +124,3 @@ def RelAccSensor(flangeA:Rotational, flangeB:Rotational, a:Signal) = {
     w = der(phiRel);
     a = der(w);
 }
-
-

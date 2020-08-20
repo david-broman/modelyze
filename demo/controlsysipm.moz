@@ -1,0 +1,78 @@
+/*
+Modeling Kernel Language (Modelyze) library
+Copyright (C) 2010-2012 David Broman
+
+Modelyze library is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Modelyze library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with Modelyze library.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+include ModelyzeIPM
+
+include Electrical
+include Mechanical
+include Block
+
+def DCMotor(V:Voltage,flange:Rotational) = {
+    def e1, e2, e3, e4:Electrical;
+    SignalVoltage(V, e1, e4);
+    Resistor(200.0, e1, e2);
+    Inductor(0.1, e2, e3);
+    EMF(1.0, e3, e4, flange);
+    Ground(e4);
+}
+
+
+// All P_i, P_t
+def ShaftElement(flangeA:Rotational, flangeB:Rotational) = {
+    def r1:Rotational;
+    Spring(1.0, flangeA, r1);
+    Damper(0.02, flangeA, r1);
+    Inertia(0.01, r1, flangeB);
+}
+
+
+type Element = <?> -> <?> -> Equations
+
+// Constants discoved as structural, but this is a help
+// function. Should not be seen as a parameter
+def serialize(n:Int, f1:Rotational, f2:Rotational, elem:Element) -> Equations = {
+    def recursive(n:Int, f1:Rotational, f2:Rotational) -> Equations = {
+       if n == 1 then
+            elem(f1,f2)
+       else{
+            def node:?;
+            elem(f1,node);
+            recursive(n - 1, node, f2);
+       }
+    };
+    recursive(n, f1, f2);
+}
+
+// All P_i, P_t extept in serialize, which is P_s
+def CPS() = {
+    def s1, s2, s3, s4, s5:Signal;
+    def r1, r2, r3, r4:Rotational;
+    ConstantSource(1.0, s1);
+    Feedback(s1, s4, s2);
+    PID(3.0, 0.7, 0.1, 10.0, s2, s3);
+    DCMotor(s3, r1);
+    IdealGear(4.0, r1, r2);
+    serialize(3, r2, r3, ShaftElement);
+    Inertia(0.3, r3, r4);
+    AngleSpeedSensor(r4,s5,s4);
+    probe "angle" = s5;
+}
+//    probe "angularVelocity" = s4;
+
+def main =
+    printsim(CPS(), 0.01, 400.0)
